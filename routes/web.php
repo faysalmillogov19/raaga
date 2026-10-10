@@ -86,6 +86,9 @@ Route::middleware('guest')->group(function () {
 });
 
 // Redirige chaque utilisateur vers le tableau de bord de son rôle.
+// Agent de guichet : état vide en attendant l'interface guichet.
+Route::view('/guichet', 'dashboards.show', ['role' => Role::AgentGuichet])->middleware(['auth', 'role:'.Role::AgentGuichet->value])->name('guichet');
+
 Route::get('/dashboard', function () {
     return redirect()->route(auth()->user()->codeRole()->dashboardRoute());
 })->middleware('auth')->name('dashboard');

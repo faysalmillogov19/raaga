@@ -1,15 +1,20 @@
+{{-- Parcours pas encore ouverts (souscription, paiement, espace, vérification) : état vide honnête. --}}
+@php
+    $citoyen = auth()->user()?->isCitoyen();
+    [$icone, $lien, $libelleLien] = match ($page) {
+        'souscrire' => ['souscriptions', route('offre'), __('public.etats_vides.liens.offre')],
+        'paiement' => ['cadenas', route('faq'), __('public.etats_vides.liens.faq')],
+        'espace' => ['utilisateur', $citoyen ? route('espace.profil') : route('offre'), $citoyen ? __('public.etats_vides.liens.profil') : __('public.etats_vides.liens.offre')],
+        'verification' => ['kyc', route('faq'), __('public.etats_vides.liens.faq')],
+    };
+@endphp
+
 <x-public.layout :titre="$titre">
-    <x-public.page-entete :titre="$titre" :intro="$intro" :fil="[['libelle' => $titre]]" />
+    <x-public.page-entete :titre="$titre" :fil="[['libelle' => $titre]]" />
 
-    <div class="conteneur max-w-3xl py-8 tab:py-12">
-        <x-public.alerte variante="info" :titre="__('public.preparation.titre_alerte')">
-            {{ __('public.preparation.texte') }}
-        </x-public.alerte>
-
-        <p class="mt-6 leading-relaxed">{{ __('public.preparation.en_attendant') }}</p>
-        <div class="mt-4 flex flex-col gap-3 sm:flex-row">
-            <a href="{{ route('offre') }}" class="btn-primaire">{{ __('public.menu.offre') }}</a>
-            <a href="{{ route('faq') }}" class="btn-secondaire">{{ __('public.menu.faq') }}</a>
-        </div>
+    <div class="conteneur py-8 tab:py-12">
+        <x-etat-vide :icone="$icone" :titre="__('public.etats_vides.'.$page.'.titre')" :lien="$lien" :libelle-lien="$libelleLien">
+            {{ __('public.etats_vides.'.$page.'.texte') }}
+        </x-etat-vide>
     </div>
 </x-public.layout>

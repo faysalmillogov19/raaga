@@ -112,8 +112,6 @@ return [
         'titre' => 'Tableau de bord',
         'bienvenue' => 'Bienvenue, :nom.',
         'aucun_service' => 'Aucun service n’est encore proposé pour ce profil.',
-        'guichet_titre' => 'Interface guichet en cours de mise en place',
-        'guichet_message' => 'Les outils des agents de guichet (inscription, souscription et encaissement pour le compte d’un citoyen) ne sont pas encore disponibles.',
     ],
 
     'entete' => [
@@ -422,10 +420,37 @@ return [
         'autres' => 'Autres actualités',
     ],
 
+    'etats_vides' => [
+        'souscrire' => [
+            'titre' => 'La souscription en ligne n’est pas encore ouverte',
+            'texte' => 'Vous serez informé par SMS dès son ouverture.',
+        ],
+        'paiement' => [
+            'titre' => 'Le paiement en ligne n’est pas encore ouvert',
+            'texte' => 'Il ouvrira en même temps que la souscription en ligne. Aucun paiement ne vous sera demandé avant.',
+        ],
+        'espace' => [
+            'titre' => 'Aucune souscription pour le moment',
+            'texte' => 'Vos souscriptions, vos documents et vos dividendes apparaîtront ici après l’ouverture de la souscription en ligne.',
+        ],
+        'verification' => [
+            'titre' => 'Le dépôt des pièces n’est pas encore ouvert',
+            'texte' => 'Vous pourrez bientôt envoyer ici votre CNIB ou votre passeport. Votre dossier sera alors vérifié sous 48 heures.',
+        ],
+        'guichet' => [
+            'page' => 'Guichet',
+            'titre' => 'Interface guichet en cours de mise en place',
+            'texte' => 'Les outils des agents de guichet ne sont pas encore disponibles.',
+        ],
+        'liens' => [
+            'offre' => 'Comprendre l’offre',
+            'faq' => 'Aide & FAQ',
+            'profil' => 'Mon profil',
+            'guichets' => 'Voir les guichets',
+        ],
+    ],
+
     'preparation' => [
-        'titre_alerte' => 'Bientôt disponible',
-        'texte' => 'Cette étape de la plateforme est en cours de mise en service. Elle sera accessible à l’ouverture de la souscription en ligne.',
-        'en_attendant' => 'En attendant, vous pouvez lire les conditions de l’offre et les réponses aux questions fréquentes.',
         'pages' => [
             'inscription' => ['titre' => 'Créer mon compte', 'intro' => 'Votre numéro de téléphone, un code de confirmation, votre identité et vos pièces : quatre étapes pour créer votre compte.'],
             'souscrire' => ['titre' => 'Souscrire', 'intro' => 'Choisissez le nombre d’actions, lisez et acceptez les conditions de la tranche.'],
