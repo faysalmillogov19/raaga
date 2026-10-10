@@ -209,6 +209,12 @@ class ConventionsController extends Controller
         $motif = $this->motif($request);
         $valeurs = $request->parametres();
 
+        // Nouvelle version du PDF : rangée sous son empreinte, appliquée seulement si l'avenant est confirmé.
+        if ($pdf = $request->file('pdf')) {
+            $valeurs['pdf_empreinte'] = hash_file('sha256', $pdf->getRealPath());
+            $pdf->storeAs('conventions', Convention::cheminPdfAvenant($valeurs['pdf_empreinte']), self::DISQUE);
+        }
+
         return $this->executer($convention, fn () => $this->workflow->proposerAvenant($convention, $request->user(), $valeurs, $motif), 'admin.parametrage.messages.avenant_soumis');
     }
 

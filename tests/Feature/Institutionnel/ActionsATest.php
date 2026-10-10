@@ -434,6 +434,35 @@ class ActionsATest extends TestCase
         $this->en($autre)->get(route('institutionnel.dividendes.avis', $distribution))->assertForbidden();
     }
 
+    public function test_un_avenant_peut_remplacer_le_pdf_et_la_signature_doit_etre_refaite(): void
+    {
+        [$institution, $signataire] = $this->creerInstitution();
+        $this->activerTotp($signataire);
+        $this->verifierDossier($institution, $signataire);
+        $convention = $this->conventionConfirmee($institution);
+        $this->en($signataire)->post(route('institutionnel.convention.signer', $convention), ['code' => $this->codeTotp($signataire)]);
+        $ancienne = $convention->fresh()->pdf_empreinte;
+
+        $nouveauPdf = UploadedFile::fake()->createWithContent('convention-v2.pdf', '%PDF-1.4 version 2');
+        $formulaire = collect($this->formulaireConvention($institution, ['droits_particuliers' => 'Deux sièges au conseil.', 'pdf' => $nouveauPdf]))
+            ->except('institution_id')->all();
+        $this->en($this->regulateur)->post(route('admin.conventions.avenant.store', $convention), [...$formulaire, 'motif' => 'Avenant n° 1 signé par les parties'])
+            ->assertSessionHas('succes');
+
+        // Tant que l'avenant n'est pas confirmé, rien ne change.
+        $this->assertSame($ancienne, $convention->fresh()->pdf_empreinte);
+        $this->assertTrue($convention->fresh()->estSignee());
+
+        $avenant = $convention->avenants()->firstOrFail();
+        $this->en($this->validateur)->post(route('admin.conventions.avenant.confirmer', [$convention, $avenant]))->assertSessionHas('succes');
+
+        $convention->refresh();
+        $this->assertSame(hash('sha256', '%PDF-1.4 version 2'), $convention->pdf_empreinte);
+        $this->assertSame('Deux sièges au conseil.', $convention->droits_particuliers);
+        $this->assertFalse($convention->estSignee());
+        $this->assertSame('%PDF-1.4 version 2', $this->en($signataire)->get(route('institutionnel.convention.pdf', $convention))->streamedContent());
+    }
+
     public function test_le_rappel_et_la_relance_des_appels_de_fonds(): void
     {
         [$institution, $signataire] = $this->creerInstitution();

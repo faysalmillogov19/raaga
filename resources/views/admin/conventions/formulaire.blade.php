@@ -62,14 +62,12 @@
                 <label for="droits_particuliers">{{ $champs['droits_particuliers'] }}</label>
                 <textarea id="droits_particuliers" name="droits_particuliers" rows="3" class="champ">{{ old('droits_particuliers', $convention->droits_particuliers) }}</textarea>
             </div>
-            @if ($mode !== 'avenant')
                 <div class="formulaire-champ !mt-0 lg:col-span-2">
                     <label for="pdf">{{ $champs['pdf'] }}</label>
                     <input id="pdf" name="pdf" type="file" accept="application/pdf" class="champ @error('pdf') est-invalide @enderror">
                     @if ($convention->pdf_nom_original)<p class="aide-champ">{{ $convention->pdf_nom_original }}</p>@endif
                     @error('pdf') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 </div>
-            @endif
         </section>
 
         <section class="bo-carte" aria-labelledby="echeancier-titre">

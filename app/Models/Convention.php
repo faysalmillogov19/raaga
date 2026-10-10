@@ -132,9 +132,19 @@ class Convention extends Model implements Parametrable
         return DeclarationVirement::query()->whereIn('appel_fonds_id', $this->appels()->select('id'))->exists();
     }
 
+    /** Nom du PDF joint à un avenant (rangé sous son empreinte dans « conventions/ »). */
+    public static function cheminPdfAvenant(string $empreinte): string
+    {
+        return $empreinte.'.pdf';
+    }
+
     public function appliquerAvenant(array $valeurs): void
     {
-        $this->fill(array_intersect_key($valeurs, array_flip(self::PARAMETRES)))->save();
+        $this->fill(array_intersect_key($valeurs, array_flip(self::PARAMETRES)));
+        if ($this->isDirty('pdf_empreinte')) {
+            $this->forceFill(['pdf_chemin' => 'conventions/'.self::cheminPdfAvenant($this->pdf_empreinte), 'pdf_nom_original' => 'convention-avenant.pdf']);
+        }
+        $this->save();
 
         // Une signature porte sur une version précise : elle tombe si les paramètres changent.
         $this->forceFill(['signature_mode' => null, 'signee_par' => null, 'signee_le' => null, 'signature_empreinte' => null,
