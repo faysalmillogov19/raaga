@@ -34,6 +34,32 @@ return [
         'merci' => 'Merci de votre patience.',
     ],
 
+    'erreurs' => [
+        'code' => 'Erreur :code',
+        'accueil_alt' => ':nom — retour à l’accueil',
+        'retour_accueil' => 'Retour à l’accueil',
+        'aide' => 'Aide & FAQ',
+        '404' => [
+            'titre' => 'Page introuvable',
+            'message' => 'La page demandée n’existe pas ou a été déplacée. Vérifiez l’adresse ou repartez de l’accueil.',
+        ],
+        '403' => [
+            'titre' => 'Accès refusé',
+            'message' => 'Vous n’avez pas l’autorisation d’accéder à cette page.',
+        ],
+        '419' => [
+            'titre' => 'Session expirée',
+            'message' => 'Votre session a expiré. Reconnectez-vous pour continuer.',
+        ],
+        '500' => [
+            'titre' => 'Une erreur est survenue',
+            'message' => 'Le service rencontre un problème technique. Réessayez dans quelques instants.',
+        ],
+        '503' => [
+            'message' => 'Le site est momentanément indisponible pour une opération de maintenance.',
+        ],
+    ],
+
     'entete' => [
         'aide' => 'Aide & FAQ',
         'mon_espace' => 'Mon espace',
