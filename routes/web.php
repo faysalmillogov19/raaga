@@ -4,7 +4,6 @@ use App\Enums\Role;
 use App\Http\Controllers\Compte\ConnexionController;
 use App\Http\Controllers\Compte\InscriptionController;
 use App\Http\Controllers\Compte\ProfilController as CompteProfilController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Publique\AccueilController;
 use App\Http\Controllers\Publique\ArmoiriesController;
 use App\Http\Controllers\Publique\ImagePlateformeController;
@@ -83,10 +82,10 @@ Route::middleware('guest')->group(function () {
 // Redirige chaque utilisateur vers le tableau de bord de son rôle.
 Route::get('/dashboard', function () {
     return redirect()->route(auth()->user()->codeRole()->dashboardRoute());
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware('auth')->name('dashboard');
 
 // Un tableau de bord par rôle : /{prefixe}/dashboard, protégé par le middleware role.
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware('auth')->group(function () {
     foreach (Role::cases() as $role) {
         if ($role->estEspaceSecurise()) {
             continue; // Back-office : /admin (routes/admin.php) ; institutionnels : /institutionnel.
@@ -99,11 +98,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::view('/dashboard', 'dashboards.show', ['role' => $role])->name('dashboard');
             });
     }
-});
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
 require __DIR__.'/auth.php';

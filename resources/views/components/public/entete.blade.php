@@ -46,8 +46,10 @@
                     <ul id="menu-compte" x-show="ouvert" x-cloak aria-label="{{ __('public.entete.menu_compte') }}"
                         class="absolute right-0 z-20 mt-2 min-w-[200px] rounded-charte border border-ligne bg-white py-1 shadow-legere">
                         <li><a href="{{ route('espace') }}" class="flex min-h-[44px] items-center px-4 font-semibold text-encre no-underline hover:bg-fond">{{ __('public.entete.mon_espace') }}</a></li>
-                        <li><a href="{{ Auth::user()->estBackoffice() ? route('admin.profil') : (Auth::user()->isCitoyen() ? route('espace.profil') : route('profile.edit')) }}"
-                               class="flex min-h-[44px] items-center px-4 font-semibold text-encre no-underline hover:bg-fond">{{ __('public.entete.mon_profil') }}</a></li>
+                        @if ($profil = Auth::user()->estBackoffice() ? route('admin.profil') : (Auth::user()->isCitoyen() ? route('espace.profil') : null))
+                            <li><a href="{{ $profil }}"
+                                   class="flex min-h-[44px] items-center px-4 font-semibold text-encre no-underline hover:bg-fond">{{ __('public.entete.mon_profil') }}</a></li>
+                        @endif
                         <li>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf

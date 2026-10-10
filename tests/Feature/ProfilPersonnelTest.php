@@ -64,13 +64,16 @@ class ProfilPersonnelTest extends TestCase
         $this->assertSame(Role::SuperAdmin, $user->fresh()->codeRole());
     }
 
-    public function test_les_pages_breeze_renvoient_le_back_office_vers_son_profil(): void
+    public function test_les_anciennes_pages_breeze_ne_modifient_plus_rien(): void
     {
-        $this->connecterBackoffice(Role::Validateur);
+        $user = $this->connecterBackoffice(Role::Validateur);
+        $nom = $user->name;
 
-        $this->get('/profile')->assertRedirect(route('admin.profil'));
-        $this->patch('/profile', ['name' => 'X', 'email' => 'x@raaga.test'])->assertRedirect(route('admin.profil'));
-        $this->put('/password', ['current_password' => 'password', 'password' => 'court', 'password_confirmation' => 'court'])->assertForbidden();
+        $this->get('/profile')->assertStatus(301)->assertRedirect('/espace/profil');
+        $this->patch('/profile', ['name' => 'X', 'email' => 'x@raaga.test'])->assertStatus(301);
+        $this->put('/password', ['current_password' => 'password', 'password' => 'court', 'password_confirmation' => 'court'])->assertNotFound();
+
+        $this->assertSame($nom, $user->fresh()->name);
     }
 
     // ---------------------------------------------------------------- Citoyens
@@ -166,19 +169,6 @@ class ProfilPersonnelTest extends TestCase
         $this->get('/espace/profil')->assertRedirect(route('connexion'));
 
         $this->actingAs(User::factory()->role(Role::Investisseur)->create())->get('/espace/profil')->assertForbidden();
-        $this->actingAs($this->citoyen())->get('/profile')->assertRedirect(route('espace.profil'));
-    }
-
-    // ---------------------------------------------------------------- Autres comptes (profil Breeze)
-
-    public function test_les_autres_comptes_modifient_leur_profil_breeze(): void
-    {
-        $investisseur = User::factory()->role(Role::Investisseur)->create(['email' => 'issa@raaga.test']);
-
-        $this->actingAs($investisseur)->patch('/profile', ['name' => 'Issa TRAORÉ', 'email' => 'issa@raaga.test'])
-            ->assertRedirect('/profile');
-
-        $this->assertSame('Issa TRAORÉ', $investisseur->fresh()->name);
-        $this->assertSame(Role::Investisseur, $investisseur->fresh()->codeRole());
+        $this->actingAs($this->citoyen())->get('/profile')->assertRedirect('/espace/profil');
     }
 }

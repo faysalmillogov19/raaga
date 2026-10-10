@@ -21,7 +21,7 @@ class EnsureUserHasRole
         $user = $request->user();
 
         if (! $user) {
-            return redirect()->guest(route('login'));
+            return redirect()->guest(route('connexion'));
         }
 
         $allowed = array_map(fn (string $role) => Role::from($role), $roles);

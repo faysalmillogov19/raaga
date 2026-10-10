@@ -85,7 +85,7 @@ class RoleMiddlewareTest extends TestCase
 
     public function test_guests_are_redirected_to_login(): void
     {
-        $this->get(route('citoyen.dashboard'))->assertRedirect(route('login'));
+        $this->get(route('citoyen.dashboard'))->assertRedirect(route('connexion'));
         $this->get('/admin')->assertRedirect(route('admin.connexion'));
     }
 }

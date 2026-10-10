@@ -251,12 +251,13 @@ class ConnexionBackofficeTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_la_connexion_breeze_ne_contourne_pas_la_double_authentification(): void
+    public function test_l_ancienne_connexion_breeze_ne_contourne_pas_la_double_authentification(): void
     {
         $this->compte();
 
         $this->post('/login', ['email' => 'agent@raaga.test', 'password' => self::MOT_DE_PASSE])
-            ->assertRedirect(route('admin.connexion'));
+            ->assertStatus(301)
+            ->assertRedirect('/connexion');
 
         $this->assertGuest();
     }

@@ -1,17 +1,17 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Tableau de bord') }} — {{ $role->label() }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    {{ __('Bienvenue, :name. Vous êtes connecté en tant que :role.', ['name' => Auth::user()->name, 'role' => Auth::user()->role->label()]) }}
-                </div>
-            </div>
+{{-- Tableau de bord des profils sans espace dédié (agent de guichet, profils historiques). --}}
+<x-public.layout :titre="__('public.tableau.titre')">
+    <div class="conteneur max-w-2xl py-16 text-center">
+        <p class="text-sm font-bold uppercase tracking-wide text-vert-fonce">{{ $role->label() }}</p>
+        @if ($role === \App\Enums\Role::AgentGuichet)
+            <h1 class="mt-3">{{ __('public.tableau.guichet_titre') }}</h1>
+            <p class="mt-4 text-lg leading-relaxed">{{ __('public.tableau.guichet_message') }}</p>
+        @else
+            <h1 class="mt-3">{{ __('public.tableau.titre') }}</h1>
+            <p class="mt-4 text-lg leading-relaxed">{{ __('public.tableau.bienvenue', ['nom' => Auth::user()->prenoms ?: Auth::user()->name]) }}</p>
+            <p class="mt-2 text-gris">{{ __('public.tableau.aucun_service') }}</p>
+        @endif
+        <div class="mt-8 flex justify-center">
+            <a href="{{ route('accueil') }}" class="btn-secondaire">{{ __('public.erreurs.retour_accueil') }}</a>
         </div>
     </div>
-</x-app-layout>
+</x-public.layout>

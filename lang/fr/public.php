@@ -60,6 +60,14 @@ return [
         ],
     ],
 
+    'tableau' => [
+        'titre' => 'Tableau de bord',
+        'bienvenue' => 'Bienvenue, :nom.',
+        'aucun_service' => 'Aucun service n’est encore proposé pour ce profil.',
+        'guichet_titre' => 'Interface guichet en cours de mise en place',
+        'guichet_message' => 'Les outils des agents de guichet (inscription, souscription et encaissement pour le compte d’un citoyen) ne sont pas encore disponibles.',
+    ],
+
     'entete' => [
         'aide' => 'Aide & FAQ',
         'mon_espace' => 'Mon espace',
@@ -441,6 +449,7 @@ return [
             'creer' => 'Créer un compte',
             'inconnu' => 'Aucun compte n’est associé à ce numéro.',
             'desactive' => 'Ce compte a été désactivé. Contactez l’assistance au numéro vert.',
+            'espace_securise' => 'Ce compte se connecte depuis son espace dédié, avec e-mail, mot de passe et code d’authentification.',
         ],
         'profil' => [
             'titre' => 'Mon profil',

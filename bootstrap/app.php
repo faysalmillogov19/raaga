@@ -23,12 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'backoffice' => AuthentifieBackoffice::class,
         ]);
 
-        // Espace citoyen → téléphone + SMS ; back-office → e-mail + mot de passe + TOTP ; autres → Breeze.
+        // Back-office et institutionnels → e-mail + mot de passe + TOTP ; tous les autres → téléphone + SMS.
         $middleware->redirectGuestsTo(fn (Request $request) => match (true) {
-            $request->is('espace', 'espace/*', 'souscri*', 'paiement') => route('connexion'),
             $request->is('admin', 'admin/*') => route('admin.connexion'),
             $request->is('institutionnel', 'institutionnel/*') => route('institutionnel.connexion'),
-            default => route('login'),
+            default => route('connexion'),
         });
 
         // Déjà connecté sur une page de connexion : citoyen → son espace, autres rôles → leur tableau de bord.

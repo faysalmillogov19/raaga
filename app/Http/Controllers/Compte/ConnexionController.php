@@ -46,6 +46,11 @@ class ConnexionController extends Controller
                 ->with('compte.inconnu', true);
         }
 
+        // Back-office et institutionnels : connexion par e-mail + mot de passe + TOTP uniquement.
+        if ($compte->codeRole()->estEspaceSecurise()) {
+            return back()->withInput()->withErrors(['telephone' => __('public.compte.connexion.espace_securise')]);
+        }
+
         // Compte désactivé par le SUPER_ADMIN : aucun code n'est envoyé.
         if (! $compte->actif) {
             return back()->withInput()->withErrors(['telephone' => __('public.compte.connexion.desactive')]);
@@ -86,6 +91,7 @@ class ConnexionController extends Controller
         }
 
         $user = User::query()->where('telephone', $telephone)->firstOrFail();
+        abort_if($user->codeRole()->estEspaceSecurise(), 403);
 
         Auth::login($user);
         $request->session()->regenerate();
