@@ -75,7 +75,7 @@ class LiensTest extends TestCase
 
         foreach ($liens as $lien => $source) {
             // Les fichiers statiques (CSS, armoiries) ne passent pas par le routeur Laravel.
-            if (preg_match('/\.(css|js|svg|png|pdf)$/', $lien)) {
+            if (preg_match('/\.(css|js|svg|png|pdf|ico)$/', $lien)) {
                 $this->assertFileExists(public_path(ltrim($lien, '/')), "Fichier manquant : {$lien} (lien trouvé sur {$source})");
 
                 continue;

@@ -24,7 +24,7 @@
         <x-public.icone nom="telephone" class="mt-0.5 h-5 w-5 text-vert-fonce" />
         <div>
             <p class="texte-carte">{{ __('public.communs.numero_vert') }}</p>
-            <p class="text-lg font-extrabold text-vert-fonce"><a href="tel:{{ $c['numeroVert'] }}" class="no-underline">{{ Telephone::formaterLocal($c['numeroVert']) }}</a></p>
+            <p class="text-lg font-extrabold text-vert-fonce"><a href="tel:{{ $c['numeroVert'] }}" class="inline-flex min-h-[44px] items-center no-underline">{{ Telephone::formaterLocal($c['numeroVert']) }}</a></p>
         </div>
     </div>
 @endif

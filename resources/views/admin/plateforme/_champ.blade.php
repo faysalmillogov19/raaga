@@ -52,8 +52,13 @@
 
         @case('image')
             <label for="{{ $id }}">{{ $libelle }}</label>
-            <div class="flex items-center gap-4">
-                <img src="{{ \App\Support\Armoiries::url() }}" alt="" class="h-14 w-auto rounded border border-ligne bg-white p-1">
+            <div class="flex flex-wrap items-center gap-3">
+                @if ($apercu = \App\Support\ImagesPlateforme::url($champ))
+                    <img src="{{ $apercu }}" alt="" class="h-14 w-auto max-w-[220px] rounded border border-ligne bg-white p-1">
+                    <img src="{{ $apercu }}" alt="" class="h-14 w-auto max-w-[220px] rounded bg-vert-fonce p-1">
+                @else
+                    <span class="texte-carte">—</span>
+                @endif
                 <input id="{{ $id }}" name="{{ $champ }}" type="file" accept=".svg,.png,image/svg+xml,image/png" @class(['champ', 'est-invalide' => $invalide])>
             </div>
             @break

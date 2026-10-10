@@ -118,8 +118,11 @@
     }
 
     .lien-fort {
-        display: inline-block;
-        margin-top: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 44px;
+        margin-top: 4px;
         font-size: .9rem;
         font-weight: 700;
         color: var(--vert-fonce);

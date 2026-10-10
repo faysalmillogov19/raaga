@@ -7,11 +7,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{{ $description ?? plateforme('identite.sousTitre') }}">
-    <meta name="theme-color" content="#005C2B">
 
     <title>{{ collect([$titre, plateforme('identite.nomPlateforme')])->filter()->implode(' · ') }}</title>
 
-    <link rel="icon" href="{{ \App\Support\Armoiries::url() }}">
+    <x-meta-icones />
+
+    {{-- Partage sur les réseaux sociaux. --}}
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ collect([$titre, plateforme('identite.nomPlateforme')])->filter()->implode(' · ') }}">
+    <meta property="og:description" content="{{ $description ?? plateforme('identite.sousTitre') }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ asset('images/og-raaga.png') }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{ asset('images/og-raaga.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">

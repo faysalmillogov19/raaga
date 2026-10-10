@@ -7,6 +7,7 @@ use App\Http\Controllers\Compte\ProfilController as CompteProfilController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Publique\AccueilController;
 use App\Http\Controllers\Publique\ArmoiriesController;
+use App\Http\Controllers\Publique\ImagePlateformeController;
 use App\Http\Controllers\Publique\PageController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,22 @@ Route::get('/', AccueilController::class)->name('accueil');
 
 // Armoiries de la plateforme (déposées dans les paramètres de la plateforme).
 Route::get('/armoiries', ArmoiriesController::class)->name('armoiries');
+// Logos de la plateforme (paramètres de la plateforme, sinon public/images/logo).
+// Manifeste de l'application web : nom lu dans les paramètres de la plateforme.
+Route::get('/site.webmanifest', fn () => response()->json([
+    'name' => plateforme('identite.nomPlateforme'),
+    'short_name' => 'Raaga',
+    'lang' => 'fr',
+    'start_url' => '/',
+    'display' => 'browser',
+    'background_color' => '#FFFFFF',
+    'theme_color' => '#005C2B',
+    'icons' => [
+        ['src' => asset('images/logo/icone-192.png'), 'sizes' => '192x192', 'type' => 'image/png'],
+        ['src' => asset('images/logo/icone-512.png'), 'sizes' => '512x512', 'type' => 'image/png'],
+    ],
+], 200, ['Content-Type' => 'application/manifest+json'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))->name('manifeste');
+Route::get('/plateforme/images/{champ}', ImagePlateformeController::class)->whereAlpha('champ')->name('plateforme.image');
 Route::controller(PageController::class)->group(function () {
     Route::get('/offre', 'offre')->name('offre');
     Route::get('/transparence', 'transparence')->name('transparence');

@@ -5,12 +5,12 @@
     <div class="conteneur py-6 tab:py-9">
         <nav aria-label="{{ __('public.fil.libelle') }}">
             <ol class="flex flex-wrap items-center gap-1 text-sm text-gris">
-                <li><a href="{{ route('accueil') }}" class="text-vert-fonce underline underline-offset-2">{{ __('public.menu.accueil') }}</a></li>
+                <li><a href="{{ route('accueil') }}" class="inline-flex min-h-[44px] items-center text-vert-fonce underline underline-offset-2">{{ __('public.menu.accueil') }}</a></li>
                 @foreach ($fil as $element)
                     <li class="flex items-center gap-1">
-                        <span aria-hidden="true">›</span>
+                        <x-icon name="chevron" class="h-4 w-4" />
                         @if (! empty($element['url']) && ! $loop->last)
-                            <a href="{{ $element['url'] }}" class="text-vert-fonce underline underline-offset-2">{{ $element['libelle'] }}</a>
+                            <a href="{{ $element['url'] }}" class="inline-flex min-h-[44px] items-center text-vert-fonce underline underline-offset-2">{{ $element['libelle'] }}</a>
                         @else
                             <span @if ($loop->last) aria-current="page" @endif>{{ $element['libelle'] }}</span>
                         @endif

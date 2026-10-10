@@ -2,7 +2,7 @@
     {{-- Écran de succès : le compte est créé et l'utilisateur connecté. --}}
     <x-public.carte-compte :titre="__('public.compte.inscription.succes_titre')">
         <x-slot:avant>
-            <div class="pastille-succes" aria-hidden="true">✓</div>
+            <div class="pastille-succes" aria-hidden="true"><x-icon name="check" class="h-8 w-8" /></div>
         </x-slot:avant>
 
         <p class="compte-intro">{{ __('public.compte.inscription.succes_texte') }}</p>

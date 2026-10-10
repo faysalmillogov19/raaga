@@ -87,11 +87,11 @@
             <h2 id="regles-titre">{{ __('public.accueil.regles.titre') }}</h2>
             <div class="encadres">
                 <div class="encadre encadre-danger">
-                    <h3><span class="encadre-symbole" aria-hidden="true">⚠︎</span> {{ __('public.accueil.regles.boutique_titre') }}</h3>
+                    <h3><x-icon name="danger" class="encadre-symbole h-5 w-5" /> {{ __('public.accueil.regles.boutique_titre') }}</h3>
                     <p>{!! __('public.accueil.regles.boutique_texte') !!}</p>
                 </div>
                 <div class="encadre encadre-attention">
-                    <h3><span class="encadre-symbole" aria-hidden="true">ℹ︎</span> {{ __('public.accueil.regles.rendement_titre') }}</h3>
+                    <h3><x-icon name="info" class="encadre-symbole h-5 w-5" /> {{ __('public.accueil.regles.rendement_titre') }}</h3>
                     <p>{!! __('public.accueil.regles.rendement_texte') !!}</p>
                 </div>
             </div>
@@ -115,7 +115,7 @@
                             <h3>{{ $actualite['titre'] }}</h3>
                             <p class="texte-carte">{{ $actualite['resume'] }}</p>
                             <a href="{{ route('actualites.show', $actualite['slug']) }}" class="lien-fort">
-                                {{ __('public.accueil.actualites.lire') }} <span aria-hidden="true">→</span>
+                                {{ __('public.accueil.actualites.lire') }} <x-icon name="fleche" class="h-4 w-4" />
                                 <span class="sr-only">{{ __('public.accueil.actualites.lire_sr', ['titre' => $actualite['titre']]) }}</span>
                             </a>
                         </li>
@@ -135,7 +135,7 @@
                     <x-public.question :question="$question['q']">{{ $question['r'] }}</x-public.question>
                 @endforeach
             </div>
-            <a href="{{ route('faq') }}" class="lien-fort">{{ __('public.accueil.faq.toutes') }} <span aria-hidden="true">→</span></a>
+            <a href="{{ route('faq') }}" class="lien-fort">{{ __('public.accueil.faq.toutes') }} <x-icon name="fleche" class="h-4 w-4" /></a>
         </div>
     </section>
 

@@ -18,7 +18,7 @@ class ModeMaintenancePublic
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $this->parametres->get('messages.modeMaintenance.actif') || $request->is('admin', 'admin/*', 'armoiries', 'up')) {
+        if (! $this->parametres->get('messages.modeMaintenance.actif') || $request->is('admin', 'admin/*', 'armoiries', 'plateforme/images/*', 'site.webmanifest', 'up')) {
             return $next($request);
         }
 

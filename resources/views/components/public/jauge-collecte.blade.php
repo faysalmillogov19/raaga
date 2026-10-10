@@ -37,6 +37,6 @@
     </dl>
 
     @if ($lien)
-        <a href="{{ route('transparence') }}" class="lien-fort">{{ __('public.jauge.suivre') }} <span aria-hidden="true">→</span></a>
+        <a href="{{ route('transparence') }}" class="lien-fort">{{ __('public.jauge.suivre') }} <x-icon name="fleche" class="h-4 w-4" /></a>
     @endif
 </section>

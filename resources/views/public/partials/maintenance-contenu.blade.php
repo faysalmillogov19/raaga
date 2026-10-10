@@ -1,6 +1,6 @@
 {{-- Contenu de la page de maintenance. Variables : $message, $finPrevue (Carbon|null). --}}
 <div class="conteneur max-w-2xl py-16 text-center">
-    <x-public.armoiries class="mx-auto h-20 w-auto" />
+    <x-logo class="mx-auto h-12" :alt="plateforme('identite.nomPlateforme')" />
     <h1 class="mt-6">{{ __('public.maintenance.titre') }}</h1>
     @if ($message)
         <p class="mt-4 text-lg leading-relaxed">{{ $message }}</p>

@@ -66,8 +66,11 @@ class PlateformeController extends Controller
             ])]);
         }
 
-        if ($request->hasFile('armoiries')) {
-            $valeurs['armoiries'] = $this->deposerArmoiries($request->file('armoiries'));
+        // Images (armoiries, logos) : un fichier déposé remplace l'image en vigueur.
+        foreach (Catalogue::champs()[$section] as $champ => [$type]) {
+            if ($type === 'image' && $request->hasFile($champ)) {
+                $valeurs[$champ] = $this->deposerImage($request->file($champ), $champ);
+            }
         }
 
         $titre = __('admin.plateforme.sections.'.$section);
@@ -183,11 +186,11 @@ class PlateformeController extends Controller
         return $attributs;
     }
 
-    private function deposerArmoiries(UploadedFile $fichier): string
+    private function deposerImage(UploadedFile $fichier, string $champ): string
     {
         $extension = strtolower($fichier->getClientOriginalExtension()) === 'svg' ? 'svg' : 'png';
 
-        return Storage::disk(self::DISQUE)->putFileAs('plateforme', $fichier, 'armoiries-'.Str::uuid().'.'.$extension);
+        return Storage::disk(self::DISQUE)->putFileAs('plateforme', $fichier, Str::kebab($champ).'-'.Str::uuid().'.'.$extension);
     }
 
     /**

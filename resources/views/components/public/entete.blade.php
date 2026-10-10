@@ -1,6 +1,7 @@
 <header class="border-b border-ligne bg-white" x-data="{ menuOuvert: false }" @keydown.escape="menuOuvert = false">
     <div class="conteneur flex items-center gap-2 py-3 tab:gap-5 tab:py-4">
-        <a href="{{ route('accueil') }}" class="flex shrink-0 items-center gap-2 text-encre no-underline tab:gap-2.5">
+        {{-- Identité de l'État : armoiries, pays, devise. --}}
+        <div class="flex shrink-0 items-center gap-2 text-encre tab:gap-2.5">
             <x-public.armoiries class="h-10 w-auto tab:h-14" />
             <span class="leading-tight">
                 <span class="block text-[0.75rem] font-extrabold tracking-[0.06em] tab:text-base tab:tracking-[0.12em]">{{ __('public.site.pays') }}</span>
@@ -8,15 +9,16 @@
                     <span class="hidden text-xs italic text-gris tab:block">{{ $devise }}</span>
                 @endif
             </span>
-        </a>
+        </div>
 
-        <div class="hidden h-11 w-px bg-ligne tab:block" aria-hidden="true"></div>
+        <div class="h-9 w-px shrink-0 bg-ligne tab:h-11" aria-hidden="true"></div>
 
-        <div class="min-w-0 flex-1 border-l border-ligne pl-2 tab:border-0 tab:pl-0">
-            <p class="text-[0.85rem] font-extrabold leading-tight text-vert-fonce tab:text-lg">{{ plateforme('identite.nomPlateforme') }}</p>
-            @if ($sousTitre = plateforme('identite.sousTitre'))
-                <p class="hidden text-sm text-gris tab:block">{{ $sousTitre }}</p>
-            @endif
+        {{-- Logo Raaga : lien vers l'accueil (symbole seul sous 400 px). --}}
+        <div class="min-w-0 flex-1">
+            <a href="{{ route('accueil') }}" class="inline-flex min-h-[44px] items-center">
+                <x-logo variante="symbole" class="h-8 min-[400px]:hidden" />
+                <x-logo class="hidden h-9 min-[400px]:block tab:h-11" />
+            </a>
         </div>
 
         <div class="hidden shrink-0 items-center gap-5 tab:flex">

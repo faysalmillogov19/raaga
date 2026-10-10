@@ -10,7 +10,9 @@
 <footer class="bg-encre text-gris-clair">
     <div class="conteneur pied-grille py-10">
         <div>
-            <p class="font-extrabold text-white">{{ $identite['nomPlateforme'] }}</p>
+            <a href="{{ route('accueil') }}" class="inline-flex min-h-[44px] items-center">
+                <x-logo variante="blanc" class="h-[52px]" :alt="$identite['nomPlateforme'].' – '.__('public.menu.accueil')" />
+            </a>
             <p class="mt-2 leading-relaxed">{{ __('public.pied.presentation') }}</p>
             @if ($identite['mentionTutelle'])
                 <p class="mt-2 leading-relaxed">{{ $identite['mentionTutelle'] }}</p>
@@ -39,7 +41,8 @@
             <h2 class="pied-titre">{{ __('public.pied.assistance') }}</h2>
             <ul>
                 @if ($contacts['numeroVert'])
-                    <li class="font-semibold text-white">{{ __('public.communs.numero_vert') }} : {{ \App\Support\Telephone::formaterLocal($contacts['numeroVert']) }}</li>
+                    <li><a href="tel:{{ $contacts['numeroVert'] }}" class="pied-lien inline-flex min-h-[44px] items-center gap-2 font-semibold !text-white">
+                        <x-icon name="telephone" class="h-4 w-4" />{{ __('public.compte.numero_vert') }} : <span class="whitespace-nowrap">{{ \App\Support\Telephone::formaterLocal($contacts['numeroVert']) }}</span></a></li>
                 @endif
                 @if ($contacts['emailAssistance'])
                     <li><a href="mailto:{{ $contacts['emailAssistance'] }}" class="pied-lien break-all">{{ $contacts['emailAssistance'] }}</a></li>

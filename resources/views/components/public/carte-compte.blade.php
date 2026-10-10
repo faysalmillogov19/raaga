@@ -6,7 +6,7 @@
         <div class="compte-carte">
             {{ $avant ?? '' }}
 
-            <x-public.armoiries class="compte-armoiries" />
+            <x-logo class="mx-auto mb-5 h-12" :alt="plateforme('identite.nomPlateforme')" />
             <h1>{{ $titre }}</h1>
             @if ($intro)
                 <p class="compte-intro">{{ $intro }}</p>

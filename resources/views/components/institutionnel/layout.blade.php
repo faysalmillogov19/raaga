@@ -25,7 +25,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex, nofollow">
     <title>{{ $titre }} · {{ __('institutionnel.nom') }}</title>
-    <link rel="icon" href="{{ \App\Support\Armoiries::url() }}">
+    <x-meta-icones />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -37,7 +37,7 @@
     <div class="bo-cadre" x-data="menuBackoffice" :class="{ 'bo-replie': replie }">
         <aside class="bo-lateral">
             <div class="bo-marque">
-                <x-public.armoiries class="h-9 w-auto" />
+                <span class="inline-flex shrink-0 rounded-[6px] bg-white p-1"><x-logo variante="symbole" class="h-7" :alt="plateforme('identite.nomPlateforme')" /></span>
                 <span class="bo-marque-texte">{{ $institution->nomCourt() }}</span>
             </div>
 

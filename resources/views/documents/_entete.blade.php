@@ -30,6 +30,9 @@
                 @if ($identification){{ implode(' · ', $identification) }}<br>@endif
                 @if ($coordonnees){{ implode(' · ', $coordonnees) }}@endif
             </td>
+            @if ($logo = \App\Support\ImagesPlateforme::dataUri('logoHorizontal'))
+                <td style="width:150px; text-align:right; vertical-align:top;"><img src="{{ $logo }}" alt="" style="height:40px;"></td>
+            @endif
         </tr>
     </table>
 @else
@@ -40,5 +43,6 @@
             @if ($identification)<p class="texte-carte">{{ implode(' · ', $identification) }}</p>@endif
             @if ($coordonnees)<p class="texte-carte">{{ implode(' · ', $coordonnees) }}</p>@endif
         </div>
+        <x-logo class="ml-auto h-10 shrink-0" alt="" />
     </div>
 @endif
