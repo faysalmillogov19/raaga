@@ -212,6 +212,11 @@ class ActionsATest extends TestCase
         $this->en($signataire)->get(route('institutionnel.actions'))->assertOk()->assertSee($lignes->first()->numero_certificat)->assertSee("1\u{00A0}000");
         $this->en($signataire)->get(route('institutionnel.actions.attestation', $lignes->first()))->assertOk();
         $this->en($signataire)->get(route('institutionnel.tableau'))->assertOk()->assertSee("10\u{00A0}000\u{00A0}000");
+
+        // Toutes les rubriques de l'espace s'ouvrent.
+        foreach (['projet', 'assemblees', 'dividendes', 'organisation', 'contact', 'appels', 'convention'] as $rubrique) {
+            $this->en($signataire)->get(route('institutionnel.'.$rubrique))->assertOk();
+        }
     }
 
     public function test_un_echeancier_dont_la_somme_differe_du_montant_engage_est_refuse(): void

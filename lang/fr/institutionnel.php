@@ -92,6 +92,11 @@ return [
         'rien' => 'Rien à faire pour le moment.',
     ],
 
+    'projet' => [
+        'rapports' => 'Rapports périodiques et comptes certifiés',
+        'apres_ouverture' => 'Après l’ouverture du marché, cette rubrique présentera aussi le taux d’occupation des boutiques et les résultats de la société.',
+    ],
+
     'dividendes' => [
         'colonnes' => ['exercice' => 'Exercice', 'actions' => 'Actions A', 'brut' => 'Brut', 'retenue' => 'Retenue (IRVM)', 'net' => 'Net', 'paiement' => 'Mise en paiement', 'statut' => 'Statut', 'avis' => 'Avis'],
         'avis' => 'Avis de distribution (PDF)',

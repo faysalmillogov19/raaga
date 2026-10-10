@@ -40,9 +40,8 @@ Route::prefix('institutionnel')->name('institutionnel.')->group(function () {
         Route::get('/contact', [EspaceController::class, 'contact'])->name('contact');
         Route::get('/dividendes', [DividendesController::class, 'index'])->name('dividendes');
         Route::get('/dividendes/{distribution}/avis', [DividendesController::class, 'avis'])->name('dividendes.avis');
-        foreach (['projet', 'assemblees'] as $rubrique) {
-            Route::get('/'.$rubrique, [EspaceController::class, 'aVenir'])->defaults('rubrique', $rubrique)->name($rubrique);
-        }
+        Route::get('/projet', [EspaceController::class, 'projet'])->name('projet');
+        Route::get('/assemblees', [EspaceController::class, 'aVenir'])->defaults('rubrique', 'assemblees')->name('assemblees');
 
         Route::get('/convention', [ConventionController::class, 'show'])->name('convention');
         Route::get('/convention/{convention}/pdf', [ConventionController::class, 'pdf'])->name('convention.pdf');

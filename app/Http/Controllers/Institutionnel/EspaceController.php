@@ -9,6 +9,7 @@ use App\Enums\TypeDocumentKyb;
 use App\Models\AppelFonds;
 use App\Models\LigneRegistreA;
 use App\Services\Institutionnels\RegistreA;
+use App\Services\Publique\CollectePublique;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -44,12 +45,26 @@ class EspaceController extends Controleur
         ]);
     }
 
+    /**
+     * Informations du projet : avancement du chantier et rapports publiés (mêmes sources que la page
+     * Transparence) ; comptes certifiés, occupation et résultats viendront après l'ouverture du marché.
+     */
+    public function projet(CollectePublique $collecte): View
+    {
+        return view('institutionnel.projet', [
+            'chantier' => $collecte->chantier(),
+            'rapports' => collect(config('raaga.rapports'))
+                ->map(fn (array $r) => $r + ['url' => ! empty($r['fichier']) && is_file(public_path($r['fichier'])) ? asset($r['fichier']) : null])
+                ->all(),
+        ]);
+    }
+
     public function contact(): View
     {
         return view('institutionnel.contact', ['institution' => $this->institution()]);
     }
 
-    /** Rubriques prévues pour plus tard (dividendes, informations du projet, assemblées générales). */
+    /** Rubrique prévue pour plus tard (assemblées générales). */
     public function aVenir(Request $request): View
     {
         $rubrique = $request->route()->defaults['rubrique'];
