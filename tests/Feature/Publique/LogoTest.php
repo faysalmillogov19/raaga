@@ -30,6 +30,13 @@ class LogoTest extends TestCase
         $this->get('/connexion')->assertOk()->assertSee($logo, false);
         $this->assertStringContainsString('images/og-raaga.png', $accueil->getContent());
         $this->assertStringContainsString('rel="manifest"', $accueil->getContent());
+
+        // Police hébergée localement : aucun appel à un service externe.
+        $this->assertStringNotContainsString('fonts.googleapis', $accueil->getContent());
+        $this->assertStringContainsString('fonts/public-sans-400.woff2', $accueil->getContent());
+        foreach ([400, 600, 700, 800] as $graisse) {
+            $this->assertFileExists(public_path("fonts/public-sans-{$graisse}.woff2"));
+        }
     }
 
     public function test_les_fichiers_du_logo_sont_servis(): void

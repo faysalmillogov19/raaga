@@ -3,6 +3,39 @@
 @tailwind utilities;
 
 /* Charte des pages publiques — mêmes valeurs que tailwind.config.js, pour le CSS brut. */
+/* Public Sans hébergée localement (SIL OFL 1.1, jeu latin), graisses utilisées uniquement : 400, 600, 700, 800. */
+@font-face {
+    font-family: 'Public Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/public-sans-400.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Public Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/public-sans-600.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Public Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/public-sans-700.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Public Sans';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url('/fonts/public-sans-800.woff2') format('woff2');
+}
+
 :root {
     --vert: #00843D;
     --vert-fonce: #005C2B;
