@@ -1,0 +1,205 @@
+<?php
+
+namespace Tests\Feature\Admin;
+
+use App\Enums\PayeurFrais;
+use App\Enums\StatutAvenant;
+use App\Enums\StatutDistribution;
+use App\Models\Avenant;
+use App\Models\DistributionDividende;
+use App\Services\Dividendes\SimulationDistribution;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Tests\Support\ActeursParametrage;
+use Tests\TestCase;
+
+class DividendesWorkflowTest extends TestCase
+{
+    use ActeursParametrage, RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Storage::fake('local');
+        $this->creerActeurs();
+    }
+
+    private function formulaire(array $surcharges = [], bool $avecPv = true): array
+    {
+        return [
+            'exercice' => 2025,
+            'ag_date' => '2026-06-30',
+            'ag_pv_numero' => 'PV-AGO-2026-01',
+            'resultat_distribuable' => 100_000_000,
+            'mode_calcul' => 'MONTANT_GLOBAL',
+            'montant_global' => 50_000_000,
+            'date_arrete' => '2026-07-15',
+            'date_mise_en_paiement' => '2026-08-01',
+            'taux_irvm' => '12.5',
+            'frais_supportes_par' => 'RAAGA',
+            'seuil_minimal' => 500,
+            'canaux_autorises' => ['ORANGE_MONEY', 'MOOV_MONEY', 'VIREMENT'],
+            'canal_defaut' => 'ORANGE_MONEY',
+            'tentatives' => 3,
+            'delai_tentatives_heures' => 24,
+            'conservation_non_reclames_mois' => 60,
+            'traitement_non_reclames' => 'CONSIGNATION',
+            ...($avecPv ? ['pv' => UploadedFile::fake()->create('pv.pdf', 100, 'application/pdf')] : []),
+            ...$surcharges,
+        ];
+    }
+
+    private function distributionSoumise(): DistributionDividende
+    {
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire())->assertSessionHasNoErrors();
+        $d = DistributionDividende::query()->firstOrFail();
+        $this->en($this->regulateur)->post(route('admin.dividendes.soumettre', $d), ['montant_conforme_pv' => '1'])->assertSessionHas('succes');
+
+        return $d->refresh();
+    }
+
+    private function distributionConfirmee(): DistributionDividende
+    {
+        $d = $this->distributionSoumise();
+        $this->en($this->validateur)->post(route('admin.dividendes.confirmer', $d))->assertSessionHas('succes');
+
+        return $d->refresh();
+    }
+
+    public function test_le_regulateur_cree_et_soumet_un_parametrage_mais_ne_peut_pas_le_confirmer(): void
+    {
+        $this->en($this->regulateur)->get(route('admin.dividendes.create'))->assertOk();
+        $d = $this->distributionSoumise();
+
+        $this->assertSame(StatutDistribution::Soumis, $d->statut);
+        $this->assertSame(1, $d->version);
+        $this->assertSame(1250, $d->taux_irvm_pb);
+        $this->assertNotNull($d->pv_empreinte);
+        Storage::disk('local')->assertExists($d->pv_chemin);
+
+        $this->en($this->regulateur)->post(route('admin.dividendes.confirmer', $d))->assertForbidden();
+        $this->en($this->regulateur)->post(route('admin.dividendes.rejeter', $d), ['motif' => 'Essai de rejet'])->assertForbidden();
+        $this->assertSame(StatutDistribution::Soumis, $d->refresh()->statut);
+    }
+
+    public function test_un_parametrage_ne_peut_pas_etre_soumis_sans_pv_d_ag(): void
+    {
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire(avecPv: false))->assertSessionHasNoErrors();
+        $d = DistributionDividende::query()->firstOrFail();
+
+        $this->en($this->regulateur)->post(route('admin.dividendes.soumettre', $d), ['montant_conforme_pv' => '1'])
+            ->assertSessionHas('erreur', __('admin.dividendes.erreurs.pv_obligatoire'));
+
+        $this->assertSame(StatutDistribution::Brouillon, $d->refresh()->statut);
+        $this->assertSame(0, $d->versions()->count());
+    }
+
+    public function test_la_soumission_exige_l_attestation_du_montant(): void
+    {
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire());
+        $d = DistributionDividende::query()->firstOrFail();
+
+        $this->en($this->regulateur)->post(route('admin.dividendes.soumettre', $d))->assertSessionHasErrors('montant_conforme_pv');
+        $this->assertSame(StatutDistribution::Brouillon, $d->refresh()->statut);
+    }
+
+    public function test_le_pv_doit_etre_un_pdf_et_les_dates_coherentes(): void
+    {
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire([
+            'pv' => UploadedFile::fake()->create('pv.docx', 10, 'application/msword'),
+            'date_arrete' => '2026-06-01',
+            'montant_global' => 200_000_000,
+        ]))->assertSessionHasErrors(['pv', 'date_arrete', 'montant_global']);
+
+        $this->assertSame(0, DistributionDividende::query()->count());
+    }
+
+    public function test_le_validateur_confirme_ou_rejette_mais_ne_peut_ni_creer_ni_modifier(): void
+    {
+        $d = $this->distributionSoumise();
+
+        $this->en($this->validateur)->get(route('admin.dividendes.create'))->assertForbidden();
+        $this->en($this->validateur)->post(route('admin.dividendes.store'), $this->formulaire(['exercice' => 2024]))->assertForbidden();
+        $this->en($this->validateur)->put(route('admin.dividendes.update', $d), $this->formulaire())->assertForbidden();
+        $this->en($this->validateur)->post(route('admin.dividendes.soumettre', $d), ['montant_conforme_pv' => '1'])->assertForbidden();
+
+        $this->en($this->validateur)->get(route('admin.dividendes.show', $d))->assertOk()->assertSee('Modifications soumises');
+        $this->en($this->validateur)->get(route('admin.dividendes.pv', $d))->assertOk();
+        $this->en($this->validateur)->get(route('admin.tableau'))->assertSee('Dividendes de l’exercice 2025 soumis', false);
+
+        $this->en($this->validateur)->post(route('admin.dividendes.rejeter', $d), ['motif' => 'Montant non conforme au PV'])->assertSessionHas('succes');
+        $this->assertSame(StatutDistribution::Brouillon, $d->refresh()->statut);
+        $this->en($this->regulateur)->get(route('admin.dividendes.show', $d))->assertSee('Montant non conforme au PV');
+
+        $this->en($this->regulateur)->post(route('admin.dividendes.soumettre', $d), ['montant_conforme_pv' => '1']);
+        $this->en($this->validateur)->post(route('admin.dividendes.confirmer', $d))->assertSessionHas('succes');
+        $this->assertSame(StatutDistribution::Confirme, $d->refresh()->statut);
+        $this->assertSame(2, $d->version);
+    }
+
+    public function test_le_super_admin_n_a_aucune_action_d_ecriture_sur_les_dividendes(): void
+    {
+        $d = $this->distributionSoumise();
+        $sa = $this->superAdmin;
+
+        $this->en($sa)->get(route('admin.dividendes'))->assertOk();
+        $this->en($sa)->get(route('admin.dividendes.show', $d))->assertOk();
+
+        $this->en($sa)->get(route('admin.dividendes.create'))->assertForbidden();
+        $this->en($sa)->post(route('admin.dividendes.store'), $this->formulaire(['exercice' => 2024]))->assertForbidden();
+        $this->en($sa)->put(route('admin.dividendes.update', $d), $this->formulaire())->assertForbidden();
+        $this->en($sa)->post(route('admin.dividendes.soumettre', $d), ['montant_conforme_pv' => '1'])->assertForbidden();
+        $this->en($sa)->post(route('admin.dividendes.confirmer', $d))->assertForbidden();
+        $this->en($sa)->post(route('admin.dividendes.rejeter', $d), ['motif' => 'Essai de rejet'])->assertForbidden();
+        $this->en($sa)->post(route('admin.dividendes.avenant.store', $d), ['motif' => 'Essai'])->assertForbidden();
+        $this->en($sa)->get(route('admin.dividendes.simulation', $d))->assertForbidden();
+
+        $this->assertSame(StatutDistribution::Soumis, $d->refresh()->statut);
+    }
+
+    public function test_un_parametrage_confirme_ne_change_que_par_avenant_confirme(): void
+    {
+        $d = $this->distributionConfirmee();
+
+        $this->en($this->regulateur)->put(route('admin.dividendes.update', $d), $this->formulaire(['montant_global' => 40_000_000]))
+            ->assertSessionHas('erreur');
+        $this->assertSame(50_000_000, $d->refresh()->montant_global);
+
+        $this->en($this->regulateur)->post(route('admin.dividendes.avenant.store', $d), [
+            ...$this->formulaire(['seuil_minimal' => 1000], avecPv: false), 'motif' => 'Relèvement du seuil',
+        ])->assertSessionHas('succes');
+        $avenant = Avenant::query()->firstOrFail();
+        $this->assertSame(['seuil_minimal'], array_keys($avenant->nouvelle_valeur));
+        $this->assertSame(500, $d->refresh()->seuil_minimal);
+
+        $this->en($this->regulateur)->post(route('admin.dividendes.avenant.confirmer', [$d, $avenant]))->assertForbidden();
+        $this->en($this->validateur)->post(route('admin.dividendes.avenant.confirmer', [$d, $avenant]))->assertSessionHas('succes');
+
+        $this->assertSame(1000, $d->refresh()->seuil_minimal);
+        $this->assertSame(2, $d->version);
+        $this->assertSame(StatutAvenant::Approuve, $avenant->refresh()->statut);
+    }
+
+    public function test_la_simulation_respecte_l_egalite_comptable(): void
+    {
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire(['montant_global' => 49_999_999]));
+        $d = DistributionDividende::query()->firstOrFail();
+        $service = app(SimulationDistribution::class);
+
+        foreach ([PayeurFrais::Raaga, PayeurFrais::Souscripteur] as $payeur) {
+            $d->forceFill(['frais_supportes_par' => $payeur])->save();
+            $r = $service->simuler($d, SimulationDistribution::SOURCE_DEMO);
+            $fraisDeduits = $r->fraisParActionnaire ? $r->totalFrais : 0;
+
+            $this->assertGreaterThan(0, $r->nbBeneficiaires);
+            $this->assertSame(49_999_999, $r->totalNetAPayer + $r->totalRetenue + $fraisDeduits + $r->totalReporte + $r->totalConsigne + $r->reliquat);
+        }
+
+        $this->en($this->regulateur)->get(route('admin.dividendes.simulation', [$d, 'source' => 'demo']))->assertOk()->assertSee('Vérifié');
+        $this->en($this->regulateur)->get(route('admin.dividendes.simulation', $d))->assertOk()->assertSee('aucune action');
+        $this->en($this->validateur)->get(route('admin.dividendes.simulation', $d))->assertOk();
+        $this->en($this->regulateur)->get(route('admin.dividendes.avis', $d))->assertOk()->assertSee('PV-AGO-2026-01');
+    }
+}
