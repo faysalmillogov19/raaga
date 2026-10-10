@@ -30,7 +30,7 @@
     <link rel="preload" href="{{ asset('fonts/public-sans-700.woff2') }}" as="font" type="font/woff2" crossorigin>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="site-public bo font-public">
+<body class="site-public bo bo-inst font-public">
     <x-public.bande-tricolore />
 
     <div class="bo-cadre" x-data="menuBackoffice" :class="{ 'bo-replie': replie }">
@@ -65,6 +65,28 @@
 
         <div class="bo-principal">
             <header class="bo-haut">
+                {{-- Mobile (< 768 px) : la barre latérale laisse place à un menu déroulant avec libellés. --}}
+                <div class="bo-menu-mobile" x-data="{ ouvert: false }" @keydown.escape.window="ouvert = false" @click.outside="ouvert = false">
+                    <button type="button" class="bo-menu-bouton" @click="ouvert = ! ouvert"
+                            :aria-expanded="ouvert.toString()" aria-expanded="false" aria-controls="menu-institutionnel-mobile">
+                        <x-icon name="menu" class="h-5 w-5" />
+                        {{ __('institutionnel.menu_mobile') }}
+                    </button>
+                    <nav id="menu-institutionnel-mobile" x-show="ouvert" x-cloak class="bo-menu-panneau" aria-label="{{ __('admin.menu_principal') }}">
+                        <ul>
+                            @foreach ($menu as $cle => [$route, $icone])
+                                @php($actif = request()->routeIs($route, $route.'.*'))
+                                <li>
+                                    <a href="{{ route($route) }}" @class(['bo-menu-lien', 'bo-menu-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif>
+                                        <x-admin.icone :nom="$icone" />
+                                        <span>{{ __('institutionnel.menu.'.$cle) }}</span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </nav>
+                </div>
+
                 <nav aria-label="{{ __('admin.fil') }}" class="bo-fil">
                     <ol>
                         <li><a href="{{ route('institutionnel.tableau') }}">{{ $institution->nomCourt() }}</a></li>

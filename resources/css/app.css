@@ -687,6 +687,93 @@
         margin-top: 18px;
     }
 
+    /* Espace institutionnel sur mobile (< 768 px) : menu déroulant avec libellés, marges de 16 px. */
+    .bo-menu-mobile {
+        display: none;
+    }
+
+    @media (max-width: 767px) {
+        .bo-inst .bo-cadre,
+        .bo-inst .bo-cadre.bo-replie {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .bo-inst .bo-lateral {
+            display: none;
+        }
+
+        .bo-inst .bo-haut {
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            padding: 8px 16px;
+        }
+
+        .bo-inst .bo-menu-mobile {
+            display: block;
+        }
+
+        .bo-inst .bo-fil {
+            order: 3;
+            flex-basis: 100%;
+        }
+
+        .bo-inst .bo-contenu,
+        .bo-inst .bo-carte {
+            padding: 16px;
+        }
+
+        .bo-inst .bo-carte + .bo-carte {
+            margin-top: 16px;
+        }
+    }
+
+    .bo-menu-bouton {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 14px;
+        border: 2px solid var(--vert-fonce);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--vert-fonce);
+        font-weight: 700;
+    }
+
+    .bo-menu-panneau {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        top: calc(100% + 4px);
+        z-index: 30;
+        padding: 6px 0;
+        border: 1px solid var(--ligne);
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(22, 32, 26, .14);
+    }
+
+    .bo-menu-lien {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 48px;
+        padding: 0 16px;
+        color: var(--encre);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .bo-menu-lien:hover {
+        background: var(--fond);
+    }
+
+    .bo-menu-lien-actif {
+        color: var(--vert-fonce);
+        background: var(--vert-pale);
+        box-shadow: inset 4px 0 0 var(--vert-fonce);
+    }
+
     .bo-tableau {
         width: 100%;
         border-collapse: collapse;

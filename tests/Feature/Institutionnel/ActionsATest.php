@@ -153,6 +153,23 @@ class ActionsATest extends TestCase
 
     // ---------------------------------------------------------------- Tests
 
+    public function test_sur_mobile_le_menu_deroulant_reprend_toutes_les_rubriques_avec_libelles(): void
+    {
+        [, $signataire] = $this->creerInstitution();
+
+        $page = $this->en($signataire)->get(route('institutionnel.tableau'))->assertOk()
+            ->assertSee('class="site-public bo bo-inst font-public"', false)
+            ->assertSee('aria-controls="menu-institutionnel-mobile"', false);
+
+        preg_match('/<nav id="menu-institutionnel-mobile".*?<\/nav>/s', $page->getContent(), $menu);
+        $this->assertNotEmpty($menu);
+
+        foreach (__('institutionnel.menu') as $libelle) {
+            $this->assertStringContainsString(e($libelle), $menu[0]);
+        }
+        $this->assertStringContainsString('aria-current="page"', $menu[0]);
+    }
+
     public function test_parcours_complet_jusqu_a_l_attestation_d_actionnaire(): void
     {
         // 1. Création par le SUPER_ADMIN et invitation du premier signataire (lien vers l'espace institutionnel).

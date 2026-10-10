@@ -67,6 +67,7 @@ return [
         'organisation' => 'Mon organisation',
         'contact' => 'Contact',
     ],
+    'menu_mobile' => 'Menu',
 
     'a_venir' => 'Cette rubrique sera disponible prochainement.',
     'a_venir_dividendes' => 'Les avis de distribution et les versements des dividendes des actions A apparaîtront ici après la première assemblée générale distribuant un dividende.',
