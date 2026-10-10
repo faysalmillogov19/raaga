@@ -10,6 +10,7 @@ use App\Enums\TypeDocumentKyb;
 use App\Http\Controllers\Admin\TranchesController;
 use App\Models\AppelFonds;
 use App\Models\Convention;
+use App\Models\DistributionDividende;
 use App\Models\Institution;
 use App\Models\InstitutionDocument;
 use App\Models\LigneRegistreA;
@@ -18,6 +19,7 @@ use App\Models\User;
 use App\Notifications\AlerteRetardAppelFonds;
 use App\Notifications\AppelFondsNotification;
 use App\Notifications\InvitationBackoffice;
+use App\Services\Dividendes\SimulationDistribution;
 use App\Services\Institutionnels\RegistreA;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -363,6 +365,53 @@ class ActionsATest extends TestCase
         $this->en($this->regulateur)->get(route('admin.registre-a.export'))->assertOk();
         $this->en($this->validateur)->get(route('admin.registre-a.export'))->assertForbidden();
         $this->en($signataire)->get(route('institutionnel.tableau'))->assertOk()->assertSee('25,00');
+    }
+
+    /** Institution détenant 1 000 actions A (convention signée, deux appels reçus). */
+    private function institutionActionnaire(): array
+    {
+        [$institution, $signataire] = $this->creerInstitution();
+        $this->activerTotp($signataire);
+        $this->verifierDossier($institution, $signataire);
+        $convention = $this->conventionConfirmee($institution);
+        $this->en($signataire)->post(route('institutionnel.convention.signer', $convention), ['code' => $this->codeTotp($signataire)]);
+        foreach ($convention->appels as $appel) {
+            $this->payer($signataire, $appel);
+        }
+
+        return [$institution, $signataire];
+    }
+
+    /** Paramétrage de dividendes A confirmé : 1 000 000 FCFA, IRVM 12,5 %, arrêté demain. */
+    private function dividendesA(): DistributionDividende
+    {
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), [
+            'classe_actions' => 'A', 'exercice' => 2025, 'ag_date' => now()->toDateString(), 'ag_pv_numero' => 'PV-AG-A',
+            'pv' => $this->pdf('pv.pdf'), 'resultat_distribuable' => 5_000_000, 'mode_calcul' => 'MONTANT_GLOBAL',
+            'montant_global' => 1_000_000, 'date_arrete' => now()->addDay()->toDateString(), 'date_mise_en_paiement' => now()->addDays(10)->toDateString(),
+            'taux_irvm' => '12.5', 'frais_supportes_par' => 'RAAGA', 'seuil_minimal' => 0, 'canaux_autorises' => ['VIREMENT'],
+            'canal_defaut' => 'VIREMENT', 'tentatives' => 1, 'delai_tentatives_heures' => 24,
+            'conservation_non_reclames_mois' => 60, 'traitement_non_reclames' => 'CONSIGNATION',
+        ])->assertSessionHasNoErrors();
+        $distribution = DistributionDividende::query()->where('classe_actions', 'A')->firstOrFail();
+        $this->en($this->regulateur)->post(route('admin.dividendes.soumettre', $distribution), ['montant_conforme_pv' => '1'])->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.dividendes.confirmer', $distribution))->assertSessionHas('succes');
+
+        return $distribution->fresh();
+    }
+
+    public function test_les_dividendes_des_actions_a_sont_calcules_sur_le_registre_a(): void
+    {
+        [$institution] = $this->institutionActionnaire();
+        $distribution = $this->dividendesA();
+
+        $resultat = app(SimulationDistribution::class)->simuler($distribution);
+        $this->assertSame(1, $resultat->nbBeneficiaires);
+        $this->assertSame(1000, $resultat->nbActions);
+        $ligne = app(SimulationDistribution::class)->ligneInstitution($distribution, $institution->id);
+        $this->assertSame([1_000_000, 125_000, 875_000], [$ligne->brut, $ligne->retenue, $ligne->net]);
+        $this->assertSame('VIREMENT', $ligne->canal);
+        $this->assertSame(1_000_000, $resultat->totalNetAPayer + $resultat->totalRetenue + $resultat->totalReporte + $resultat->totalConsigne + $resultat->reliquat);
     }
 
     public function test_le_rappel_et_la_relance_des_appels_de_fonds(): void

@@ -3,17 +3,22 @@
 namespace App\Services\Dividendes;
 
 use App\Domain\Dividendes\Detention;
+use App\Domain\Dividendes\LigneDistribution;
 use App\Domain\Dividendes\MoteurDistribution;
 use App\Domain\Dividendes\ParametresDistribution;
 use App\Domain\Dividendes\ResultatDistribution;
+use App\Enums\CanalPaiement;
+use App\Enums\ClasseActions;
 use App\Enums\ModeCalculDividende;
 use App\Enums\PayeurFrais;
 use App\Models\BlocageActions;
 use App\Models\DistributionDividende;
 use App\Models\LigneRegistre;
+use App\Models\LigneRegistreA;
 
 /**
- * Simulation d'une distribution : registre des actions B à la date d'arrêté (ou jeu fictif de démonstration).
+ * Simulation d'une distribution à la date d'arrêté : registre des actions B (citoyens) ou registre des
+ * actions A (institutions) selon la classe du paramétrage, ou jeu fictif de démonstration.
  */
 class SimulationDistribution
 {
@@ -50,13 +55,34 @@ class SimulationDistribution
     }
 
     /**
+     * Ligne de distribution d'une institution (actions A) : brut, retenue, net — null si elle ne détenait
+     * aucune action A à la date d'arrêté.
+     */
+    public function ligneInstitution(DistributionDividende $distribution, int $institutionId): ?LigneDistribution
+    {
+        return collect($this->simuler($distribution)->lignes)->first(fn (LigneDistribution $l) => $l->userId === $institutionId);
+    }
+
+    /**
      * Actionnaires inscrits au registre à la date d'arrêté, avec leurs blocages actifs à cette date.
+     * Actions A : une détention par institution, versée par virement sur son RIB vérifié.
      *
      * @return list<Detention>
      */
     private function detentionsAuRegistre(DistributionDividende $d): array
     {
         $arrete = $d->date_arrete->endOfDay();
+
+        if ($d->classe_actions === ClasseActions::A) {
+            return LigneRegistreA::query()
+                ->where('date_inscription', '<=', $arrete->toDateString())
+                ->groupBy('institution_id')
+                ->selectRaw('institution_id, SUM(nb_actions) AS actions')
+                ->orderBy('institution_id')
+                ->get()
+                ->map(fn ($l) => new Detention((int) $l->institution_id, (int) $l->actions, canal: CanalPaiement::Virement->value))
+                ->all();
+        }
 
         $bloques = BlocageActions::query()
             ->where('debut', '<=', $arrete)
