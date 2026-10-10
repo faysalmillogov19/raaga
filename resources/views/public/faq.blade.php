@@ -52,6 +52,11 @@
                 <div id="guichets" class="mt-5 scroll-mt-6 border-t border-ligne pt-4">
                     <h3 class="flex items-center gap-2"><x-public.icone nom="lieu" class="h-5 w-5 text-vert-fonce" />{{ __('public.faq.contact.guichets_titre') }}</h3>
                     <p class="mt-1 text-[0.95rem]">{{ __('public.faq.contact.guichets_texte') }}</p>
+                    <a href="{{ route('guichets') }}" class="lien-fort">{{ __('public.faq.contact.guichets_lien') }}</a>
+                </div>
+
+                <div class="mt-5 border-t border-ligne pt-4">
+                    <a href="{{ route('contact') }}" class="btn-secondaire w-full">{{ __('public.faq.contact.ecrire') }}</a>
                 </div>
             </div>
         </aside>

@@ -6,6 +6,8 @@ use App\Http\Controllers\Compte\InscriptionController;
 use App\Http\Controllers\Compte\ProfilController as CompteProfilController;
 use App\Http\Controllers\Publique\AccueilController;
 use App\Http\Controllers\Publique\ArmoiriesController;
+use App\Http\Controllers\Publique\ContactController;
+use App\Http\Controllers\Publique\GuichetController;
 use App\Http\Controllers\Publique\ImagePlateformeController;
 use App\Http\Controllers\Publique\PageController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +33,10 @@ Route::get('/site.webmanifest', fn () => response()->json([
     ],
 ], 200, ['Content-Type' => 'application/manifest+json'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))->name('manifeste');
 Route::get('/plateforme/images/{champ}', ImagePlateformeController::class)->whereAlpha('champ')->name('plateforme.image');
+Route::get('/contact', [ContactController::class, 'show'])->name('contact');
+Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,10')->name('contact.store');
+Route::get('/guichets', GuichetController::class)->name('guichets');
+
 Route::controller(PageController::class)->group(function () {
     Route::get('/offre', 'offre')->name('offre');
     Route::get('/transparence', 'transparence')->name('transparence');

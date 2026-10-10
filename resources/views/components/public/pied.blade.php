@@ -48,8 +48,8 @@
                     <li><a href="mailto:{{ $contacts['emailAssistance'] }}" class="pied-lien break-all">{{ $contacts['emailAssistance'] }}</a></li>
                 @endif
                 <li><a href="{{ route('faq') }}" class="pied-lien">{{ __('public.pied.aide') }}</a></li>
-                <li><a href="{{ route('faq') }}#guichets" class="pied-lien">{{ __('public.pied.guichets') }}</a></li>
-                <li><a href="{{ route('faq') }}#contact" class="pied-lien">{{ __('public.pied.contact') }}</a></li>
+                <li><a href="{{ route('guichets') }}" class="pied-lien">{{ __('public.pied.guichets') }}</a></li>
+                <li><a href="{{ route('contact') }}" class="pied-lien">{{ __('public.pied.contact') }}</a></li>
             </ul>
         </div>
     </div>
