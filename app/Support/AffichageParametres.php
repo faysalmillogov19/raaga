@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\CanalPaiement;
+use App\Enums\ClasseActions;
 use App\Enums\MethodeAllocation;
 use App\Enums\ModeCalculDividende;
 use App\Enums\ModeInscriptionA;
@@ -34,6 +35,7 @@ final class AffichageParametres
         'canal_defaut' => CanalPaiement::class,
         'traitement_non_reclames' => TraitementNonReclames::class,
         'mode_inscription' => ModeInscriptionA::class,
+        'classe_actions' => ClasseActions::class,
     ];
 
     private const MONTANTS = [

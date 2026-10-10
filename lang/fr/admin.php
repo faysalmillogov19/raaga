@@ -744,7 +744,7 @@ return [
         'nouvelle' => 'Nouvelle distribution',
         'aucune' => 'Aucune distribution paramétrée.',
         'exercice' => 'Exercice :annee',
-        'colonnes' => ['exercice' => 'Exercice', 'statut' => 'Statut', 'mode' => 'Mode de calcul', 'montant' => 'Montant / dividende', 'arrete' => 'Arrêté des droits', 'paiement' => 'Mise en paiement'],
+        'colonnes' => ['exercice' => 'Exercice', 'classe' => 'Classe', 'statut' => 'Statut', 'mode' => 'Mode de calcul', 'montant' => 'Montant / dividende', 'arrete' => 'Arrêté des droits', 'paiement' => 'Mise en paiement'],
         'formulaire' => [
             'creation' => 'Nouvelle distribution de dividendes',
             'modification' => 'Modifier la distribution',
@@ -765,6 +765,7 @@ return [
             'cas' => 'Cas particuliers',
         ],
         'champs' => [
+            'classe_actions' => 'classe d’actions',
             'exercice' => 'exercice',
             'ag_date' => 'date de l’assemblée générale',
             'ag_pv_numero' => 'numéro du procès-verbal',
@@ -828,7 +829,8 @@ return [
             'egalite_ok' => 'Vérifié : :total = :global',
         ],
         'erreurs' => [
-            'exercice_existe' => 'Une distribution existe déjà pour cet exercice.',
+            'exercice_existe' => 'Une distribution existe déjà pour cet exercice et cette classe d’actions.',
+            'classe_a_virement' => 'Les dividendes des actions A sont versés uniquement par virement, sur le RIB vérifié de l’institution.',
             'montant_global' => 'Le montant attribué ne peut pas dépasser le résultat distribuable.',
             'arrete_apres_ag' => 'La date d’arrêté doit être postérieure ou égale à la date de l’assemblée générale.',
             'paiement_apres_arrete' => 'La date de mise en paiement doit être postérieure à la date d’arrêté.',

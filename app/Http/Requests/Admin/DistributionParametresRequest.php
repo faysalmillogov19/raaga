@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\CanalPaiement;
+use App\Enums\ClasseActions;
 use App\Enums\ModeCalculDividende;
 use App\Enums\PayeurFrais;
 use App\Enums\TraitementNonReclames;
@@ -32,7 +33,10 @@ class DistributionParametresRequest extends FormRequest
         $distribution = $this->route('distribution');
 
         return [
-            'exercice' => ['required', 'integer', 'between:2000,2100', Rule::unique('distributions_dividendes', 'exercice')->ignore($distribution?->id)],
+            // Un paramétrage par exercice et par classe d'actions.
+            'classe_actions' => ['required', Rule::enum(ClasseActions::class)],
+            'exercice' => ['required', 'integer', 'between:2000,2100', Rule::unique('distributions_dividendes', 'exercice')
+                ->where('classe_actions', (string) $this->input('classe_actions'))->ignore($distribution?->id)],
             'ag_date' => ['required', 'date'],
             'ag_pv_numero' => ['required', 'string', 'max:60'],
             'pv' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
@@ -46,7 +50,8 @@ class DistributionParametresRequest extends FormRequest
             'frais_supportes_par' => ['required', $enum(PayeurFrais::class)],
             'seuil_minimal' => ['required', 'integer', 'min:0'],
             'canaux_autorises' => ['required', 'array', 'min:1'],
-            'canaux_autorises.*' => [Rule::in($canaux)],
+            // Actions A : versement par virement sur le RIB vérifié de l'institution, uniquement.
+            'canaux_autorises.*' => [Rule::in($this->input('classe_actions') === ClasseActions::A->value ? [CanalPaiement::Virement->value] : $canaux)],
             'canal_defaut' => ['required', Rule::in($this->input('canaux_autorises', []))],
             'tentatives' => ['required', 'integer', 'min:0', 'max:10'],
             'delai_tentatives_heures' => ['required', 'integer', 'min:1', 'max:720'],
@@ -94,6 +99,7 @@ class DistributionParametresRequest extends FormRequest
             'date_arrete.after_or_equal' => __('admin.dividendes.erreurs.arrete_apres_ag'),
             'date_mise_en_paiement.after' => __('admin.dividendes.erreurs.paiement_apres_arrete'),
             'canal_defaut.in' => __('admin.dividendes.erreurs.canal_defaut'),
+            'canaux_autorises.*.in' => __('admin.dividendes.erreurs.classe_a_virement'),
             'pv.mimes' => __('admin.dividendes.erreurs.pv_pdf'),
             'pv.max' => __('admin.dividendes.erreurs.pv_taille'),
             '*.required_if' => __('admin.tranches.erreurs.requis_si'),

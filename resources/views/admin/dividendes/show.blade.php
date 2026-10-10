@@ -8,7 +8,7 @@
     $libelles['taux_irvm_pb'] = $libelles['taux_irvm'];
     $libelles['pv_empreinte'] = 'empreinte du PV';
     $sections = [
-        'decision' => ['exercice', 'ag_date', 'ag_pv_numero', 'pv_empreinte'],
+        'decision' => ['classe_actions', 'exercice', 'ag_date', 'ag_pv_numero', 'pv_empreinte'],
         'calcul' => ['resultat_distribuable', 'mode_calcul', 'montant_global', 'dividende_brut_par_action'],
         'dates' => ['date_arrete', 'date_mise_en_paiement'],
         'versement' => ['taux_irvm_pb', 'frais_supportes_par', 'seuil_minimal', 'canaux_autorises', 'canal_defaut', 'tentatives', 'delai_tentatives_heures'],

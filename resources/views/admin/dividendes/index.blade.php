@@ -13,6 +13,7 @@
                     @forelse ($distributions as $d)
                         <tr>
                             <td><a href="{{ route('admin.dividendes.show', $d) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $d->exercice }}</a></td>
+                            <td>{{ $d->classe_actions->value }}</td>
                             <td>@include('admin.parametrage._statut', ['statut' => $d->statut])</td>
                             <td>{{ $d->mode_calcul->label() }}</td>
                             <td class="montant">{{ $d->montant_global ? format_fcfa($d->montant_global) : format_fcfa((int) $d->dividende_brut_par_action).' / action' }}</td>
@@ -20,7 +21,7 @@
                             <td>{{ $d->date_mise_en_paiement?->format('d/m/Y') }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="6">{{ __('admin.dividendes.aucune') }}</td></tr>
+                        <tr><td colspan="7">{{ __('admin.dividendes.aucune') }}</td></tr>
                     @endforelse
                 </tbody>
             </table>

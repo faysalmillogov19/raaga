@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\Parametrable;
 use App\Enums\CanalPaiement;
+use App\Enums\ClasseActions;
 use App\Enums\ModeCalculDividende;
 use App\Enums\PayeurFrais;
 use App\Enums\StatutDistribution;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 #[Table(name: 'distributions_dividendes')]
 #[Fillable([
-    'exercice', 'statut', 'ag_date', 'ag_pv_numero', 'pv_chemin', 'pv_nom_original', 'pv_empreinte',
+    'exercice', 'classe_actions', 'statut', 'ag_date', 'ag_pv_numero', 'pv_chemin', 'pv_nom_original', 'pv_empreinte',
     'resultat_distribuable', 'mode_calcul', 'montant_global', 'dividende_brut_par_action',
     'date_arrete', 'date_mise_en_paiement', 'taux_irvm_pb', 'frais_supportes_par', 'seuil_minimal',
     'canaux_autorises', 'canal_defaut', 'tentatives', 'delai_tentatives_heures',
@@ -33,7 +34,7 @@ class DistributionDividende extends Model implements Parametrable
 {
     /** Paramètres versionnés (le PV est versionné à part, par son empreinte). */
     public const PARAMETRES = [
-        'exercice', 'ag_date', 'ag_pv_numero', 'pv_empreinte', 'resultat_distribuable', 'mode_calcul',
+        'exercice', 'classe_actions', 'ag_date', 'ag_pv_numero', 'pv_empreinte', 'resultat_distribuable', 'mode_calcul',
         'montant_global', 'dividende_brut_par_action', 'date_arrete', 'date_mise_en_paiement', 'taux_irvm_pb',
         'frais_supportes_par', 'seuil_minimal', 'canaux_autorises', 'canal_defaut', 'tentatives',
         'delai_tentatives_heures', 'conservation_non_reclames_mois', 'traitement_non_reclames',
@@ -43,6 +44,7 @@ class DistributionDividende extends Model implements Parametrable
     {
         return [
             'exercice' => 'integer',
+            'classe_actions' => ClasseActions::class,
             'statut' => StatutDistribution::class,
             'ag_date' => 'date',
             'resultat_distribuable' => 'integer',

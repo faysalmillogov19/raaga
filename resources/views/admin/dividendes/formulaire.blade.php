@@ -43,6 +43,7 @@
         <section class="bo-carte !mt-0" aria-labelledby="s-decision">
             <h2 id="s-decision" class="!text-[1.15rem]">{{ __('admin.dividendes.sections.decision') }}</h2>
             <div class="mt-3 grid gap-4 lg:grid-cols-2">
+                <x-admin.liste nom="classe_actions" :libelle="ucfirst($c['classe_actions'])" :options="$options(\App\Enums\ClasseActions::class)" :valeur="$d->classe_actions" />
                 <x-admin.champ nom="exercice" :libelle="ucfirst($c['exercice'])" type="number" min="2000" max="2100" :valeur="$d->exercice" required />
                 <x-admin.champ nom="ag_date" :libelle="ucfirst($c['ag_date'])" type="date" :valeur="$date($d->ag_date)" required />
                 <x-admin.champ nom="ag_pv_numero" :libelle="ucfirst($c['ag_pv_numero'])" :valeur="$d->ag_pv_numero" required maxlength="60" />

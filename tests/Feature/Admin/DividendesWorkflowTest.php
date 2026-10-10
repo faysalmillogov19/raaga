@@ -29,6 +29,7 @@ class DividendesWorkflowTest extends TestCase
     private function formulaire(array $surcharges = [], bool $avecPv = true): array
     {
         return [
+            'classe_actions' => 'B',
             'exercice' => 2025,
             'ag_date' => '2026-06-30',
             'ag_pv_numero' => 'PV-AGO-2026-01',
@@ -103,6 +104,23 @@ class DividendesWorkflowTest extends TestCase
 
         $this->en($this->regulateur)->post(route('admin.dividendes.soumettre', $d))->assertSessionHasErrors('montant_conforme_pv');
         $this->assertSame(StatutDistribution::Brouillon, $d->refresh()->statut);
+    }
+
+    public function test_un_parametrage_par_exercice_et_par_classe_d_actions(): void
+    {
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire())->assertSessionHasNoErrors();
+
+        // Même exercice, actions A : paramétrage distinct, versement par virement uniquement.
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire(['classe_actions' => 'A']))
+            ->assertSessionHasErrors(['canaux_autorises.0' => __('admin.dividendes.erreurs.classe_a_virement')]);
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire([
+            'classe_actions' => 'A', 'canaux_autorises' => ['VIREMENT'], 'canal_defaut' => 'VIREMENT', 'montant_global' => 30_000_000,
+        ]))->assertSessionHasNoErrors();
+
+        // Un second paramétrage B pour le même exercice est refusé.
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire())->assertSessionHasErrors('exercice');
+
+        $this->assertSame(['A', 'B'], DistributionDividende::query()->orderBy('classe_actions')->pluck('classe_actions')->map->value->all());
     }
 
     public function test_le_pv_doit_etre_un_pdf_et_les_dates_coherentes(): void

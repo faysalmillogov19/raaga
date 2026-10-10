@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\CanalPaiement;
+use App\Enums\ClasseActions;
 use App\Enums\Droit;
 use App\Enums\ModeCalculDividende;
 use App\Enums\PayeurFrais;
@@ -246,6 +247,7 @@ class DividendesController extends Controller
     {
         return [
             'exercice' => (int) now()->subYear()->format('Y'),
+            'classe_actions' => ClasseActions::B,
             'mode_calcul' => ModeCalculDividende::MontantGlobal,
             'taux_irvm_pb' => 1250,
             'frais_supportes_par' => PayeurFrais::Raaga,
