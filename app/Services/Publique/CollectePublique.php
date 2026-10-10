@@ -9,6 +9,7 @@ use App\Enums\StatutTranche;
 use App\Models\Paiement;
 use App\Models\Souscription;
 use App\Models\Tranche;
+use App\Support\VerrouEnvironnement;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 
@@ -30,7 +31,7 @@ class CollectePublique
     {
         $etat = Cache::remember('public.collecte', self::CACHE_SECONDES, fn () => $this->depuisLaBase());
 
-        if ($etat === null && config('raaga.demo')) {
+        if ($etat === null && VerrouEnvironnement::demonstration()) {
             return DonneesDemo::collecte();
         }
 
@@ -45,7 +46,7 @@ class CollectePublique
             return $tranche ? $this->statistiquesDepuisLaBase($tranche) : null;
         });
 
-        if ($statistiques === null && config('raaga.demo')) {
+        if ($statistiques === null && VerrouEnvironnement::demonstration()) {
             return DonneesDemo::statistiques();
         }
 
@@ -59,7 +60,7 @@ class CollectePublique
      */
     public function chantier(): array
     {
-        return config('raaga.demo') ? DonneesDemo::chantier() : [];
+        return VerrouEnvironnement::demonstration() ? DonneesDemo::chantier() : [];
     }
 
     /**
@@ -69,7 +70,7 @@ class CollectePublique
      */
     public function actualites(): array
     {
-        return config('raaga.demo') ? DonneesDemo::actualites() : [];
+        return VerrouEnvironnement::demonstration() ? DonneesDemo::actualites() : [];
     }
 
     /**

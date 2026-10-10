@@ -34,6 +34,10 @@
 
     <x-public.bande-tricolore />
 
+    @if (\App\Support\VerrouEnvironnement::demonstration())
+        <p class="bandeau-demo">{{ __('public.site.demonstration') }}</p>
+    @endif
+
     <x-public.bandeau />
 
     <x-public.entete />
