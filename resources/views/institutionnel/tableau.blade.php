@@ -23,7 +23,7 @@
                 [$t('paye'), format_fcfa($paye)],
                 [$t('restant'), format_fcfa(max(0, $engage - $paye))],
                 [$t('part'), format_nombre($part, 2)."\u{00A0}%"],
-                [$t('dividendes'), format_fcfa(0)],
+                [$t('dividendes'), format_fcfa($dividendes)],
             ] as [$libelle, $valeur])
                 <div class="flex flex-col-reverse rounded-charte border border-ligne p-4">
                     <dt class="texte-carte">{{ $libelle }}</dt>

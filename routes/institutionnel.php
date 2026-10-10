@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Institutionnel\ActionsController;
 use App\Http\Controllers\Institutionnel\AppelsController;
 use App\Http\Controllers\Institutionnel\ConventionController;
+use App\Http\Controllers\Institutionnel\DividendesController;
 use App\Http\Controllers\Institutionnel\EspaceController;
 use App\Http\Controllers\Institutionnel\OrganisationController;
 use Illuminate\Support\Facades\Route;
@@ -37,7 +38,9 @@ Route::prefix('institutionnel')->name('institutionnel.')->group(function () {
 
         Route::get('/', [EspaceController::class, 'tableau'])->name('tableau');
         Route::get('/contact', [EspaceController::class, 'contact'])->name('contact');
-        foreach (['dividendes', 'projet', 'assemblees'] as $rubrique) {
+        Route::get('/dividendes', [DividendesController::class, 'index'])->name('dividendes');
+        Route::get('/dividendes/{distribution}/avis', [DividendesController::class, 'avis'])->name('dividendes.avis');
+        foreach (['projet', 'assemblees'] as $rubrique) {
             Route::get('/'.$rubrique, [EspaceController::class, 'aVenir'])->defaults('rubrique', $rubrique)->name($rubrique);
         }
 

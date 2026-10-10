@@ -92,6 +92,12 @@ return [
         'rien' => 'Rien à faire pour le moment.',
     ],
 
+    'dividendes' => [
+        'colonnes' => ['exercice' => 'Exercice', 'actions' => 'Actions A', 'brut' => 'Brut', 'retenue' => 'Retenue (IRVM)', 'net' => 'Net', 'paiement' => 'Mise en paiement', 'statut' => 'Statut', 'avis' => 'Avis'],
+        'avis' => 'Avis de distribution (PDF)',
+        'virement' => 'Les dividendes des actions A sont versés par virement sur le compte vérifié de votre institution (rubrique « Mon organisation »).',
+    ],
+
     'convention' => [
         'aucune' => 'Aucune convention confirmée pour le moment. Elle apparaîtra ici dès sa confirmation par Raaga.',
         'reference' => 'Référence',

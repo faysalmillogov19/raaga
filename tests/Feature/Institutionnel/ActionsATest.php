@@ -414,6 +414,21 @@ class ActionsATest extends TestCase
         $this->assertSame(1_000_000, $resultat->totalNetAPayer + $resultat->totalRetenue + $resultat->totalReporte + $resultat->totalConsigne + $resultat->reliquat);
     }
 
+    public function test_l_institution_consulte_son_avis_de_distribution_et_jamais_celui_d_une_autre(): void
+    {
+        [, $signataire] = $this->institutionActionnaire();
+        [, $autre] = $this->creerInstitution('Caisse B', 'b@caisse.test');
+        $distribution = $this->dividendesA();
+
+        $this->en($signataire)->get(route('institutionnel.dividendes'))->assertOk()
+            ->assertSee("875\u{00A0}000\u{00A0}FCFA")->assertSee("125\u{00A0}000\u{00A0}FCFA");
+        $this->en($signataire)->get(route('institutionnel.dividendes.avis', $distribution))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+
+        // L'institution B ne détient aucune action A : aucun avis, et l'avis de A lui est refusé.
+        $this->en($autre)->get(route('institutionnel.dividendes'))->assertOk()->assertDontSee("875\u{00A0}000");
+        $this->en($autre)->get(route('institutionnel.dividendes.avis', $distribution))->assertForbidden();
+    }
+
     public function test_le_rappel_et_la_relance_des_appels_de_fonds(): void
     {
         [$institution, $signataire] = $this->creerInstitution();

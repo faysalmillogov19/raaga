@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Institutionnel;
 
 use App\Enums\StatutAppelFonds;
+use App\Enums\StatutDistribution;
 use App\Enums\StatutDocumentKyc;
 use App\Enums\TypeDocumentKyb;
 use App\Models\AppelFonds;
@@ -36,6 +37,9 @@ class EspaceController extends Controleur
             // Part du capital : actions A détenues sur le total des actions inscrites (A + B).
             'part' => $repartition['total'] > 0 ? $actions * 100 / $repartition['total'] : 0,
             'piecesValidees' => $pieces->where('statut', StatutDocumentKyc::Valide)->count(),
+            // Dividendes perçus : distributions A au statut PAYÉ (la mise en paiement suit la confirmation).
+            'dividendes' => (int) app(DividendesController::class)->distributions()
+                ->filter(fn (array $e) => $e['distribution']->statut === StatutDistribution::Paye)->sum(fn (array $e) => $e['ligne']->net),
             'piecesTotal' => count(TypeDocumentKyb::cases()),
         ]);
     }
