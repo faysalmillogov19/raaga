@@ -84,6 +84,13 @@
                         </div>
                     @enderror
 
+                    @if ($errors->any() && ! $errors->has('confirmation_sensible'))
+                        <div class="bo-message bo-message-erreur" role="alert">
+                            <p class="font-bold">{{ $p('erreurs.non_enregistre') }}</p>
+                            @if ($errors->has('armoiries'))<p class="mt-1">{{ $p('erreurs.armoiries_refusees') }}</p>@endif
+                        </div>
+                    @endif
+
                     <div class="grid gap-x-6 gap-y-5 lg:grid-cols-2">
                         @foreach ($champs as $champ => $definition)
                             @include('admin.plateforme._champ', ['champ' => $champ, 'type' => $definition[0], 'max' => $definition[1] ?? 255, 'valeur' => $valeurs[$champ]])

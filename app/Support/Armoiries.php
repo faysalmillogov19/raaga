@@ -23,6 +23,17 @@ final class Armoiries
         return str_ends_with(self::chemin(), '.png') ? 'image/png' : 'image/svg+xml';
     }
 
+    /**
+     * Adresse de l'image, avec une version tirée du fichier : quand les armoiries changent,
+     * l'adresse change aussi et aucun navigateur ne garde l'ancienne image en cache.
+     */
+    public static function url(): string
+    {
+        $chemin = self::chemin();
+
+        return route('armoiries', ['v' => substr(sha1($chemin.'|'.@filemtime($chemin)), 0, 10)]);
+    }
+
     /** Pour les PDF : image intégrée au document. */
     public static function dataUri(): string
     {

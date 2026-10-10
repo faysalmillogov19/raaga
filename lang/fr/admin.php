@@ -380,6 +380,8 @@ return [
             'tel_intl' => 'Saisissez un numéro au format international, par exemple +226 25 30 00 00.',
             'expediteur' => '11 lettres ou chiffres au plus, sans espace ni accent.',
             'armoiries' => 'Fichier SVG ou PNG de 500 Ko au plus.',
+            'non_enregistre' => 'Rien n’a été enregistré : corrigez les champs signalés en rouge ci-dessous.',
+            'armoiries_refusees' => 'Les armoiries n’ont pas été remplacées. Choisissez de nouveau le fichier (SVG ou PNG, 500 Ko au plus) avant d’enregistrer.',
             'financement_total' => 'Le total de la répartition (:total) doit être égal au coût total du projet (:cout).',
             'financement_cout' => 'Renseignez le coût total du projet pour saisir la répartition du financement.',
             'financement_ecart' => 'Écart de :ecart : le total des lignes doit être égal au coût total du projet. L’enregistrement sera refusé.',

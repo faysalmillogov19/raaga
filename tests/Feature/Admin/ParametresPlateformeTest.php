@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\TranchesController;
 use App\Models\AuditLog;
 use App\Models\Tranche;
 use App\Models\User;
+use App\Support\Armoiries;
 use App\Support\Plateforme\Catalogue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -163,8 +164,20 @@ class ParametresPlateformeTest extends TestCase
         Storage::fake('local');
         $this->connecterBackoffice(Role::SuperAdmin);
 
+        $avant = Armoiries::url();
+
+        // Fichier trop lourd : refusé, et le formulaire le dit en haut de page.
+        $this->from(route('admin.plateforme', ['section' => 'identite']))->followingRedirects()
+            ->put(route('admin.plateforme.update', 'identite'), [...$this->saisie('identite'), 'armoiries' => UploadedFile::fake()->create('armoiries.png', 600, 'image/png')])
+            ->assertSee('Rien n’a été enregistré', false)->assertSee('Les armoiries n’ont pas été remplacées', false);
+
         $svg = UploadedFile::fake()->createWithContent('armoiries.svg', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
         $this->enregistrer('identite', ['armoiries' => $svg])->assertSessionHas('succes');
+
+        // Nouvelle adresse versionnée : aucun navigateur ne garde l'ancienne image.
+        $apres = Armoiries::url();
+        $this->assertNotSame($avant, $apres);
+        $this->get('/')->assertSee(e($apres), false);
 
         $reponse = $this->get('/armoiries')->assertOk();
         $this->assertStringContainsString("default-src 'none'", $reponse->headers->get('Content-Security-Policy'));

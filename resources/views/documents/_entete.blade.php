@@ -34,7 +34,7 @@
     </table>
 @else
     <div class="document-entete flex items-start gap-4 border-b border-ligne pb-4">
-        <img src="{{ route('armoiries') }}" alt="" class="h-14 w-auto">
+        <img src="{{ \App\Support\Armoiries::url() }}" alt="" class="h-14 w-auto">
         <div class="text-[0.9rem] leading-snug">
             <p class="font-extrabold text-encre">{{ $m['denominationSociale'] ?: plateforme('identite.nomPlateforme') }}</p>
             @if ($identification)<p class="texte-carte">{{ implode(' · ', $identification) }}</p>@endif

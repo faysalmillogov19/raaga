@@ -53,7 +53,7 @@
         @case('image')
             <label for="{{ $id }}">{{ $libelle }}</label>
             <div class="flex items-center gap-4">
-                <img src="{{ route('armoiries') }}" alt="" class="h-14 w-auto rounded border border-ligne bg-white p-1">
+                <img src="{{ \App\Support\Armoiries::url() }}" alt="" class="h-14 w-auto rounded border border-ligne bg-white p-1">
                 <input id="{{ $id }}" name="{{ $champ }}" type="file" accept=".svg,.png,image/svg+xml,image/png" @class(['champ', 'est-invalide' => $invalide])>
             </div>
             @break
