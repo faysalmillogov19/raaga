@@ -28,7 +28,7 @@
             <section class="bo-carte !mt-0" aria-labelledby="signature-titre">
                 <h2 id="signature-titre" class="!text-[1.15rem]">{{ $c('signature') }}</h2>
                 @if ($convention->estSignee())
-                    <p class="bo-message mt-3 !mb-0">{{ $c('signee', ['date' => $convention->signee_le->format('d/m/Y à H:i'), 'nom' => $convention->signataire?->name, 'mode' => mb_strtolower($convention->signature_mode->label())]) }}</p>
+                    <p class="bo-message mt-3 !mb-0">{{ $c('signee', ['date' => $convention->signee_le->format('d/m/Y à H:i'), 'nom' => $convention->signataire?->name, 'mode' => $convention->signature_mode->court()]) }}</p>
                     <p class="texte-carte mt-2 break-all">{{ $c('empreinte', ['empreinte' => $convention->signature_empreinte]) }}</p>
                 @elseif ($convention->signatureEnAttente())
                     <p class="bo-message mt-3 !mb-0">{{ $c('depot_attente', ['date' => $convention->signature_deposee_le->format('d/m/Y')]) }}</p>

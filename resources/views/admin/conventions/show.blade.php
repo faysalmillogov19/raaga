@@ -71,7 +71,7 @@
         <section class="bo-carte !mt-0" aria-labelledby="signature-titre">
             <h2 id="signature-titre" class="!text-[1.05rem]">{{ $c['signature'] }}</h2>
             @if ($convention->estSignee())
-                <p class="mt-2">{{ __('institutionnel.bo.conventions.signee', ['date' => $convention->signee_le->format('d/m/Y à H:i'), 'nom' => $convention->signataire?->name, 'mode' => mb_strtolower($convention->signature_mode->label())]) }}</p>
+                <p class="mt-2">{{ __('institutionnel.bo.conventions.signee', ['date' => $convention->signee_le->format('d/m/Y à H:i'), 'nom' => $convention->signataire?->name, 'mode' => $convention->signature_mode->court()]) }}</p>
                 <p class="texte-carte mt-1 break-all">{{ $convention->signature_empreinte }}</p>
             @elseif ($convention->signatureEnAttente())
                 <p class="mt-2">{{ __('institutionnel.bo.conventions.depot', ['date' => $convention->signature_deposee_le->format('d/m/Y'), 'nom' => $convention->signataire?->name]) }}</p>
