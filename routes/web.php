@@ -2,6 +2,7 @@
 
 use App\Enums\Role;
 use App\Http\Controllers\Compte\ConnexionController;
+use App\Http\Controllers\Compte\EspaceController;
 use App\Http\Controllers\Compte\InscriptionController;
 use App\Http\Controllers\Compte\PaiementController;
 use App\Http\Controllers\Compte\ProfilController as CompteProfilController;
@@ -46,7 +47,6 @@ Route::controller(PageController::class)->group(function () {
     Route::get('/actualites/{slug}', 'actualite')->name('actualites.show');
 
     // Tunnel de souscription : pages d'attente jusqu'à la mise en service des parcours.
-    Route::get('/espace', 'preparation')->defaults('page', 'espace')->middleware('auth')->name('espace');
     Route::get('/espace/verification', 'preparation')->defaults('page', 'verification')->middleware('auth')->name('espace.verification');
 
     Route::get('/mentions-legales', 'legal')->defaults('page', 'mentions')->name('legal.mentions');
@@ -71,6 +71,13 @@ Route::middleware(['auth', 'role:citoyen'])->controller(PaiementController::clas
     Route::post('/changer', 'changer')->name('changer');
     Route::get('/confirmation', 'confirmation')->name('confirmation');
     Route::get('/recu', 'recu')->name('recu');
+});
+
+// Mon espace : tableau de bord du citoyen (un autre profil voit un état vide).
+Route::get('/espace', [EspaceController::class, 'show'])->middleware('auth')->name('espace');
+Route::middleware(['auth', 'role:citoyen'])->controller(EspaceController::class)->prefix('espace/documents')->name('espace.documents.')->group(function () {
+    Route::get('/reglement/{souscription:reference}', 'reglement')->name('reglement');
+    Route::get('/attestation/{ligne:numero_certificat}', 'attestation')->name('attestation');
 });
 
 // Mon profil (citoyen) : informations personnelles et téléphone (confirmé par SMS).
