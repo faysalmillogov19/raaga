@@ -66,7 +66,7 @@ class SouscriptionController extends Controller
             (string) $request->userAgent(),
         );
 
-        return redirect()->route('paiement')->with('souscription.reservee', $souscription->reference);
+        return redirect()->route('paiement.show', $souscription->reference)->with('souscription.reservee', $souscription->reference);
     }
 
     /** Règlement de la tranche ouverte, tel qu'accepté à la souscription (version affichée). */

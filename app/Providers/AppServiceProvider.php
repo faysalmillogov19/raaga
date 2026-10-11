@@ -2,14 +2,17 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentProvider;
 use App\Contracts\SmsProvider;
 use App\Enums\Droit;
 use App\Models\User;
+use App\Services\Paiement\SimulatedProvider;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Services\Sms\LogSmsProvider;
 use App\Support\VerrouEnvironnement;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
         // Jalon 1 : aucun SMS réel, le code s'affiche dans la console du serveur.
         $this->app->bind(SmsProvider::class, LogSmsProvider::class);
 
+        // Paiement : seul le simulateur de recette existe pour l'instant (refusé en production).
+        $this->app->bind(PaymentProvider::class, fn () => match (config('raaga.paiement.fournisseur') ?? 'simule') {
+            'simule' => new SimulatedProvider,
+            default => throw new RuntimeException('Fournisseur de paiement inconnu : '.config('raaga.paiement.fournisseur')),
+        });
+
         // Un seul service par requête : il porte le cache et les valeurs d'aperçu.
         $this->app->singleton(ParametresPlateforme::class);
     }
@@ -30,8 +39,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Données de démonstration interdites en production : démarrage refusé.
-        VerrouEnvironnement::verifier((string) $this->app->environment(), (bool) config('raaga.demo'));
+        // Données de démonstration et paiement simulé interdits en production : démarrage refusé.
+        VerrouEnvironnement::verifier((string) $this->app->environment(), (bool) config('raaga.demo'), config('raaga.paiement.fournisseur'));
 
         // Une Gate par droit du back-office, d'après la matrice App\Enums\Droit::pour().
         // Un compte désactivé n'a plus aucun droit.

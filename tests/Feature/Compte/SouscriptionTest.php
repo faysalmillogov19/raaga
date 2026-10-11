@@ -99,7 +99,7 @@ class SouscriptionTest extends TestCase
         $citoyen = $this->citoyen();
 
         $this->actingAs($citoyen)->post('/souscrire', ['nb_actions' => 25, 'engagements' => self::TOUS])
-            ->assertRedirect(route('paiement'))
+            ->assertRedirect(route('paiement.show', Souscription::sole()->reference))
             ->assertSessionHas('souscription.reservee');
 
         $souscription = Souscription::sole();

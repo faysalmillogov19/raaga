@@ -7,7 +7,7 @@ use RuntimeException;
 
 /**
  * Garde-fous de démarrage : les fonctions réservées au développement et à la recette (données de
- * démonstration, et plus tard le paiement simulé) ne peuvent jamais être actives en production.
+ * démonstration, paiement simulé) ne peuvent jamais être actives en production.
  * L'application refuse alors de démarrer, avec un message explicite dans les journaux.
  */
 final class VerrouEnvironnement
@@ -15,23 +15,48 @@ final class VerrouEnvironnement
     /**
      * @throws RuntimeException en production si une fonction de recette est activée
      */
-    public static function verifier(string $environnement, bool $demo): void
+    public static function verifier(string $environnement, bool $demo, ?string $fournisseurPaiement = null): void
     {
-        if ($environnement !== 'production' || ! $demo) {
+        if ($environnement !== 'production') {
             return;
         }
 
-        $message = 'Démarrage refusé : RAAGA_DEMO=true est interdit avec APP_ENV=production '
-            .'(des données fictives s’afficheraient sur le site). Passez RAAGA_DEMO à false.';
+        if ($demo) {
+            self::refuser('RAAGA_DEMO=true est interdit avec APP_ENV=production '
+                .'(des données fictives s’afficheraient sur le site). Passez RAAGA_DEMO à false.');
+        }
 
-        Log::critical($message);
-
-        throw new RuntimeException($message);
+        if ($fournisseurPaiement === 'simule') {
+            self::refuser('RAAGA_PAIEMENT_FOURNISSEUR=simule est interdit avec APP_ENV=production '
+                .'(aucune somme ne serait réellement encaissée). Configurez un fournisseur de paiement réel.');
+        }
     }
 
     /** Données de démonstration actives (jamais en production : voir verifier()). */
     public static function demonstration(): bool
     {
         return (bool) config('raaga.demo') && ! app()->environment('production');
+    }
+
+    /**
+     * Refuse l'usage d'une fonction de recette en production, même si la configuration la demande.
+     *
+     * @throws RuntimeException
+     */
+    public static function exigerHorsProduction(string $fonction): void
+    {
+        if (app()->environment('production')) {
+            self::refuser("Fonction de recette refusée en production : {$fonction}.");
+        }
+    }
+
+    /** @throws RuntimeException */
+    private static function refuser(string $message): never
+    {
+        $message = str_starts_with($message, 'Fonction') ? $message : 'Démarrage refusé : '.$message;
+
+        Log::critical($message);
+
+        throw new RuntimeException($message);
     }
 }

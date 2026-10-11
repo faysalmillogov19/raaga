@@ -51,6 +51,14 @@ return [
     | Compte séquestre recevant les virements des appels de fonds (actions A). Provisoire en
     | attendant le référentiel des canaux de paiement : null = « communiqué par votre interlocuteur ».
     */
+    /*
+    | Paiement des souscriptions. null = simulateur de recette hors production (refusé en production).
+    | « simule » explicitement en production : démarrage refusé (App\Support\VerrouEnvironnement).
+    */
+    'paiement' => [
+        'fournisseur' => env('RAAGA_PAIEMENT_FOURNISSEUR'),
+    ],
+
     'compte_sequestre' => [
         'titulaire' => env('RAAGA_SEQUESTRE_TITULAIRE'),
         'banque' => env('RAAGA_SEQUESTRE_BANQUE'),

@@ -3,6 +3,7 @@
 use App\Enums\Role;
 use App\Http\Controllers\Compte\ConnexionController;
 use App\Http\Controllers\Compte\InscriptionController;
+use App\Http\Controllers\Compte\PaiementController;
 use App\Http\Controllers\Compte\ProfilController as CompteProfilController;
 use App\Http\Controllers\Compte\SouscriptionController;
 use App\Http\Controllers\Publique\AccueilController;
@@ -45,7 +46,6 @@ Route::controller(PageController::class)->group(function () {
     Route::get('/actualites/{slug}', 'actualite')->name('actualites.show');
 
     // Tunnel de souscription : pages d'attente jusqu'à la mise en service des parcours.
-    Route::get('/paiement', 'preparation')->defaults('page', 'paiement')->name('paiement');
     Route::get('/espace', 'preparation')->defaults('page', 'espace')->middleware('auth')->name('espace');
     Route::get('/espace/verification', 'preparation')->defaults('page', 'verification')->middleware('auth')->name('espace.verification');
 
@@ -59,6 +59,17 @@ Route::controller(SouscriptionController::class)->group(function () {
     Route::get('/souscrire', 'create')->name('souscrire');
     Route::get('/souscrire/reglement', 'reglement')->name('souscrire.reglement');
     Route::post('/souscrire', 'store')->middleware(['auth', 'role:citoyen', 'throttle:10,1'])->name('souscrire.store');
+});
+
+// Paiement d'une souscription réservée (citoyen connecté ; sans réservation, état vide).
+Route::get('/paiement', [PaiementController::class, 'index'])->name('paiement');
+Route::middleware(['auth', 'role:citoyen'])->controller(PaiementController::class)->prefix('paiement/{reference}')->name('paiement.')->group(function () {
+    Route::get('/', 'show')->name('show');
+    Route::post('/', 'payer')->middleware('throttle:10,1')->name('payer');
+    Route::get('/statut', 'statut')->middleware('throttle:60,1')->name('statut');
+    Route::post('/simuler', 'simuler')->middleware('throttle:10,1')->name('simuler');
+    Route::post('/changer', 'changer')->name('changer');
+    Route::get('/confirmation', 'confirmation')->name('confirmation');
 });
 
 // Mon profil (citoyen) : informations personnelles et téléphone (confirmé par SMS).
