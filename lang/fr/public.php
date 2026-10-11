@@ -11,7 +11,6 @@ return [
     'site' => [
         'pays' => 'BURKINA FASO',
         'armoiries' => 'Armoiries du Burkina Faso',
-        'demonstration' => 'Environnement de démonstration — données fictives',
         'logo_alt' => 'Raaga – Participation populaire, accueil',
         'aller_au_contenu' => 'Aller au contenu',
     ],

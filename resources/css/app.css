@@ -1431,16 +1431,6 @@
 /* Variantes construites dynamiquement dans les vues (encadre-{variante}, remplissage-{couleur}) :
    hors de @layer pour ne pas être retirées à la compilation. */
 
-/* Environnement de démonstration (jamais en production) : bandeau discret. */
-.bandeau-demo {
-    padding: 4px 16px;
-    background: var(--fond);
-    border-bottom: 1px solid var(--ligne);
-    color: var(--gris);
-    font-size: .8rem;
-    text-align: center;
-}
-
 /* Bandeau d'annonce du site public (type choisi dans les paramètres de la plateforme). */
 .bandeau-annonce-information {
     background: var(--vert-pale);

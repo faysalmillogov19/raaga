@@ -35,13 +35,12 @@ class VerrouEnvironnementTest extends TestCase
         $this->addToAssertionCount(3);
     }
 
-    public function test_le_bandeau_de_demonstration_n_apparait_qu_en_demonstration(): void
+    public function test_aucun_bandeau_de_demonstration_n_est_jamais_affiche(): void
     {
-        config(['raaga.demo' => true]);
-        $this->get('/')->assertOk()->assertSee('Environnement de démonstration — données fictives');
-
-        config(['raaga.demo' => false]);
-        $this->get('/')->assertOk()->assertDontSee('Environnement de démonstration');
+        foreach ([true, false] as $demo) {
+            config(['raaga.demo' => $demo]);
+            $this->get('/')->assertOk()->assertDontSee('Environnement de démonstration')->assertDontSee('données fictives');
+        }
     }
 
     public function test_aucune_donnee_fictive_en_production_meme_si_la_configuration_le_demande(): void
