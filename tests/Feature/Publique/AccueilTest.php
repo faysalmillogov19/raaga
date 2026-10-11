@@ -98,6 +98,21 @@ class AccueilTest extends TestCase
         $this->get('/')->assertSee('aria-current="page"', false);
     }
 
+    public function test_les_chiffres_mis_en_cache_se_relisent_avec_un_cache_qui_serialise(): void
+    {
+        // Le cache « array » des tests ne sérialise rien : le défaut (database) refuse de désérialiser des objets.
+        config(['cache.default' => 'file']);
+        Cache::flush();
+        $this->trancheOuverte();
+
+        foreach (['/', '/offre', '/transparence', '/', '/offre', '/transparence'] as $page) {
+            $this->get($page)->assertOk();
+        }
+        $this->get('/')->assertSee('Tranche test');
+
+        Cache::flush();
+    }
+
     private function trancheOuverte(array $parametres = []): Tranche
     {
         return Tranche::create([

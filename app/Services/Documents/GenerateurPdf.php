@@ -19,7 +19,7 @@ class GenerateurPdf
     {
         return Pdf::loadView($vue, [...$donnees, 'pdf' => true])
             ->setPaper('a4')
-            ->setOption(['isRemoteEnabled' => false, 'defaultFont' => 'DejaVu Sans'])
+            ->setOption(['isRemoteEnabled' => false, 'defaultFont' => 'DejaVu Sans', 'isFontSubsettingEnabled' => true])
             ->output();
     }
 }

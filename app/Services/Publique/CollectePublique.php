@@ -29,7 +29,14 @@ class CollectePublique
      */
     public function etat(): ?EtatCollecte
     {
-        $etat = Cache::remember('public.collecte', self::CACHE_SECONDES, fn () => $this->depuisLaBase());
+        // Le cache ne garde que des valeurs simples : Laravel refuse de désérialiser des objets
+        // (config cache.serializable_classes = false).
+        $valeurs = Cache::remember('public.collecte', self::CACHE_SECONDES, function () {
+            $etat = $this->depuisLaBase();
+
+            return $etat ? [...get_object_vars($etat), 'dateOuverture' => $etat->dateOuverture->toIso8601String(), 'dateCloture' => $etat->dateCloture->toIso8601String()] : null;
+        });
+        $etat = $valeurs ? new EtatCollecte(...[...$valeurs, 'dateOuverture' => CarbonImmutable::parse($valeurs['dateOuverture']), 'dateCloture' => CarbonImmutable::parse($valeurs['dateCloture'])]) : null;
 
         if ($etat === null && VerrouEnvironnement::demonstration()) {
             return DonneesDemo::collecte();
@@ -40,11 +47,12 @@ class CollectePublique
 
     public function statistiques(): ?StatistiquesTransparence
     {
-        $statistiques = Cache::remember('public.statistiques', self::CACHE_STATISTIQUES_SECONDES, function () {
+        $valeurs = Cache::remember('public.statistiques', self::CACHE_STATISTIQUES_SECONDES, function () {
             $tranche = $this->trancheOuverte();
 
-            return $tranche ? $this->statistiquesDepuisLaBase($tranche) : null;
+            return $tranche ? get_object_vars($this->statistiquesDepuisLaBase($tranche)) : null;
         });
+        $statistiques = $valeurs ? new StatistiquesTransparence(...$valeurs) : null;
 
         if ($statistiques === null && VerrouEnvironnement::demonstration()) {
             return DonneesDemo::statistiques();
