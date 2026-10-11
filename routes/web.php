@@ -7,6 +7,7 @@ use App\Http\Controllers\Compte\InscriptionController;
 use App\Http\Controllers\Compte\PaiementController;
 use App\Http\Controllers\Compte\ProfilController as CompteProfilController;
 use App\Http\Controllers\Compte\SouscriptionController;
+use App\Http\Controllers\Compte\VerificationController;
 use App\Http\Controllers\Publique\AccueilController;
 use App\Http\Controllers\Publique\ArmoiriesController;
 use App\Http\Controllers\Publique\ContactController;
@@ -47,7 +48,6 @@ Route::controller(PageController::class)->group(function () {
     Route::get('/actualites/{slug}', 'actualite')->name('actualites.show');
 
     // Tunnel de souscription : pages d'attente jusqu'à la mise en service des parcours.
-    Route::get('/espace/verification', 'preparation')->defaults('page', 'verification')->middleware('auth')->name('espace.verification');
 
     Route::get('/mentions-legales', 'legal')->defaults('page', 'mentions')->name('legal.mentions');
     Route::get('/donnees-personnelles', 'legal')->defaults('page', 'donnees')->name('legal.donnees');
@@ -78,6 +78,13 @@ Route::get('/espace', [EspaceController::class, 'show'])->middleware('auth')->na
 Route::middleware(['auth', 'role:citoyen'])->controller(EspaceController::class)->prefix('espace/documents')->name('espace.documents.')->group(function () {
     Route::get('/reglement/{souscription:reference}', 'reglement')->name('reglement');
     Route::get('/attestation/{ligne:numero_certificat}', 'attestation')->name('attestation');
+});
+
+// Vérification d'identité (citoyen) : dépôt des pièces, suivi, fichiers servis au seul titulaire.
+Route::middleware(['auth', 'role:citoyen'])->controller(VerificationController::class)->prefix('espace/verification')->name('espace.verification')->group(function () {
+    Route::get('/', 'show');
+    Route::post('/', 'store')->middleware('throttle:10,1')->name('.store');
+    Route::get('/fichiers/{document}', 'fichier')->whereNumber('document')->name('.fichier');
 });
 
 // Mon profil (citoyen) : informations personnelles et téléphone (confirmé par SMS).

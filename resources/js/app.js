@@ -242,6 +242,29 @@ Alpine.data('souscription', (p) => ({
     },
 }));
 
+// Vérification d'identité : aperçu de la photo avant envoi, format et taille contrôlés (le serveur revérifie).
+Alpine.data('pieceKyc', ({ maxOctets, messages }) => ({
+    apercu: null,
+    erreur: '',
+    choisir(evenement) {
+        const fichier = evenement.target.files[0];
+        if (this.apercu) URL.revokeObjectURL(this.apercu);
+        this.apercu = null;
+        this.erreur = '';
+        if (!fichier) return;
+        if (!['image/jpeg', 'image/png'].includes(fichier.type)) {
+            this.erreur = messages.format;
+        } else if (fichier.size > maxOctets) {
+            this.erreur = messages.taille;
+        }
+        if (this.erreur) {
+            evenement.target.value = '';
+            return;
+        }
+        this.apercu = URL.createObjectURL(fichier);
+    },
+}));
+
 window.Alpine = Alpine;
 
 Alpine.start();

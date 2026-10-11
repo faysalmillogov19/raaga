@@ -626,6 +626,69 @@ return [
         ],
     ],
 
+    'verification' => [
+        'titre_statut' => 'Statut de votre identité',
+        'statut' => [
+            'NON_SOUMIS' => 'Déposez votre pièce d’identité et un selfie : la vérification est obligatoire avant tout paiement.',
+            'EN_ATTENTE' => 'Vérification sous 48 heures. Vous serez prévenu par SMS.',
+            'VALIDE' => 'Votre identité est vérifiée. Vous pouvez souscrire et payer.',
+            'REJETE' => 'Une ou plusieurs pièces ont été refusées. Renvoyez uniquement les pièces concernées.',
+        ],
+        'statuts_piece' => [
+            'EN_ATTENTE' => 'En attente',
+            'VALIDE' => 'Validée',
+            'REJETE' => 'Refusée',
+        ],
+        'motif' => 'Motif : :motif',
+        'deposer_titre' => 'Déposer mes pièces',
+        'renvoyer_titre' => 'Renvoyer les pièces refusées',
+        'consignes' => 'Photos nettes, en couleur, sans reflet, pièce entière et lisible. JPG ou PNG, 5 Mo au maximum par fichier.',
+        'type_piece' => 'Type de pièce',
+        'types' => [
+            'CNIB' => 'CNIB (carte nationale d’identité)',
+            'PASSEPORT' => 'Passeport',
+        ],
+        'pieces' => [
+            'recto' => ['CNIB' => 'CNIB — recto', 'PASSEPORT' => 'Passeport — page d’identité'],
+            'verso' => ['CNIB' => 'CNIB — verso', 'PASSEPORT' => 'Passeport — verso'],
+            'selfie' => ['SELFIE' => 'Selfie'],
+        ],
+        'aides' => [
+            'recto' => 'Face avec votre photo et votre nom.',
+            'verso' => 'Face arrière de la carte.',
+            'selfie' => 'Votre visage de face, bien éclairé, sans lunettes de soleil ni couvre-chef.',
+        ],
+        'apercu' => 'Aperçu de la photo choisie',
+        'envoyer' => 'Envoyer pour vérification',
+        'envoye' => 'Vos pièces sont envoyées. Vérification sous 48 heures.',
+        'attributs' => [
+            'type_piece' => 'type de pièce',
+            'recto' => 'recto',
+            'verso' => 'verso',
+            'selfie' => 'selfie',
+        ],
+        'erreurs' => [
+            'resume' => 'Certaines pièces n’ont pas été acceptées : corrigez les champs signalés.',
+            'type' => 'Choisissez le type de pièce : CNIB ou passeport.',
+            'manquant' => 'Ajoutez cette photo.',
+            'motif' => 'Indiquez le motif du refus.',
+            'validateur' => 'Seul un VALIDATEUR peut se prononcer sur une pièce d’identité.',
+            'fichiers' => [
+                'file' => 'Choisissez une photo (JPG ou PNG).',
+                'mimes' => 'Format refusé : envoyez une photo JPG ou PNG.',
+                'mimetypes' => 'Format refusé : envoyez une photo JPG ou PNG.',
+                'max' => 'Fichier trop lourd : 5 Mo au maximum.',
+                'uploaded' => 'Le fichier n’a pas pu être envoyé : 5 Mo au maximum, JPG ou PNG.',
+            ],
+        ],
+        'sms' => [
+            'soumis' => '{nomPlateforme} : vos pièces d’identité sont reçues. Vérification sous 48 heures.[ Aide : {numeroVert}]',
+            'en_attente' => '{nomPlateforme} : votre dossier d’identité est en cours de vérification.',
+            'valide' => '{nomPlateforme} : votre identité est vérifiée. Vous pouvez souscrire et payer.',
+            'rejete' => '{nomPlateforme} : une pièce de votre dossier d’identité a été refusée. Consultez Mon espace pour la renvoyer.[ Aide : {numeroVert}]',
+        ],
+    ],
+
     'etats_vides' => [
         'souscrire' => [
             'titre' => 'La souscription en ligne n’est pas encore ouverte',

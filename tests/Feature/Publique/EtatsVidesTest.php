@@ -32,7 +32,7 @@ class EtatsVidesTest extends TestCase
             ->assertSee('href="'.route('espace.profil').'"', false);
 
         $this->actingAs($citoyen)->get('/espace/verification')->assertOk()
-            ->assertSee('Le dépôt des pièces n’est pas encore ouvert');
+            ->assertSee('Déposer mes pièces');
     }
 
     public function test_le_guichet_remplace_le_tableau_de_bord_breeze(): void

@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\DividendesController;
 use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
+use App\Http\Controllers\Admin\PiecesKycController;
 use App\Http\Controllers\Admin\PlateformeController;
 use App\Http\Controllers\Admin\ProfilController;
 use App\Http\Controllers\Admin\RegistreAController;
@@ -45,6 +46,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware('backoffice')->group(function () {
         Route::post('/deconnexion', [ConnexionController::class, 'destroy'])->name('deconnexion');
+
+        // Pièces d'identité des citoyens : VALIDATEUR uniquement (l'écran KYC viendra avec le lot KYC).
+        Route::get('/kyc/pieces/{document}', PiecesKycController::class)->whereNumber('document')->middleware('can:'.Droit::KycVoirPieces->value)->name('kyc.piece');
 
         // Mon profil : chaque compte back-office met à jour ses propres informations (jamais son rôle).
         Route::get('/profil', [ProfilController::class, 'show'])->name('profil');
