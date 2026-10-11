@@ -532,8 +532,6 @@ return [
         'nouvelle_souscription' => 'Nouvelle souscription',
         'indisponible_titre' => 'Paiement en ligne indisponible',
         'indisponible' => 'Le paiement en ligne est momentanément indisponible. Votre réservation est conservée jusqu’à la fin du délai.',
-        'confirme_titre' => 'Paiement reçu',
-        'confirme' => 'Votre souscription est payée. Elle est en attente d’allocation des actions.',
         'montant_paye' => 'Montant payé',
         'canal' => 'Moyen de paiement',
         'date' => 'Date',
@@ -546,6 +544,18 @@ return [
         'erreurs' => [
             'telephone' => 'Saisissez un numéro burkinabè à 8 chiffres, par exemple 70 12 34 56.',
         ],
+    ],
+
+    'recu' => [
+        'titre_page' => 'Souscription enregistrée',
+        'enregistree' => 'Votre souscription est enregistrée',
+        'intro' => 'Votre paiement est confirmé. Conservez votre numéro de reçu.',
+        'numero' => 'N° de reçu',
+        'allouee' => 'Actions allouées',
+        'telecharger' => 'Télécharger le reçu (PDF)',
+        'espace' => 'Accéder à mon espace',
+        'sms_envoye' => 'Un SMS de confirmation avec votre numéro de reçu a été envoyé à votre numéro de téléphone.',
+        'sms' => '{nomPlateforme} : paiement reçu. Reçu n° {recu}, souscription {reference}, {actions} action(s), {montant}.[ {urlSiteOfficiel}]',
     ],
 
     'etats_vides' => [

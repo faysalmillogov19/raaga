@@ -21,8 +21,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Jalon 1 : aucun SMS réel, le code s'affiche dans la console du serveur.
-        $this->app->bind(SmsProvider::class, LogSmsProvider::class);
+        // SMS : pilote « log » (message écrit dans les journaux) tant qu'aucun opérateur n'est branché.
+        // Brancher un opérateur = ajouter son pilote ici ; le reste du code passe par App\Services\Sms\EnvoiSms.
+        $this->app->bind(SmsProvider::class, fn () => match (config('raaga.sms.pilote') ?? 'log') {
+            'log' => new LogSmsProvider,
+            default => throw new RuntimeException('Pilote SMS inconnu : '.config('raaga.sms.pilote')),
+        });
 
         // Paiement : seul le simulateur de recette existe pour l'instant (refusé en production).
         $this->app->bind(PaymentProvider::class, fn () => match (config('raaga.paiement.fournisseur') ?? 'simule') {

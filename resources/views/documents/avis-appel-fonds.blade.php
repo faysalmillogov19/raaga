@@ -1,6 +1,6 @@
 {{-- Avis d'appel de fonds (actions A) : montant, échéance, compte séquestre, référence de virement obligatoire. --}}
 @php
-    $sequestre = array_filter(config('raaga.compte_sequestre'));
+    $sequestre = array_filter(\App\Support\CompteSequestre::actuel());
     $convention = $appel->convention;
     $institution = $appel->institution;
 @endphp

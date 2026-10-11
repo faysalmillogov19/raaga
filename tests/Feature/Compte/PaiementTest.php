@@ -104,7 +104,7 @@ class PaiementTest extends TestCase
 
         $this->actingAs($this->citoyen)->get($this->url())->assertRedirect($this->url('/confirmation'));
         $this->actingAs($this->citoyen)->get($this->url('/confirmation'))->assertOk()
-            ->assertSee('Paiement reçu')->assertSee('En attente d’allocation')->assertSee($paiement->reference);
+            ->assertSee('Votre souscription est enregistrée')->assertSee('En attente d’allocation')->assertSee($paiement->reference);
     }
 
     public function test_echec_puis_nouvel_essai(): void

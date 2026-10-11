@@ -55,6 +55,11 @@ return [
     | Paiement des souscriptions. null = simulateur de recette hors production (refusé en production).
     | « simule » explicitement en production : démarrage refusé (App\Support\VerrouEnvironnement).
     */
+    'sms' => [
+        // « log » : aucun envoi, le message est écrit dans les journaux (seul pilote disponible).
+        'pilote' => env('RAAGA_SMS_PILOTE', 'log'),
+    ],
+
     'paiement' => [
         'fournisseur' => env('RAAGA_PAIEMENT_FOURNISSEUR'),
     ],

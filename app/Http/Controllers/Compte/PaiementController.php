@@ -9,12 +9,16 @@ use App\Enums\StatutPaiement;
 use App\Enums\StatutSouscription;
 use App\Http\Controllers\Controller;
 use App\Models\Souscription;
+use App\Services\Documents\GenerateurPdf;
 use App\Services\Paiement\ServicePaiement;
+use App\Support\CompteSequestre;
+use App\Support\Recu;
 use App\Support\Telephone;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Throwable;
@@ -46,7 +50,7 @@ class PaiementController extends Controller
         $this->service->expirerReservations();
         $souscription = $this->souscription($request, $reference);
 
-        if ($souscription->statut === StatutSouscription::Payee) {
+        if (Recu::disponible($souscription)) {
             return redirect()->route('paiement.confirmation', $souscription->reference);
         }
         abort_unless(in_array($souscription->statut, [StatutSouscription::Reservee, StatutSouscription::Expiree], true), 404);
@@ -69,7 +73,7 @@ class PaiementController extends Controller
             'paiement' => $enAttente,
             'simule' => $fournisseur?->estSimule() ?? false,
             'canaux' => $this->canaux($souscription),
-            'sequestre' => config('raaga.compte_sequestre'),
+            'sequestre' => CompteSequestre::actuel(),
         ]);
     }
 
@@ -141,13 +145,33 @@ class PaiementController extends Controller
     {
         $souscription = $this->souscription($request, $reference);
 
-        if ($souscription->statut !== StatutSouscription::Payee) {
+        if (! Recu::disponible($souscription)) {
             return redirect()->route('paiement.show', $souscription->reference);
         }
+        $paiement = Recu::paiement($souscription) ?? abort(404);
 
         return view('public.paiement.confirmation', [
             'souscription' => $souscription,
-            'paiement' => $souscription->paiements()->where('statut', StatutPaiement::Confirme)->latest('id')->firstOrFail(),
+            'paiement' => $paiement,
+            'numeroRecu' => Recu::numero($paiement),
+        ]);
+    }
+
+    /** Reçu PDF : téléchargeable tant que la souscription est payée ou allouée (repris dans Mon espace). */
+    public function recu(Request $request, string $reference, GenerateurPdf $pdf): Response
+    {
+        $souscription = $this->souscription($request, $reference);
+        abort_unless(Recu::disponible($souscription), 404);
+        $paiement = Recu::paiement($souscription) ?? abort(404);
+        $numero = Recu::numero($paiement);
+
+        return response($pdf->rendre('documents.recu-souscription', [
+            'souscription' => $souscription->load(['tranche', 'user']),
+            'paiement' => $paiement,
+            'numero' => $numero,
+        ]), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="recu-'.$numero.'.pdf"',
         ]);
     }
 

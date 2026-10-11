@@ -70,6 +70,7 @@ Route::middleware(['auth', 'role:citoyen'])->controller(PaiementController::clas
     Route::post('/simuler', 'simuler')->middleware('throttle:10,1')->name('simuler');
     Route::post('/changer', 'changer')->name('changer');
     Route::get('/confirmation', 'confirmation')->name('confirmation');
+    Route::get('/recu', 'recu')->name('recu');
 });
 
 // Mon profil (citoyen) : informations personnelles et téléphone (confirmé par SMS).
