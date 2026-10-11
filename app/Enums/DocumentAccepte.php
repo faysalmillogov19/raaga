@@ -8,6 +8,7 @@ enum DocumentAccepte: string
     case RendementNonGaranti = 'RENDEMENT_NON_GARANTI';
     case ReglementTranche = 'REGLEMENT_TRANCHE';
     case ConditionsUtilisation = 'CONDITIONS_UTILISATION';
+    case OrigineLiciteFonds = 'ORIGINE_LICITE_FONDS';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum DocumentAccepte: string
             self::RendementNonGaranti => 'Rendement non garanti',
             self::ReglementTranche => 'Règlement de la tranche',
             self::ConditionsUtilisation => 'Conditions d’utilisation et protection des données personnelles',
+            self::OrigineLiciteFonds => 'Origine licite des fonds',
         };
     }
 }

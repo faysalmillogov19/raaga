@@ -204,6 +204,44 @@ Alpine.data('menuBackoffice', () => ({
     },
 }));
 
+// Souscription : montant et frais recalculés en direct à partir des paramètres de la tranche (fournis par le serveur).
+const fcfa = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+
+Alpine.data('souscription', (p) => ({
+    nb: p.nb,
+    coches: [],
+    fichier: false,
+    get valide() {
+        return Number.isInteger(this.nb) && this.nb >= p.min && (p.reste === null || this.nb <= p.reste);
+    },
+    get montant() {
+        return this.valide ? this.nb * p.prix : 0;
+    },
+    get frais() {
+        if (p.fraisType === 'POURCENTAGE') return Math.floor((this.montant * p.fraisValeur + 5000) / 10000);
+        if (p.fraisType === 'FIXE') return this.montant > 0 ? p.fraisValeur : 0;
+        return 0;
+    },
+    get total() {
+        return this.montant + this.frais;
+    },
+    get justificatifRequis() {
+        return p.seuil !== null && !p.justificatifFourni && p.deja + this.montant > p.seuil;
+    },
+    get pret() {
+        return p.kyc && this.valide && this.coches.length === 4 && (!this.justificatifRequis || this.fichier);
+    },
+    fcfa,
+    lire(valeur) {
+        const n = parseInt(String(valeur).replace(/\D/g, ''), 10);
+        this.nb = Number.isNaN(n) ? 0 : n;
+    },
+    ajuster(delta) {
+        const max = p.reste === null ? Infinity : p.reste;
+        this.nb = Math.min(max, Math.max(p.min, (this.nb || 0) + delta));
+    },
+}));
+
 window.Alpine = Alpine;
 
 Alpine.start();

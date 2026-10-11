@@ -15,7 +15,7 @@ class EtatsVidesTest extends TestCase
     {
         $this->get('/souscrire')->assertOk()
             ->assertSee('La souscription en ligne n’est pas encore ouverte')
-            ->assertSee('Vous serez informé par SMS dès son ouverture.')
+            ->assertSee('Consultez cette page ou la rubrique Actualités pour connaître la date d’ouverture.')
             ->assertSee('href="'.route('offre').'"', false)
             ->assertSee('Comprendre l’offre')
             ->assertDontSee('Bientôt disponible');

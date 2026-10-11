@@ -4,6 +4,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Compte\ConnexionController;
 use App\Http\Controllers\Compte\InscriptionController;
 use App\Http\Controllers\Compte\ProfilController as CompteProfilController;
+use App\Http\Controllers\Compte\SouscriptionController;
 use App\Http\Controllers\Publique\AccueilController;
 use App\Http\Controllers\Publique\ArmoiriesController;
 use App\Http\Controllers\Publique\ContactController;
@@ -43,8 +44,7 @@ Route::controller(PageController::class)->group(function () {
     Route::get('/faq', 'faq')->name('faq');
     Route::get('/actualites/{slug}', 'actualite')->name('actualites.show');
 
-    // Tunnel de souscription : pages d'attente jusqu'à la mise en service (étape 3).
-    Route::get('/souscrire', 'preparation')->defaults('page', 'souscrire')->name('souscrire');
+    // Tunnel de souscription : pages d'attente jusqu'à la mise en service des parcours.
     Route::get('/paiement', 'preparation')->defaults('page', 'paiement')->name('paiement');
     Route::get('/espace', 'preparation')->defaults('page', 'espace')->middleware('auth')->name('espace');
     Route::get('/espace/verification', 'preparation')->defaults('page', 'verification')->middleware('auth')->name('espace.verification');
@@ -52,6 +52,13 @@ Route::controller(PageController::class)->group(function () {
     Route::get('/mentions-legales', 'legal')->defaults('page', 'mentions')->name('legal.mentions');
     Route::get('/donnees-personnelles', 'legal')->defaults('page', 'donnees')->name('legal.donnees');
     Route::get('/accessibilite', 'legal')->defaults('page', 'accessibilite')->name('legal.accessibilite');
+});
+
+// Souscription (citoyen connecté ; sans tranche ouverte, état vide visible de tous).
+Route::controller(SouscriptionController::class)->group(function () {
+    Route::get('/souscrire', 'create')->name('souscrire');
+    Route::get('/souscrire/reglement', 'reglement')->name('souscrire.reglement');
+    Route::post('/souscrire', 'store')->middleware(['auth', 'role:citoyen', 'throttle:10,1'])->name('souscrire.store');
 });
 
 // Mon profil (citoyen) : informations personnelles et téléphone (confirmé par SMS).
