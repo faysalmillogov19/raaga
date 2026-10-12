@@ -28,6 +28,7 @@ return [
     'menu' => [
         'tableau' => 'Tableau de bord',
         'tranches' => 'Tranches',
+        'boutiques' => 'Boutiques',
         'dividendes' => 'Dividendes',
         'simulations' => 'Simulations',
         'kyc' => 'Dossiers KYC',
@@ -88,6 +89,10 @@ return [
         'tranches.saisir' => 'Créer une tranche, saisir ses paramètres de souscription et les soumettre',
         'tranches.confirmer' => 'Confirmer ou rejeter un paramétrage de tranche',
         'tranches.piloter' => 'Ouvrir, prolonger (avenant) et clôturer une tranche',
+        'boutiques.voir' => 'Consulter les campagnes d’attribution des boutiques et les candidatures',
+        'boutiques.saisir' => 'Saisir et soumettre une campagne d’attribution des boutiques (catégories, cautions)',
+        'boutiques.confirmer' => 'Confirmer ou rejeter une campagne d’attribution des boutiques',
+        'boutiques.piloter' => 'Ouvrir, clôturer une campagne et lancer le tirage au sort des boutiques',
         'dividendes.voir' => 'Consulter les paramétrages de distribution des dividendes',
         'dividendes.saisir' => 'Saisir les paramètres de distribution des dividendes et les soumettre',
         'dividendes.confirmer' => 'Confirmer ou rejeter un paramétrage de distribution',
@@ -416,6 +421,7 @@ return [
         'intro' => 'Consultation, en lecture seule, des paramètres fixés par le RÉGULATEUR et confirmés par le VALIDATEUR. Aucune modification n’est possible depuis le profil SUPER_ADMIN.',
         'liens' => [
             'tranches' => ['Tranches', 'Paramètres de souscription, versions, décisions et avenants.'],
+            'boutiques' => ['Boutiques', 'Campagnes d’attribution, catégories, cautions et tirages au sort.'],
             'dividendes' => ['Dividendes', 'Paramétrages de distribution par exercice, PV d’AG, simulation.'],
             'simulations' => ['Simulations', 'Simulations d’allocation enregistrées.'],
             'referentiels' => ['Paiements', 'Canaux de paiement, frais et compte séquestre.'],
@@ -659,6 +665,70 @@ return [
             'mot' => 'Saisissez exactement le mot :mot.',
             'code' => 'Code de double authentification incorrect.',
             'totp_requis' => 'Activez la double authentification pour effectuer cette action.',
+        ],
+    ],
+
+    'boutiques' => [
+        'titre' => 'Attribution des boutiques',
+        'intro' => 'Campagnes de candidature aux boutiques du marché, indépendantes des actions : tout citoyen peut candidater en versant la caution de la catégorie choisie. Les boutiques sont attribuées par tirage au sort.',
+        'nouvelle' => 'Nouvelle campagne',
+        'aucune' => 'Aucune campagne pour le moment.',
+        'colonnes' => [
+            'nom' => 'Campagne',
+            'statut' => 'Statut',
+            'periode' => 'Période de candidature',
+            'boutiques' => 'Boutiques',
+            'version' => 'Version',
+            'candidatures' => 'Candidatures',
+        ],
+        'champs' => [
+            'nom' => 'nom de la campagne',
+            'description' => 'présentation (affichée aux citoyens)',
+            'date_ouverture' => 'ouverture des candidatures',
+            'date_cloture' => 'clôture des candidatures',
+            'delai_paiement_heures' => 'délai de paiement de la caution (heures)',
+            'canaux_actifs' => 'moyens de paiement de la caution',
+            'categories' => 'catégories de boutiques',
+        ],
+        'categorie' => [
+            'titre' => 'Catégories de boutiques',
+            'aide' => 'Une ligne par catégorie : le nombre de boutiques à attribuer et la caution demandée à chaque candidat de la catégorie.',
+            'libelle' => 'Catégorie',
+            'description' => 'Description (surface, emplacement…)',
+            'nombre_boutiques' => 'Nombre de boutiques',
+            'caution' => 'Caution (FCFA)',
+            'ajouter' => 'Ajouter une catégorie',
+            'retirer' => 'Retirer',
+        ],
+        'sections' => [
+            'campagne' => 'Campagne',
+            'paiement' => 'Caution et paiement',
+        ],
+        'formulaire' => [
+            'creation' => 'Nouvelle campagne d’attribution',
+            'modification' => 'Modifier la campagne',
+        ],
+        'actions' => [
+            'ouvrir' => 'Ouvrir les candidatures',
+            'cloturer' => 'Clôturer les candidatures',
+        ],
+        'confirmations' => [
+            'ouvrir' => 'Les citoyens pourront candidater et verser leur caution jusqu’à la date de clôture.',
+            'cloturer' => 'Plus aucune candidature ne sera acceptée. Les cautions non payées expireront.',
+        ],
+        'messages' => [
+            'enregistree' => 'Campagne enregistrée.',
+            'ouverte' => 'Candidatures ouvertes.',
+            'cloturee' => 'Candidatures clôturées.',
+        ],
+        'regles' => [
+            'ouverture_confirmee' => 'Seule une campagne confirmée peut être ouverte.',
+            'une_seule_ouverte' => 'Une autre campagne est déjà ouverte : clôturez-la d’abord.',
+            'cloture_ouverte' => 'Seule une campagne ouverte peut être clôturée.',
+        ],
+        'erreurs' => [
+            'categories' => 'Ajoutez au moins une catégorie de boutiques.',
+            'categorie_complete' => 'Chaque catégorie doit avoir un libellé, un nombre de boutiques et une caution.',
         ],
     ],
 

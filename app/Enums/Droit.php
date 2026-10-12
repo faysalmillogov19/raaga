@@ -54,6 +54,12 @@ enum Droit: string
     case TranchesConfirmer = 'tranches.confirmer';
     case TranchesPiloter = 'tranches.piloter';
 
+    // Attribution des boutiques (indépendante des actions) : campagnes, cautions, tirage au sort.
+    case BoutiquesVoir = 'boutiques.voir';
+    case BoutiquesSaisir = 'boutiques.saisir';
+    case BoutiquesConfirmer = 'boutiques.confirmer';
+    case BoutiquesPiloter = 'boutiques.piloter';
+
     case DividendesVoir = 'dividendes.voir';
     case DividendesSaisir = 'dividendes.saisir';
     case DividendesConfirmer = 'dividendes.confirmer';
@@ -114,6 +120,7 @@ enum Droit: string
             self::ConventionsSaisir, self::ConventionsConfirmer, self::AppelsFondsRapprocher,
             self::UtilisateursGerer, self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
+            self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter,
@@ -129,7 +136,7 @@ enum Droit: string
      */
     public static function saisies(): array
     {
-        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir];
+        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir, self::BoutiquesSaisir];
     }
 
     /**
@@ -140,7 +147,7 @@ enum Droit: string
     public static function confirmationsEtExecutions(): array
     {
         return [self::TranchesConfirmer, self::TranchesPiloter, self::DividendesConfirmer, self::DividendesPayer, self::AllocationExecuter,
-            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier];
+            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter];
     }
 
     /**
@@ -171,6 +178,7 @@ enum Droit: string
         return [
             self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
+            self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter,
@@ -198,7 +206,7 @@ enum Droit: string
                 self::UtilisateursGerer,
                 self::SecuriteGerer, self::ConnexionsVoir,
                 self::AuditVoir,
-                self::ParametresVoir, self::TranchesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
+                self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
             ],
             // Support et assistance uniquement.
             Role::Admin => self::support(),
@@ -207,6 +215,7 @@ enum Droit: string
                 self::TableauDeBordVoir,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
+                self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
                 self::DividendesVoir, self::DividendesConfirmer, self::DividendesPayer,
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
                 self::KycVoir, self::KycVoirPieces, self::KycTraiter,
@@ -226,6 +235,7 @@ enum Droit: string
                 self::TableauDeBordVoir,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
+                self::BoutiquesVoir, self::BoutiquesSaisir,
                 self::DividendesVoir, self::DividendesSaisir,
                 self::SimulationsVoir, self::SimulationsLancer,
                 self::KycVoir,

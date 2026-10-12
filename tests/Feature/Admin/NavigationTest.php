@@ -19,15 +19,15 @@ class NavigationTest extends TestCase
 
     /** Écrans hors menu mais accessibles en lecture (le SUPER_ADMIN y arrive par « Paramètres (lecture) »). */
     private const LECTURE_HORS_MENU = [
-        'superadmin' => ['tranches', 'dividendes', 'simulations', 'referentiels'],
+        'superadmin' => ['tranches', 'boutiques', 'dividendes', 'simulations', 'referentiels'],
     ];
 
     /** Menus attendus par profil (d'après le tableau des droits de la spécification). */
     private const MENUS = [
         'superadmin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'plateforme', 'securite', 'audit', 'parametres', 'connexions'],
         'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme'],
-        'validateur' => ['tableau', 'tranches', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels'],
-        'regulateur' => ['tableau', 'tranches', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels'],
+        'validateur' => ['tableau', 'tranches', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels'],
+        'regulateur' => ['tableau', 'tranches', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels'],
     ];
 
     public static function profils(): array

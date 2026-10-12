@@ -3,6 +3,7 @@
 use App\Enums\Droit;
 use App\Http\Controllers\Admin\AppelsFondsController;
 use App\Http\Controllers\Admin\AssistanceController;
+use App\Http\Controllers\Admin\CampagnesBoutiquesController;
 use App\Http\Controllers\Admin\ConnexionController;
 use App\Http\Controllers\Admin\ConnexionsController;
 use App\Http\Controllers\Admin\ConventionsController;
@@ -54,6 +55,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/profil', [ProfilController::class, 'show'])->name('profil');
         Route::post('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::post('/profil/mot-de-passe', [ProfilController::class, 'motDePasse'])->middleware('throttle:10,1')->name('profil.mot-de-passe');
+
+        // Boutiques : RÉGULATEUR saisit et soumet les campagnes (catégories, cautions), VALIDATEUR confirme, ouvre, clôture, tire au sort.
+        Route::controller(CampagnesBoutiquesController::class)->prefix('boutiques')->name('boutiques')->group(function () {
+            Route::get('/', 'index')->middleware('can:'.Droit::BoutiquesVoir->value);
+            Route::get('/creer', 'create')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.create');
+            Route::post('/', 'store')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.store');
+            Route::get('/{campagne}', 'show')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesVoir->value)->name('.show');
+            Route::get('/{campagne}/modifier', 'edit')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.edit');
+            Route::put('/{campagne}', 'update')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.update');
+            Route::post('/{campagne}/soumettre', 'soumettre')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.soumettre');
+            Route::post('/{campagne}/confirmer', 'confirmer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.confirmer');
+            Route::post('/{campagne}/rejeter', 'rejeter')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.rejeter');
+            Route::post('/{campagne}/ouvrir', 'ouvrir')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.ouvrir');
+            Route::post('/{campagne}/cloturer', 'cloturer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.cloturer');
+        });
 
         // Tranches : RÉGULATEUR saisit et soumet, VALIDATEUR confirme puis ouvre, prolonge, clôture.
         Route::controller(TranchesController::class)->prefix('tranches')->name('tranches')->group(function () {

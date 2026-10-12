@@ -2,7 +2,7 @@
     <div class="bo-carte !mt-0">
         <p class="texte-carte max-w-3xl">{{ __('admin.parametres.intro') }}</p>
         <div class="mt-4 grid gap-3 sm:grid-cols-2">
-            @foreach (['tranches' => 'admin.tranches', 'dividendes' => 'admin.dividendes', 'simulations' => 'admin.simulations', 'referentiels' => 'admin.referentiels'] as $cle => $route)
+            @foreach (['tranches' => 'admin.tranches', 'boutiques' => 'admin.boutiques', 'dividendes' => 'admin.dividendes', 'simulations' => 'admin.simulations', 'referentiels' => 'admin.referentiels'] as $cle => $route)
                 @php([$titre, $texte] = __('admin.parametres.liens.'.$cle))
                 <a href="{{ route($route) }}" class="flex items-start gap-3 rounded-charte border border-ligne p-4 no-underline hover:border-vert">
                     <x-admin.icone :nom="$cle" class="mt-0.5 h-5 w-5 text-vert-fonce" />
