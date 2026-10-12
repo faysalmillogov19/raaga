@@ -8,10 +8,13 @@ use App\Enums\StatutCampagneBoutiques;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CampagneBoutiquesRequest;
 use App\Models\CampagneBoutiques;
+use App\Models\CandidatureBoutique;
 use App\Models\ParametrageDecision;
+use App\Models\TirageBoutiques;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
+use App\Services\Boutiques\TirageAuSort;
 use App\Services\Parametrage\WorkflowParametrage;
 use Closure;
 use Illuminate\Http\RedirectResponse;
@@ -90,6 +93,11 @@ class CampagnesBoutiquesController extends Controller
                 : [],
             'premiereVersion' => $precedente === null,
             'totpExige' => ConfirmationRenforcee::totpExige($request->user()),
+            // Candidatures par catégorie et par statut, résultats des tirages.
+            'compteurs' => CandidatureBoutique::query()->where('campagne_boutiques_id', $campagne->id)
+                ->selectRaw('categorie_boutique_id, statut, count(*) as nombre')->groupBy('categorie_boutique_id', 'statut')->toBase()->get()
+                ->groupBy('categorie_boutique_id')->map(fn ($lignes) => $lignes->pluck('nombre', 'statut')),
+            'tirages' => TirageBoutiques::query()->where('campagne_boutiques_id', $campagne->id)->with(['categorie', 'tireur'])->get(),
         ]);
     }
 
@@ -180,6 +188,17 @@ class CampagnesBoutiquesController extends Controller
             $campagne->forceFill(['statut' => StatutCampagneBoutiques::Cloturee, 'cloturee_le' => now()])->save();
             $this->journal->ecrire($request->user(), 'campagne_boutiques.cloturee', 'CampagneBoutiques', $campagne->id, ['statut' => 'OUVERTE'], ['statut' => 'CLOTUREE']);
         }, 'admin.boutiques.messages.cloturee');
+    }
+
+    /** Tirage au sort, catégorie par catégorie (VALIDATEUR, confirmation renforcée). */
+    public function tirer(Request $request, CampagneBoutiques $campagne, TirageAuSort $tirage): RedirectResponse
+    {
+        Gate::authorize(Droit::BoutiquesPiloter->value);
+
+        return $this->executer($campagne, function () use ($request, $campagne, $tirage) {
+            $this->confirmation->verifier($request, $request->user());
+            $tirage->tirer($campagne, $request->user());
+        }, 'admin.boutiques.messages.tiree');
     }
 
     /** @param list<array<string, mixed>> $categories */

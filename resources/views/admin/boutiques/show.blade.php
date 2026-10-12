@@ -48,6 +48,9 @@
                 @elseif ($campagne->statut === StatutCampagneBoutiques::Ouverte)
                     <x-admin.confirmation-renforcee id="cloturer" :titre="__('admin.boutiques.actions.cloturer')" :message="__('admin.boutiques.confirmations.cloturer')"
                                                     :action="route('admin.boutiques.cloturer', $campagne)" :bouton="__('admin.boutiques.actions.cloturer')" :totp="$totpExige" />
+                @elseif ($campagne->statut === StatutCampagneBoutiques::Cloturee)
+                    <x-admin.confirmation-renforcee id="tirer" :titre="__('admin.boutiques.actions.tirer')" :message="__('admin.boutiques.confirmations.tirer')"
+                                                    :action="route('admin.boutiques.tirer', $campagne)" :bouton="__('admin.boutiques.actions.tirer')" :totp="$totpExige" />
                 @endif
             @endcan
         </div>
@@ -86,15 +89,53 @@
         <h2 id="sec-categories" class="!text-[1.05rem]">{{ $k['titre'] }}</h2>
         <div class="mt-3 overflow-x-auto">
             <table class="bo-tableau">
-                <thead><tr><th scope="col">{{ $k['libelle'] }}</th><th scope="col">{{ $k['description'] }}</th><th scope="col" class="montant">{{ $k['nombre_boutiques'] }}</th><th scope="col" class="montant">{{ $k['caution'] }}</th></tr></thead>
+                <thead><tr><th scope="col">{{ $k['libelle'] }}</th><th scope="col">{{ $k['description'] }}</th><th scope="col" class="montant">{{ $k['nombre_boutiques'] }}</th><th scope="col" class="montant">{{ $k['caution'] }}</th>
+                    @foreach (['RESERVEE' => 'reservees', 'PAYEE' => 'payees', 'RETENUE' => 'retenues', 'NON_RETENUE' => 'non_retenues', 'EXPIREE' => 'expirees'] as $cle)
+                        <th scope="col" class="montant">{{ __('admin.boutiques.candidatures.'.$cle) }}</th>
+                    @endforeach
+                </tr></thead>
                 <tbody>
                     @foreach ($campagne->categories as $cat)
-                        <tr><td class="font-semibold">{{ $cat->libelle }}</td><td>{{ $cat->description }}</td><td class="montant">{{ format_nombre($cat->nombre_boutiques) }}</td><td class="montant">{{ format_fcfa($cat->caution) }}</td></tr>
+                        <tr><td class="font-semibold">{{ $cat->libelle }}</td><td>{{ $cat->description }}</td><td class="montant">{{ format_nombre($cat->nombre_boutiques) }}</td><td class="montant">{{ format_fcfa($cat->caution) }}</td>
+                            @foreach (['RESERVEE', 'PAYEE', 'RETENUE', 'NON_RETENUE', 'EXPIREE'] as $statut)
+                                <td class="montant">{{ format_nombre((int) ($compteurs[$cat->id][$statut] ?? 0)) }}</td>
+                            @endforeach
+                        </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
     </section>
+
+    @if ($tirages->isNotEmpty())
+        <section class="bo-carte" aria-labelledby="sec-tirage">
+            <h2 id="sec-tirage" class="!text-[1.05rem]">{{ __('admin.boutiques.tirage.titre') }}</h2>
+            <p class="texte-carte mt-1 max-w-3xl">{{ __('admin.boutiques.tirage.explication') }}</p>
+            @foreach ($tirages as $tirage)
+                <div class="mt-5 border-t border-ligne pt-4">
+                    <h3 class="!text-base">{{ $tirage->categorie->libelle }} — {{ __('admin.boutiques.tirage.participants', ['n' => $tirage->nombre_participants, 'b' => $tirage->nombre_boutiques]) }}</h3>
+                    <p class="texte-carte">{{ __('admin.boutiques.tirage.par', ['date' => $tirage->created_at->format('d/m/Y H:i'), 'nom' => $tirage->tireur->name]) }}</p>
+                    <dl class="bo-definitions mt-2">
+                        <dt>{{ __('admin.boutiques.tirage.graine') }}</dt><dd class="break-all font-mono text-sm">{{ $tirage->graine }}</dd>
+                        <dt>{{ __('admin.boutiques.tirage.empreinte') }}</dt><dd class="break-all font-mono text-sm">{{ $tirage->empreinte_participants }}</dd>
+                    </dl>
+                    @if ($tirage->ordre)
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="bo-tableau">
+                                <thead><tr><th scope="col">{{ __('admin.boutiques.tirage.rang') }}</th><th scope="col">{{ __('admin.boutiques.tirage.reference') }}</th><th scope="col">{{ __('admin.boutiques.tirage.resultat') }}</th></tr></thead>
+                                <tbody>
+                                    @foreach ($tirage->ordre as $i => $reference)
+                                        <tr><td>{{ $i + 1 }}</td><td class="font-mono">{{ $reference }}</td>
+                                            <td>{{ $i < $tirage->nombre_boutiques ? __('admin.boutiques.candidatures.retenues') : __('admin.boutiques.candidatures.non_retenues') }}</td></tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+        </section>
+    @endif
 
     @include('admin.parametrage._historique', ['versions' => $versions, 'decisions' => $decisions])
 </x-admin.layout>

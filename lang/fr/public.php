@@ -578,6 +578,7 @@ return [
         'onglets_libelle' => 'Rubriques de mon espace',
         'onglets' => [
             'souscriptions' => 'Mes souscriptions',
+            'boutiques' => 'Mes boutiques',
             'documents' => 'Mes documents',
             'dividendes' => 'Mes dividendes',
             'profil' => 'Mon profil',
@@ -594,6 +595,7 @@ return [
         ],
         'payer_avant' => 'À payer avant le :date.',
         'payer' => 'Payer maintenant',
+        'voir_candidature' => 'Voir la candidature',
         'documents' => [
             'attestation' => 'Attestation d’actionnaire — :n actions B',
             'certificat' => 'certificat :numero',
@@ -609,6 +611,8 @@ return [
             'souscrire' => 'Souscrire',
             'documents_titre' => 'Aucun document pour le moment',
             'documents' => 'Vos reçus, les règlements acceptés et vos attestations d’actionnaire apparaîtront ici.',
+            'boutiques_titre' => 'Aucune candidature à une boutique',
+            'boutiques' => 'Vos candidatures aux boutiques du marché et le résultat du tirage au sort apparaîtront ici.',
             'dividendes_titre' => 'Aucun dividende versé',
             'dividendes' => 'Les dividendes dépendent des bénéfices de Raaga et des décisions de l’assemblée générale. Les versements apparaîtront ici.',
         ],
@@ -747,6 +751,8 @@ return [
         'paiement_caution' => 'Paiement de la caution',
         'sms' => [
             'caution_payee' => '{nomPlateforme} : caution reçue. Reçu n° {recu}, candidature {reference}, {montant}. Résultat du tirage au sort par SMS.',
+            'retenue' => '{nomPlateforme} : bonne nouvelle, votre candidature {reference} ({categorie}) est retenue au tirage au sort. Les étapes suivantes vous seront communiquées.[ Aide : {numeroVert}]',
+            'non_retenue' => '{nomPlateforme} : votre candidature {reference} ({categorie}) n’a pas été retenue au tirage au sort. Les modalités concernant votre caution vous seront communiquées.[ Aide : {numeroVert}]',
         ],
         'reglement' => [
             'titre' => 'Règlement de la campagne d’attribution des boutiques',

@@ -94,6 +94,29 @@
                     @endforelse
                     @break
 
+                @case('boutiques')
+                    @forelse ($candidatures as $c)
+                        @if ($loop->first)<ul class="space-y-3">@endif
+                        <li class="carte p-4 tab:p-5">
+                            <div class="flex flex-wrap items-start justify-between gap-2">
+                                <p class="whitespace-nowrap font-bold tracking-wide text-encre">{{ $c->reference }}</p>
+                                <span class="rounded-full px-3 py-1 text-sm font-bold {{ ['RESERVEE' => 'bg-jaune-pale text-encre', 'PAYEE' => 'bg-vert-pale text-vert-fonce', 'RETENUE' => 'bg-vert-fonce text-white', 'NON_RETENUE' => 'bg-fond text-encre', 'EXPIREE' => 'bg-fond text-gris'][$c->statut->value] }}">{{ $c->statut->label() }}</span>
+                            </div>
+                            <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.95rem] tab:grid-cols-3">
+                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.campagne') }}</dt><dd class="font-semibold">{{ $c->campagne->nom }}</dd></div>
+                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.categorie') }}</dt><dd class="font-semibold">{{ $c->categorie->libelle }}</dd></div>
+                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.caution') }}</dt><dd class="font-semibold">{{ format_fcfa($c->caution) }}</dd></div>
+                            </dl>
+                            <a href="{{ route('boutiques.candidature', $c->reference) }}" class="btn-secondaire mt-3">{{ __('public.espace.voir_candidature') }}</a>
+                        </li>
+                        @if ($loop->last)</ul>@endif
+                    @empty
+                        <x-etat-vide icone="boutiques" :titre="__('public.espace.vides.boutiques_titre')" :lien="route('boutiques')" :libelle-lien="__('public.boutiques.titre')">
+                            {{ __('public.espace.vides.boutiques') }}
+                        </x-etat-vide>
+                    @endforelse
+                    @break
+
                 @case('documents')
                     @if ($recus->isEmpty() && $reglements->isEmpty() && $attestations->isEmpty())
                         <x-etat-vide icone="contenus" :titre="__('public.espace.vides.documents_titre')">

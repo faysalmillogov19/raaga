@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Enums\StatutSouscription;
 use App\Http\Controllers\Controller;
 use App\Models\Acceptation;
+use App\Models\CandidatureBoutique;
 use App\Models\LigneRegistre;
 use App\Models\Souscription;
 use App\Services\Documents\GenerateurPdf;
@@ -22,7 +23,7 @@ use Illuminate\View\View;
  */
 class EspaceController extends Controller
 {
-    public const ONGLETS = ['souscriptions', 'documents', 'dividendes', 'profil'];
+    public const ONGLETS = ['souscriptions', 'boutiques', 'documents', 'dividendes', 'profil'];
 
     public function show(Request $request, ServicePaiement $paiements): View
     {
@@ -59,6 +60,7 @@ class EspaceController extends Controller
                 ->whereNotNull('souscription_id')->with('souscription.tranche')->orderByDesc('accepte_le')->get()
                 ->unique(fn (Acceptation $a) => $a->souscription->tranche_id.'-'.$a->version_document),
             'attestations' => $user->lignesRegistre()->with('tranche')->orderByDesc('date_inscription')->get(),
+            'candidatures' => CandidatureBoutique::query()->where('user_id', $user->id)->with(['campagne', 'categorie'])->latest('id')->get(),
         ]);
     }
 
