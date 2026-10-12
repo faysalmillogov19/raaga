@@ -94,7 +94,7 @@ class PaiementTest extends TestCase
 
         // Reprise : la page rechargée retrouve la demande en cours.
         $this->actingAs($this->citoyen)->get($this->url())->assertOk()->assertSee('En attente de confirmation')->assertSee('Simuler un paiement réussi');
-        $this->actingAs($this->citoyen)->getJson($this->url('/statut'))->assertExactJson(['souscription' => 'RESERVEE', 'paiement' => 'EN_ATTENTE']);
+        $this->actingAs($this->citoyen)->getJson($this->url('/statut'))->assertExactJson(['objet' => 'RESERVEE', 'paiement' => 'EN_ATTENTE']);
 
         $this->actingAs($this->citoyen)->post($this->url('/simuler'), ['issue' => 'succes'])->assertRedirect($this->url());
 

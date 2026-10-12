@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'souscription_id', 'canal', 'montant', 'frais', 'reference', 'reference_fournisseur',
+    'souscription_id', 'candidature_boutique_id', 'canal', 'montant', 'frais', 'reference', 'reference_fournisseur',
     'statut', 'date_confirmation', 'agent_id', 'cloture_caisse_id', 'metadonnees',
 ])]
 class Paiement extends Model
@@ -32,6 +32,20 @@ class Paiement extends Model
     public function souscription(): BelongsTo
     {
         return $this->belongsTo(Souscription::class);
+    }
+
+    /**
+     * @return BelongsTo<CandidatureBoutique, $this>
+     */
+    public function candidature(): BelongsTo
+    {
+        return $this->belongsTo(CandidatureBoutique::class, 'candidature_boutique_id');
+    }
+
+    /** Objet réglé par ce paiement (souscription d'actions ou caution d'une candidature). */
+    public function objet(): Souscription|CandidatureBoutique
+    {
+        return $this->souscription_id ? $this->souscription : $this->candidature;
     }
 
     /**

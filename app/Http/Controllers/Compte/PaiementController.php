@@ -2,30 +2,25 @@
 
 namespace App\Http\Controllers\Compte;
 
-use App\Contracts\PaymentProvider;
-use App\Enums\CanalPaiement;
 use App\Enums\Role;
-use App\Enums\StatutPaiement;
 use App\Enums\StatutSouscription;
+use App\Http\Controllers\Compte\Concerns\GerePaiements;
 use App\Http\Controllers\Controller;
 use App\Models\Souscription;
 use App\Services\Documents\GenerateurPdf;
 use App\Services\Paiement\ServicePaiement;
-use App\Support\CompteSequestre;
 use App\Support\Recu;
-use App\Support\Telephone;
-use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Throwable;
 
 /** /paiement : paiement d'une souscription RÉSERVÉE du citoyen connecté. */
 class PaiementController extends Controller
 {
+    use GerePaiements;
+
     public function __construct(private readonly ServicePaiement $service) {}
 
     /** Sans réservation en cours : état vide ; sinon, ouverture de la plus récente. */
@@ -48,95 +43,57 @@ class PaiementController extends Controller
     public function show(Request $request, string $reference): View|RedirectResponse
     {
         $this->service->expirerReservations();
-        $souscription = $this->souscription($request, $reference);
+        $s = $this->souscription($request, $reference);
 
-        if (Recu::disponible($souscription)) {
-            return redirect()->route('paiement.confirmation', $souscription->reference);
+        if (Recu::disponible($s)) {
+            return redirect()->route('paiement.confirmation', $s->reference);
         }
-        abort_unless(in_array($souscription->statut, [StatutSouscription::Reservee, StatutSouscription::Expiree], true), 404);
+        abort_unless(in_array($s->statut, [StatutSouscription::Reservee, StatutSouscription::Expiree], true), 404);
 
-        $fournisseur = $this->fournisseur();
-        $enAttente = ServicePaiement::enAttente($souscription);
-        $dernier = $souscription->paiements()->latest('id')->first();
-
-        $etat = match (true) {
-            $souscription->statut === StatutSouscription::Expiree => 'expiree',
-            ! $fournisseur => 'indisponible',
-            $enAttente !== null => 'attente',
-            $dernier?->statut === StatutPaiement::Echoue => 'echec',
-            default => 'choix',
-        };
-
-        return view('public.paiement.show', [
-            'souscription' => $souscription->load('tranche'),
-            'etat' => $etat,
-            'paiement' => $enAttente,
-            'simule' => $fournisseur?->estSimule() ?? false,
-            'canaux' => $this->canaux($souscription),
-            'sequestre' => CompteSequestre::actuel(),
+        return $this->ecranPaiement($s->load('tranche'), [
+            'titre' => __('public.paiement.titre'),
+            'fil' => [['libelle' => __('public.preparation.pages.souscrire.titre'), 'url' => route('souscrire')], ['libelle' => __('public.paiement.titre')]],
+            'alerte' => session('souscription.reservee')
+                ? __('public.souscription.reservee', ['reference' => '<span class="whitespace-nowrap font-bold">'.e($s->reference).'</span>'])
+                : null,
+            'lignes' => [
+                [__('public.souscription.recap_actions'), format_nombre($s->nb_actions_demandees)],
+                [__('public.souscription.recap_montant'), format_fcfa($s->montant)],
+                [__('public.souscription.recap_frais'), format_fcfa($s->frais_souscription)],
+            ],
+            'total' => $s->montant + $s->frais_souscription,
+            'routes' => $this->routes($s),
+            'nouvelle' => ['url' => route('souscrire'), 'libelle' => __('public.paiement.nouvelle_souscription')],
         ]);
     }
 
     public function payer(Request $request, string $reference): RedirectResponse
     {
         $souscription = $this->souscription($request, $reference);
-        $canaux = array_map(fn (CanalPaiement $c) => $c->value, $this->canaux($souscription));
-
-        $donnees = $request->validate([
-            'canal' => ['required', Rule::in($canaux)],
-            'telephone' => [Rule::requiredIf(in_array($request->input('canal'), [CanalPaiement::OrangeMoney->value, CanalPaiement::MoovMoney->value], true)),
-                'nullable', 'string', function (string $attribut, mixed $valeur, Closure $echec) {
-                    if ($valeur !== null && ! Telephone::estValide($valeur)) {
-                        $echec(__('public.paiement.erreurs.telephone'));
-                    }
-                }],
-        ], [], __('public.paiement.attributs'));
-
-        $fournisseur = $this->fournisseur();
-        abort_unless($fournisseur, 503);
-        $this->service->expirerReservations();
-        abort_unless($souscription->fresh()->statut === StatutSouscription::Reservee, 409);
-
-        $canal = CanalPaiement::from($donnees['canal']);
-        $mobile = in_array($canal, [CanalPaiement::OrangeMoney, CanalPaiement::MoovMoney], true);
-        $this->service->initier($souscription, $canal, $mobile ? Telephone::normaliser($donnees['telephone']) : null, $fournisseur, $request->user());
+        $this->demanderPaiement($request, $souscription->load('tranche'));
 
         return redirect()->route('paiement.show', $souscription->reference);
     }
 
-    /** Suivi de la demande en cours (rafraîchissement automatique de l'écran d'attente). */
     public function statut(Request $request, string $reference): JsonResponse
     {
         $this->service->expirerReservations();
-        $souscription = $this->souscription($request, $reference);
 
-        return response()->json([
-            'souscription' => $souscription->statut->value,
-            'paiement' => $souscription->paiements()->latest('id')->value('statut'),
-        ]);
+        return $this->statutPaiement($this->souscription($request, $reference));
     }
 
-    /** Recette uniquement : choix de l'issue du paiement simulé. */
     public function simuler(Request $request, string $reference): RedirectResponse
     {
         $souscription = $this->souscription($request, $reference);
-        $fournisseur = $this->fournisseur();
-        abort_unless($fournisseur?->estSimule(), 404);
-
-        $issue = $request->validate(['issue' => ['required', Rule::in(['succes', 'echec'])]])['issue'];
-        $paiement = ServicePaiement::enAttente($souscription);
-        abort_unless($paiement, 409);
-
-        $this->service->confirmer($paiement->reference, $issue === 'succes', $request->user());
+        $this->simulerPaiement($request, $souscription);
 
         return redirect()->route('paiement.show', $souscription->reference);
     }
 
-    /** Abandon de la demande en cours pour choisir un autre moyen de paiement. */
     public function changer(Request $request, string $reference): RedirectResponse
     {
         $souscription = $this->souscription($request, $reference);
-        $souscription->paiements()->where('statut', StatutPaiement::EnAttente)->update(['statut' => StatutPaiement::Annule]);
+        $this->abandonnerPaiement($souscription);
 
         return redirect()->route('paiement.show', $souscription->reference);
     }
@@ -175,6 +132,13 @@ class PaiementController extends Controller
         ]);
     }
 
+    /** @return array<string, string> */
+    private function routes(Souscription $s): array
+    {
+        return collect(['show', 'payer', 'statut', 'simuler', 'changer'])
+            ->mapWithKeys(fn (string $r) => [$r => route('paiement.'.$r, $s->reference)])->all();
+    }
+
     /** Souscription du citoyen connecté ; celle d'un autre citoyen est refusée. */
     private function souscription(Request $request, string $reference): Souscription
     {
@@ -182,24 +146,5 @@ class PaiementController extends Controller
         abort_unless($souscription->user_id === $request->user()->id, 403);
 
         return $souscription;
-    }
-
-    /** Fournisseur configuré, ou null s'il refuse de fonctionner (simulateur en production). */
-    private function fournisseur(): ?PaymentProvider
-    {
-        try {
-            return app(PaymentProvider::class);
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    /** @return list<CanalPaiement> canaux actifs de la tranche (paramètres confirmés) */
-    private function canaux(Souscription $souscription): array
-    {
-        return array_values(array_filter(array_map(
-            fn (string $c) => CanalPaiement::tryFrom($c),
-            (array) $souscription->tranche->canaux_actifs,
-        )));
     }
 }

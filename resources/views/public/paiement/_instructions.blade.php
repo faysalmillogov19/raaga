@@ -1,4 +1,4 @@
-{{-- Instructions propres au canal. Variables : $canal (CanalPaiement), $s (souscription), $sequestre (config). --}}
+{{-- Instructions propres au canal. Variables : $canal (CanalPaiement), $s (objet réglé : souscription ou candidature), $sequestre. --}}
 @php($c = $canal->value)
 
 <div class="mt-4 rounded-charte bg-fond p-4 text-[0.95rem]">

@@ -26,8 +26,13 @@
                 <div class="flex justify-between gap-3 border-t border-ligne pt-2"><dt class="font-semibold text-encre">{{ $l['caution'] }}</dt><dd class="text-xl font-extrabold text-vert-fonce">{{ format_fcfa($c->caution) }}</dd></div>
             </dl>
             @if ($c->statut === S::Reservee && $c->expire_le->isFuture())
-                <p class="mt-4 texte-carte">{{ __('public.boutiques.candidature.payer_avant', ['date' => $c->expire_le->format('d/m/Y \à H\hi')]) }}</p>
-                <p class="mt-1 texte-carte">{{ $l['paiement_bientot'] }}</p>
+                <div class="mt-4 flex flex-col gap-2 border-t border-ligne pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="texte-carte">{{ __('public.boutiques.candidature.payer_avant', ['date' => $c->expire_le->format('d/m/Y \à H\hi')]) }}</p>
+                    <a href="{{ route('boutiques.caution.show', $c->reference) }}" class="btn-primaire">{{ $l['payer'] }}</a>
+                </div>
+            @elseif (in_array($c->statut, [S::Payee, S::Retenue, S::NonRetenue], true))
+                <p class="mt-4 texte-carte">{{ $c->statut === S::Payee ? $l['attente_tirage'] : ($c->statut === S::Retenue ? $l['retenue'] : $l['non_retenue']) }}</p>
+                <a href="{{ route('boutiques.caution.recu', $c->reference) }}" class="btn-secondaire mt-4" download>{{ $l['recu'] }}</a>
             @endif
         </section>
 

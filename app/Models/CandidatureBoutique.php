@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Contracts\Payable;
+use App\Enums\CanalPaiement;
 use App\Enums\StatutCandidatureBoutique;
+use App\Support\Recu;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'reference', 'user_id', 'campagne_boutiques_id', 'categorie_boutique_id', 'caution', 'statut',
     'expire_le', 'payee_le', 'rang_tirage', 'tiree_le',
 ])]
-class CandidatureBoutique extends Model
+class CandidatureBoutique extends Model implements Payable
 {
     protected function casts(): array
     {
@@ -51,6 +54,59 @@ class CandidatureBoutique extends Model
     public function categorie(): BelongsTo
     {
         return $this->belongsTo(CategorieBoutique::class, 'categorie_boutique_id');
+    }
+
+    /**
+     * @return HasMany<Paiement, $this>
+     */
+    public function paiements(): HasMany
+    {
+        return $this->hasMany(Paiement::class, 'candidature_boutique_id');
+    }
+
+    public static function clePaiement(): string
+    {
+        return 'candidature_boutique_id';
+    }
+
+    public function montantAPayer(): int
+    {
+        return $this->caution;
+    }
+
+    public function fraisAPayer(): int
+    {
+        return 0;
+    }
+
+    public function attendPaiement(): bool
+    {
+        return $this->statut === StatutCandidatureBoutique::Reservee;
+    }
+
+    public function marquerPaye(): void
+    {
+        $this->forceFill(['statut' => StatutCandidatureBoutique::Payee, 'payee_le' => now()])->save();
+    }
+
+    public function estExpire(): bool
+    {
+        return $this->statut === StatutCandidatureBoutique::Expiree;
+    }
+
+    /** @return list<CanalPaiement> */
+    public function canauxPaiement(): array
+    {
+        return $this->campagne->canaux();
+    }
+
+    public function smsPaiementConfirme(Paiement $paiement): array
+    {
+        return [__('public.boutiques.sms.caution_payee'), [
+            'recu' => Recu::numero($paiement),
+            'reference' => $this->reference,
+            'montant' => format_fcfa($paiement->montant),
+        ]];
     }
 
     /**

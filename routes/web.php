@@ -2,6 +2,7 @@
 
 use App\Enums\Role;
 use App\Http\Controllers\Compte\BoutiquesController;
+use App\Http\Controllers\Compte\CautionController;
 use App\Http\Controllers\Compte\ConnexionController;
 use App\Http\Controllers\Compte\EspaceController;
 use App\Http\Controllers\Compte\InscriptionController;
@@ -71,6 +72,16 @@ Route::controller(BoutiquesController::class)->prefix('boutiques')->name('boutiq
         Route::post('/candidater', 'store')->middleware('throttle:10,1')->name('.candidater.store');
         Route::get('/candidatures/{reference}', 'candidature')->name('.candidature');
     });
+});
+
+// Caution d'une candidature : même module de paiement que les souscriptions (titulaire uniquement).
+Route::middleware(['auth', 'role:citoyen'])->controller(CautionController::class)->prefix('boutiques/candidatures/{reference}/caution')->name('boutiques.caution.')->group(function () {
+    Route::get('/', 'show')->name('show');
+    Route::post('/', 'payer')->middleware('throttle:10,1')->name('payer');
+    Route::get('/statut', 'statut')->middleware('throttle:60,1')->name('statut');
+    Route::post('/simuler', 'simuler')->middleware('throttle:10,1')->name('simuler');
+    Route::post('/changer', 'changer')->name('changer');
+    Route::get('/recu', 'recu')->name('recu');
 });
 
 // Paiement d'une souscription réservée (citoyen connecté ; sans réservation, état vide).

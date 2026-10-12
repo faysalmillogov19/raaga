@@ -74,7 +74,7 @@ class BoutiquesController extends Controller
             (string) $request->ip(), (string) $request->userAgent(),
         );
 
-        return redirect()->route('boutiques.candidature', $candidature->reference)->with('candidature.creee', true);
+        return redirect()->route('boutiques.caution.show', $candidature->reference)->with('candidature.creee', true);
     }
 
     /** Suivi d'une candidature : uniquement par son titulaire. */

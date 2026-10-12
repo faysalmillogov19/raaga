@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Contracts\Payable;
+use App\Enums\CanalPaiement;
 use App\Enums\CanalSouscription;
 use App\Enums\StatutRevue;
 use App\Enums\StatutSouscription;
+use App\Support\Recu;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'frais_souscription', 'canal', 'agent_id', 'statut', 'revue_statut', 'revue_par', 'revue_le',
     'revue_motif', 'nb_actions_allouees', 'montant_a_rembourser', 'expire_le', 'payee_le', 'allouee_le',
 ])]
-class Souscription extends Model
+class Souscription extends Model implements Payable
 {
     protected function casts(): array
     {
@@ -66,6 +69,52 @@ class Souscription extends Model
     public function paiements(): HasMany
     {
         return $this->hasMany(Paiement::class);
+    }
+
+    public static function clePaiement(): string
+    {
+        return 'souscription_id';
+    }
+
+    public function montantAPayer(): int
+    {
+        return $this->montant;
+    }
+
+    public function fraisAPayer(): int
+    {
+        return $this->frais_souscription;
+    }
+
+    public function attendPaiement(): bool
+    {
+        return $this->statut === StatutSouscription::Reservee;
+    }
+
+    public function marquerPaye(): void
+    {
+        $this->forceFill(['statut' => StatutSouscription::Payee, 'payee_le' => now()])->save();
+    }
+
+    public function estExpire(): bool
+    {
+        return $this->statut === StatutSouscription::Expiree;
+    }
+
+    /** @return list<CanalPaiement> */
+    public function canauxPaiement(): array
+    {
+        return array_values(array_filter(array_map(fn (string $c) => CanalPaiement::tryFrom($c), (array) $this->tranche->canaux_actifs)));
+    }
+
+    public function smsPaiementConfirme(Paiement $paiement): array
+    {
+        return [__('public.recu.sms'), [
+            'recu' => Recu::numero($paiement),
+            'reference' => $this->reference,
+            'actions' => format_nombre($this->nb_actions_demandees),
+            'montant' => format_fcfa($paiement->montant + $paiement->frais),
+        ]];
     }
 
     /**

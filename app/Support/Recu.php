@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Contracts\Payable;
 use App\Enums\StatutPaiement;
 use App\Enums\StatutSouscription;
 use App\Models\Paiement;
@@ -19,9 +20,10 @@ final class Recu
         return 'REC-'.$paiement->date_confirmation->format('Y').'-'.str_pad((string) $paiement->id, 6, '0', STR_PAD_LEFT);
     }
 
-    public static function paiement(Souscription $souscription): ?Paiement
+    /** Paiement confirmé d'une souscription ou d'une caution de candidature. */
+    public static function paiement(Payable $objet): ?Paiement
     {
-        return $souscription->paiements()->where('statut', StatutPaiement::Confirme)->latest('id')->first();
+        return $objet->paiements()->where('statut', StatutPaiement::Confirme)->latest('id')->first();
     }
 
     public static function disponible(Souscription $souscription): bool

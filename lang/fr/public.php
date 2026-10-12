@@ -737,8 +737,16 @@ return [
             'categorie' => 'Catégorie',
             'caution' => 'Caution',
             'statut' => 'Statut',
-            'payer_avant' => 'À payer avant le :date.',
-            'paiement_bientot' => 'Le paiement de la caution s’ouvre à l’étape suivante.',
+            'payer_avant' => 'Caution à payer avant le :date.',
+            'payer' => 'Payer la caution',
+            'attente_tirage' => 'Caution payée. Le tirage au sort aura lieu après la clôture des candidatures ; le résultat vous sera envoyé par SMS.',
+            'retenue' => 'Votre candidature a été retenue au tirage au sort : une boutique de cette catégorie vous est attribuée.',
+            'non_retenue' => 'Votre candidature n’a pas été retenue au tirage au sort.',
+            'recu' => 'Télécharger le reçu de caution (PDF)',
+        ],
+        'paiement_caution' => 'Paiement de la caution',
+        'sms' => [
+            'caution_payee' => '{nomPlateforme} : caution reçue. Reçu n° {recu}, candidature {reference}, {montant}. Résultat du tirage au sort par SMS.',
         ],
         'reglement' => [
             'titre' => 'Règlement de la campagne d’attribution des boutiques',
