@@ -58,6 +58,9 @@ return [
     'sms' => [
         // « log » : aucun envoi, le message est écrit dans les journaux (seul pilote disponible).
         'pilote' => env('RAAGA_SMS_PILOTE', 'log'),
+        // Page « SMS de recette » (/recette/sms) : jamais en production ; false pour la couper ailleurs.
+        'journal_recette' => env('RAAGA_SMS_JOURNAL_RECETTE'),
+        'fichier_recette' => storage_path('logs/sms-recette.jsonl'),
     ],
 
     'paiement' => [

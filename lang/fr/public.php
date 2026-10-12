@@ -766,6 +766,16 @@ return [
         ],
     ],
 
+    'recette_sms' => [
+        'titre' => 'SMS de recette',
+        'intro' => 'Aucun SMS n’est réellement envoyé sur cet environnement : les messages s’affichent ici, avec les codes de confirmation. Cette page n’existe pas en production.',
+        'actualisation' => 'Mise à jour automatique toutes les 3 secondes. Le message le plus récent est en premier.',
+        'vide' => 'Aucun SMS pour le moment.',
+        'copier' => 'Copier le code',
+        'copie' => 'Code copié',
+        'lien' => 'Voir les SMS de recette (code de confirmation)',
+    ],
+
     'etats_vides' => [
         'souscrire' => [
             'titre' => 'La souscription en ligne n’est pas encore ouverte',

@@ -6,6 +6,11 @@
     <p class="formulaire">{!! __('public.compte.code_envoye', ['telephone' => '<strong class="whitespace-nowrap">'.e(\App\Support\Telephone::formater($telephone)).'</strong>']) !!}</p>
     {{ $slot }}
 
+    {{-- Recette uniquement : aucun SMS réel n'est envoyé, le code se lit sur la page des SMS simulés. --}}
+    @if (\App\Support\VerrouEnvironnement::journalSmsRecette())
+        <p class="formulaire"><a href="{{ route('recette.sms') }}" target="_blank" rel="noopener" class="lien-fort">{{ __('public.recette_sms.lien') }}</a></p>
+    @endif
+
     <form method="POST" action="{{ $action }}" class="formulaire" novalidate x-ref="formulaire" @submit="valider($event)">
         @csrf
         <fieldset>

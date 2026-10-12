@@ -32,6 +32,17 @@ final class VerrouEnvironnement
         }
     }
 
+    /**
+     * Page « SMS de recette » (SMS simulés, codes de confirmation lisibles) : jamais en production,
+     * et seulement avec le pilote SMS « log ». Activée par défaut hors production ; RAAGA_SMS_JOURNAL_RECETTE=false la coupe.
+     */
+    public static function journalSmsRecette(): bool
+    {
+        return ! app()->environment('production')
+            && (config('raaga.sms.pilote') ?? 'log') === 'log'
+            && (bool) (config('raaga.sms.journal_recette') ?? true);
+    }
+
     /** Données de démonstration actives (jamais en production : voir verifier()). */
     public static function demonstration(): bool
     {

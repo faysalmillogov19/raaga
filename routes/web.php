@@ -16,6 +16,7 @@ use App\Http\Controllers\Publique\ContactController;
 use App\Http\Controllers\Publique\GuichetController;
 use App\Http\Controllers\Publique\ImagePlateformeController;
 use App\Http\Controllers\Publique\PageController;
+use App\Http\Controllers\Publique\SmsRecetteController;
 use Illuminate\Support\Facades\Route;
 
 // Pages publiques
@@ -42,6 +43,9 @@ Route::get('/plateforme/images/{champ}', ImagePlateformeController::class)->wher
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,10')->name('contact.store');
 Route::get('/guichets', GuichetController::class)->name('guichets');
+
+// SMS simulés, pour saisir les codes de confirmation en recette (jamais en production).
+Route::get('/recette/sms', SmsRecetteController::class)->name('recette.sms');
 
 Route::controller(PageController::class)->group(function () {
     Route::get('/offre', 'offre')->name('offre');
