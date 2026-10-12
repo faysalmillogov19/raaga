@@ -46,6 +46,8 @@ Route::get('/guichets', GuichetController::class)->name('guichets');
 
 // SMS simulés, pour saisir les codes de confirmation en recette (jamais en production).
 Route::get('/recette/sms', SmsRecetteController::class)->name('recette.sms');
+Route::redirect('/admin/recette', '/recette/sms');
+Route::redirect('/admin/recette/sms', '/recette/sms');
 
 Route::controller(PageController::class)->group(function () {
     Route::get('/offre', 'offre')->name('offre');
