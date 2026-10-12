@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Role;
+use App\Http\Controllers\Compte\BoutiquesController;
 use App\Http\Controllers\Compte\ConnexionController;
 use App\Http\Controllers\Compte\EspaceController;
 use App\Http\Controllers\Compte\InscriptionController;
@@ -59,6 +60,17 @@ Route::controller(SouscriptionController::class)->group(function () {
     Route::get('/souscrire', 'create')->name('souscrire');
     Route::get('/souscrire/reglement', 'reglement')->name('souscrire.reglement');
     Route::post('/souscrire', 'store')->middleware(['auth', 'role:citoyen', 'throttle:10,1'])->name('souscrire.store');
+});
+
+// Boutiques du marché : présentation et règlement publics, candidature et suivi (citoyen connecté).
+Route::controller(BoutiquesController::class)->prefix('boutiques')->name('boutiques')->group(function () {
+    Route::get('/', 'index');
+    Route::get('/reglement', 'reglement')->name('.reglement');
+    Route::middleware(['auth', 'role:citoyen'])->group(function () {
+        Route::get('/candidater', 'create')->name('.candidater');
+        Route::post('/candidater', 'store')->middleware('throttle:10,1')->name('.candidater.store');
+        Route::get('/candidatures/{reference}', 'candidature')->name('.candidature');
+    });
 });
 
 // Paiement d'une souscription réservée (citoyen connecté ; sans réservation, état vide).

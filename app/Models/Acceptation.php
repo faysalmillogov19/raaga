@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Table(timestamps: false)]
 #[Fillable([
-    'user_id', 'souscription_id', 'document', 'version_document', 'empreinte_document',
+    'user_id', 'souscription_id', 'candidature_boutique_id', 'document', 'version_document', 'empreinte_document',
     'accepte_le', 'ip', 'user_agent', 'created_at',
 ])]
 class Acceptation extends Model

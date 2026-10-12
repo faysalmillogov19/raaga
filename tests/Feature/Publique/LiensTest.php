@@ -15,7 +15,7 @@ class LiensTest extends TestCase
     private const PAGES = [
         '/', '/offre', '/transparence', '/faq', '/actualites/ouverture-tranche-1',
         '/connexion', '/inscription', '/souscrire', '/paiement',
-        '/contact', '/guichets', '/mentions-legales', '/donnees-personnelles', '/accessibilite',
+        '/contact', '/guichets', '/boutiques', '/mentions-legales', '/donnees-personnelles', '/accessibilite',
     ];
 
     protected function setUp(): void

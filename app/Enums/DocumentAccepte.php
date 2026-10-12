@@ -9,6 +9,10 @@ enum DocumentAccepte: string
     case ReglementTranche = 'REGLEMENT_TRANCHE';
     case ConditionsUtilisation = 'CONDITIONS_UTILISATION';
     case OrigineLiciteFonds = 'ORIGINE_LICITE_FONDS';
+    // Candidature aux boutiques.
+    case ReglementCampagneBoutiques = 'REGLEMENT_CAMPAGNE_BOUTIQUES';
+    case TirageSansGarantie = 'TIRAGE_SANS_GARANTIE';
+    case CautionSansLienActions = 'CAUTION_SANS_LIEN_ACTIONS';
 
     public function label(): string
     {
@@ -18,6 +22,9 @@ enum DocumentAccepte: string
             self::ReglementTranche => 'Règlement de la tranche',
             self::ConditionsUtilisation => 'Conditions d’utilisation et protection des données personnelles',
             self::OrigineLiciteFonds => 'Origine licite des fonds',
+            self::ReglementCampagneBoutiques => 'Règlement de la campagne d’attribution des boutiques',
+            self::TirageSansGarantie => 'Attribution par tirage au sort, sans garantie d’obtenir une boutique',
+            self::CautionSansLienActions => 'Caution sans lien avec les actions',
         };
     }
 }

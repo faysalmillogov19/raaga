@@ -5,6 +5,7 @@
         ['cle' => 'offre', 'route' => 'offre', 'motifs' => ['offre']],
         ['cle' => 'souscrire', 'route' => 'souscrire', 'motifs' => ['souscrire', 'inscription', 'inscription.*', 'paiement', 'souscription.*']],
         ['cle' => 'transparence', 'route' => 'transparence', 'motifs' => ['transparence']],
+        ['cle' => 'boutiques', 'route' => 'boutiques', 'motifs' => ['boutiques', 'boutiques.*']],
         ['cle' => 'espace', 'route' => auth()->check() ? 'espace' : 'connexion', 'motifs' => ['espace', 'espace.*', 'connexion', 'connexion.*']],
         ['cle' => 'faq', 'route' => 'faq', 'motifs' => ['faq']],
     ];
