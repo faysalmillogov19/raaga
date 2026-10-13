@@ -90,6 +90,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{campagne}/ouvrir', 'ouvrir')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.ouvrir');
             Route::post('/{campagne}/cloturer', 'cloturer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.cloturer');
             Route::post('/{campagne}/tirage', 'tirer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.tirer');
+            Route::post('/{campagne}/affectation', 'affecter')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.affecter');
         });
 
         // Tranches : RÉGULATEUR saisit et soumet, VALIDATEUR confirme puis ouvre, prolonge, clôture.

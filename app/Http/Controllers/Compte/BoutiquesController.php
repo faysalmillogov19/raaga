@@ -23,7 +23,7 @@ class BoutiquesController extends Controller
     public function index(Request $request): View
     {
         $campagne = CampagneBoutiques::ouverte()
-            ?? CampagneBoutiques::query()->whereIn('statut', [StatutCampagneBoutiques::Cloturee, StatutCampagneBoutiques::Attribuee])->latest('cloturee_le')->first();
+            ?? CampagneBoutiques::query()->whereIn('statut', [StatutCampagneBoutiques::Cloturee, StatutCampagneBoutiques::Tiree, StatutCampagneBoutiques::Attribuee])->latest('cloturee_le')->first();
         $user = $request->user();
 
         return view('public.boutiques.index', [
@@ -35,7 +35,7 @@ class BoutiquesController extends Controller
 
     public function reglement(): View
     {
-        $campagne = CampagneBoutiques::query()->whereIn('statut', [StatutCampagneBoutiques::Ouverte, StatutCampagneBoutiques::Cloturee, StatutCampagneBoutiques::Attribuee])
+        $campagne = CampagneBoutiques::query()->whereIn('statut', [StatutCampagneBoutiques::Ouverte, StatutCampagneBoutiques::Cloturee, StatutCampagneBoutiques::Tiree, StatutCampagneBoutiques::Attribuee])
             ->latest('id')->first();
         abort_unless($campagne, 404);
 
@@ -76,7 +76,7 @@ class BoutiquesController extends Controller
     /** Suivi d'une candidature : uniquement par son titulaire. */
     public function candidature(Request $request, string $reference): View
     {
-        $candidature = CandidatureBoutique::query()->where('reference', $reference)->with(['campagne', 'categorie'])->firstOrFail();
+        $candidature = CandidatureBoutique::query()->where('reference', $reference)->with(['campagne', 'categorie.site', 'boutique'])->firstOrFail();
         abort_unless($candidature->user_id === $request->user()->id && $request->user()->hasRole(Role::Citoyen), 403);
 
         return view('public.boutiques.candidature', ['candidature' => $candidature]);

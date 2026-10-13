@@ -101,6 +101,9 @@
                                 <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.campagne') }}</dt><dd class="font-semibold">{{ $c->campagne->nom }}</dd></div>
                                 <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.categorie') }}</dt><dd class="font-semibold">{{ $c->categorie->intitule() }}</dd></div>
                                 <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.caution') }}</dt><dd class="font-semibold">{{ format_fcfa($c->caution) }}</dd></div>
+                                @if ($c->boutique)
+                                    <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.boutique') }}</dt><dd class="font-extrabold text-vert-fonce">{{ $c->boutique->numero }}</dd></div>
+                                @endif
                             </dl>
                             <a href="{{ route('boutiques.candidature', $c->reference) }}" class="btn-secondaire mt-3">{{ __('public.espace.voir_candidature') }}</a>
                         </li>

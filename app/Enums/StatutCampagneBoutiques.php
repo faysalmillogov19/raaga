@@ -9,6 +9,7 @@ enum StatutCampagneBoutiques: string
     case Confirmee = 'CONFIRMEE';
     case Ouverte = 'OUVERTE';
     case Cloturee = 'CLOTUREE';
+    case Tiree = 'TIREE';
     case Attribuee = 'ATTRIBUEE';
 
     public function label(): string
@@ -19,6 +20,7 @@ enum StatutCampagneBoutiques: string
             self::Confirmee => 'Confirmée',
             self::Ouverte => 'Ouverte aux candidatures',
             self::Cloturee => 'Clôturée',
+            self::Tiree => 'Candidats tirés au sort — boutiques à affecter',
             self::Attribuee => 'Boutiques attribuées',
         };
     }

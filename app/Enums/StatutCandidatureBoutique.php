@@ -15,7 +15,7 @@ enum StatutCandidatureBoutique: string
         return match ($this) {
             self::Reservee => 'Caution à payer',
             self::Payee => 'Caution payée — en attente du tirage',
-            self::Retenue => 'Retenue : boutique attribuée',
+            self::Retenue => 'Retenue au tirage au sort',
             self::NonRetenue => 'Non retenue',
             self::Expiree => 'Expirée (caution non payée)',
         };

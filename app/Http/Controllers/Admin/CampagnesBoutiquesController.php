@@ -105,7 +105,7 @@ class CampagnesBoutiquesController extends Controller
             'compteurs' => CandidatureBoutique::query()->where('campagne_boutiques_id', $campagne->id)
                 ->selectRaw('categorie_boutique_id, statut, count(*) as nombre')->groupBy('categorie_boutique_id', 'statut')->toBase()->get()
                 ->groupBy('categorie_boutique_id')->map(fn ($lignes) => $lignes->pluck('nombre', 'statut')),
-            'tirages' => TirageBoutiques::query()->where('campagne_boutiques_id', $campagne->id)->with(['categorie', 'tireur'])->get(),
+            'tirages' => TirageBoutiques::query()->where('campagne_boutiques_id', $campagne->id)->with(['categorie.site', 'tireur', 'affectation'])->get(),
         ]);
     }
 
@@ -220,6 +220,17 @@ class CampagnesBoutiquesController extends Controller
             $this->confirmation->verifier($request, $request->user());
             $tirage->tirer($campagne, $request->user());
         }, 'admin.boutiques.messages.tiree');
+    }
+
+    /** Second tirage : boutique précise de chaque retenu (VALIDATEUR, confirmation renforcée). */
+    public function affecter(Request $request, CampagneBoutiques $campagne, TirageAuSort $tirage): RedirectResponse
+    {
+        Gate::authorize(Droit::BoutiquesPiloter->value);
+
+        return $this->executer($campagne, function () use ($request, $campagne, $tirage) {
+            $this->confirmation->verifier($request, $request->user());
+            $tirage->affecter($campagne, $request->user());
+        }, 'admin.boutiques.messages.affectee');
     }
 
     /**

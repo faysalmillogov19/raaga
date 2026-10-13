@@ -33,8 +33,9 @@
                     @if ($c->max_boutiques_par_personne) Une même personne ne peut pas obtenir plus de {{ $c->max_boutiques_par_personne }} boutique(s) dans cette campagne. @endif</p></section>
 
             <section><h3>Article 4 — Tirage au sort</h3>
-                <p>Après la clôture, un tirage au sort est réalisé dans chaque catégorie, parmi les candidatures dont la caution est payée.
-                    Les premiers candidats tirés, dans la limite du nombre de boutiques de la catégorie, sont retenus. Le tirage est enregistré et vérifiable.</p></section>
+                <p>Après la clôture, un premier tirage au sort est réalisé dans chaque lot (site et type de boutique), parmi les candidatures dont la caution est payée.
+                    Les premiers candidats tirés, dans la limite du nombre de boutiques du lot, sont retenus@if ($c->max_boutiques_par_personne), sans qu’une même personne obtienne plus de {{ $c->max_boutiques_par_personne }} boutique(s) : une candidature dont le titulaire a atteint ce nombre est écartée et la suivante prend sa place@endif.
+                    Un second tirage au sort attribue ensuite à chaque candidat retenu une boutique précise du lot. Les deux tirages sont enregistrés et vérifiables.</p></section>
 
             <section><h3>Article 5 — Caution des candidats non retenus</h3>
                 <p>Les modalités de restitution de la caution des candidats non retenus seront communiquées avant le tirage au sort.</p></section>

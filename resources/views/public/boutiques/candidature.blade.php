@@ -23,6 +23,9 @@
             <dl class="mt-4 space-y-2 text-[0.95rem]">
                 <div class="flex justify-between gap-3"><dt>{{ $l['reference'] }}</dt><dd class="whitespace-nowrap font-bold tracking-wide text-encre">{{ $c->reference }}</dd></div>
                 <div class="flex justify-between gap-3"><dt>{{ $l['campagne'] }}</dt><dd class="text-right font-semibold">{{ $c->campagne->nom }}</dd></div>
+                @if ($c->boutique)
+                    <div class="flex justify-between gap-3"><dt>{{ $l['boutique'] }}</dt><dd class="text-right font-extrabold text-vert-fonce">{{ $c->boutique->numero }}@if ($c->boutique->bloc) · {{ $c->boutique->bloc }}@endif</dd></div>
+                @endif
                 <div class="flex justify-between gap-3 border-t border-ligne pt-2"><dt class="font-semibold text-encre">{{ $l['caution'] }}</dt><dd class="text-xl font-extrabold text-vert-fonce">{{ format_fcfa($c->caution) }}</dd></div>
             </dl>
             @if ($c->statut === S::Reservee && $c->expire_le->isFuture())

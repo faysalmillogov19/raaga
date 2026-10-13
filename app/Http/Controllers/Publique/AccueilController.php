@@ -17,7 +17,7 @@ class AccueilController extends Controller
         // Phase 1 : accueil centré sur la campagne d'attribution des boutiques.
         if (! Phase::actionsPubliques()) {
             $campagne = CampagneBoutiques::ouverte()
-                ?? CampagneBoutiques::query()->whereIn('statut', [StatutCampagneBoutiques::Cloturee, StatutCampagneBoutiques::Attribuee])->latest('cloturee_le')->first();
+                ?? CampagneBoutiques::query()->whereIn('statut', [StatutCampagneBoutiques::Cloturee, StatutCampagneBoutiques::Tiree, StatutCampagneBoutiques::Attribuee])->latest('cloturee_le')->first();
 
             return view('public.accueil-boutiques', [
                 'campagne' => $campagne?->load('categories.site'),

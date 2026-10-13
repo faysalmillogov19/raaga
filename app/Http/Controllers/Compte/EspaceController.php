@@ -43,7 +43,7 @@ class EspaceController extends Controller
         $phase2 = Phase::actionsPubliques();
         $onglets = $phase2 ? self::ONGLETS : ['boutiques', 'profil'];
         $onglet = in_array($request->query('onglet'), $onglets, true) ? $request->query('onglet') : $onglets[0];
-        $candidatures = CandidatureBoutique::query()->where('user_id', $user->id)->with(['campagne', 'categorie'])->latest('id')->get();
+        $candidatures = CandidatureBoutique::query()->where('user_id', $user->id)->with(['campagne', 'categorie.site', 'boutique'])->latest('id')->get();
         $cautionsPayees = $candidatures->whereIn('statut', [StatutCandidatureBoutique::Payee, StatutCandidatureBoutique::Retenue, StatutCandidatureBoutique::NonRetenue]);
 
         $payees = $souscriptions->where('statut', StatutSouscription::Payee);

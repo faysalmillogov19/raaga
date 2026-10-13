@@ -51,6 +51,9 @@
                 @elseif ($campagne->statut === StatutCampagneBoutiques::Cloturee)
                     <x-admin.confirmation-renforcee id="tirer" :titre="__('admin.boutiques.actions.tirer')" :message="__('admin.boutiques.confirmations.tirer')"
                                                     :action="route('admin.boutiques.tirer', $campagne)" :bouton="__('admin.boutiques.actions.tirer')" :totp="$totpExige" />
+                @elseif ($campagne->statut === StatutCampagneBoutiques::Tiree)
+                    <x-admin.confirmation-renforcee id="affecter" :titre="__('admin.boutiques.actions.affecter')" :message="__('admin.boutiques.confirmations.affecter')"
+                                                    :action="route('admin.boutiques.affecter', $campagne)" :bouton="__('admin.boutiques.actions.affecter')" :totp="$totpExige" />
                 @endif
             @endcan
         </div>
@@ -118,15 +121,21 @@
                     <dl class="bo-definitions mt-2">
                         <dt>{{ __('admin.boutiques.tirage.graine') }}</dt><dd class="break-all font-mono text-sm">{{ $tirage->graine }}</dd>
                         <dt>{{ __('admin.boutiques.tirage.empreinte') }}</dt><dd class="break-all font-mono text-sm">{{ $tirage->empreinte_participants }}</dd>
+                        @if ($tirage->affectation)
+                            <dt>{{ __('admin.boutiques.tirage.graine_affectation') }}</dt><dd class="break-all font-mono text-sm">{{ $tirage->affectation->graine }}</dd>
+                        @endif
                     </dl>
                     @if ($tirage->ordre)
                         <div class="mt-3 overflow-x-auto">
                             <table class="bo-tableau">
-                                <thead><tr><th scope="col">{{ __('admin.boutiques.tirage.rang') }}</th><th scope="col">{{ __('admin.boutiques.tirage.reference') }}</th><th scope="col">{{ __('admin.boutiques.tirage.resultat') }}</th></tr></thead>
+                                <thead><tr><th scope="col">{{ __('admin.boutiques.tirage.rang') }}</th><th scope="col">{{ __('admin.boutiques.tirage.reference') }}</th><th scope="col">{{ __('admin.boutiques.tirage.resultat') }}</th>
+                                    @if ($tirage->affectation)<th scope="col">{{ __('admin.boutiques.tirage.boutique') }}</th>@endif</tr></thead>
                                 <tbody>
                                     @foreach ($tirage->ordre as $i => $reference)
+                                        @php($retenu = in_array($reference, (array) $tirage->retenus, true))
                                         <tr><td>{{ $i + 1 }}</td><td class="font-mono">{{ $reference }}</td>
-                                            <td>{{ $i < $tirage->nombre_boutiques ? __('admin.boutiques.candidatures.retenues') : __('admin.boutiques.candidatures.non_retenues') }}</td></tr>
+                                            <td>{{ $retenu ? __('admin.boutiques.candidatures.retenues') : (in_array($reference, (array) $tirage->ecartes, true) ? __('admin.boutiques.tirage.ecarte') : __('admin.boutiques.candidatures.non_retenues')) }}</td>
+                                            @if ($tirage->affectation)<td class="font-mono font-semibold">{{ $tirage->affectation->affectations[$reference] ?? '' }}</td>@endif</tr>
                                     @endforeach
                                 </tbody>
                             </table>
