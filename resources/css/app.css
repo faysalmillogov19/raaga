@@ -1465,6 +1465,10 @@
     background: #1F4E8C;
 }
 
+.bo-badge-sites {
+    background: #7A4E12;
+}
+
 .encadre-danger {
     border-color: var(--rouge);
     background: var(--rouge-pale);

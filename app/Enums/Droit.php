@@ -54,6 +54,11 @@ enum Droit: string
     case TranchesConfirmer = 'tranches.confirmer';
     case TranchesPiloter = 'tranches.piloter';
 
+    // Référentiel des sites du marché et de leurs boutiques (GESTIONNAIRE DES SITES saisit, VALIDATEUR confirme).
+    case SitesVoir = 'sites.voir';
+    case SitesGerer = 'sites.gerer';
+    case SitesConfirmer = 'sites.confirmer';
+
     // Attribution des boutiques (indépendante des actions) : campagnes, cautions, tirage au sort.
     case BoutiquesVoir = 'boutiques.voir';
     case BoutiquesSaisir = 'boutiques.saisir';
@@ -121,6 +126,7 @@ enum Droit: string
             self::UtilisateursGerer, self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
             self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
+            self::SitesGerer, self::SitesConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter,
@@ -136,7 +142,7 @@ enum Droit: string
      */
     public static function saisies(): array
     {
-        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir, self::BoutiquesSaisir];
+        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir, self::BoutiquesSaisir, self::SitesGerer];
     }
 
     /**
@@ -147,7 +153,7 @@ enum Droit: string
     public static function confirmationsEtExecutions(): array
     {
         return [self::TranchesConfirmer, self::TranchesPiloter, self::DividendesConfirmer, self::DividendesPayer, self::AllocationExecuter,
-            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter];
+            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::SitesConfirmer];
     }
 
     /**
@@ -165,6 +171,7 @@ enum Droit: string
             self::TextesLegauxRediger,
             self::PlateformeVoir, self::PlateformeModifier,
             self::InstitutionsGerer,
+            self::SitesVoir,
         ];
     }
 
@@ -179,6 +186,7 @@ enum Droit: string
             self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
             self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
+            self::SitesGerer, self::SitesConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter,
@@ -216,6 +224,7 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
                 self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
+                self::SitesVoir, self::SitesConfirmer,
                 self::DividendesVoir, self::DividendesConfirmer, self::DividendesPayer,
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
                 self::KycVoir, self::KycVoirPieces, self::KycTraiter,
@@ -231,11 +240,17 @@ enum Droit: string
                 self::RegistreAVoir,
             ],
             // Saisit et soumet tous les paramètres ; ne confirme ni n'exécute jamais.
+            // Référentiel des sites et des boutiques uniquement : saisie et soumission, jamais de confirmation.
+            Role::GestionnaireSites => [
+                self::TableauDeBordVoir,
+                self::SitesVoir, self::SitesGerer,
+            ],
             Role::Regulateur => [
                 self::TableauDeBordVoir,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
                 self::BoutiquesVoir, self::BoutiquesSaisir,
+                self::SitesVoir,
                 self::DividendesVoir, self::DividendesSaisir,
                 self::SimulationsVoir, self::SimulationsLancer,
                 self::KycVoir,

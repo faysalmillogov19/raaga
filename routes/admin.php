@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PlateformeController;
 use App\Http\Controllers\Admin\ProfilController;
 use App\Http\Controllers\Admin\RegistreAController;
 use App\Http\Controllers\Admin\SectionController;
+use App\Http\Controllers\Admin\SitesController;
 use App\Http\Controllers\Admin\TranchesController;
 use App\Http\Controllers\Admin\UtilisateursController;
 use App\Support\MenuBackoffice;
@@ -55,6 +56,25 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/profil', [ProfilController::class, 'show'])->name('profil');
         Route::post('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::post('/profil/mot-de-passe', [ProfilController::class, 'motDePasse'])->middleware('throttle:10,1')->name('profil.mot-de-passe');
+
+        // Sites et boutiques (référentiel, en amont des campagnes) : GESTIONNAIRE DES SITES saisit, VALIDATEUR confirme.
+        Route::controller(SitesController::class)->prefix('sites')->name('sites')->group(function () {
+            Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
+            Route::post('/types', 'ajouterType')->middleware('can:'.Droit::SitesGerer->value)->name('.types.store');
+            Route::delete('/types/{type}', 'supprimerType')->whereNumber('type')->middleware('can:'.Droit::SitesGerer->value)->name('.types.destroy');
+            Route::get('/creer', 'create')->middleware('can:'.Droit::SitesGerer->value)->name('.create');
+            Route::post('/', 'store')->middleware('can:'.Droit::SitesGerer->value)->name('.store');
+            Route::get('/{site}', 'show')->whereNumber('site')->middleware('can:'.Droit::SitesVoir->value)->name('.show');
+            Route::get('/{site}/modifier', 'edit')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.edit');
+            Route::put('/{site}', 'update')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.update');
+            Route::post('/{site}/boutiques', 'ajouterBoutique')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.boutiques.store');
+            Route::post('/{site}/boutiques/serie', 'genererBoutiques')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.boutiques.serie');
+            Route::delete('/{site}/boutiques/{boutique}', 'supprimerBoutique')->whereNumber(['site', 'boutique'])->middleware('can:'.Droit::SitesGerer->value)->name('.boutiques.destroy');
+            Route::post('/{site}/soumettre', 'soumettre')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.soumettre');
+            Route::post('/{site}/reviser', 'reviser')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.reviser');
+            Route::post('/{site}/confirmer', 'confirmer')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
+            Route::post('/{site}/rejeter', 'rejeter')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
+        });
 
         // Boutiques : RÉGULATEUR saisit et soumet les campagnes (catégories, cautions), VALIDATEUR confirme, ouvre, clôture, tire au sort.
         Route::controller(CampagnesBoutiquesController::class)->prefix('boutiques')->name('boutiques')->group(function () {

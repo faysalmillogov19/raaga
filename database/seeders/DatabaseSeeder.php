@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
             ['Mariam TRAORÉ', 'validation@raaga.test', Role::Validateur],
             ['Boukary ZONGO', 'validation2@raaga.test', Role::Validateur],
             ['Clarisse SOMÉ', 'regulation@raaga.test', Role::Regulateur],
+            ['Salif OUÉDRAOGO', 'sites@raaga.test', Role::GestionnaireSites],
         ];
 
         foreach ($backoffice as [$nom, $email, $role]) {

@@ -24,10 +24,11 @@ class NavigationTest extends TestCase
 
     /** Menus attendus par profil (d'après le tableau des droits de la spécification). */
     private const MENUS = [
-        'superadmin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'plateforme', 'securite', 'audit', 'parametres', 'connexions'],
-        'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme'],
-        'validateur' => ['tableau', 'tranches', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels'],
-        'regulateur' => ['tableau', 'tranches', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels'],
+        'superadmin' => ['tableau', 'sites', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'plateforme', 'securite', 'audit', 'parametres', 'connexions'],
+        'admin' => ['tableau', 'sites', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme'],
+        'gestionnaire_sites' => ['tableau', 'sites'],
+        'validateur' => ['tableau', 'tranches', 'sites', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels'],
+        'regulateur' => ['tableau', 'tranches', 'sites', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels'],
     ];
 
     public static function profils(): array
@@ -37,6 +38,7 @@ class NavigationTest extends TestCase
             'ADMIN' => [Role::Admin],
             'VALIDATEUR' => [Role::Validateur],
             'REGULATEUR' => [Role::Regulateur],
+            'GESTIONNAIRE_SITES' => [Role::GestionnaireSites],
         ];
     }
 
