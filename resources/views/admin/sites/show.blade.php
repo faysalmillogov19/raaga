@@ -6,13 +6,14 @@
     $modifiable = $gerer && $site->estModifiable();
     $b = __('admin.sites.boutiques');
     $libelles = __('admin.sites.champs');
+    $numeroMax = str_repeat('9', \App\Models\Boutique::CHIFFRES_NUMERO);
 @endphp
 
 <x-admin.layout :titre="$site->nom" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $site->nom]]">
     {{-- Statut et actions --}}
     <section class="bo-carte !mt-0" aria-labelledby="etat-titre">
         <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} : @include('admin.parametrage._statut', ['statut' => $site->statut])</h2>
-        <p class="texte-carte mt-1">{{ $site->region }} · {{ $site->commune }} — {{ $site->adresse }}</p>
+        <p class="texte-carte mt-1">@if ($site->code)<span class="font-mono font-bold text-encre">{{ $site->code }}</span> · @endif{{ $site->region }} · {{ $site->commune }} — {{ $site->adresse }}</p>
         <p class="texte-carte">{{ $site->version ? __('admin.parametrage.version', ['n' => $site->version]) : __('admin.parametrage.aucune_version') }}</p>
         @if ($site->description)<p class="mt-2 max-w-3xl whitespace-pre-line">{{ $site->description }}</p>@endif
 
@@ -67,7 +68,14 @@
             <p class="texte-carte mt-1">{{ $b['modifiable_brouillon'] }}</p>
         @endif
 
-        @if ($modifiable)
+        @if (($sansNiveau = $boutiques->whereNull('niveau')->where('statut', '!=', \App\Enums\StatutBoutique::Retiree)->count()) > 0)
+            <p class="bo-message bo-message-erreur mt-4 !mb-0" role="status">{{ trans_choice('admin.sites.boutiques.sans_niveau_alerte', $sansNiveau, ['n' => $sansNiveau]) }}</p>
+        @endif
+        @if ($gerer && $site->code === null)
+            <p class="bo-message bo-message-erreur mt-4 !mb-0" role="status">{{ __('admin.sites.regles.sans_code_site') }}</p>
+        @endif
+
+        @if ($modifiable && $site->code !== null)
             @if ($types->isEmpty())
                 <p class="bo-message bo-message-erreur mt-4">{{ __('admin.sites.types.aucun') }} <a href="{{ route('admin.sites') }}">{{ __('admin.sites.types.titre') }}</a></p>
             @else
@@ -75,20 +83,12 @@
                     <form method="POST" action="{{ route('admin.sites.boutiques.serie', $site) }}" class="rounded-charte border border-ligne p-4" novalidate>
                         @csrf
                         <h3 class="!text-base">{{ $b['serie_titre'] }}</h3>
-                        <p class="texte-carte">{{ $b['serie_aide'] }}</p>
+                        <p class="texte-carte">{{ __('admin.sites.boutiques.serie_aide', ['site' => $site->code]) }}</p>
                         <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                            <x-admin.champ nom="prefixe" :libelle="$b['prefixe']" maxlength="20" />
-                            <x-admin.champ nom="chiffres" :libelle="$b['chiffres']" type="number" min="1" max="5" valeur="3" required />
-                            <x-admin.champ nom="debut" :libelle="$b['debut']" type="number" min="0" valeur="1" required />
-                            <x-admin.champ nom="fin" :libelle="$b['fin']" type="number" min="0" required />
-                            <x-admin.champ nom="bloc" :libelle="$b['bloc']" maxlength="40" />
-                            <x-admin.champ nom="surface" :libelle="$b['surface']" type="number" step="0.01" min="0.5" />
-                            <div class="formulaire-champ !mt-0 sm:col-span-2">
-                                <label for="serie-type">{{ $b['type'] }}</label>
-                                <select id="serie-type" name="type_boutique_id" class="champ" required>
-                                    @foreach ($types as $type)<option value="{{ $type->id }}">{{ $type->libelle }}</option>@endforeach
-                                </select>
-                            </div>
+                            @include('admin.sites._champs-code', ['prefixe' => 'serie', 'boutique' => null])
+                            <x-admin.champ nom="debut" :libelle="$b['debut']" type="number" min="1" max="{{ $numeroMax }}" valeur="1" required />
+                            <x-admin.champ nom="fin" :libelle="$b['fin']" type="number" min="1" max="{{ $numeroMax }}" required />
+                            @include('admin.sites._champs-fiche', ['prefixe' => 'serie', 'boutique' => null])
                         </div>
                         <button type="submit" class="bo-bouton bo-bouton-principal mt-3">{{ $b['generer'] }}</button>
                     </form>
@@ -97,17 +97,11 @@
                         @csrf
                         <h3 class="!text-base">{{ $b['ajouter_titre'] }}</h3>
                         <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                            <x-admin.champ nom="numero" :libelle="$b['numero']" maxlength="30" required />
-                            <div class="formulaire-champ !mt-0"><label for="unique-bloc">{{ $b['bloc'] }}</label>
-                                <input id="unique-bloc" name="bloc" maxlength="40" class="champ"></div>
-                            <div class="formulaire-champ !mt-0"><label for="unique-surface">{{ $b['surface'] }}</label>
-                                <input id="unique-surface" name="surface" type="number" step="0.01" min="0.5" class="champ"></div>
-                            <div class="formulaire-champ !mt-0">
-                                <label for="unique-type">{{ $b['type'] }}</label>
-                                <select id="unique-type" name="type_boutique_id" class="champ" required>
-                                    @foreach ($types as $type)<option value="{{ $type->id }}">{{ $type->libelle }}</option>@endforeach
-                                </select>
-                            </div>
+                            @include('admin.sites._champs-code', ['prefixe' => 'unique', 'boutique' => null])
+                            <div class="formulaire-champ !mt-0"><label for="unique-numero">{{ $b['numero'] }}</label>
+                                <input id="unique-numero" name="numero" type="number" min="1" max="{{ $numeroMax }}" required class="champ" aria-describedby="unique-numero-aide">
+                                <p id="unique-numero-aide" class="aide-champ">{{ $b['numero_aide'] }}</p></div>
+                            @include('admin.sites._champs-fiche', ['prefixe' => 'unique', 'boutique' => null])
                         </div>
                         <button type="submit" class="bo-bouton bo-bouton-principal mt-3">{{ $b['ajouter'] }}</button>
                     </form>
@@ -118,28 +112,40 @@
         <div class="mt-4 overflow-x-auto">
             <table class="bo-tableau">
                 <thead><tr>
-                    <th scope="col">{{ $b['numero'] }}</th><th scope="col">{{ $b['bloc'] }}</th><th scope="col" class="montant">{{ $b['surface'] }}</th>
-                    <th scope="col">{{ $b['type'] }}</th><th scope="col">{{ $b['statut'] }}</th>@if ($modifiable)<th scope="col"><span class="sr-only">{{ $b['supprimer'] }}</span></th>@endif
+                    <th scope="col">{{ $b['code'] }}</th><th scope="col">{{ $b['niveau'] }}</th><th scope="col">{{ $b['bloc'] }}</th>
+                    <th scope="col">{{ $b['type'] }}</th><th scope="col" class="montant">{{ $b['surface'] }}</th><th scope="col">{{ $b['position'] }}</th>
+                    <th scope="col">{{ $b['coffret'] }}</th><th scope="col">{{ $b['planche'] }}</th>
+                    <th scope="col">{{ $b['etat_physique'] }}</th><th scope="col">{{ $b['statut'] }}</th>
+                    @if ($modifiable)<th scope="col"><span class="sr-only">{{ $b['modifier'] }}</span></th>@endif
                 </tr></thead>
                 <tbody>
                     @forelse ($boutiques as $boutique)
                         <tr>
-                            <td class="font-mono font-semibold">{{ $boutique->numero }}</td>
+                            <td class="whitespace-nowrap font-mono font-semibold">{{ $boutique->reference() }}
+                                @if ($boutique->code === null)<br><span class="text-sm font-normal text-gris">{{ __('admin.sites.boutiques.ancien_numero', ['numero' => $boutique->numero]) }}</span>@endif</td>
+                            <td>@if ($boutique->niveau){{ $boutique->niveau->label() }}@else<span class="font-semibold text-rouge">{{ $b['sans_niveau'] }}</span>@endif</td>
                             <td>{{ $boutique->bloc ?: '—' }}</td>
-                            <td class="montant">{{ $boutique->surface !== null ? format_nombre((float) $boutique->surface, 2) : '—' }}</td>
                             <td>{{ $boutique->type->libelle }}</td>
+                            <td class="montant">{{ $boutique->surface !== null ? format_nombre((float) $boutique->surface, 2) : '—' }}</td>
+                            <td>{{ $boutique->position?->label() ?? '—' }}</td>
+                            <td>{{ $boutique->coffret ?: '—' }}</td>
+                            <td>{{ $boutique->planche ?: '—' }}</td>
+                            <td>{{ $boutique->etat_physique?->label() ?? $b['non_renseigne'] }}</td>
                             <td>{{ $boutique->statut->label() }}</td>
                             @if ($modifiable)
                                 <td>@unless ($boutique->statut->verrouillee())
-                                    <form method="POST" action="{{ route('admin.sites.boutiques.destroy', [$site, $boutique]) }}">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $b['supprimer'] }}</button>
-                                    </form>
+                                    <div class="flex gap-2">
+                                        <a href="{{ route('admin.sites.boutiques.edit', [$site, $boutique]) }}" class="bo-bouton bo-bouton-secondaire">{{ $b['modifier'] }}</a>
+                                        <form method="POST" action="{{ route('admin.sites.boutiques.destroy', [$site, $boutique]) }}">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $b['supprimer'] }}</button>
+                                        </form>
+                                    </div>
                                 @endunless</td>
                             @endif
                         </tr>
                     @empty
-                        <tr><td colspan="6">{{ $b['aucune'] }}</td></tr>
+                        <tr><td colspan="11">{{ $b['aucune'] }}</td></tr>
                     @endforelse
                 </tbody>
             </table>

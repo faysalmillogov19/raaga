@@ -145,7 +145,7 @@ class TirageAuSort
                         ->where('statut', StatutBoutique::EnCampagne)->lockForUpdate()->get()
                     : collect();
                 $graine = bin2hex(random_bytes(32));
-                $ordreBoutiques = self::ordonner($graine, $boutiques->map(fn (Boutique $b) => (string) $b->numero)->all());
+                $ordreBoutiques = self::ordonner($graine, $boutiques->map(fn (Boutique $b) => $b->reference())->all());
 
                 $affectations = [];
                 $attribuees = [];
@@ -155,7 +155,7 @@ class TirageAuSort
                     if ($numero === null) {
                         continue; // Lot sans référentiel (ancienne campagne) : pas de boutique précise.
                     }
-                    $boutique = $boutiques->first(fn (Boutique $b) => (string) $b->numero === $numero);
+                    $boutique = $boutiques->first(fn (Boutique $b) => $b->reference() === $numero);
                     $boutique->forceFill(['statut' => StatutBoutique::Attribuee])->save();
                     $attribuees[] = $boutique->id;
                     $candidature->forceFill(['boutique_id' => $boutique->id])->save();
@@ -191,7 +191,7 @@ class TirageAuSort
                 $this->sms->envoyer($candidature->user->telephone, __('public.boutiques.sms.'.$modele), [
                     'reference' => $candidature->reference,
                     'categorie' => $candidature->categorie->intitule(),
-                    'boutique' => $candidature->boutique?->numero,
+                    'boutique' => $candidature->boutique?->reference(),
                 ]);
             } catch (Throwable $e) {
                 Log::warning('SMS de résultat du tirage non envoyé', ['candidature' => $candidature->id, 'erreur' => $e->getMessage()]);

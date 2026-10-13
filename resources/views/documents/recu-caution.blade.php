@@ -13,6 +13,7 @@
         <tr><th>Candidat</th><td>{{ $c->user->name }}@if ($c->user->telephone) — {{ \App\Support\Telephone::masquer($c->user->telephone) }}@endif</td></tr>
         <tr><th>Référence de la candidature</th><td>{{ $c->reference }}</td></tr>
         <tr><th>Catégorie de boutique</th><td>{{ $c->categorie->intitule() }}@if ($c->categorie->description) ({{ $c->categorie->description }})@endif</td></tr>
+        @if ($c->boutique)<tr><th>Boutique attribuée</th><td><strong>{{ $c->boutique->reference() }}</strong></td></tr>@endif
         <tr><th>Caution payée</th><td><strong>{{ format_fcfa($paiement->montant) }}</strong></td></tr>
         <tr><th>Moyen de paiement</th><td>{{ __('public.paiement.canaux.'.$paiement->canal->value) }}</td></tr>
         <tr><th>Référence du paiement</th><td>{{ $paiement->reference }}</td></tr>

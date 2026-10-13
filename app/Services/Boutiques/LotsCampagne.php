@@ -91,6 +91,6 @@ class LotsCampagne
     public function boutiquesDuLot(CategorieBoutique $lot, StatutBoutique $statut): Collection
     {
         return Boutique::query()->where('site_id', $lot->site_id)->where('type_boutique_id', $lot->type_boutique_id)
-            ->where('statut', $statut)->orderByRaw('LENGTH(numero), numero')->get();
+            ->where('statut', $statut)->orderByRaw('code IS NULL, code, LENGTH(numero), numero')->get();
     }
 }

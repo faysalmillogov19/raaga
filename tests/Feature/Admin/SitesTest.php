@@ -28,20 +28,20 @@ class SitesTest extends TestCase
 
     private function siteAvecBoutiques(): Site
     {
-        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['libelle' => 'Petite boutique', 'description' => '9 m²'])->assertSessionHas('succes');
-        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['libelle' => 'Kiosque']);
+        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'BOUT', 'libelle' => 'Petite boutique', 'description' => '9 m²'])->assertSessionHas('succes');
+        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'ETAL', 'libelle' => 'Kiosque']);
         $petite = TypeBoutique::query()->where('libelle', 'Petite boutique')->value('id');
 
         $this->en($this->gestionnaire)->post(route('admin.sites.store'), [
-            'nom' => 'Marché central de Ouagadougou', 'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation',
+            'code' => 'RAA', 'nom' => 'Marché central de Ouagadougou', 'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation',
         ])->assertSessionHasNoErrors();
         $site = Site::query()->sole();
 
         $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.serie', $site), [
-            'prefixe' => 'A-', 'debut' => 1, 'fin' => 40, 'chiffres' => 3, 'bloc' => 'Bloc A', 'surface' => 9, 'type_boutique_id' => $petite,
+            'niveau' => 'R1', 'bloc' => 'A', 'debut' => 1, 'fin' => 40, 'surface' => 9, 'type_boutique_id' => $petite, 'etat_physique' => 'LIVREE',
         ])->assertSessionHasNoErrors();
         $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.store', $site), [
-            'numero' => 'K-1', 'type_boutique_id' => TypeBoutique::query()->where('libelle', 'Kiosque')->value('id'),
+            'niveau' => 'RC', 'bloc' => 'K', 'numero' => 1, 'type_boutique_id' => TypeBoutique::query()->where('libelle', 'Kiosque')->value('id'), 'etat_physique' => 'LIVREE',
         ])->assertSessionHasNoErrors();
 
         return $site->refresh();
@@ -52,24 +52,24 @@ class SitesTest extends TestCase
         $site = $this->siteAvecBoutiques();
 
         $this->assertSame(41, $site->boutiques()->count());
-        $this->assertSame(['A-001', 'A-002'], $site->boutiques()->where('numero', 'like', 'A-%')->limit(2)->pluck('numero')->all());
-        $this->assertSame('A-040', $site->boutiques()->where('numero', 'like', 'A-%')->get()->last()->numero);
+        $this->assertSame(['RAA-R1-A-001', 'RAA-R1-A-002'], $site->boutiques()->where('bloc', 'A')->limit(2)->pluck('code')->all());
+        $this->assertSame('RAA-R1-A-040', $site->boutiques()->where('bloc', 'A')->get()->last()->code);
         $this->assertTrue($site->boutiques()->get()->every(fn ($b) => $b->statut === StatutBoutique::Disponible));
 
         // Une série qui recouvre des numéros existants est refusée.
         $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.serie', $site), [
-            'prefixe' => 'A-', 'debut' => 39, 'fin' => 45, 'chiffres' => 3, 'type_boutique_id' => TypeBoutique::query()->value('id'),
+            'niveau' => 'R1', 'bloc' => 'A', 'debut' => 39, 'fin' => 45, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE',
         ])->assertSessionHasErrors('debut');
         $this->assertSame(41, $site->boutiques()->count());
 
         $this->en($this->gestionnaire)->post(route('admin.sites.soumettre', $site))->assertSessionHas('succes');
         $site->refresh();
         $this->assertSame(StatutSite::Soumis, $site->statut);
-        $this->assertStringContainsString('Petite boutique : 40 (A-001 à A-040)', $site->versions()->first()->parametres['boutiques']);
+        $this->assertStringContainsString('Petite boutique : 40 (RAA-R1-A-001 à RAA-R1-A-040)', $site->versions()->first()->parametres['boutiques']);
 
         // Le gestionnaire ne confirme jamais ; soumis, le site n'est plus modifiable.
         $this->en($this->gestionnaire)->post(route('admin.sites.confirmer', $site))->assertForbidden();
-        $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.store', $site), ['numero' => 'X-1', 'type_boutique_id' => TypeBoutique::query()->value('id')])
+        $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.store', $site), ['niveau' => 'RC', 'bloc' => 'X', 'numero' => 1, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE'])
             ->assertSessionHas('erreur');
     }
 
@@ -78,7 +78,7 @@ class SitesTest extends TestCase
         $site = $this->siteAvecBoutiques();
         $this->en($this->gestionnaire)->post(route('admin.sites.soumettre', $site));
 
-        $this->en($this->validateur)->get(route('admin.sites.show', $site))->assertOk()->assertSee('A-001')->assertSee('Soumis à confirmation');
+        $this->en($this->validateur)->get(route('admin.sites.show', $site))->assertOk()->assertSee('RAA-R1-A-001')->assertSee('Soumis à confirmation');
         $this->en($this->validateur)->post(route('admin.sites.rejeter', $site), ['motif' => 'Surface manquante sur le kiosque'])->assertSessionHas('succes');
         $this->assertSame(StatutSite::Brouillon, $site->refresh()->statut);
 
@@ -96,7 +96,7 @@ class SitesTest extends TestCase
         $this->assertModelExists($engagee);
         $libre = $site->boutiques()->where('statut', StatutBoutique::Disponible)->first();
         $this->en($this->gestionnaire)->delete(route('admin.sites.boutiques.destroy', [$site, $libre]))->assertSessionHas('succes');
-        $this->assertModelMissing($libre);
+        $this->assertSoftDeleted($libre);
     }
 
     public function test_les_autres_profils_consultent_sans_rien_modifier(): void
@@ -105,7 +105,7 @@ class SitesTest extends TestCase
 
         foreach ([$this->regulateur, User::factory()->role(Role::SuperAdmin)->create(), User::factory()->role(Role::Admin)->create()] as $profil) {
             $this->en($profil)->get(route('admin.sites'))->assertOk();
-            $this->en($profil)->get(route('admin.sites.show', $site))->assertOk()->assertSee('A-001');
+            $this->en($profil)->get(route('admin.sites.show', $site))->assertOk()->assertSee('RAA-R1-A-001');
             $this->en($profil)->get(route('admin.sites.create'))->assertForbidden();
             $this->en($profil)->post(route('admin.sites.boutiques.store', $site), ['numero' => 'Z-1'])->assertForbidden();
         }

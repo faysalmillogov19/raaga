@@ -2,21 +2,84 @@
 
 namespace App\Models;
 
+use App\Enums\EtatPhysiqueBoutique;
+use App\Enums\NiveauBoutique;
+use App\Enums\PositionBoutique;
 use App\Enums\StatutBoutique;
+use App\Services\Backoffice\RegleGestionException;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-/** Boutique d'un site : numéro unique sur le site, bloc, surface, type, statut. */
-#[Fillable(['site_id', 'type_boutique_id', 'numero', 'bloc', 'surface', 'statut'])]
+/**
+ * Boutique d'un site : code SITE-NIVEAU-BLOC-NUMÉRO (ex. RAA-R1-A-045), fiche (niveau, bloc, surface, type, position,
+ * coffret, planche, état physique) et statut commercial. Le code est calculé à la création, ne change jamais et
+ * n'est jamais réutilisé : une boutique supprimée reste en base (suppression logique) et garde son code.
+ */
+#[Fillable([
+    'site_id', 'type_boutique_id', 'numero', 'niveau', 'bloc', 'surface',
+    'position', 'coffret', 'planche', 'etat_physique', 'statut',
+])]
 class Boutique extends Model
 {
+    use SoftDeletes;
+
+    /** Bloc : lettres majuscules ou chiffres (A, B2, C10). */
+    public const FORMAT_BLOC = '/^[A-Z0-9]{1,3}$/';
+
+    /** Numéro : 1 à 3 chiffres, écrit sur 3 chiffres dans le code. */
+    public const CHIFFRES_NUMERO = 3;
+
+    /** Champs qui composent le code : figés dès que le code existe. */
+    private const ELEMENTS_DU_CODE = ['site_id', 'niveau', 'bloc', 'numero', 'code'];
+
     protected function casts(): array
     {
         return [
             'surface' => 'decimal:2',
             'statut' => StatutBoutique::class,
+            'niveau' => NiveauBoutique::class,
+            'position' => PositionBoutique::class,
+            'etat_physique' => EtatPhysiqueBoutique::class,
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Boutique $boutique) {
+            if ($boutique->getOriginal('code') !== null && $boutique->isDirty(self::ELEMENTS_DU_CODE)) {
+                throw new RegleGestionException(__('admin.sites.boutiques.code_fige', ['code' => $boutique->getOriginal('code')]));
+            }
+            if ($boutique->code === null) {
+                $boutique->code = self::composerCode($boutique->site?->code, $boutique->niveau?->value, $boutique->bloc, $boutique->numero);
+            }
+            if ($boutique->code !== null && $boutique->isDirty('code')
+                && self::withTrashed()->where('code', $boutique->code)->whereKeyNot($boutique->getKey())->exists()) {
+                throw new RegleGestionException(__('admin.sites.boutiques.code_pris', ['code' => $boutique->code]));
+            }
+        });
+    }
+
+    /**
+     * Code SITE-NIVEAU-BLOC-NUMÉRO, ou null si un élément manque ou est mal formé (jamais de valeur inventée).
+     * Le numéro garde ses derniers chiffres (« A-045 » → 045) pour les boutiques saisies avant le code.
+     */
+    public static function composerCode(?string $site, ?string $niveau, ?string $bloc, ?string $numero): ?string
+    {
+        $bloc = $bloc === null ? null : mb_strtoupper(trim($bloc));
+        if ($site === null || NiveauBoutique::tryFrom((string) $niveau) === null || $bloc === null || ! preg_match(self::FORMAT_BLOC, $bloc)
+            || ! preg_match('/(?<!\d)(\d{1,'.self::CHIFFRES_NUMERO.'})$/', (string) $numero, $m) || (int) $m[1] === 0) {
+            return null;
+        }
+
+        return implode('-', [$site, $niveau, $bloc, str_pad((string) (int) $m[1], self::CHIFFRES_NUMERO, '0', STR_PAD_LEFT)]);
+    }
+
+    /** Ce qui identifie la boutique à l'écran, dans les SMS et les tirages : le code, ou l'ancien numéro tant qu'il manque. */
+    public function reference(): string
+    {
+        return $this->code ?? (string) $this->numero;
     }
 
     /**

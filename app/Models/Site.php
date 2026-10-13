@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\Parametrable;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
+use App\Services\Backoffice\RegleGestionException;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -17,12 +18,15 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * saisit et soumet ; le VALIDATEUR confirme (workflow commun). Seuls les sites confirmés entrent dans une campagne.
  */
 #[Fillable([
-    'statut', 'nom', 'region', 'commune', 'adresse', 'description', 'version',
+    'statut', 'code', 'nom', 'region', 'commune', 'adresse', 'description', 'version',
     'cree_par', 'soumis_par', 'soumis_le', 'valide_par', 'valide_le', 'motif_rejet',
 ])]
 class Site extends Model implements Parametrable
 {
-    public const PARAMETRES = ['nom', 'region', 'commune', 'adresse', 'description'];
+    public const PARAMETRES = ['code', 'nom', 'region', 'commune', 'adresse', 'description'];
+
+    /** Code court du site (RAA, SAR, A04) : premier élément du code de ses boutiques. */
+    public const FORMAT_CODE = '/^[A-Z0-9]{3}$/';
 
     protected function casts(): array
     {
@@ -32,6 +36,39 @@ class Site extends Model implements Parametrable
             'soumis_le' => 'datetime',
             'valide_le' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (Site $site) {
+            if ($site->isDirty('code') && $site->getOriginal('code') !== null && $site->codeFige()) {
+                throw new RegleGestionException(__('admin.sites.regles.code_fige'));
+            }
+        });
+
+        // Code du site renseigné après coup (site saisi avant les codes) : les boutiques complètes reçoivent leur code.
+        static::saved(function (Site $site) {
+            if ($site->wasChanged('code') && $site->code !== null) {
+                $site->boutiques()->whereNull('code')->whereNotNull('niveau')->get()
+                    ->each(fn (Boutique $b) => $b->setRelation('site', $site)->save());
+            }
+        });
+    }
+
+    /** Le code ne change plus après la première confirmation ni dès qu'une boutique porte un code calculé avec lui. */
+    public function codeFige(): bool
+    {
+        return $this->getOriginal('valide_le') !== null || $this->boutiques()->withTrashed()->whereNotNull('code')->exists();
+    }
+
+    /**
+     * Boutiques sans niveau (saisies avant les codes) : le site ne peut pas être soumis tant qu'il en reste.
+     *
+     * @return HasMany<Boutique, $this>
+     */
+    public function boutiquesSansNiveau(): HasMany
+    {
+        return $this->boutiques()->whereNull('niveau')->where('statut', '!=', StatutBoutique::Retiree);
     }
 
     public function scopeConfirmes(Builder $requete): Builder
@@ -99,10 +136,20 @@ class Site extends Model implements Parametrable
     {
         $snapshot = array_map(fn ($v) => $v, $this->only(self::PARAMETRES));
 
-        $snapshot['boutiques'] = $this->boutiques()->where('statut', '!=', StatutBoutique::Retiree)->with('type')->get()
-            ->groupBy(fn (Boutique $b) => $b->type->libelle)
-            ->map(fn ($groupe, $type) => $type.' : '.$groupe->count().' ('.$groupe->pluck('numero')->sort(SORT_NATURAL)->first().' à '.$groupe->pluck('numero')->sort(SORT_NATURAL)->last().')')
+        $boutiques = $this->boutiques()->where('statut', '!=', StatutBoutique::Retiree)->with('type')->get();
+        $snapshot['boutiques'] = $boutiques->groupBy(fn (Boutique $b) => $b->type->libelle)
+            ->map(fn ($groupe, $type) => $type.' : '.$groupe->count().' ('.$groupe->map->reference()->sort(SORT_NATURAL)->first().' à '.$groupe->map->reference()->sort(SORT_NATURAL)->last().')')
             ->sort()->implode(' ; ');
+        $s = __('admin.sites');
+        $snapshot['niveaux'] = $boutiques->groupBy(fn (Boutique $b) => $b->niveau?->label() ?? $s['boutiques']['sans_niveau'])
+            ->map(fn ($groupe, $niveau) => $niveau.' : '.$groupe->count())->sort()->implode(' ; ');
+        $snapshot['etats_physiques'] = $boutiques->groupBy(fn (Boutique $b) => $b->etat_physique?->label() ?? $s['boutiques']['non_renseigne'])
+            ->map(fn ($groupe, $etat) => $etat.' : '.$groupe->count())->sort()->implode(' ; ');
+        // Fiche complète de chaque boutique, conservée dans l'historique ; le différentiel liste les boutiques modifiées.
+        $snapshot['fiches'] = $boutiques->sortBy('id')->mapWithKeys(fn (Boutique $b) => [$b->reference() => implode(' · ', array_map(
+            fn ($v) => $v ?? '—',
+            [$b->niveau?->value, $b->bloc, $b->surface, $b->type->libelle, $b->position?->label(), $b->coffret, $b->planche, $b->etat_physique?->label()],
+        ))])->all();
 
         return $snapshot;
     }
@@ -112,7 +159,7 @@ class Site extends Model implements Parametrable
      */
     public function boutiques(): HasMany
     {
-        return $this->hasMany(Boutique::class)->orderByRaw('LENGTH(numero), numero');
+        return $this->hasMany(Boutique::class)->orderByRaw('code IS NULL, code, LENGTH(numero), numero');
     }
 
     /**

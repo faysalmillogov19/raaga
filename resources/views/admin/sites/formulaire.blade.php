@@ -14,6 +14,12 @@
         @if ($site->exists) @method('PUT') @endif
 
         <div class="grid gap-4 lg:grid-cols-2">
+            @if ($site->exists && $site->code !== null && $site->codeFige())
+                <x-admin.champ nom="code" :libelle="ucfirst($c['code'])" :valeur="$site->code" readonly :aide="__('admin.sites.formulaire.code_fige')" />
+            @else
+                <x-admin.champ nom="code" :libelle="ucfirst($c['code'])" :valeur="$site->code" required minlength="3" maxlength="3" autocomplete="off"
+                               :aide="__('admin.sites.formulaire.code_aide')" />
+            @endif
             <x-admin.champ nom="nom" :libelle="ucfirst($c['nom'])" :valeur="$site->nom" required maxlength="150" class="lg:col-span-2" />
             <div class="formulaire-champ !mt-0">
                 <label for="region">{{ ucfirst($c['region']) }}</label>
