@@ -12,12 +12,6 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /** Mot de passe des comptes back-office de démonstration (12 caractères minimum). */
-    public const MOT_DE_PASSE_BACKOFFICE = 'Raaga-Demo-2026!';
-
-    /** Mot de passe des autres comptes de démonstration. */
-    public const MOT_DE_PASSE_AUTRES = 'password';
-
     /** Comptes back-office de démonstration : [nom, e-mail, rôle]. */
     private const BACKOFFICE = [
         ['Aminata SAWADOGO', 'superadmin@raaga.test', Role::SuperAdmin],
@@ -33,10 +27,10 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database. Se relance sans risque (« php artisan db:seed ») :
      *
      * - Rôles : table alignée sur l'enum (RoleSeeder).
-     * - Comptes de démonstration : créés s'ils manquent ; s'ils existent, seul leur rôle est remis à jour
-     *   (jamais le mot de passe, le nom ni le TOTP). Back-office : mot de passe ci-dessus ; sans TOTP enrôlé,
-     *   la double authentification n'est dispensée qu'en local avec RAAGA_TOTP_FACULTATIF_EN_LOCAL=true.
-     *   Autres rôles : un compte {prefixe}@raaga.test, mot de passe « password ».
+     * - Comptes de démonstration : créés s'ils manquent, avec un mot de passe identique à leur adresse e-mail
+     *   (exemple : sites@raaga.test / sites@raaga.test) ; s'ils existent, seul leur rôle est remis à jour
+     *   (jamais le mot de passe, le nom ni le TOTP). Back-office : sans TOTP enrôlé, la double authentification
+     *   n'est dispensée qu'en local avec RAAGA_TOTP_FACULTATIF_EN_LOCAL=true. Autres rôles : {prefixe}@raaga.test.
      * À changer immédiatement hors environnement local.
      */
     public function run(): void
@@ -45,7 +39,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ParametresPlateformeSeeder::class);
 
         foreach (self::BACKOFFICE as [$nom, $email, $role]) {
-            $this->compte($nom, $email, $role, self::MOT_DE_PASSE_BACKOFFICE);
+            $this->compte($nom, $email, $role);
         }
 
         foreach (Role::cases() as $role) {
@@ -53,16 +47,16 @@ class DatabaseSeeder extends Seeder
             if ($role->estBackoffice() || $role->estInstitutionnel()) {
                 continue;
             }
-            $this->compte($role->label(), $role->prefix().'@raaga.test', $role, self::MOT_DE_PASSE_AUTRES);
+            $this->compte($role->label(), $role->prefix().'@raaga.test', $role);
         }
     }
 
-    /** Crée le compte s'il manque ; sinon remet seulement son rôle à jour. */
-    private function compte(string $nom, string $email, Role $role, string $motDePasse): void
+    /** Crée le compte s'il manque (mot de passe = adresse e-mail) ; sinon remet seulement son rôle à jour. */
+    private function compte(string $nom, string $email, Role $role): void
     {
         $user = User::query()->firstOrNew(['email' => $email]);
         if (! $user->exists) {
-            $user->forceFill(['name' => $nom, 'password' => $motDePasse, 'email_verified_at' => now()]);
+            $user->forceFill(['name' => $nom, 'password' => $email, 'email_verified_at' => now()]);
         }
         $user->forceFill(['role_id' => RoleModel::pour($role)->id])->save();
     }
