@@ -90,16 +90,26 @@
 
     <section class="bo-carte" aria-labelledby="sec-categories">
         <h2 id="sec-categories" class="!text-[1.05rem]">{{ $k['titre'] }}</h2>
+        <p class="texte-carte mt-1">{{ $campagne->categories->contains(fn ($c) => ! $c->estTarife()) ? $k['montants_provisoires'] : $k['montants_figes'] }}
+            <a href="{{ route('admin.boutiques.grilles') }}" class="font-semibold text-vert-fonce underline underline-offset-2">{{ __('admin.grilles.titre') }}</a></p>
         <div class="mt-3 overflow-x-auto">
             <table class="bo-tableau">
-                <thead><tr><th scope="col">{{ $k['libelle'] }}</th><th scope="col">{{ $k['site'] }}</th><th scope="col" class="montant">{{ $k['nombre_boutiques'] }}</th><th scope="col" class="montant">{{ $k['caution'] }}</th>
+                <thead><tr><th scope="col">{{ $k['libelle'] }}</th><th scope="col">{{ $k['site'] }}</th><th scope="col" class="montant">{{ $k['nombre_boutiques'] }}</th><th scope="col" class="montant">{{ $k['loyer_mensuel'] }}</th><th scope="col" class="montant">{{ $k['caution'] }}</th><th scope="col" class="montant">{{ $k['avance'] }}</th>
                     @foreach (['RESERVEE' => 'reservees', 'PAYEE' => 'payees', 'RETENUE' => 'retenues', 'NON_RETENUE' => 'non_retenues', 'EXPIREE' => 'expirees'] as $cle)
                         <th scope="col" class="montant">{{ __('admin.boutiques.candidatures.'.$cle) }}</th>
                     @endforeach
                 </tr></thead>
                 <tbody>
                     @foreach ($campagne->categories as $cat)
-                        <tr><td class="font-semibold">{{ $cat->libelle }}</td><td>{{ $cat->site?->nom ?? $cat->description }}</td><td class="montant">{{ format_nombre($cat->nombre_boutiques) }}</td><td class="montant">{{ format_fcfa($cat->caution) }}</td>
+                        <tr><td class="font-semibold">{{ $cat->libelle }}</td><td>{{ $cat->site?->nom ?? $cat->description }}</td><td class="montant">{{ format_nombre($cat->nombre_boutiques) }}</td>@php($t = $cat->estTarife() ? $cat : ($tarifs[$cat->id] ?? null))
+                            @if ($t === null)
+                                <td colspan="3" class="font-semibold text-rouge">{{ $k['sans_grille'] }}</td>
+                            @else
+                                @php($t = (object) (is_array($t) ? $t : $t->only(['loyer_mensuel', 'caution', 'avance', 'mois_caution', 'mois_avance'])))
+                                <td class="montant">{{ $t->loyer_mensuel !== null ? format_fcfa($t->loyer_mensuel) : '—' }}</td>
+                                <td class="montant">{{ format_fcfa($t->caution) }}@if ($t->mois_caution)<br><span class="texte-carte">{{ trans_choice('admin.boutiques.categorie.mois', $t->mois_caution, ['n' => $t->mois_caution]) }}</span>@endif</td>
+                                <td class="montant">{{ format_fcfa($t->avance) }}@if ($t->mois_avance)<br><span class="texte-carte">{{ trans_choice('admin.boutiques.categorie.mois', $t->mois_avance, ['n' => $t->mois_avance]) }}</span>@endif</td>
+                            @endif
                             @foreach (['RESERVEE', 'PAYEE', 'RETENUE', 'NON_RETENUE', 'EXPIREE'] as $statut)
                                 <td class="montant">{{ format_nombre((int) ($compteurs[$cat->id][$statut] ?? 0)) }}</td>
                             @endforeach

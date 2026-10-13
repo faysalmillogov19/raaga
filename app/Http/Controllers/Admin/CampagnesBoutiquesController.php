@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 /**
- * Campagnes d'attribution des boutiques : le RÉGULATEUR saisit et soumet (catégories, cautions),
+ * Campagnes d'attribution des boutiques : le RÉGULATEUR saisit et soumet (sites et types proposés ; montants issus de la grille),
  * le VALIDATEUR confirme ou rejette, puis ouvre et clôture les candidatures.
  */
 class CampagnesBoutiquesController extends Controller
@@ -71,13 +71,13 @@ class CampagnesBoutiquesController extends Controller
         try {
             $campagne = DB::transaction(function () use ($request) {
                 $campagne = CampagneBoutiques::create([...$request->parametres(), 'statut' => StatutCampagneBoutiques::Brouillon, 'cree_par' => $request->user()->id]);
-                $this->lots->definir($campagne, $request->cautions());
+                $this->lots->definir($campagne, $request->selection());
                 $this->journal->ecrire($request->user(), 'campagne_boutiques.creee', 'CampagneBoutiques', $campagne->id, null, ['nom' => $campagne->nom]);
 
                 return $campagne;
             });
         } catch (RegleGestionException $e) {
-            return back()->withInput()->withErrors(['cautions' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['lots' => $e->getMessage()]);
         }
 
         return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree'));
@@ -105,6 +105,8 @@ class CampagnesBoutiquesController extends Controller
             'compteurs' => CandidatureBoutique::query()->where('campagne_boutiques_id', $campagne->id)
                 ->selectRaw('categorie_boutique_id, statut, count(*) as nombre')->groupBy('categorie_boutique_id', 'statut')->toBase()->get()
                 ->groupBy('categorie_boutique_id')->map(fn ($lignes) => $lignes->pluck('nombre', 'statut')),
+            // Montants de chaque lot : figés à l'ouverture, sinon calculés depuis la grille confirmée (null : ligne absente).
+            'tarifs' => $campagne->categories->mapWithKeys(fn ($lot) => [$lot->id => $lot->estTarife() ? null : $this->lots->tarifer($lot)]),
             'tirages' => TirageBoutiques::query()->where('campagne_boutiques_id', $campagne->id)->with(['categorie.site', 'tireur', 'affectation'])->get(),
         ]);
     }
@@ -135,11 +137,11 @@ class CampagnesBoutiquesController extends Controller
         try {
             DB::transaction(function () use ($request, $campagne) {
                 $campagne->fill($request->parametres())->save();
-                $this->lots->definir($campagne, $request->cautions());
+                $this->lots->definir($campagne, $request->selection());
                 $this->journal->ecrire($request->user(), 'campagne_boutiques.modifiee', 'CampagneBoutiques', $campagne->id);
             });
         } catch (RegleGestionException $e) {
-            return back()->withInput()->withErrors(['cautions' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['lots' => $e->getMessage()]);
         }
 
         return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree'));
@@ -152,7 +154,7 @@ class CampagnesBoutiquesController extends Controller
         return $this->executer($campagne, function () use ($request, $campagne) {
             // Nombres de boutiques recomptés dans le référentiel au moment de la soumission.
             DB::transaction(function () use ($request, $campagne) {
-                $this->lots->definir($campagne, $this->cautionsActuelles($campagne));
+                $this->lots->definir($campagne, $this->selectionActuelle($campagne));
                 $this->workflow->soumettre($campagne, $request->user());
             });
         }, 'admin.parametrage.messages.soumis');
@@ -234,7 +236,7 @@ class CampagnesBoutiquesController extends Controller
     }
 
     /**
-     * Sites confirmés, types disponibles par site et cautions déjà saisies (formulaire).
+     * Sites confirmés, types disponibles par site et types déjà retenus (formulaire).
      *
      * @return array<string, mixed>
      */
@@ -246,19 +248,19 @@ class CampagnesBoutiquesController extends Controller
             'sites' => Site::query()->confirmes()->whereIn('id', $disponibilites->keys())->orderBy('nom')->get(),
             'types' => TypeBoutique::query()->orderBy('ordre')->orderBy('libelle')->get()->keyBy('id'),
             'disponibilites' => $disponibilites,
-            'cautions' => $campagne ? $this->cautionsActuelles($campagne) : [],
+            'selection' => $campagne ? $this->selectionActuelle($campagne) : [],
         ];
     }
 
-    /** @return array<int, array<int, int>> */
-    private function cautionsActuelles(CampagneBoutiques $campagne): array
+    /** @return array<int, array<int, bool>> */
+    private function selectionActuelle(CampagneBoutiques $campagne): array
     {
-        $cautions = [];
+        $selection = [];
         foreach ($campagne->categories()->whereNotNull('site_id')->get() as $lot) {
-            $cautions[$lot->site_id][$lot->type_boutique_id] = $lot->caution;
+            $selection[$lot->site_id][$lot->type_boutique_id] = true;
         }
 
-        return $cautions;
+        return $selection;
     }
 
     private function executer(CampagneBoutiques $campagne, Closure $action, string $message): RedirectResponse

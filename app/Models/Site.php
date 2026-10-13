@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
@@ -168,6 +169,14 @@ class Site extends Model implements Parametrable
     public function versions(): HasMany
     {
         return $this->hasMany(SiteVersion::class)->orderBy('numero');
+    }
+
+    /**
+     * @return HasOne<GrilleTarifaire, $this>
+     */
+    public function grilleTarifaire(): HasOne
+    {
+        return $this->hasOne(GrilleTarifaire::class);
     }
 
     public function avenants(): MorphMany

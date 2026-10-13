@@ -100,7 +100,10 @@
                             <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.95rem] tab:grid-cols-3">
                                 <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.campagne') }}</dt><dd class="font-semibold">{{ $c->campagne->nom }}</dd></div>
                                 <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.categorie') }}</dt><dd class="font-semibold">{{ $c->categorie->intitule() }}</dd></div>
-                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.caution') }}</dt><dd class="font-semibold">{{ format_fcfa($c->caution) }}</dd></div>
+                                @foreach ($c->lignesMontants() as $ligne)
+                                    <div><dt class="text-sm text-gris">{{ $ligne['libelle'] }}</dt><dd class="font-semibold">{{ format_fcfa($ligne['montant']) }}</dd>
+                                        <dd class="text-sm text-gris">{{ $ligne['mention'] }}</dd></div>
+                                @endforeach
                                 @if ($c->boutique)
                                     <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.boutique') }}</dt><dd class="whitespace-nowrap font-extrabold text-vert-fonce">{{ $c->boutique->reference() }}</dd></div>
                                 @endif

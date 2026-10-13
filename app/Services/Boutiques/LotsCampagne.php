@@ -2,19 +2,23 @@
 
 namespace App\Services\Boutiques;
 
+use App\Enums\NiveauBoutique;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
 use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
 use App\Models\CategorieBoutique;
+use App\Models\GrilleTarifaire;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Services\Backoffice\RegleGestionException;
 use Illuminate\Support\Collection;
 
 /**
- * Lots d'une campagne (un site confirmé × un type de boutique, avec sa caution). Le nombre de boutiques
- * d'un lot n'est jamais saisi : il est compté dans le référentiel (boutiques disponibles du site et du type).
+ * Lots d'une campagne. Le RÉGULATEUR choisit les types proposés sur chaque site confirmé ; les lots sont construits
+ * dans le référentiel, homogènes en prix (site × type × niveau × surface), et le nombre de boutiques y est compté.
+ * À l'ouverture, loyer, caution et avance de chaque lot sont calculés depuis la grille tarifaire confirmée du site
+ * et figés ; une boutique sans ligne de grille confirmée (ou sans surface) bloque l'ouverture.
  */
 class LotsCampagne
 {
@@ -32,33 +36,42 @@ class LotsCampagne
     }
 
     /**
-     * Remplace les lots de la campagne. Une caution vide = type non proposé sur ce site.
+     * Remplace les lots de la campagne à partir des types retenus par site.
      *
-     * @param  array<int|string, array<int|string, int|string|null>>  $cautions  [site_id][type_id] => caution
+     * @param  array<int|string, array<int|string, mixed>>  $selection  [site_id][type_id] => coché
      *
      * @throws RegleGestionException
      */
-    public function definir(CampagneBoutiques $campagne, array $cautions): void
+    public function definir(CampagneBoutiques $campagne, array $selection): void
     {
         $disponibles = self::disponibilites();
-        $sites = Site::query()->whereIn('id', array_keys($cautions))->get()->keyBy('id');
+        $sites = Site::query()->whereIn('id', array_keys($selection))->get()->keyBy('id');
         $types = TypeBoutique::query()->get()->keyBy('id');
 
         $lots = [];
-        foreach ($cautions as $siteId => $parType) {
-            foreach ($parType as $typeId => $caution) {
-                if ($caution === null || $caution === '') {
+        foreach ($selection as $siteId => $parType) {
+            foreach ($parType as $typeId => $retenu) {
+                if (! $retenu) {
                     continue;
                 }
                 $site = $sites[$siteId] ?? null;
-                $nombre = $disponibles[$siteId][$typeId] ?? 0;
-                if (! $site || $site->statut !== StatutSite::Confirme || $nombre === 0 || ! isset($types[$typeId])) {
+                if (! $site || $site->statut !== StatutSite::Confirme || ($disponibles[$siteId][$typeId] ?? 0) === 0 || ! isset($types[$typeId])) {
                     throw new RegleGestionException(__('admin.boutiques.regles.lot_indisponible'));
                 }
-                $lots[] = [
-                    'site_id' => $site->id, 'type_boutique_id' => (int) $typeId, 'libelle' => $types[$typeId]->libelle,
-                    'description' => $types[$typeId]->description, 'nombre_boutiques' => $nombre, 'caution' => (int) $caution,
-                ];
+                $groupes = Boutique::query()->where('site_id', $site->id)->where('type_boutique_id', $typeId)->where('statut', StatutBoutique::Disponible)
+                    ->get()->groupBy(fn (Boutique $b) => $b->niveau?->value.'|'.$b->surface)
+                    ->sortBy(fn ($groupe) => [array_search($groupe->first()->niveau, NiveauBoutique::cases(), true), (float) $groupe->first()->surface]);
+                foreach ($groupes as $groupe) {
+                    $b = $groupe->first();
+                    $lots[] = [
+                        'site_id' => $site->id, 'type_boutique_id' => (int) $typeId, 'niveau' => $b->niveau, 'surface' => $b->surface,
+                        'libelle' => __('admin.boutiques.categorie.libelle_lot', [
+                            'type' => $types[$typeId]->libelle, 'niveau' => $b->niveau?->label() ?? '—',
+                            'surface' => $b->surface !== null ? format_nombre((float) $b->surface, fmod((float) $b->surface, 1.0) == 0.0 ? 0 : 2) : '—',
+                        ]),
+                        'description' => $types[$typeId]->description, 'nombre_boutiques' => $groupe->count(),
+                    ];
+                }
             }
         }
         if (! $lots) {
@@ -72,16 +85,50 @@ class LotsCampagne
     }
 
     /**
-     * Ouverture : les boutiques des lots passent « dans une campagne » ; le nombre doit toujours être disponible.
+     * Montants d'un lot selon la grille confirmée de son site, sans rien enregistrer ; null si la ligne manque.
+     *
+     * @return array{grille_version: int, loyer_m2: int, mois_caution: int, mois_avance: int, loyer_mensuel: int, caution: int, avance: int}|null
+     */
+    public function tarifer(CategorieBoutique $lot): ?array
+    {
+        if ($lot->niveau === null || $lot->surface === null) {
+            return null;
+        }
+        $grille = GrilleTarifaire::query()->where('site_id', $lot->site_id)->first()?->confirmee();
+        $ligne = $grille['lignes'][GrilleTarifaire::cle($lot->niveau->value, $lot->type_boutique_id)] ?? null;
+        if ($ligne === null) {
+            return null;
+        }
+
+        return [
+            'grille_version' => $grille['version'], ...$ligne,
+            ...GrilleTarifaire::montants((float) $lot->surface, $ligne['loyer_m2'], $ligne['mois_caution'], $ligne['mois_avance']),
+        ];
+    }
+
+    /**
+     * Ouverture : chaque boutique doit avoir une ligne de grille confirmée ; les montants des lots sont figés et
+     * les boutiques passent « dans une campagne ».
      *
      * @throws RegleGestionException
      */
     public function engager(CampagneBoutiques $campagne): void
     {
-        foreach ($campagne->categories()->whereNotNull('site_id')->get() as $lot) {
+        $lots = $campagne->categories()->whereNotNull('site_id')->with('site')->get();
+
+        // Lot antérieur aux grilles : sa caution saisie suffit ; sinon, la grille confirmée doit couvrir le lot.
+        $sansTarif = $lots->filter(fn (CategorieBoutique $lot) => ($lot->niveau !== null || ! $lot->estTarife()) && $this->tarifer($lot) === null);
+        if ($sansTarif->isNotEmpty()) {
+            throw new RegleGestionException(__('admin.boutiques.regles.sans_grille', ['lots' => $sansTarif->map->intitule()->implode(' ; ')]));
+        }
+
+        foreach ($lots as $lot) {
             $boutiques = $this->boutiquesDuLot($lot, StatutBoutique::Disponible);
             if ($boutiques->count() < $lot->nombre_boutiques) {
                 throw new RegleGestionException(__('admin.boutiques.regles.boutiques_retirees', ['lot' => $lot->libelle]));
+            }
+            if ($tarif = $this->tarifer($lot)) {
+                $lot->forceFill($tarif)->save();
             }
             Boutique::query()->whereIn('id', $boutiques->take($lot->nombre_boutiques)->pluck('id'))->update(['statut' => StatutBoutique::EnCampagne]);
         }
@@ -90,7 +137,6 @@ class LotsCampagne
     /** @return Collection<int, Boutique> */
     public function boutiquesDuLot(CategorieBoutique $lot, StatutBoutique $statut): Collection
     {
-        return Boutique::query()->where('site_id', $lot->site_id)->where('type_boutique_id', $lot->type_boutique_id)
-            ->where('statut', $statut)->orderByRaw('code IS NULL, code, LENGTH(numero), numero')->get();
+        return $lot->requeteBoutiques()->where('statut', $statut)->get();
     }
 }

@@ -46,8 +46,10 @@
                                 <p class="texte-carte mt-1">{{ $categorie->description }}</p>
                             @endif
                             <p class="mt-2 texte-carte">{{ trans_choice('public.boutiques.nombre', $categorie->nombre_boutiques, ['n' => format_nombre($categorie->nombre_boutiques)]) }}</p>
-                            <p class="mt-auto pt-3"><span class="text-sm text-gris">{{ __('public.boutiques.caution') }}</span><br>
-                                <span class="text-xl font-extrabold text-vert-fonce">{{ format_fcfa($categorie->caution) }}</span></p>
+                            @if ($categorie->loyer_mensuel)
+                                <p class="texte-carte">{{ __('public.boutiques.montants.loyer') }} : {{ format_fcfa($categorie->loyer_mensuel) }}</p>
+                            @endif
+                            <div class="mt-auto pt-3">@include('public.boutiques._montants', ['lignes' => $categorie->lignesMontants(), 'compact' => true])</div>
                         </li>
                     @endforeach
                 </ul>

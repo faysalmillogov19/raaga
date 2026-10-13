@@ -19,10 +19,11 @@
             <section><h3>Article 1 — Objet</h3>
                 <p>La présente campagne attribue des boutiques du marché Raaga par tirage au sort, entre les citoyens qui ont candidaté et payé la caution de la catégorie choisie.</p></section>
 
-            <section><h3>Article 2 — Catégories et cautions</h3>
+            <section><h3>Article 2 — Lots, cautions et avances</h3>
                 <ul class="list-disc pl-5">
                     @foreach ($c->categories as $cat)
-                        <li><strong>{{ $cat->intitule() }}</strong>@if ($cat->description) ({{ $cat->description }})@endif : {{ format_nombre($cat->nombre_boutiques) }} boutique(s), caution de {{ format_fcfa($cat->caution) }}.</li>
+                        <li><strong>{{ $cat->intitule() }}</strong>@if ($cat->description) ({{ $cat->description }})@endif : {{ format_nombre($cat->nombre_boutiques) }} boutique(s)@if ($cat->loyer_mensuel), loyer mensuel de {{ format_fcfa($cat->loyer_mensuel) }}@endif.
+                            @foreach ($cat->lignesMontants() as $ligne)<br>{{ $ligne['libelle'] }} : {{ format_fcfa($ligne['montant']) }} — {{ $ligne['mention'] }}@endforeach</li>
                     @endforeach
                 </ul></section>
 

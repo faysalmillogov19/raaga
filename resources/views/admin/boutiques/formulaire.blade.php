@@ -33,26 +33,24 @@
             </div>
         </section>
 
-        {{-- Lots : caution par site confirmé et par type de boutique (nombre compté dans le référentiel) --}}
+        {{-- Lots : types proposés par site confirmé ; lots homogènes et montants issus de la grille tarifaire --}}
         <section class="bo-carte !mt-0" aria-labelledby="s-lots">
             <h2 id="s-lots" class="!text-[1.15rem]">{{ $k['titre'] }}</h2>
             <p class="texte-carte mt-1">{{ $k['aide'] }}</p>
-            @error('cautions') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-            @if ($errors->has('cautions.*'))
-                <p class="message-erreur" role="alert">{{ __('admin.boutiques.erreurs.caution') }}</p>
-            @endif
+            @error('lots') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
 
             @forelse ($sites as $site)
                 <fieldset class="mt-4 rounded-charte border border-ligne p-3">
                     <legend class="px-1 font-bold text-encre">{{ $site->nom }} <span class="texte-carte font-normal">— {{ $site->region }} · {{ $site->commune }}</span></legend>
                     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         @foreach ($disponibilites[$site->id] as $typeId => $nombre)
-                            @php($nom = 'cautions['.$site->id.']['.$typeId.']')
-                            <div class="formulaire-champ !mt-0">
-                                <label for="caution-{{ $site->id }}-{{ $typeId }}">{{ $types[$typeId]->libelle }} <span class="texte-carte">({{ trans_choice('admin.boutiques.categorie.disponibles', $nombre, ['n' => format_nombre($nombre)]) }})</span></label>
-                                <input id="caution-{{ $site->id }}-{{ $typeId }}" name="{{ $nom }}" type="number" min="1" class="champ"
-                                       value="{{ old('cautions.'.$site->id.'.'.$typeId, $cautions[$site->id][$typeId] ?? '') }}" placeholder="{{ $k['non_propose'] }}">
-                            </div>
+                            @php($id = 'lot-'.$site->id.'-'.$typeId)
+                            <label for="{{ $id }}" class="flex items-start gap-2">
+                                <input type="hidden" name="lots[{{ $site->id }}][{{ $typeId }}]" value="0">
+                                <input id="{{ $id }}" type="checkbox" name="lots[{{ $site->id }}][{{ $typeId }}]" value="1" class="mt-1"
+                                       @checked(old('lots.'.$site->id.'.'.$typeId, $selection[$site->id][$typeId] ?? false))>
+                                <span>{{ $types[$typeId]->libelle }} <span class="texte-carte">({{ trans_choice('admin.boutiques.categorie.disponibles', $nombre, ['n' => format_nombre($nombre)]) }})</span></span>
+                            </label>
                         @endforeach
                     </div>
                 </fieldset>

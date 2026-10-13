@@ -39,7 +39,7 @@
                                 @if ($cat->site)<span class="block text-sm font-semibold uppercase tracking-wide text-vert-fonce">{{ $cat->site->nom }} · {{ $cat->site->commune }}</span>@endif
                                 <span class="block font-bold text-encre">{{ $cat->libelle }}</span>
                                 @if ($cat->description)<span class="texte-carte block">{{ $cat->description }}</span>@endif
-                                <span class="mt-1 block font-semibold text-vert-fonce">{{ __('public.boutiques.caution') }} : {{ format_fcfa($cat->caution) }}</span>
+                                <span class="mt-2 block">@include('public.boutiques._montants', ['lignes' => $cat->lignesMontants(), 'compact' => true])</span>
                             </span>
                         </label>
                     @endforeach

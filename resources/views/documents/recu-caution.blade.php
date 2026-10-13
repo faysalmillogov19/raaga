@@ -14,7 +14,11 @@
         <tr><th>Référence de la candidature</th><td>{{ $c->reference }}</td></tr>
         <tr><th>Catégorie de boutique</th><td>{{ $c->categorie->intitule() }}@if ($c->categorie->description) ({{ $c->categorie->description }})@endif</td></tr>
         @if ($c->boutique)<tr><th>Boutique attribuée</th><td><strong>{{ $c->boutique->reference() }}</strong></td></tr>@endif
-        <tr><th>Caution payée</th><td><strong>{{ format_fcfa($paiement->montant) }}</strong></td></tr>
+        {{-- Caution et avance : deux lignes distinctes, chacune avec sa mention. --}}
+        @foreach ($c->lignesMontants() as $ligne)
+            <tr><th>{{ $ligne['libelle'] }}</th><td><strong>{{ format_fcfa($ligne['montant']) }}</strong><br>{{ $ligne['mention'] }}</td></tr>
+        @endforeach
+        <tr><th>{{ __('public.boutiques.montants.total') }}</th><td><strong>{{ format_fcfa($paiement->montant) }}</strong></td></tr>
         <tr><th>Moyen de paiement</th><td>{{ __('public.paiement.canaux.'.$paiement->canal->value) }}</td></tr>
         <tr><th>Référence du paiement</th><td>{{ $paiement->reference }}</td></tr>
         <tr><th>Date du paiement</th><td>{{ $paiement->date_confirmation->format('d/m/Y à H\hi') }}</td></tr>

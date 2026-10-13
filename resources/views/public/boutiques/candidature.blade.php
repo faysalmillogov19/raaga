@@ -26,8 +26,8 @@
                 @if ($c->boutique)
                     <div class="flex justify-between gap-3"><dt>{{ $l['boutique'] }}</dt><dd class="text-right font-extrabold text-vert-fonce">{{ $c->boutique->reference() }}</dd></div>
                 @endif
-                <div class="flex justify-between gap-3 border-t border-ligne pt-2"><dt class="font-semibold text-encre">{{ $l['caution'] }}</dt><dd class="text-xl font-extrabold text-vert-fonce">{{ format_fcfa($c->caution) }}</dd></div>
             </dl>
+            <div class="mt-2 border-t border-ligne pt-2">@include('public.boutiques._montants', ['lignes' => $c->lignesMontants()])</div>
             @if ($c->statut === S::Reservee && $c->expire_le->isFuture())
                 <div class="mt-4 flex flex-col gap-2 border-t border-ligne pt-4 sm:flex-row sm:items-center sm:justify-between">
                     <p class="texte-carte">{{ __('public.boutiques.candidature.payer_avant', ['date' => $c->expire_le->format('d/m/Y \à H\hi')]) }}</p>

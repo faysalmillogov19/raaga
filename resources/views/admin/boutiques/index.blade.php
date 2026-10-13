@@ -2,9 +2,12 @@
     <div class="bo-carte">
         <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
             <p class="texte-carte max-w-3xl">{{ __('admin.boutiques.intro') }}</p>
-            @can(\App\Enums\Droit::BoutiquesSaisir->value)
-                <a href="{{ route('admin.boutiques.create') }}" class="bo-bouton bo-bouton-principal">{{ __('admin.boutiques.nouvelle') }}</a>
-            @endcan
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('admin.boutiques.grilles') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.grilles.titre') }}</a>
+                @can(\App\Enums\Droit::BoutiquesSaisir->value)
+                    <a href="{{ route('admin.boutiques.create') }}" class="bo-bouton bo-bouton-principal">{{ __('admin.boutiques.nouvelle') }}</a>
+                @endcan
+            </div>
         </div>
 
         <div class="overflow-x-auto">

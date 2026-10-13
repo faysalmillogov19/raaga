@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * Campagne d'attribution des boutiques du marché. Indépendante des actions : tout citoyen peut
- * candidater, sans avantage lié aux actions détenues. Une caution par catégorie ; attribution par
+ * candidater, sans avantage lié aux actions détenues. Caution et avance par lot (grille tarifaire) ; attribution par
  * tirage au sort. Paramétrage soumis au workflow commun (RÉGULATEUR saisit, VALIDATEUR confirme).
  */
 #[Table(name: 'campagnes_boutiques')]
@@ -126,7 +126,8 @@ class CampagneBoutiques extends Model implements Parametrable
         }
 
         $snapshot['categories'] = $this->categories()->with('site')->get()
-            ->map(fn (CategorieBoutique $c) => $c->intitule().' : '.format_nombre($c->nombre_boutiques).' boutique(s), caution '.format_fcfa($c->caution))
+            ->map(fn (CategorieBoutique $c) => $c->intitule().' : '.format_nombre($c->nombre_boutiques).' boutique(s)'
+                .($c->estTarife() ? ', caution '.format_fcfa($c->caution).($c->avance ? ', avance '.format_fcfa($c->avance) : '') : ''))
             ->implode(' ; ');
 
         return $snapshot;

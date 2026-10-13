@@ -141,8 +141,7 @@ class TirageAuSort
             foreach ($tirages as $tirage) {
                 $lot = $tirage->categorie;
                 $boutiques = $lot->site_id
-                    ? Boutique::query()->where('site_id', $lot->site_id)->where('type_boutique_id', $lot->type_boutique_id)
-                        ->where('statut', StatutBoutique::EnCampagne)->lockForUpdate()->get()
+                    ? $lot->requeteBoutiques()->where('statut', StatutBoutique::EnCampagne)->lockForUpdate()->get()
                     : collect();
                 $graine = bin2hex(random_bytes(32));
                 $ordreBoutiques = self::ordonner($graine, $boutiques->map(fn (Boutique $b) => $b->reference())->all());

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\Payable;
 use App\Enums\CanalPaiement;
 use App\Enums\StatutCandidatureBoutique;
+use App\Support\MontantsBoutique;
 use App\Support\Recu;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -12,11 +13,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** Candidature d'un citoyen à une catégorie de boutiques ; la caution est figée à la candidature. */
+/**
+ * Candidature d'un citoyen à un lot de boutiques. Caution et avance sont deux montants distincts, figés à la
+ * candidature (copiés du lot) : le montant à payer est leur somme, mais ils s'affichent toujours séparément.
+ */
 #[Table(name: 'candidatures_boutiques')]
 #[Fillable([
-    'reference', 'user_id', 'campagne_boutiques_id', 'categorie_boutique_id', 'boutique_id', 'caution', 'statut',
-    'expire_le', 'payee_le', 'rang_tirage', 'tiree_le',
+    'reference', 'user_id', 'campagne_boutiques_id', 'categorie_boutique_id', 'boutique_id', 'caution', 'avance',
+    'loyer_mensuel', 'mois_caution', 'mois_avance', 'statut', 'expire_le', 'payee_le', 'rang_tirage', 'tiree_le',
 ])]
 class CandidatureBoutique extends Model implements Payable
 {
@@ -24,6 +28,10 @@ class CandidatureBoutique extends Model implements Payable
     {
         return [
             'caution' => 'integer',
+            'avance' => 'integer',
+            'loyer_mensuel' => 'integer',
+            'mois_caution' => 'integer',
+            'mois_avance' => 'integer',
             'statut' => StatutCandidatureBoutique::class,
             'expire_le' => 'datetime',
             'payee_le' => 'datetime',
@@ -77,7 +85,7 @@ class CandidatureBoutique extends Model implements Payable
 
     public function montantAPayer(): int
     {
-        return $this->caution;
+        return $this->caution + $this->avance;
     }
 
     public function fraisAPayer(): int
@@ -108,11 +116,19 @@ class CandidatureBoutique extends Model implements Payable
 
     public function smsPaiementConfirme(Paiement $paiement): array
     {
-        return [__('public.boutiques.sms.caution_payee'), [
+        return [__('public.boutiques.sms.'.($this->avance > 0 ? 'caution_avance_payee' : 'caution_payee')), [
             'recu' => Recu::numero($paiement),
             'reference' => $this->reference,
             'montant' => format_fcfa($paiement->montant),
+            'caution' => format_fcfa($this->caution),
+            'avance' => format_fcfa($this->avance),
         ]];
+    }
+
+    /** @return list<array{libelle: string, montant: int, mention: string}> */
+    public function lignesMontants(): array
+    {
+        return MontantsBoutique::lignes($this->caution, $this->avance, $this->mois_avance);
     }
 
     /**

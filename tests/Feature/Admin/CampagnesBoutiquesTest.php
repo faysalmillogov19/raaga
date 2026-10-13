@@ -14,11 +14,12 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\Support\ActeursParametrage;
+use Tests\Support\GrillesTarifaires;
 use Tests\TestCase;
 
 class CampagnesBoutiquesTest extends TestCase
 {
-    use ActeursParametrage, RefreshDatabase;
+    use ActeursParametrage, GrillesTarifaires, RefreshDatabase;
 
     private Site $site;
 
@@ -32,14 +33,14 @@ class CampagnesBoutiquesTest extends TestCase
 
         $this->creerActeurs();
 
-        // Référentiel confirmé : 12 petites et 3 grandes boutiques au marché central.
+        // Référentiel confirmé : 12 petites boutiques (R+1, 9 m²) et 3 grandes (rez-de-chaussée, 24 m²) au marché central.
         $this->site = Site::create(['statut' => StatutSite::Confirme, 'nom' => 'Marché central', 'region' => 'Centre', 'commune' => 'Ouagadougou',
             'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $this->regulateur->id]);
         $this->petite = TypeBoutique::create(['libelle' => 'Petite boutique', 'description' => '9 m²']);
         $this->grande = TypeBoutique::create(['libelle' => 'Grande boutique', 'description' => '24 m²']);
-        foreach ([[$this->petite, 12, 'P-'], [$this->grande, 3, 'G-']] as [$type, $nombre, $prefixe]) {
+        foreach ([[$this->petite, 12, 'P-', 'R1', 9], [$this->grande, 3, 'G-', 'RC', 24]] as [$type, $nombre, $prefixe, $niveau, $surface]) {
             foreach (range(1, $nombre) as $n) {
-                $this->site->boutiques()->create(['numero' => $prefixe.$n, 'type_boutique_id' => $type->id, 'statut' => StatutBoutique::Disponible]);
+                $this->site->boutiques()->create(['numero' => $prefixe.$n, 'niveau' => $niveau, 'surface' => $surface, 'type_boutique_id' => $type->id, 'statut' => StatutBoutique::Disponible]);
             }
         }
     }
@@ -70,7 +71,7 @@ class CampagnesBoutiquesTest extends TestCase
             'delai_paiement_heures' => 72,
             'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'],
             'max_boutiques_par_personne' => 2,
-            'cautions' => [$this->site->id => [$this->petite->id => 150000, $this->grande->id => 500000]],
+            'lots' => [$this->site->id => [$this->petite->id => 1, $this->grande->id => 1]],
             ...$surcharges,
         ];
     }
@@ -84,7 +85,7 @@ class CampagnesBoutiquesTest extends TestCase
         return $campagne->refresh();
     }
 
-    public function test_le_regulateur_choisit_les_sites_et_fixe_une_caution_par_site_et_par_type(): void
+    public function test_le_regulateur_choisit_les_sites_et_les_types_proposes(): void
     {
         $this->en($this->regulateur)->get(route('admin.boutiques.create'))->assertOk()
             ->assertSee('Marché central')->assertSee('12 disponibles')->assertSee('3 disponibles');
@@ -93,22 +94,22 @@ class CampagnesBoutiquesTest extends TestCase
 
         $this->assertSame(StatutCampagneBoutiques::Soumise, $campagne->statut);
         $this->assertSame(2, $campagne->max_boutiques_par_personne);
-        // Nombres comptés dans le référentiel, jamais saisis.
-        $this->assertSame([['Petite boutique', $this->site->id, 12, 150000], ['Grande boutique', $this->site->id, 3, 500000]],
-            $campagne->categories->map(fn ($c) => [$c->libelle, $c->site_id, $c->nombre_boutiques, $c->caution])->all());
-        $this->assertStringContainsString("Petite boutique — Marché central : 12 boutique(s), caution 150\u{00A0}000\u{00A0}FCFA", $campagne->versions()->first()->parametres['categories']);
+        // Lots homogènes, nombres comptés dans le référentiel ; montants calculés à l'ouverture, jamais saisis.
+        $this->assertSame([['Grande boutique · Rez-de-chaussée · 24 m²', $this->site->id, 3, null], ['Petite boutique · R+1 · 9 m²', $this->site->id, 12, null]],
+            $campagne->categories->sortBy('libelle')->map(fn ($c) => [$c->libelle, $c->site_id, $c->nombre_boutiques, $c->caution])->values()->all());
+        $this->assertStringContainsString('Petite boutique · R+1 · 9 m² — Marché central : 12 boutique(s)', $campagne->versions()->first()->parametres['categories']);
 
         $this->en($this->regulateur)->post(route('admin.boutiques.confirmer', $campagne))->assertForbidden();
-        $this->en($this->validateur)->get(route('admin.boutiques.show', $campagne))->assertOk()->assertSee('Marché central')->assertSee("500\u{00A0}000\u{00A0}FCFA");
+        $this->en($this->validateur)->get(route('admin.boutiques.show', $campagne))->assertOk()->assertSee('Marché central')->assertSee('Pas de ligne de grille confirmée');
     }
 
     public function test_une_campagne_sans_lot_ou_sur_un_site_non_confirme_est_refusee(): void
     {
-        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire(['cautions' => [$this->site->id => [$this->petite->id => '', $this->grande->id => '']]]))
-            ->assertSessionHasErrors(['cautions' => 'Ajoutez au moins une catégorie de boutiques.']);
+        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire(['lots' => [$this->site->id => [$this->petite->id => 0, $this->grande->id => 0]]]))
+            ->assertSessionHasErrors(['lots' => 'Ajoutez au moins une catégorie de boutiques.']);
 
         $this->site->forceFill(['statut' => StatutSite::Brouillon])->save();
-        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire())->assertSessionHasErrors('cautions');
+        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire())->assertSessionHasErrors('lots');
 
         $this->assertSame(0, CampagneBoutiques::count());
     }
@@ -122,12 +123,13 @@ class CampagnesBoutiquesTest extends TestCase
 
         // Seules les petites boutiques sont finalement proposées.
         $this->en($this->regulateur)->put(route('admin.boutiques.update', $campagne), $this->formulaire([
-            'cautions' => [$this->site->id => [$this->petite->id => 100000, $this->grande->id => '']],
+            'lots' => [$this->site->id => [$this->petite->id => 1, $this->grande->id => 0]],
         ]))->assertSessionHasNoErrors();
-        $this->assertSame([100000], $campagne->categories()->pluck('caution')->all());
+        $this->assertSame(['Petite boutique · R+1 · 9 m²'], $campagne->categories()->pluck('libelle')->all());
         $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $campagne));
         $this->en($this->validateur)->post(route('admin.boutiques.confirmer', $campagne))->assertSessionHas('succes');
 
+        $this->grilleConfirmee($this->site, ['R1' => [$this->petite->id => [2000, 12, 36]]]);
         $code = $this->activerTotp($this->validateur);
         $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => '000000'])->assertSessionHas('erreur');
         $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $code])->assertSessionHas('succes');

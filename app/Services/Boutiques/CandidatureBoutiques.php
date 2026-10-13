@@ -16,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Candidature d'un citoyen à un lot (site × type) d'une campagne ouverte : plusieurs candidatures possibles,
- * chacune avec sa caution ; identité vérifiée, quatre engagements acceptés et horodatés, caution figée (RÉSERVÉE).
+ * chacune avec sa caution et son avance ; identité vérifiée, quatre engagements acceptés et horodatés, montants figés (RÉSERVÉE).
  * Le plafond de boutiques par personne s'applique au tirage au sort, pas à la candidature.
  * Indépendante des actions : aucune donnée de souscription n'intervient.
  */
@@ -62,6 +62,9 @@ class CandidatureBoutiques
                 $erreur('identite', 'kyc');
             }
             $categorie = $campagne->categories()->whereKey($categorieId)->first() ?? $erreur('categorie', 'categorie');
+            if (! $categorie->estTarife()) {
+                $erreur('categorie', 'categorie');
+            }
             if (array_diff(array_map(fn (DocumentAccepte $d) => $d->value, self::ENGAGEMENTS), $engagements)) {
                 $erreur('engagements', 'engagements');
             }
@@ -71,7 +74,12 @@ class CandidatureBoutiques
                 'user_id' => $user->id,
                 'campagne_boutiques_id' => $campagne->id,
                 'categorie_boutique_id' => $categorie->id,
+                // Montants figés : un changement ultérieur de la grille ne les modifie pas.
                 'caution' => $categorie->caution,
+                'avance' => $categorie->avance,
+                'loyer_mensuel' => $categorie->loyer_mensuel,
+                'mois_caution' => $categorie->mois_caution,
+                'mois_avance' => $categorie->mois_avance,
                 'statut' => StatutCandidatureBoutique::Reservee,
                 'expire_le' => now()->addHours($campagne->delai_paiement_heures),
             ]);
@@ -89,7 +97,7 @@ class CandidatureBoutiques
             }
 
             $this->journal->ecrire($user, 'candidature_boutique.reservee', 'CandidatureBoutique', $candidature->id, null, [
-                'reference' => $candidature->reference, 'campagne' => $campagne->id, 'categorie' => $categorie->id, 'caution' => $categorie->caution,
+                'reference' => $candidature->reference, 'campagne' => $campagne->id, 'categorie' => $categorie->id, 'caution' => $categorie->caution, 'avance' => $categorie->avance,
             ]);
 
             return $candidature;

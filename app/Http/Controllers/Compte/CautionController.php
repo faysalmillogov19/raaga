@@ -45,8 +45,11 @@ class CautionController extends Controller
             'lignes' => [
                 [__('public.boutiques.candidature.campagne'), $c->campagne->nom],
                 [__('public.boutiques.candidature.categorie'), $c->categorie->libelle],
+                // Caution et avance : deux lignes distinctes, avec leur mention.
+                ...array_map(fn ($l) => [$l['libelle'], format_fcfa($l['montant'])], $c->lignesMontants()),
             ],
-            'total' => $c->caution,
+            'mentions' => array_column($c->lignesMontants(), 'mention'),
+            'total' => $c->montantAPayer(),
             'routes' => collect(['show', 'payer', 'statut', 'simuler', 'changer'])
                 ->mapWithKeys(fn (string $r) => [$r => route('boutiques.caution.'.$r, $c->reference)])->all(),
             'nouvelle' => ['url' => route('boutiques'), 'libelle' => __('public.boutiques.titre')],

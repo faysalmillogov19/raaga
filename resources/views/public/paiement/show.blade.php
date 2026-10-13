@@ -37,6 +37,9 @@
                 @endforeach
                 <div class="flex justify-between gap-3 border-t border-ligne pt-2 tab:col-span-2"><dt class="font-semibold text-encre">{{ __('public.souscription.recap_total') }}</dt><dd class="text-xl font-extrabold text-vert-fonce">{{ format_fcfa($total) }}</dd></div>
             </dl>
+            @foreach ($mentions ?? [] as $mention)
+                <p class="mt-2 text-sm text-gris">{{ $mention }}</p>
+            @endforeach
             @if ($etat !== 'expiree')
                 <p class="mt-3 texte-carte">{{ __('public.paiement.avant', ['date' => $s->expire_le->translatedFormat('j F Y \à H\hi')]) }}</p>
             @endif

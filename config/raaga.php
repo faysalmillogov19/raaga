@@ -111,6 +111,19 @@ return [
     ],
 
     /*
+    | Grille tarifaire des boutiques (par site, niveau et type) : valeurs proposées au RÉGULATEUR, qui les ajuste
+    | avant de soumettre la grille au VALIDATEUR. Loyer mensuel = surface × loyer au m² ; caution = loyer × mois de
+    | caution ; avance = loyer × mois d'avance (montants arrondis au franc).
+    */
+    'grille_tarifaire' => [
+        'mois_caution' => 12,
+        // Mois d'avance par niveau (code NiveauBoutique).
+        'mois_avance_par_niveau' => ['RC' => 60, 'R1' => 36, 'R2' => 24, 'R3' => 12, 'SS' => 12],
+        // Mois d'avance par type (code TypeBoutique), prioritaire sur le niveau : les magasins, quel que soit le niveau.
+        'mois_avance_par_type' => ['MAG' => 12],
+    ],
+
+    /*
     | Création de compte citoyen.
     */
     'inscription' => [

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ConnexionController;
 use App\Http\Controllers\Admin\ConnexionsController;
 use App\Http\Controllers\Admin\ConventionsController;
 use App\Http\Controllers\Admin\DividendesController;
+use App\Http\Controllers\Admin\GrillesTarifairesController;
 use App\Http\Controllers\Admin\ImportBoutiquesController;
 use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
@@ -88,6 +89,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/excel/import', 'apercu')->name('import');
             Route::post('/excel/import/confirmer', 'confirmer')->name('import.confirmer');
             Route::post('/excel/import/annuler', 'annuler')->name('import.annuler');
+        });
+
+        // Grilles tarifaires des boutiques (une par site) : RÉGULATEUR saisit et soumet, VALIDATEUR confirme.
+        Route::controller(GrillesTarifairesController::class)->prefix('boutiques/grilles')->name('boutiques.grilles')->group(function () {
+            Route::get('/', 'index')->middleware('can:'.Droit::BoutiquesVoir->value);
+            Route::get('/{site}', 'show')->whereNumber('site')->middleware('can:'.Droit::BoutiquesVoir->value)->name('.show');
+            Route::get('/{site}/modifier', 'edit')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.edit');
+            Route::put('/{site}', 'update')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.update');
+            Route::post('/{site}/soumettre', 'soumettre')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.soumettre');
+            Route::post('/{site}/reviser', 'reviser')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.reviser');
+            Route::post('/{site}/confirmer', 'confirmer')->whereNumber('site')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.confirmer');
+            Route::post('/{site}/rejeter', 'rejeter')->whereNumber('site')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.rejeter');
         });
 
         // Boutiques : RÉGULATEUR saisit et soumet les campagnes (catégories, cautions), VALIDATEUR confirme, ouvre, clôture, tire au sort.

@@ -748,7 +748,7 @@ return [
             ['titre' => 'Résultat par SMS', 'texte' => 'Et dans Mon espace.'],
         ],
         'periode' => 'Candidatures du :debut au :fin.',
-        'categories_titre' => 'Catégories et cautions',
+        'categories_titre' => 'Lots, cautions et avances',
         'nombre' => ':n boutique|:n boutiques',
         'caution' => 'Caution',
         'candidater' => 'Je candidate',
@@ -796,8 +796,18 @@ return [
             'recu' => 'Télécharger le reçu de caution (PDF)',
         ],
         'paiement_caution' => 'Paiement de la caution',
+        // Caution et avance : deux montants distincts, toujours affichés sur deux lignes avec leur mention.
+        'montants' => [
+            'caution' => 'Caution',
+            'avance' => 'Avance',
+            'total' => 'Total à payer',
+            'loyer' => 'Loyer mensuel',
+            'mention_caution' => 'Caution : remboursable selon le règlement.',
+            'mention_avance' => 'Avance : loyers payés d’avance, imputés sur le premier mois.|Avance : loyers payés d’avance, imputés sur les :mois premiers mois.',
+        ],
         'sms' => [
             'caution_payee' => '{nomPlateforme} : caution reçue. Reçu n° {recu}, candidature {reference}, {montant}. Résultat du tirage au sort par SMS.',
+            'caution_avance_payee' => '{nomPlateforme} : paiement reçu. Reçu n° {recu}, candidature {reference}. Caution : {caution} (remboursable selon le règlement). Avance : {avance} (loyers payés d’avance). Résultat du tirage au sort par SMS.',
             'retenue' => '{nomPlateforme} : bonne nouvelle, votre candidature {reference} est retenue. Boutique attribuée : {boutique} ({categorie}). Les étapes suivantes vous seront communiquées.[ Aide : {numeroVert}]',
             'non_retenue' => '{nomPlateforme} : votre candidature {reference} ({categorie}) n’a pas été retenue au tirage au sort. Les modalités concernant votre caution vous seront communiquées.[ Aide : {numeroVert}]',
         ],

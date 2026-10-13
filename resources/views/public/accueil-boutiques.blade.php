@@ -69,8 +69,7 @@
                             <h3 class="!text-lg">{{ $categorie->libelle }}</h3>
                             @if ($categorie->description)<p class="texte-carte mt-1">{{ $categorie->description }}</p>@endif
                             <p class="mt-2 texte-carte">{{ trans_choice('public.boutiques.nombre', $categorie->nombre_boutiques, ['n' => format_nombre($categorie->nombre_boutiques)]) }}</p>
-                            <p class="mt-auto pt-3"><span class="text-sm text-gris">{{ __('public.boutiques.caution') }}</span><br>
-                                <span class="text-xl font-extrabold text-vert-fonce">{{ format_fcfa($categorie->caution) }}</span></p>
+                            <div class="mt-auto pt-3">@include('public.boutiques._montants', ['lignes' => $categorie->lignesMontants(), 'compact' => true])</div>
                         </li>
                     @endforeach
                 </ul>
