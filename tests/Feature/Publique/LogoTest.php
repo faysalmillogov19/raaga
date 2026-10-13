@@ -18,15 +18,21 @@ class LogoTest extends TestCase
 {
     use ConnexionBackoffice, RefreshDatabase;
 
-    public function test_le_logo_figure_dans_l_en_tete_le_pied_de_page_et_la_connexion(): void
+    public function test_l_en_tete_n_affiche_que_les_armoiries_et_le_logo_reste_au_pied_de_page_et_a_la_connexion(): void
     {
         $logo = e(ImagesPlateforme::url('logoHorizontal'));
 
-        $accueil = $this->get('/')->assertOk()
-            ->assertSee('alt="Raaga – Participation populaire, accueil"', false)
-            ->assertSee($logo, false)
-            ->assertSee(e(ImagesPlateforme::url('logoSymbole')), false)
-            ->assertSee('srcset=', false);
+        $accueil = $this->get('/')->assertOk();
+        preg_match('/<header.*?<\/header>/s', $accueil->getContent(), $entete);
+        $this->assertStringContainsString(e(ImagesPlateforme::url('armoiries')), $entete[0]);
+        $this->assertStringContainsString('aria-label="Accueil — '.e(plateforme('identite.nomPlateforme')).'"', $entete[0]);
+        foreach ([$logo, e(ImagesPlateforme::url('logoSymbole')), 'BURKINA FASO', e((string) plateforme('identite.deviseNationale'))] as $absent) {
+            $this->assertStringNotContainsString($absent, $entete[0]);
+        }
+
+        preg_match('/<footer.*?<\/footer>/s', $accueil->getContent(), $pied);
+        $this->assertStringContainsString($logo, $pied[0]);
+        $accueil->assertSee('srcset=', false);
         $this->get('/connexion')->assertOk()->assertSee($logo, false);
         $this->assertStringContainsString('images/og-raaga.png', $accueil->getContent());
         $this->assertStringContainsString('rel="manifest"', $accueil->getContent());

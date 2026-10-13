@@ -114,6 +114,7 @@ return [
     ],
 
     'entete' => [
+        'accueil' => 'Accueil — :nom',
         'aide' => 'Aide & FAQ',
         'mon_espace' => 'Mon espace',
         'se_deconnecter' => 'Se déconnecter',

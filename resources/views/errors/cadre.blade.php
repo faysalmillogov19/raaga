@@ -8,7 +8,7 @@
     use App\Support\ImagesPlateforme;
 
     $nom = rescue(fn () => plateforme('identite.nomPlateforme'), null, false) ?: 'Raaga';
-    $logo = rescue(fn () => ImagesPlateforme::url('logoHorizontal'), null, false) ?: asset(ImagesPlateforme::DEFAUTS['logoHorizontal'][0]);
+    $armoiries = rescue(fn () => ImagesPlateforme::url('armoiries'), null, false) ?: asset(ImagesPlateforme::DEFAUTS['armoiries'][0]);
     $numeroVert = rescue(fn () => plateforme('contacts.numeroVert'), null, false);
 @endphp
 <!DOCTYPE html>
@@ -26,8 +26,9 @@
 
     <header class="border-b border-gris-clair">
         <div class="conteneur flex min-h-[72px] items-center">
+            {{-- Comme sur le site : armoiries seules dans l'en-tête. --}}
             <a href="{{ url('/') }}" class="inline-flex min-h-[44px] items-center">
-                <img src="{{ $logo }}" alt="{{ __('public.erreurs.accueil_alt', ['nom' => $nom]) }}" class="h-11 w-auto">
+                <img src="{{ $armoiries }}" alt="{{ __('public.erreurs.accueil_alt', ['nom' => $nom]) }}" class="h-12 w-auto">
             </a>
         </div>
     </header>

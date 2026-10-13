@@ -1,23 +1,10 @@
 <header class="border-b border-ligne bg-white" x-data="{ menuOuvert: false }" @keydown.escape="menuOuvert = false">
     <div class="conteneur flex items-center gap-2 py-3 tab:gap-5 tab:py-4">
-        {{-- Identité de l'État : armoiries, pays, devise. --}}
-        <div class="flex shrink-0 items-center gap-2 text-encre tab:gap-2.5">
-            <x-public.armoiries class="h-10 w-auto tab:h-14" />
-            <span class="leading-tight">
-                <span class="block text-[0.75rem] font-extrabold tracking-[0.06em] tab:text-base tab:tracking-[0.12em]">{{ __('public.site.pays') }}</span>
-                @if ($devise = plateforme('identite.deviseNationale'))
-                    <span class="hidden text-xs italic text-gris tab:block">{{ $devise }}</span>
-                @endif
-            </span>
-        </div>
-
-        <div class="h-9 w-px shrink-0 bg-ligne tab:h-11" aria-hidden="true"></div>
-
-        {{-- Logo Raaga : lien vers l'accueil (symbole seul sous 400 px). --}}
+        {{-- Armoiries seules (ni texte ni logo dans l'en-tête) : lien vers l'accueil. --}}
         <div class="min-w-0 flex-1">
-            <a href="{{ route('accueil') }}" class="inline-flex min-h-[44px] items-center">
-                <x-logo variante="symbole" class="h-8 min-[400px]:hidden" />
-                <x-logo class="hidden h-9 min-[400px]:block tab:h-11" />
+            <a href="{{ route('accueil') }}" class="inline-flex min-h-[44px] items-center"
+               aria-label="{{ __('public.entete.accueil', ['nom' => plateforme('identite.nomPlateforme')]) }}">
+                <x-public.armoiries class="h-11 w-auto tab:h-14" />
             </a>
         </div>
 
