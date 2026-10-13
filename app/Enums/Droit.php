@@ -54,7 +54,7 @@ enum Droit: string
     case TranchesConfirmer = 'tranches.confirmer';
     case TranchesPiloter = 'tranches.piloter';
 
-    // Référentiel des sites du marché et de leurs boutiques (GESTIONNAIRE DES SITES saisit, VALIDATEUR confirme).
+    // Référentiel des sites du marché et de leurs boutiques (GESTIONNAIRE DES SITES ET BOUTIQUES saisit, VALIDATEUR confirme).
     case SitesVoir = 'sites.voir';
     case SitesGerer = 'sites.gerer';
     case SitesConfirmer = 'sites.confirmer';

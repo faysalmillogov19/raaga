@@ -23,7 +23,7 @@ use Illuminate\View\View;
 
 /**
  * Référentiel des sites du marché et de leurs boutiques, tenu en amont des campagnes.
- * GESTIONNAIRE DES SITES : saisie et soumission ; VALIDATEUR : confirmation ou rejet ; autres profils : lecture.
+ * GESTIONNAIRE DES SITES ET BOUTIQUES : saisie et soumission ; VALIDATEUR : confirmation ou rejet ; autres profils : lecture.
  */
 class SitesController extends Controller
 {

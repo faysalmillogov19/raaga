@@ -57,7 +57,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::post('/profil/mot-de-passe', [ProfilController::class, 'motDePasse'])->middleware('throttle:10,1')->name('profil.mot-de-passe');
 
-        // Sites et boutiques (référentiel, en amont des campagnes) : GESTIONNAIRE DES SITES saisit, VALIDATEUR confirme.
+        // Sites et boutiques (référentiel, en amont des campagnes) : GESTIONNAIRE DES SITES ET BOUTIQUES saisit, VALIDATEUR confirme.
         Route::controller(SitesController::class)->prefix('sites')->name('sites')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
             Route::post('/types', 'ajouterType')->middleware('can:'.Droit::SitesGerer->value)->name('.types.store');

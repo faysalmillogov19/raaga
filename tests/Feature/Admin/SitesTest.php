@@ -110,7 +110,7 @@ class SitesTest extends TestCase
             $this->en($profil)->post(route('admin.sites.boutiques.store', $site), ['numero' => 'Z-1'])->assertForbidden();
         }
 
-        // Le gestionnaire des sites ne touche ni aux campagnes, ni aux tranches.
+        // Le gestionnaire des sites et boutiques ne touche ni aux campagnes, ni aux tranches.
         $this->en($this->gestionnaire)->get(route('admin.boutiques'))->assertForbidden();
         $this->en($this->gestionnaire)->get(route('admin.tranches'))->assertForbidden();
     }

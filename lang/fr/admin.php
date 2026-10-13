@@ -674,7 +674,7 @@ return [
 
     'sites' => [
         'titre' => 'Sites et boutiques',
-        'intro' => 'Référentiel des sites du marché et de leurs boutiques, tenu par le GESTIONNAIRE DES SITES et confirmé par le VALIDATEUR. Seuls les sites confirmés peuvent entrer dans une campagne d’attribution.',
+        'intro' => 'Référentiel des sites du marché et de leurs boutiques, tenu par le GESTIONNAIRE DES SITES ET BOUTIQUES et confirmé par le VALIDATEUR. Seuls les sites confirmés peuvent entrer dans une campagne d’attribution.',
         'nouveau' => 'Nouveau site',
         'aucun' => 'Aucun site pour le moment.',
         'colonnes' => [
@@ -783,7 +783,7 @@ return [
             'aide' => 'Pour chaque site confirmé, saisissez la caution des types de boutiques proposés dans la campagne. Laissez vide un type que vous ne proposez pas. Le nombre de boutiques est compté dans le référentiel des sites.',
             'disponibles' => ':n disponible|:n disponibles',
             'non_propose' => 'Non proposé',
-            'aucun_site' => 'Aucun site confirmé avec des boutiques disponibles : le GESTIONNAIRE DES SITES doit d’abord créer les sites, et le VALIDATEUR les confirmer.',
+            'aucun_site' => 'Aucun site confirmé avec des boutiques disponibles : le GESTIONNAIRE DES SITES ET BOUTIQUES doit d’abord créer les sites, et le VALIDATEUR les confirmer.',
             'sans_plafond' => 'Laisser vide : pas de plafond.',
             'site' => 'Site',
             'libelle' => 'Catégorie',

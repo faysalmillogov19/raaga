@@ -45,7 +45,7 @@ enum Role: string
             self::AgentGuichet => 'Agent de guichet',
             self::Regulateur => 'Régulateur',
             self::Validateur => 'Validateur',
-            self::GestionnaireSites => 'Gestionnaire des sites',
+            self::GestionnaireSites => 'Gestionnaire des sites et boutiques',
             self::Conformite => 'Conformité',
             self::Auditeur => 'Auditeur',
             self::InstitutionSignataire => 'Signataire (institution)',

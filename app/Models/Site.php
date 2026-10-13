@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
- * Site du marché (lieu physique) et ses boutiques, créé en amont des campagnes. Le GESTIONNAIRE DES SITES
+ * Site du marché (lieu physique) et ses boutiques, créé en amont des campagnes. Le GESTIONNAIRE DES SITES ET BOUTIQUES
  * saisit et soumet ; le VALIDATEUR confirme (workflow commun). Seuls les sites confirmés entrent dans une campagne.
  */
 #[Fillable([
