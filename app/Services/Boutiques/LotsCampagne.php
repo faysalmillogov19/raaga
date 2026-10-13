@@ -29,9 +29,9 @@ class LotsCampagne
      */
     public static function disponibilites(): Collection
     {
-        // Les types non attribuables par tirage (chambre froide mutualisée) ne sont jamais proposés.
+        // Types non attribuables par tirage (chambre froide mutualisée), désactivés ou non validés : jamais proposés.
         return Boutique::query()->whereHas('site', fn ($q) => $q->where('statut', StatutSite::Confirme))
-            ->whereHas('type', fn ($q) => $q->where('attribuable', true))
+            ->whereHas('type', fn ($q) => $q->utilisables()->where('attribuable', true))
             ->where('statut', StatutBoutique::Disponible)
             ->selectRaw('site_id, type_boutique_id, count(*) as nombre')->groupBy('site_id', 'type_boutique_id')->toBase()->get()
             ->groupBy('site_id')->map(fn ($lignes) => $lignes->pluck('nombre', 'type_boutique_id')->map(fn ($n) => (int) $n));
@@ -104,7 +104,7 @@ class LotsCampagne
 
         return [
             'grille_version' => $grille['version'], ...$ligne,
-            ...GrilleTarifaire::montants((float) $lot->surface, $ligne['loyer_m2'], $ligne['mois_caution'], $ligne['mois_avance']),
+            ...GrilleTarifaire::montants((float) $lot->surface, $ligne['loyer_m2'], $ligne['mois_caution'], $ligne['mois_avance'], $lot->type->unite_loyer),
         ];
     }
 

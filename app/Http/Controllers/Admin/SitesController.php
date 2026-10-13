@@ -43,52 +43,8 @@ class SitesController extends Controller
                 'boutiques' => fn ($q) => $q->where('statut', '!=', StatutBoutique::Retiree),
                 'boutiquesSansNiveau',
             ])->orderBy('nom')->get(),
-            'types' => TypeBoutique::query()->withCount('boutiques')->orderBy('ordre')->orderBy('libelle')->get(),
+            'types' => TypeBoutique::query()->utilisables()->count(),
         ]);
-    }
-
-    // ------------------------------------------------------------------ Types de boutiques
-
-    public function ajouterType(Request $request): RedirectResponse
-    {
-        Gate::authorize(Droit::SitesGerer->value);
-        $this->majuscules($request, ['code']);
-        $donnees = $request->validate([
-            'code' => $this->regleCodeType(),
-            'libelle' => ['required', 'string', 'max:80', Rule::unique('types_boutiques', 'libelle')],
-            'description' => ['nullable', 'string', 'max:300'],
-        ], [], __('admin.sites.types.attributs'));
-
-        $type = TypeBoutique::create([...$donnees, 'ordre' => (int) TypeBoutique::max('ordre') + 1]);
-        $this->journal->ecrire($request->user(), 'type_boutique.cree', 'TypeBoutique', $type->id, null, ['code' => $type->code, 'libelle' => $type->libelle]);
-
-        return redirect()->route('admin.sites')->with('succes', __('admin.sites.types.ajoute'));
-    }
-
-    /** Code d'un type (type saisi avant les codes, ou correction). */
-    public function modifierType(Request $request, TypeBoutique $type): RedirectResponse
-    {
-        Gate::authorize(Droit::SitesGerer->value);
-        $this->majuscules($request, ['code']);
-        $code = $request->validate(['code' => $this->regleCodeType($type)], [], __('admin.sites.types.attributs'))['code'];
-
-        $this->journal->ecrire($request->user(), 'type_boutique.modifie', 'TypeBoutique', $type->id, ['code' => $type->code], ['code' => $code]);
-        $type->forceFill(['code' => $code])->save();
-
-        return redirect()->route('admin.sites')->with('succes', __('admin.sites.types.modifie'));
-    }
-
-    public function supprimerType(Request $request, TypeBoutique $type): RedirectResponse
-    {
-        Gate::authorize(Droit::SitesGerer->value);
-
-        if ($type->boutiques()->withTrashed()->exists()) {
-            return redirect()->route('admin.sites')->with('erreur', __('admin.sites.types.utilise'));
-        }
-        $this->journal->ecrire($request->user(), 'type_boutique.supprime', 'TypeBoutique', $type->id, ['libelle' => $type->libelle]);
-        $type->delete();
-
-        return redirect()->route('admin.sites')->with('succes', __('admin.sites.types.supprime'));
     }
 
     // ------------------------------------------------------------------ Sites
@@ -129,7 +85,7 @@ class SitesController extends Controller
         return view('admin.sites.show', [
             'site' => $site,
             'boutiques' => $site->boutiques()->with('type')->get(),
-            'types' => TypeBoutique::query()->orderBy('ordre')->orderBy('libelle')->get(),
+            'types' => TypeBoutique::query()->utilisables()->orderBy('ordre')->orderBy('libelle')->get(),
             'versions' => $versions->reverse()->values(),
             'decisions' => ParametrageDecision::query()->where('objet_type', 'site')->where('objet_id', $site->id)->with('decideur')->orderByDesc('id')->get(),
             'differentiel' => $differentiel,
@@ -232,7 +188,8 @@ class SitesController extends Controller
         return view('admin.sites.boutique', [
             'site' => $site,
             'boutique' => $boutique,
-            'types' => TypeBoutique::query()->orderBy('ordre')->orderBy('libelle')->get(),
+            // Types utilisables, plus le type actuel de la boutique s'il a été désactivé.
+            'types' => TypeBoutique::query()->where(fn ($q) => $q->utilisables()->orWhere('id', $boutique->type_boutique_id))->orderBy('ordre')->orderBy('libelle')->get(),
         ]);
     }
 
@@ -243,7 +200,7 @@ class SitesController extends Controller
         $this->majuscules($request, ['bloc']);
         $donnees = $request->validate([
             ...($boutique->code === null ? [...$this->reglesCode(), 'numero' => $this->regleNumero()] : []),
-            ...$this->reglesFiche(),
+            ...$this->reglesFiche($boutique),
         ], [], __('admin.sites.boutiques.attributs'));
         if (isset($donnees['numero'])) {
             $donnees['numero'] = $this->numero($donnees['numero']);
@@ -334,12 +291,6 @@ class SitesController extends Controller
         return FicheSite::attributs($request->validate(FicheSite::regles($site), [], __('admin.sites.champs')));
     }
 
-    /** @return list<mixed> */
-    private function regleCodeType(?TypeBoutique $type = null): array
-    {
-        return ['required', 'string', 'regex:'.TypeBoutique::FORMAT_CODE, Rule::unique('types_boutiques', 'code')->ignore($type?->id)];
-    }
-
     /** Éléments du code boutique saisis par le gestionnaire, hors numéro. @return array<string, list<mixed>> */
     private function reglesCode(): array
     {
@@ -356,11 +307,19 @@ class SitesController extends Controller
     }
 
     /** @return array<string, list<mixed>> */
-    private function reglesFiche(): array
+    private function reglesFiche(?Boutique $boutique = null): array
     {
         return [
             'surface' => ['nullable', 'numeric', 'min:0.5', 'max:99999'],
-            'type_boutique_id' => ['required', Rule::exists('types_boutiques', 'id')],
+            'type_boutique_id' => ['required', 'integer', function (string $attribut, mixed $valeur, Closure $echec) use ($boutique) {
+                // Type désactivé ou non validé : refusé, sauf pour une boutique qui le porte déjà.
+                $type = TypeBoutique::query()->find($valeur);
+                if ($type === null) {
+                    $echec(__('validation.exists', ['attribute' => __('admin.sites.boutiques.attributs.type_boutique_id')]));
+                } elseif (! $type->estUtilisable() && $type->id !== $boutique?->type_boutique_id) {
+                    $echec($type->motifInutilisable());
+                }
+            }],
             'position' => ['nullable', Rule::enum(PositionBoutique::class)],
             'coffret' => ['nullable', 'string', 'max:60'],
             'planche' => ['nullable', 'string', 'max:60'],

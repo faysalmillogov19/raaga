@@ -94,48 +94,14 @@
         @endif
     </div>
 
-    {{-- Types de boutiques : catégories communes à tous les sites --}}
+    {{-- Types de boutiques : écran dédié (gestion par le GESTIONNAIRE, validation par le VALIDATEUR) --}}
     <section class="bo-carte" aria-labelledby="types-titre">
-        <h2 id="types-titre" class="!text-[1.15rem]">{{ __('admin.sites.types.titre') }}</h2>
-        <p class="texte-carte mt-1">{{ __('admin.sites.types.aide') }}</p>
-
-        @if ($types->isEmpty())
-            <p class="mt-3">{{ __('admin.sites.types.aucun') }}</p>
-        @else
-            <ul class="mt-3 divide-y divide-ligne">
-                @foreach ($types as $type)
-                    <li class="flex flex-wrap items-center justify-between gap-3 py-2">
-                        <span>@if ($type->code)<span class="font-mono font-semibold text-vert-fonce">{{ $type->code }}</span> · @endif<span class="font-semibold text-encre">{{ $type->libelle }}</span>
-                            @unless ($type->code)<span class="text-sm font-semibold text-rouge">({{ __('admin.sites.types.code_manquant') }})</span>@endunless
-                            @if ($type->description) <span class="texte-carte">— {{ $type->description }}</span>@endif
-                            <span class="texte-carte">· {{ __('admin.sites.types.nombre', ['n' => format_nombre($type->boutiques_count)]) }}</span></span>
-                        @if ($gerer && ! $type->code)
-                            <form method="POST" action="{{ route('admin.sites.types.update', $type) }}" class="flex items-end gap-2" novalidate>
-                                @csrf @method('PATCH')
-                                <label for="type-code-{{ $type->id }}" class="sr-only">{{ __('admin.sites.types.code') }}</label>
-                                <input id="type-code-{{ $type->id }}" name="code" maxlength="6" required class="champ !w-28 font-mono uppercase" placeholder="{{ __('admin.sites.types.code') }}">
-                                <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ __('admin.sites.types.enregistrer_code') }}</button>
-                            </form>
-                        @endif
-                        @if ($gerer && $type->boutiques_count === 0)
-                            <form method="POST" action="{{ route('admin.sites.types.destroy', $type) }}">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ __('admin.sites.types.supprimer') }}</button>
-                            </form>
-                        @endif
-                    </li>
-                @endforeach
-            </ul>
-        @endif
-
-        @if ($gerer)
-            <form method="POST" action="{{ route('admin.sites.types.store') }}" class="mt-4 grid gap-3 lg:grid-cols-[10rem_1fr_2fr_auto] lg:items-end" novalidate>
-                @csrf
-                <x-admin.champ nom="code" :libelle="__('admin.sites.types.code')" maxlength="6" required :aide="__('admin.sites.types.code_aide')" />
-                <x-admin.champ nom="libelle" :libelle="__('admin.sites.types.libelle')" maxlength="80" required />
-                <x-admin.champ nom="description" :libelle="__('admin.sites.types.description')" maxlength="300" />
-                <button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.sites.types.ajouter') }}</button>
-            </form>
-        @endif
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 id="types-titre" class="!text-[1.15rem]">{{ __('admin.types.titre') }}</h2>
+                <p class="texte-carte mt-1">{{ trans_choice('admin.types.utilisables', $types, ['n' => format_nombre($types)]) }}</p>
+            </div>
+            <a href="{{ route('admin.sites.types') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.types.ouvrir') }}</a>
+        </div>
     </section>
 </x-admin.layout>

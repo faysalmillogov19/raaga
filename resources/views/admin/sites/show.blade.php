@@ -84,7 +84,7 @@
 
         @if ($modifiable && $site->code !== null)
             @if ($types->isEmpty())
-                <p class="bo-message bo-message-erreur mt-4">{{ __('admin.sites.types.aucun') }} <a href="{{ route('admin.sites') }}">{{ __('admin.sites.types.titre') }}</a></p>
+                <p class="bo-message bo-message-erreur mt-4">{{ __('admin.sites.types.aucun') }} <a href="{{ route('admin.sites.types') }}">{{ __('admin.types.titre') }}</a></p>
             @else
                 <div class="mt-4 grid gap-[18px] xl:grid-cols-2">
                     <form method="POST" action="{{ route('admin.sites.boutiques.serie', $site) }}" class="rounded-charte border border-ligne p-4" novalidate>

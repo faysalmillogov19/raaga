@@ -36,7 +36,7 @@
                         @endphp
                         <tr>
                             <th scope="row" class="font-semibold">{{ $c['niveau']->label() }}</th>
-                            <td>{{ $c['type']->code ? $c['type']->code.' · ' : '' }}{{ $c['type']->libelle }}</td>
+                            <td>{{ $c['type']->code ? $c['type']->code.' · ' : '' }}{{ $c['type']->libelle }}<br><span class="texte-carte">{{ $c['type']->unite_loyer->label() }}</span></td>
                             <td class="montant">{{ format_nombre($c['nombre']) }}</td>
                             <td><label for="{{ $id }}-loyer" class="sr-only">{{ $g['loyer_m2'] }} — {{ $c['niveau']->label() }}, {{ $c['type']->libelle }}</label>
                                 <input id="{{ $id }}-loyer" name="{{ $nom }}[loyer_m2]" type="number" min="1" inputmode="numeric" class="champ !w-36 @error($cle.'.loyer_m2') est-invalide @enderror"

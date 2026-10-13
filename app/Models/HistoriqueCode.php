@@ -19,6 +19,8 @@ class HistoriqueCode extends Model
 
     public const BOUTIQUE = 'boutique';
 
+    public const TYPE = 'type_boutique';
+
     protected function casts(): array
     {
         return ['created_at' => 'datetime'];

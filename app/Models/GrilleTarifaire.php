@@ -6,6 +6,7 @@ use App\Contracts\Parametrable;
 use App\Enums\DecisionParametrage;
 use App\Enums\NiveauBoutique;
 use App\Enums\StatutGrilleTarifaire;
+use App\Enums\UniteLoyer;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -33,14 +34,15 @@ class GrilleTarifaire extends Model implements Parametrable
     }
 
     /**
-     * Montants d'une boutique, jamais saisis : loyer mensuel = surface × loyer au m² (arrondi au franc),
-     * caution = loyer × mois de caution, avance = loyer × mois d'avance.
+     * Montants d'une boutique, jamais saisis : loyer mensuel = surface × loyer au m² (arrondi au franc) pour un type
+     * loué au m², sinon le loyer de la grille tel quel (par unité ou redevance) ; caution = loyer × mois de caution,
+     * avance = loyer × mois d'avance.
      *
      * @return array{loyer_mensuel: int, caution: int, avance: int}
      */
-    public static function montants(float $surface, int $loyerM2, int $moisCaution, int $moisAvance): array
+    public static function montants(float $surface, int $loyerM2, int $moisCaution, int $moisAvance, UniteLoyer $unite = UniteLoyer::M2): array
     {
-        $loyer = (int) round($surface * $loyerM2);
+        $loyer = $unite->parSurface() ? (int) round($surface * $loyerM2) : $loyerM2;
 
         return ['loyer_mensuel' => $loyer, 'caution' => $loyer * $moisCaution, 'avance' => $loyer * $moisAvance];
     }

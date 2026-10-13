@@ -97,7 +97,7 @@ class ReferentielExcel
 
         // Listes déroulantes : niveaux et codes des types.
         $this->liste($feuille, $n."2:{$n}{$derniere}", array_map(fn (NiveauBoutique $x) => $x->value, NiveauBoutique::cases()));
-        $codesTypes = TypeBoutique::query()->whereNotNull('code')->orderBy('ordre')->pluck('code')->all();
+        $codesTypes = TypeBoutique::query()->utilisables()->whereNotNull('code')->orderBy('ordre')->pluck('code')->all();
         if ($codesTypes !== []) {
             $this->liste($feuille, $col('type')."2:{$col('type')}{$derniere}", $codesTypes);
         }
@@ -246,6 +246,8 @@ class ReferentielExcel
                 || mb_strtolower((string) $v['type']) === mb_strtolower($t->libelle));
             if ($v['type'] !== null && $v['type'] !== '' && $type === null) {
                 $err('type', $e['type'], ['valeur' => $v['type']]);
+            } elseif ($type !== null && ! $type->estUtilisable()) {
+                $err('type', $type->motifInutilisable()); // Type désactivé, ou pas encore validé.
             }
             $surface = is_numeric($s = str_replace(',', '.', (string) $v['surface'])) ? (float) $s : null;
             if ($v['surface'] !== null && $v['surface'] !== '' && ($surface === null || $surface <= 0 || $surface > 99999)) {

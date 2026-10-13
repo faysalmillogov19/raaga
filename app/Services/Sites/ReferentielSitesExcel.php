@@ -128,7 +128,7 @@ class ReferentielSitesExcel
         $this->liste($c, $cA, $finC, "{$onglet}!\${$A}\$2:\${$A}\${$finS}");
         $this->liste($c, $cB, $finC, '"'.implode(',', array_map(fn (NiveauBoutique $n) => $n->value, NiveauBoutique::cases())).'"');
         $this->liste($c, $cC, $finC, '"'.ZoneSite::query()->orderBy('id')->pluck('code')->implode(',').'"');
-        $this->liste($c, $cD, $finC, '"'.TypeBoutique::query()->whereNotNull('code')->orderBy('ordre')->pluck('code')->implode(',').'"');
+        $this->liste($c, $cD, $finC, '"'.TypeBoutique::query()->utilisables()->whereNotNull('code')->orderBy('ordre')->pluck('code')->implode(',').'"');
         $classeur->setActiveSheetIndex(0);
 
         return $classeur;
@@ -330,6 +330,8 @@ class ReferentielSitesExcel
                 $err('type', $e['obligatoire']);
             } elseif ($type === null) {
                 $err('type', $e['type'], ['valeur' => $v['type']]);
+            } elseif (! $type->estUtilisable()) {
+                $err('type', $type->motifInutilisable()); // Type désactivé, ou pas encore validé.
             }
             $nombre = $this->entier($v['nombre_prevu'] ?? null);
             if (($v['nombre_prevu'] ?? null) !== null && $nombre === null) {
