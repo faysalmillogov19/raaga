@@ -75,6 +75,10 @@
             <p class="bo-message bo-message-erreur mt-4 !mb-0" role="status">{{ __('admin.sites.regles.sans_code_site') }}</p>
         @endif
 
+        @if ($gerer)
+            @include('admin.sites._excel')
+        @endif
+
         @if ($modifiable && $site->code !== null)
             @if ($types->isEmpty())
                 <p class="bo-message bo-message-erreur mt-4">{{ __('admin.sites.types.aucun') }} <a href="{{ route('admin.sites') }}">{{ __('admin.sites.types.titre') }}</a></p>

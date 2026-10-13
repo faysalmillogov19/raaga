@@ -148,7 +148,7 @@ class Site extends Model implements Parametrable
         // Fiche complète de chaque boutique, conservée dans l'historique ; le différentiel liste les boutiques modifiées.
         $snapshot['fiches'] = $boutiques->sortBy('id')->mapWithKeys(fn (Boutique $b) => [$b->reference() => implode(' · ', array_map(
             fn ($v) => $v ?? '—',
-            [$b->niveau?->value, $b->bloc, $b->surface, $b->type->libelle, $b->position?->label(), $b->coffret, $b->planche, $b->etat_physique?->label()],
+            [$b->niveau?->value, $b->bloc, $b->surface, $b->type->libelle, $b->position?->label(), $b->coffret, $b->planche, $b->etat_physique?->label(), $b->observations],
         ))])->all();
 
         return $snapshot;

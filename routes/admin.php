@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ConnexionController;
 use App\Http\Controllers\Admin\ConnexionsController;
 use App\Http\Controllers\Admin\ConventionsController;
 use App\Http\Controllers\Admin\DividendesController;
+use App\Http\Controllers\Admin\ImportBoutiquesController;
 use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
@@ -77,6 +78,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{site}/reviser', 'reviser')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.reviser');
             Route::post('/{site}/confirmer', 'confirmer')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
             Route::post('/{site}/rejeter', 'rejeter')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
+        });
+
+        // Référentiel des boutiques d'un site en Excel : modèle, export, import avec aperçu puis confirmation (GESTIONNAIRE).
+        Route::controller(ImportBoutiquesController::class)->prefix('sites/{site}')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('sites.')->group(function () {
+            Route::get('/excel/modele', 'modele')->name('modele');
+            Route::get('/excel/export', 'exporter')->name('export');
+            Route::post('/excel/import', 'deposer')->middleware('throttle:20,1')->name('import.deposer');
+            Route::get('/excel/import', 'apercu')->name('import');
+            Route::post('/excel/import/confirmer', 'confirmer')->name('import.confirmer');
+            Route::post('/excel/import/annuler', 'annuler')->name('import.annuler');
         });
 
         // Boutiques : RÉGULATEUR saisit et soumet les campagnes (catégories, cautions), VALIDATEUR confirme, ouvre, clôture, tire au sort.

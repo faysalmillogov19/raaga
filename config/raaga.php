@@ -98,6 +98,19 @@ return [
     ],
 
     /*
+    | Référentiel des boutiques : import et export Excel (.xlsx), onglet « Locaux ».
+    */
+    'referentiel_boutiques' => [
+        // Fichiers importés, conservés hors du dossier public (disque « local » : storage/app/private).
+        'disque' => 'local',
+        'dossier' => 'imports/boutiques',
+        'taille_max_ko' => 5120,
+        'lignes_max' => 5000,
+        // Lignes du modèle préparées avec la formule du code.
+        'lignes_modele' => 500,
+    ],
+
+    /*
     | Création de compte citoyen.
     */
     'inscription' => [

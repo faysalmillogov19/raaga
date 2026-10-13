@@ -365,6 +365,7 @@ class SitesController extends Controller
             'coffret' => ['nullable', 'string', 'max:60'],
             'planche' => ['nullable', 'string', 'max:60'],
             'etat_physique' => ['required', Rule::enum(EtatPhysiqueBoutique::class)],
+            'observations' => ['nullable', 'string', 'max:500'],
         ];
     }
 

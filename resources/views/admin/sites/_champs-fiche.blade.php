@@ -45,3 +45,8 @@
     <input id="{{ $prefixe }}-planche" name="planche" maxlength="60" value="{{ old('planche', $boutique?->planche) }}" class="champ @error('planche') est-invalide @enderror">
     @error('planche') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
 </div>
+<div class="formulaire-champ !mt-0 sm:col-span-2 lg:col-span-3">
+    <label for="{{ $prefixe }}-observations">{{ $b['observations'] }}</label>
+    <input id="{{ $prefixe }}-observations" name="observations" maxlength="500" value="{{ old('observations', $boutique?->observations) }}" class="champ @error('observations') est-invalide @enderror">
+    @error('observations') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+</div>

@@ -1,0 +1,65 @@
+@php
+    $x = __('admin.sites.excel');
+    $erreurs = $analyse->erreurs();
+    $valides = count($analyse->lignes());
+@endphp
+
+<x-admin.layout :titre="$x['apercu_titre']" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $site->nom, 'url' => route('admin.sites.show', $site)], ['libelle' => $x['apercu_titre']]]">
+    <section class="bo-carte !mt-0" aria-labelledby="apercu-titre">
+        <h2 id="apercu-titre" class="!text-[1.15rem]">{{ trans_choice('admin.sites.excel.lignes_valides', $valides, ['n' => format_nombre($valides)]) }}</h2>
+        <p class="texte-carte mt-1">{{ __('admin.sites.excel.apercu_intro', ['nom' => $depot['nom'], 'empreinte' => substr($depot['empreinte'], 0, 12).'…']) }}</p>
+        @if ($valides > 0)
+            <p class="mt-2">{{ __('admin.sites.excel.creations', ['n' => format_nombre($analyse->creations())]) }} · {{ __('admin.sites.excel.mises_a_jour', ['n' => format_nombre($analyse->misesAJour())]) }}</p>
+            <div class="mt-4 grid gap-[18px] md:grid-cols-2">
+                @foreach (['par_niveau' => $analyse->parNiveau(), 'par_type' => $analyse->parType()] as $titre => $totaux)
+                    <div>
+                        <h3 class="!text-base">{{ $x[$titre] }}</h3>
+                        <table class="bo-tableau mt-2">
+                            <tbody>
+                                @foreach ($totaux as $libelle => $n)
+                                    <tr><th scope="row" class="font-semibold">{{ $libelle }}</th><td class="montant">{{ format_nombre($n) }}</td></tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <div class="mt-5 flex flex-wrap gap-3">
+            @if ($erreurs === [])
+                <x-admin.confirmation id="confirmer-import" :titre="$x['confirmer']" :message="$x['confirmer_message']"
+                                      :action="route('admin.sites.import.confirmer', $site)" :bouton="$x['confirmer']">
+                    <x-slot:declencheur>{{ $x['confirmer'] }}</x-slot:declencheur>
+                </x-admin.confirmation>
+            @else
+                <button type="button" class="bo-bouton bo-bouton-principal" disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</button>
+            @endif
+            <form method="POST" action="{{ route('admin.sites.import.annuler', $site) }}">
+                @csrf
+                <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $x['annuler'] }}</button>
+            </form>
+        </div>
+    </section>
+
+    @if ($erreurs !== [])
+        <section class="bo-carte" aria-labelledby="erreurs-titre">
+            <h2 id="erreurs-titre" class="!text-[1.15rem]">{{ trans_choice('admin.sites.excel.erreurs_titre', count($erreurs), ['n' => format_nombre(count($erreurs))]) }}</h2>
+            <p id="erreurs-aide" class="texte-carte mt-1">{{ $x['erreurs_aide'] }}</p>
+            <div class="mt-3 overflow-x-auto">
+                <table class="bo-tableau">
+                    <thead><tr><th scope="col">{{ $x['colonne_ligne'] }}</th><th scope="col">{{ $x['colonne_colonne'] }}</th><th scope="col">{{ $x['colonne_motif'] }}</th></tr></thead>
+                    <tbody>
+                        @foreach ($erreurs as $erreur)
+                            <tr>
+                                <td>{{ $erreur['ligne'] ?? '—' }}</td>
+                                <td>{{ $erreur['colonne'] ?? $x['general'] }}</td>
+                                <td>{{ $erreur['motif'] }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
+</x-admin.layout>

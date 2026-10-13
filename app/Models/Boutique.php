@@ -14,12 +14,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Boutique d'un site : code SITE-NIVEAU-BLOC-NUMÉRO (ex. RAA-R1-A-045), fiche (niveau, bloc, surface, type, position,
- * coffret, planche, état physique) et statut commercial. Le code est calculé à la création, ne change jamais et
+ * coffret, planche, état physique, observations) et statut commercial. Le code est calculé à la création, ne change jamais et
  * n'est jamais réutilisé : une boutique supprimée reste en base (suppression logique) et garde son code.
  */
 #[Fillable([
     'site_id', 'type_boutique_id', 'numero', 'niveau', 'bloc', 'surface',
-    'position', 'coffret', 'planche', 'etat_physique', 'statut',
+    'position', 'coffret', 'planche', 'etat_physique', 'observations', 'statut',
 ])]
 class Boutique extends Model
 {
