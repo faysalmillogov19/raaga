@@ -2,9 +2,17 @@
     $x = __('admin.sites.excel');
     $erreurs = $analyse->erreurs();
     $valides = count($analyse->lignes());
+    // Import depuis la fiche d'un site, ou import combiné (plusieurs sites) depuis « Sites et boutiques ».
+    $fil = [['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')]];
+    if ($site) {
+        $fil[] = ['libelle' => $site->nom, 'url' => route('admin.sites.show', $site)];
+    }
+    $fil[] = ['libelle' => $x['apercu_titre']];
+    $routeConfirmer = $site ? route('admin.sites.import.confirmer', $site) : route('admin.sites.boutiques-excel.confirmer');
+    $routeAnnuler = $site ? route('admin.sites.import.annuler', $site) : route('admin.sites.boutiques-excel.annuler');
 @endphp
 
-<x-admin.layout :titre="$x['apercu_titre']" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $site->nom, 'url' => route('admin.sites.show', $site)], ['libelle' => $x['apercu_titre']]]">
+<x-admin.layout :titre="$x['apercu_titre']" :fil="$fil">
     <section class="bo-carte !mt-0" aria-labelledby="apercu-titre">
         <h2 id="apercu-titre" class="!text-[1.15rem]">{{ trans_choice('admin.sites.excel.lignes_valides', $valides, ['n' => format_nombre($valides)]) }}</h2>
         <p class="texte-carte mt-1">{{ __('admin.sites.excel.apercu_intro', ['nom' => $depot['nom'], 'empreinte' => substr($depot['empreinte'], 0, 12).'…']) }}</p>
@@ -26,16 +34,26 @@
             </div>
         @endif
 
+        @if ($analyse->avertissements() !== [])
+            {{-- Avertissements : n'empêchent pas la confirmation. --}}
+            <div class="bo-message mt-4 !mb-0" role="status">
+                <p class="font-semibold">{{ $x['avertissements_titre'] }}</p>
+                <ul class="mt-1 list-disc pl-5">
+                    @foreach ($analyse->avertissements() as $avertissement)<li>{{ $avertissement }}</li>@endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="mt-5 flex flex-wrap gap-3">
             @if ($erreurs === [])
                 <x-admin.confirmation id="confirmer-import" :titre="$x['confirmer']" :message="$x['confirmer_message']"
-                                      :action="route('admin.sites.import.confirmer', $site)" :bouton="$x['confirmer']">
+                                      :action="$routeConfirmer" :bouton="$x['confirmer']">
                     <x-slot:declencheur>{{ $x['confirmer'] }}</x-slot:declencheur>
                 </x-admin.confirmation>
             @else
                 <button type="button" class="bo-bouton bo-bouton-principal" disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</button>
             @endif
-            <form method="POST" action="{{ route('admin.sites.import.annuler', $site) }}">
+            <form method="POST" action="{{ $routeAnnuler }}">
                 @csrf
                 <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $x['annuler'] }}</button>
             </form>

@@ -45,20 +45,44 @@ class Boutique extends Model
         ];
     }
 
+    /** Seul changement de code admis : le recodage qui suit un changement de code du site (Site::recoderBoutiques). */
+    private static bool $recodage = false;
+
     protected static function booted(): void
     {
         static::saving(function (Boutique $boutique) {
-            if ($boutique->getOriginal('code') !== null && $boutique->isDirty(self::ELEMENTS_DU_CODE)) {
+            if (! self::$recodage && $boutique->getOriginal('code') !== null && $boutique->isDirty(self::ELEMENTS_DU_CODE)) {
                 throw new RegleGestionException(__('admin.sites.boutiques.code_fige', ['code' => $boutique->getOriginal('code')]));
             }
             if ($boutique->code === null) {
                 $boutique->code = self::composerCode($boutique->site?->code, $boutique->niveau?->value, $boutique->bloc, $boutique->numero);
             }
+            // Un code déjà attribué (même à une boutique supprimée) ou abandonné lors d'un recodage n'est jamais réutilisé.
             if ($boutique->code !== null && $boutique->isDirty('code')
-                && self::withTrashed()->where('code', $boutique->code)->whereKeyNot($boutique->getKey())->exists()) {
+                && (self::withTrashed()->where('code', $boutique->code)->whereKeyNot($boutique->getKey())->exists()
+                    || HistoriqueCode::query()->boutiques()->where('ancien_code', $boutique->code)->exists())) {
                 throw new RegleGestionException(__('admin.sites.boutiques.code_pris', ['code' => $boutique->code]));
             }
         });
+    }
+
+    /** Recode la boutique avec le nouveau code de son site ; l'ancien code est conservé dans l'historique. */
+    public function recoder(string $codeSite, ?User $auteur): void
+    {
+        $ancien = $this->code;
+        $nouveau = self::composerCode($codeSite, $this->niveau?->value, $this->bloc, $this->numero);
+        if ($ancien === null || $nouveau === null || $ancien === $nouveau) {
+            return;
+        }
+
+        self::$recodage = true;
+        try {
+            $this->forceFill(['code' => $nouveau])->save();
+        } finally {
+            self::$recodage = false;
+        }
+        HistoriqueCode::create(['objet_type' => HistoriqueCode::BOUTIQUE, 'objet_id' => $this->id, 'ancien_code' => $ancien,
+            'nouveau_code' => $nouveau, 'auteur_id' => $auteur?->id, 'created_at' => now()]);
     }
 
     /**

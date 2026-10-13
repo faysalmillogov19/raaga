@@ -78,19 +78,34 @@ class Site extends Model implements Parametrable
             }
         });
 
-        // Code du site renseigné après coup (site saisi avant les codes) : les boutiques complètes reçoivent leur code.
         static::saved(function (Site $site) {
-            if ($site->wasChanged('code') && $site->code !== null) {
-                $site->boutiques()->whereNull('code')->whereNotNull('niveau')->get()
-                    ->each(fn (Boutique $b) => $b->setRelation('site', $site)->save());
+            if (! $site->wasChanged('code') || $site->code === null) {
+                return;
             }
+            $ancien = $site->getOriginal('code');
+            if ($ancien !== null && $ancien !== $site->code) {
+                // Changement de code (brouillon ou révision) : codes des boutiques recalculés, anciens codes conservés.
+                HistoriqueCode::create(['objet_type' => HistoriqueCode::SITE, 'objet_id' => $site->id, 'ancien_code' => $ancien,
+                    'nouveau_code' => $site->code, 'auteur_id' => auth()->id(), 'created_at' => now()]);
+                $site->boutiques()->whereNotNull('code')->get()->each(fn (Boutique $b) => $b->recoder($site->code, auth()->user()));
+            }
+            // Boutiques complètes encore sans code (saisies avant les codes) : elles reçoivent le leur.
+            $site->boutiques()->whereNull('code')->whereNotNull('niveau')->get()
+                ->each(fn (Boutique $b) => $b->setRelation('site', $site)->save());
         });
     }
 
-    /** Le code ne change plus après la première confirmation ni dès qu'une boutique porte un code calculé avec lui. */
+    /**
+     * Le code d'un site soumis ou confirmé ne change jamais ; en brouillon ou en révision, il change tant qu'aucune
+     * de ses boutiques n'est engagée dans une campagne ou attribuée (leurs codes servent aux tirages et aux SMS).
+     */
     public function codeFige(): bool
     {
-        return $this->getOriginal('valide_le') !== null || $this->boutiques()->withTrashed()->whereNotNull('code')->exists();
+        $statut = $this->getOriginal('statut');
+        $statut = $statut instanceof StatutSite ? $statut : StatutSite::tryFrom((string) $statut);
+
+        return $statut !== StatutSite::Brouillon
+            || $this->boutiques()->whereIn('statut', [StatutBoutique::EnCampagne, StatutBoutique::Attribuee])->exists();
     }
 
     /**

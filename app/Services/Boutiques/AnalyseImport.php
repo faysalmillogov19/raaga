@@ -2,11 +2,17 @@
 
 namespace App\Services\Boutiques;
 
-/** Résultat de l'analyse d'un fichier « Locaux » : lignes valides, erreurs (ligne, colonne, motif) et totaux. */
+/**
+ * Résultat de l'analyse d'un fichier « Locaux » : lignes valides (avec leur site), erreurs (ligne, colonne, motif)
+ * qui bloquent la confirmation, avertissements qui ne la bloquent pas, et totaux.
+ */
 final class AnalyseImport
 {
-    /** @var list<array{ligne: int, code: string, boutique_id: ?int, donnees: array<string, mixed>}> */
+    /** @var list<array{ligne: int, code: string, site_id: int, boutique_id: ?int, donnees: array<string, mixed>}> */
     private array $lignes = [];
+
+    /** @var list<string> */
+    private array $avertissements = [];
 
     /** @var list<array{ligne: ?int, colonne: ?string, motif: string}> */
     private array $erreurs = [];
@@ -24,9 +30,22 @@ final class AnalyseImport
         return $this;
     }
 
-    public function ajouter(int $ligne, string $code, ?int $boutiqueId, array $donnees, string $niveau, string $type): void
+    public function avertir(string $message, array $parametres = []): self
     {
-        $this->lignes[] = ['ligne' => $ligne, 'code' => $code, 'boutique_id' => $boutiqueId, 'donnees' => $donnees];
+        $this->avertissements[] = strtr($message, collect($parametres)->mapWithKeys(fn ($v, $k) => [':'.$k => $v])->all());
+
+        return $this;
+    }
+
+    /** @return list<string> */
+    public function avertissements(): array
+    {
+        return $this->avertissements;
+    }
+
+    public function ajouter(int $ligne, string $code, int $siteId, ?int $boutiqueId, array $donnees, string $niveau, string $type): void
+    {
+        $this->lignes[] = ['ligne' => $ligne, 'code' => $code, 'site_id' => $siteId, 'boutique_id' => $boutiqueId, 'donnees' => $donnees];
         $this->parNiveau[$niveau] = ($this->parNiveau[$niveau] ?? 0) + 1;
         $this->parType[$type] = ($this->parType[$type] ?? 0) + 1;
     }
@@ -41,7 +60,7 @@ final class AnalyseImport
         return count($this->erreurs);
     }
 
-    /** @return list<array{ligne: int, code: string, boutique_id: ?int, donnees: array<string, mixed>}> */
+    /** @return list<array{ligne: int, code: string, site_id: int, boutique_id: ?int, donnees: array<string, mixed>}> */
     public function lignes(): array
     {
         return $this->lignes;

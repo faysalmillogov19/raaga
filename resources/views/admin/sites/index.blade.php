@@ -60,6 +60,23 @@
                 </div>
                 @error('fichier_sites') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
 
+                {{-- Boutiques de plusieurs sites existants en un seul fichier (ne crée jamais de site). --}}
+                <h3 class="mt-5 !text-[0.95rem]">{{ __('admin.sites.excel.combine_titre') }}</h3>
+                <p class="texte-carte">{{ __('admin.sites.excel.combine_aide') }}</p>
+                <div class="mt-3 flex flex-wrap items-end gap-3">
+                    <a href="{{ route('admin.sites.boutiques-excel.modele') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.sites.excel.modele') }}</a>
+                    <form method="POST" action="{{ route('admin.sites.boutiques-excel.deposer') }}" enctype="multipart/form-data" class="flex flex-wrap items-end gap-3" novalidate>
+                        @csrf
+                        <div class="formulaire-champ !mt-0">
+                            <label for="fichier-boutiques">{{ __('admin.sites.excel.combine_importer') }}</label>
+                            <input id="fichier-boutiques" name="fichier" type="file" required class="champ @error('fichier') est-invalide @enderror"
+                                   accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                        </div>
+                        <button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.sites.excel.combine_importer') }}</button>
+                    </form>
+                </div>
+                @error('fichier') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+
                 @if ($imports->isNotEmpty())
                     <h3 class="mt-4 !text-[0.95rem]">{{ $x['journal_titre'] }}</h3>
                     <ul class="texte-carte mt-1 space-y-1">

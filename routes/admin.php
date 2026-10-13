@@ -92,6 +92,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/import/annuler', 'annuler')->name('annuler');
         });
 
+        // Boutiques de plusieurs sites existants en un fichier (import combiné ; ne crée jamais de site).
+        Route::controller(ImportBoutiquesController::class)->prefix('sites/excel/boutiques')->middleware('can:'.Droit::SitesGerer->value)->name('sites.boutiques-excel.')->group(function () {
+            Route::get('/modele', 'modeleCombine')->name('modele');
+            Route::post('/import', 'deposerCombine')->middleware('throttle:20,1')->name('deposer');
+            Route::get('/import', 'apercuCombine')->name('apercu');
+            Route::post('/import/confirmer', 'confirmerCombine')->name('confirmer');
+            Route::post('/import/annuler', 'annulerCombine')->name('annuler');
+        });
+
         // Référentiel des boutiques d'un site en Excel : modèle, export, import avec aperçu puis confirmation (GESTIONNAIRE).
         Route::controller(ImportBoutiquesController::class)->prefix('sites/{site}')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('sites.')->group(function () {
             Route::get('/excel/modele', 'modele')->name('modele');

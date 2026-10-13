@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\PhaseSite;
+use App\Models\HistoriqueCode;
 use App\Models\Site;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\Rule;
@@ -22,7 +23,10 @@ final class FicheSite
         $cout = fn () => $donnees === null ? request()->input('cout_total') : ($donnees['cout_total'] ?? null);
 
         return [
-            'code' => ['required', 'string', 'regex:'.Site::FORMAT_CODE, ...($codeUnique ? [Rule::unique('sites', 'code')->ignore($site?->id)] : [])],
+            'code' => ['required', 'string', 'regex:'.Site::FORMAT_CODE, ...($codeUnique ? [Rule::unique('sites', 'code')->ignore($site?->id),
+                // L'ancien code d'un autre site n'est jamais réutilisé.
+                fn (string $attribut, mixed $valeur, \Closure $echec) => HistoriqueCode::query()->sites()->where('ancien_code', $valeur)
+                    ->where('objet_id', '!=', $site?->id ?? 0)->exists() ? $echec(__('admin.sites.erreurs.ancien_code')) : null] : [])],
             'nom' => ['required', 'string', 'max:150'],
             'ville' => ['required', 'string', 'max:80'],
             'arrondissement' => ['nullable', 'string', 'max:40'],

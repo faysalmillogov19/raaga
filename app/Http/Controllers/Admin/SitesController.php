@@ -155,8 +155,11 @@ class SitesController extends Controller
 
         return $this->executer($site, function () use ($request, $site, $donnees) {
             $this->exigerBrouillon($site);
-            $site->fill($donnees)->save();
-            $this->journal->ecrire($request->user(), 'site.modifie', 'Site', $site->id);
+            $ancienCode = $site->code;
+            // Un changement de code recalcule les codes des boutiques : tout ou rien.
+            DB::transaction(fn () => $site->fill($donnees)->save());
+            $this->journal->ecrire($request->user(), 'site.modifie', 'Site', $site->id,
+                $ancienCode !== $site->code ? ['code' => $ancienCode] : null, $ancienCode !== $site->code ? ['code' => $site->code] : null);
         }, 'admin.sites.messages.enregistre');
     }
 

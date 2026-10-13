@@ -113,7 +113,7 @@ class ImportBoutiquesTest extends TestCase
         ]));
 
         $this->en($this->gestionnaire)->get(route('admin.sites.import', $this->site))->assertOk()
-            ->assertSee('Site SAR différent du site ouvert (RAA)')->assertSee('Valeur non autorisée')
+            ->assertSee('Ligne 2 : site SAR inconnu. Vouliez-vous dire RAA ?')->assertSee('Valeur non autorisée')
             ->assertSee('Nombre entier de 1 à 999')->assertSee('Type « XX » inconnu', false)->assertSee('Surface supérieure à 0')
             ->assertSee('Confirmer l’import', false);
 

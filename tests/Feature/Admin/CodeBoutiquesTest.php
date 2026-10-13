@@ -91,7 +91,8 @@ class CodeBoutiquesTest extends TestCase
         }
         $this->assertSame('RAA-R1-A-045', $boutique->fresh()->code);
 
-        // Le code du site, déjà utilisé dans le code des boutiques, est figé lui aussi.
+        // Le code d'un site soumis (ou confirmé) est figé lui aussi.
+        $this->site->forceFill(['statut' => StatutSite::Soumis])->save();
         $this->en($this->gestionnaire)->put(route('admin.sites.update', $this->site), [
             'code' => 'SAR', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'ville' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation',
         ])->assertSessionHas('erreur');
