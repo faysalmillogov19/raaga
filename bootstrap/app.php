@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ActionsPubliques;
 use App\Http\Middleware\AuthentifieBackoffice;
 use App\Http\Middleware\DeconnecterCompteDesactive;
 use App\Http\Middleware\EnsureUserHasRole;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'backoffice' => AuthentifieBackoffice::class,
+            'actions.publiques' => ActionsPubliques::class,
         ]);
 
         // Back-office et institutionnels → e-mail + mot de passe + TOTP ; tous les autres → téléphone + SMS.

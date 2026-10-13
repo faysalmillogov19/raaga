@@ -50,10 +50,11 @@ Route::redirect('/admin/recette', '/recette/sms');
 Route::redirect('/admin/recette/sms', '/recette/sms');
 
 Route::controller(PageController::class)->group(function () {
-    Route::get('/offre', 'offre')->name('offre');
-    Route::get('/transparence', 'transparence')->name('transparence');
+    // Pages des actions : masquées en phase 1 (boutiques et cautions uniquement).
+    Route::get('/offre', 'offre')->middleware('actions.publiques')->name('offre');
+    Route::get('/transparence', 'transparence')->middleware('actions.publiques')->name('transparence');
     Route::get('/faq', 'faq')->name('faq');
-    Route::get('/actualites/{slug}', 'actualite')->name('actualites.show');
+    Route::get('/actualites/{slug}', 'actualite')->middleware('actions.publiques')->name('actualites.show');
 
     // Tunnel de souscription : pages d'attente jusqu'à la mise en service des parcours.
 
@@ -63,7 +64,7 @@ Route::controller(PageController::class)->group(function () {
 });
 
 // Souscription (citoyen connecté ; sans tranche ouverte, état vide visible de tous).
-Route::controller(SouscriptionController::class)->group(function () {
+Route::middleware('actions.publiques')->controller(SouscriptionController::class)->group(function () {
     Route::get('/souscrire', 'create')->name('souscrire');
     Route::get('/souscrire/reglement', 'reglement')->name('souscrire.reglement');
     Route::post('/souscrire', 'store')->middleware(['auth', 'role:citoyen', 'throttle:10,1'])->name('souscrire.store');
@@ -91,8 +92,8 @@ Route::middleware(['auth', 'role:citoyen'])->controller(CautionController::class
 });
 
 // Paiement d'une souscription réservée (citoyen connecté ; sans réservation, état vide).
-Route::get('/paiement', [PaiementController::class, 'index'])->name('paiement');
-Route::middleware(['auth', 'role:citoyen'])->controller(PaiementController::class)->prefix('paiement/{reference}')->name('paiement.')->group(function () {
+Route::get('/paiement', [PaiementController::class, 'index'])->middleware('actions.publiques')->name('paiement');
+Route::middleware(['actions.publiques', 'auth', 'role:citoyen'])->controller(PaiementController::class)->prefix('paiement/{reference}')->name('paiement.')->group(function () {
     Route::get('/', 'show')->name('show');
     Route::post('/', 'payer')->middleware('throttle:10,1')->name('payer');
     Route::get('/statut', 'statut')->middleware('throttle:60,1')->name('statut');
@@ -104,7 +105,7 @@ Route::middleware(['auth', 'role:citoyen'])->controller(PaiementController::clas
 
 // Mon espace : tableau de bord du citoyen (un autre profil voit un état vide).
 Route::get('/espace', [EspaceController::class, 'show'])->middleware('auth')->name('espace');
-Route::middleware(['auth', 'role:citoyen'])->controller(EspaceController::class)->prefix('espace/documents')->name('espace.documents.')->group(function () {
+Route::middleware(['actions.publiques', 'auth', 'role:citoyen'])->controller(EspaceController::class)->prefix('espace/documents')->name('espace.documents.')->group(function () {
     Route::get('/reglement/{souscription:reference}', 'reglement')->name('reglement');
     Route::get('/attestation/{ligne:numero_certificat}', 'attestation')->name('attestation');
 });

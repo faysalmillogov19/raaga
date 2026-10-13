@@ -55,6 +55,14 @@ return [
     | Paiement des souscriptions. null = simulateur de recette hors production (refusé en production).
     | « simule » explicitement en production : démarrage refusé (App\Support\VerrouEnvironnement).
     */
+    /*
+    | Périmètre de la phase : la phase 1 (décision du 13/10/2026) ne porte que sur les boutiques et leurs
+    | cautions. true = parcours publics des actions visibles (phase 2).
+    */
+    'phase' => [
+        'actions_publiques' => (bool) env('RAAGA_ACTIONS_PUBLIQUES', false),
+    ],
+
     'sms' => [
         // « log » : aucun envoi, le message est écrit dans les journaux (seul pilote disponible).
         'pilote' => env('RAAGA_SMS_PILOTE', 'log'),

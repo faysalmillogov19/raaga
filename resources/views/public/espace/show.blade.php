@@ -30,12 +30,7 @@
     <div class="conteneur py-8">
         {{-- Indicateurs --}}
         <dl class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            @foreach ([
-                'investi' => format_fcfa($indicateurs['investi']),
-                'en_attente' => format_nombre($indicateurs['en_attente']),
-                'allouees' => format_nombre($indicateurs['allouees']),
-                'dividendes' => format_fcfa($indicateurs['dividendes']),
-            ] as $cle => $valeur)
+            @foreach ($indicateurs as $cle => $valeur)
                 <div class="carte flex flex-col-reverse justify-end p-4">
                     <dt class="mt-1 text-sm text-gris">{{ __('public.espace.indicateurs.'.$cle) }}</dt>
                     <dd class="text-lg font-extrabold text-encre tab:text-xl">{{ $valeur }}</dd>
@@ -46,7 +41,7 @@
         {{-- Onglets : liens (chaque onglet a son adresse, aucun script requis) --}}
         <nav class="mt-8 border-b border-ligne" aria-label="{{ __('public.espace.onglets_libelle') }}">
             <ul class="grid grid-cols-2 gap-x-1 sm:flex">
-                @foreach (\App\Http\Controllers\Compte\EspaceController::ONGLETS as $cle)
+                @foreach ($onglets as $cle)
                     <li>
                         <a href="{{ route('espace', ['onglet' => $cle]) }}" @if ($onglet === $cle) aria-current="page" @endif
                            @class(['flex min-h-[48px] items-center border-b-[3px] px-3 font-semibold no-underline sm:px-4',

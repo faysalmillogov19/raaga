@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Publique;
 
 use App\Http\Controllers\Controller;
 use App\Services\Publique\CollectePublique;
+use App\Support\Phase;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -46,8 +47,13 @@ class PageController extends Controller
 
     public function faq(): View
     {
+        $groupes = __('public.faq.groupes');
+
+        // Phase 1 : boutiques et cautions uniquement ; phase 2 : questions sur les actions.
         return view('public.faq', [
-            'groupes' => __('public.faq.groupes'),
+            'groupes' => Phase::actionsPubliques()
+                ? array_diff_key($groupes, ['boutiques' => true])
+                : array_intersect_key($groupes, array_flip(['boutiques', 'securite'])),
         ]);
     }
 

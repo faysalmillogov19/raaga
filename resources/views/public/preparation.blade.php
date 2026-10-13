@@ -1,10 +1,11 @@
 {{-- Parcours pas encore ouverts (souscription, paiement, espace, vérification) : état vide honnête. --}}
 @php
     $citoyen = auth()->user()?->isCitoyen();
+    $phase2 = \App\Support\Phase::actionsPubliques();
     [$icone, $lien, $libelleLien] = match ($page) {
         'souscrire' => ['souscriptions', route('offre'), __('public.etats_vides.liens.offre')],
         'paiement' => ['cadenas', route('faq'), __('public.etats_vides.liens.faq')],
-        'espace' => ['utilisateur', $citoyen ? route('espace.profil') : route('offre'), $citoyen ? __('public.etats_vides.liens.profil') : __('public.etats_vides.liens.offre')],
+        'espace' => ['utilisateur', $citoyen ? route('espace.profil') : ($phase2 ? route('offre') : route('boutiques')), $citoyen ? __('public.etats_vides.liens.profil') : ($phase2 ? __('public.etats_vides.liens.offre') : __('public.boutiques.titre'))],
         'verification' => ['kyc', route('faq'), __('public.etats_vides.liens.faq')],
     };
 @endphp

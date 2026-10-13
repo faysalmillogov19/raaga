@@ -9,6 +9,10 @@
         ['cle' => 'espace', 'route' => auth()->check() ? 'espace' : 'connexion', 'motifs' => ['espace', 'espace.*', 'connexion', 'connexion.*']],
         ['cle' => 'faq', 'route' => 'faq', 'motifs' => ['faq']],
     ];
+    // Phase 1 (boutiques et cautions uniquement) : pas d'entrées vers les pages des actions.
+    if (! \App\Support\Phase::actionsPubliques()) {
+        $entrees = array_values(array_filter($entrees, fn ($e) => ! in_array($e['cle'], ['offre', 'souscrire', 'transparence'], true)));
+    }
 @endphp
 
 <nav aria-label="{{ __('public.menu.libelle') }}" class="bg-vert-fonce">

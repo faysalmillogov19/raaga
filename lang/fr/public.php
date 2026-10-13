@@ -349,6 +349,20 @@ return [
         'recherche_aide' => 'Saisissez un mot, par exemple « boutique » ou « remboursement ».',
         'aucun_resultat' => 'Aucune question ne correspond à votre recherche.',
         'groupes' => [
+            'boutiques' => [
+                'titre' => 'Boutiques et cautions',
+                'questions' => [
+                    ['q' => 'Qui peut candidater à une boutique ?', 'r' => 'Tout citoyen burkinabè dont l’identité a été vérifiée sur la plateforme (CNIB ou passeport et selfie). Une seule candidature par personne et par campagne.'],
+                    ['q' => 'Comment les boutiques sont-elles attribuées ?', 'r' => 'Par tirage au sort, après la clôture des candidatures, dans chaque catégorie de boutiques, parmi les candidats qui ont payé leur caution. Le tirage est enregistré et vérifiable.'],
+                    ['q' => 'Combien coûte la caution ?', 'r' => 'La caution dépend de la catégorie de boutique choisie. Son montant est affiché sur la page Boutiques et dans le règlement de la campagne.'],
+                    ['q' => 'Combien de temps ai-je pour payer la caution ?', 'r' => 'Le délai est indiqué dans le règlement de la campagne. Passé ce délai sans paiement, la candidature expire.'],
+                    ['q' => 'Comment payer la caution ?', 'r' => 'Par Orange Money, Moov Money, virement bancaire ou en espèces dans un guichet agréé, selon les moyens ouverts pour la campagne. Un reçu est disponible dès le paiement confirmé.'],
+                    ['q' => 'Payer la caution me garantit-il une boutique ?', 'r' => 'Non. Le nombre de boutiques de chaque catégorie est limité : seuls les candidats tirés au sort, dans la limite de ce nombre, obtiennent une boutique.'],
+                    ['q' => 'Que devient ma caution si je ne suis pas retenu ?', 'r' => 'Les modalités de restitution de la caution des candidats non retenus seront communiquées avant le tirage au sort.'],
+                    ['q' => 'Faut-il détenir des actions Raaga pour candidater ?', 'r' => 'Non. La candidature est ouverte à tous, actionnaire ou non. L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique.'],
+                    ['q' => 'Comment connaître le résultat ?', 'r' => 'Par SMS après le tirage au sort, et dans Mon espace, rubrique « Mes boutiques ».'],
+                ],
+            ],
             'souscrire' => [
                 'titre' => 'Souscrire',
                 'questions' => [
@@ -575,6 +589,10 @@ return [
             'en_attente' => 'Actions en attente d’allocation',
             'allouees' => 'Actions allouées',
             'dividendes' => 'Dividendes reçus',
+            'candidatures' => 'Candidatures en cours',
+            'cautions' => 'Cautions payées',
+            'en_attente_tirage' => 'En attente du tirage',
+            'attribuees' => 'Boutiques attribuées',
         ],
         'onglets_libelle' => 'Rubriques de mon espace',
         'onglets' => [
@@ -694,6 +712,29 @@ return [
         ],
     ],
 
+    'accueil_boutiques' => [
+        'titre_page' => 'Boutiques du marché Raaga',
+        'surtitre' => ':campagne · candidatures jusqu’au :date',
+        'surtitre_fermee' => ':campagne · candidatures clôturées',
+        'titre' => 'Obtenez une boutique dans le futur marché Raaga',
+        'intro' => 'Choisissez une catégorie de boutique, payez la caution et participez au tirage au sort. Depuis votre téléphone ou dans un guichet agréé.',
+        'intro_vide' => 'Les campagnes d’attribution des boutiques sont annoncées ici. Créez dès maintenant votre compte et faites vérifier votre identité pour être prêt.',
+        'creer_compte' => 'Créer mon compte',
+        'voir' => 'Voir les boutiques et les cautions',
+        'chiffres' => [
+            'boutiques' => 'boutiques à attribuer',
+            'categories' => 'catégories',
+            'jours' => 'jours pour candidater',
+        ],
+        'regles_titre' => 'À savoir avant de candidater',
+        'regles' => [
+            ['titre' => 'Tirage au sort', 'texte' => 'Payer la caution ne garantit pas d’obtenir une boutique : le nombre de boutiques de chaque catégorie est limité.'],
+            ['titre' => 'Une candidature par personne', 'texte' => 'Une seule catégorie, avec une identité vérifiée. La caution est à payer dans le délai indiqué.'],
+            ['titre' => 'Sans lien avec les actions', 'texte' => 'L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique.'],
+        ],
+        'faq_titre' => 'Vos questions',
+    ],
+
     'boutiques' => [
         'titre' => 'Boutiques du marché',
         'intro' => 'Candidatez à une boutique du futur marché Raaga. Une caution est demandée ; les boutiques sont attribuées par tirage au sort.',
@@ -711,6 +752,7 @@ return [
         'nombre' => ':n boutique|:n boutiques',
         'caution' => 'Caution',
         'candidater' => 'Je candidate',
+        'candidater_boutique' => 'Candidater à une boutique',
         'voir_candidature' => 'Voir ma candidature',
         'lire_reglement' => 'Lire le règlement de la campagne',
         'kyc_requis' => 'Une identité vérifiée est nécessaire pour candidater.',
