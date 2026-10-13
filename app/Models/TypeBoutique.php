@@ -9,11 +9,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** Type de boutique (boutique, magasin, étal…) avec son code : catégorie commune à tous les sites. */
 #[Table(name: 'types_boutiques')]
-#[Fillable(['code', 'libelle', 'description', 'ordre'])]
+#[Fillable(['code', 'libelle', 'description', 'attribuable', 'ordre'])]
 class TypeBoutique extends Model
 {
     /** Code du type (BOUT, MAG, ETAL, CF). */
     public const FORMAT_CODE = '/^[A-Z0-9]{2,6}$/';
+
+    protected function casts(): array
+    {
+        // « attribuable » faux : type jamais proposé au tirage au sort (chambre froide mutualisée).
+        return ['attribuable' => 'boolean'];
+    }
 
     /**
      * @return HasMany<Boutique, $this>

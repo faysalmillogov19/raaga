@@ -29,7 +29,9 @@ class LotsCampagne
      */
     public static function disponibilites(): Collection
     {
+        // Les types non attribuables par tirage (chambre froide mutualisée) ne sont jamais proposés.
         return Boutique::query()->whereHas('site', fn ($q) => $q->where('statut', StatutSite::Confirme))
+            ->whereHas('type', fn ($q) => $q->where('attribuable', true))
             ->where('statut', StatutBoutique::Disponible)
             ->selectRaw('site_id, type_boutique_id, count(*) as nombre')->groupBy('site_id', 'type_boutique_id')->toBase()->get()
             ->groupBy('site_id')->map(fn ($lignes) => $lignes->pluck('nombre', 'type_boutique_id')->map(fn ($n) => (int) $n));

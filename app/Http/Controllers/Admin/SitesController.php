@@ -16,6 +16,8 @@ use App\Models\TypeBoutique;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Parametrage\WorkflowParametrage;
+use App\Services\Sites\ComparaisonCapacites;
+use App\Support\FicheSite;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -132,6 +134,8 @@ class SitesController extends Controller
             'decisions' => ParametrageDecision::query()->where('objet_type', 'site')->where('objet_id', $site->id)->with('decideur')->orderByDesc('id')->get(),
             'differentiel' => $differentiel,
             'premiereVersion' => $precedente === null,
+            'capacites' => $site->capacites()->with('type')->get(),
+            'comparaison' => app(ComparaisonCapacites::class)->pour($site),
         ]);
     }
 
@@ -324,14 +328,7 @@ class SitesController extends Controller
     {
         $this->majuscules($request, ['code']);
 
-        return $request->validate([
-            'code' => ['required', 'string', 'regex:'.Site::FORMAT_CODE, Rule::unique('sites', 'code')->ignore($site?->id)],
-            'nom' => ['required', 'string', 'max:150'],
-            'region' => ['required', Rule::in(config('raaga.inscription.regions'))],
-            'commune' => ['required', 'string', 'max:80'],
-            'adresse' => ['required', 'string', 'max:300'],
-            'description' => ['nullable', 'string', 'max:2000'],
-        ], [], __('admin.sites.champs'));
+        return FicheSite::attributs($request->validate(FicheSite::regles($site), [], __('admin.sites.champs')));
     }
 
     /** @return list<mixed> */

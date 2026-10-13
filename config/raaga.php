@@ -111,6 +111,19 @@ return [
     ],
 
     /*
+    | Référentiel des sites : import et export Excel (.xlsx), onglets « Sites » et « Capacités ».
+    */
+    'referentiel_sites' => [
+        'disque' => 'local',
+        'dossier' => 'imports/sites',
+        'taille_max_ko' => 5120,
+        'lignes_max' => 5000,
+        // Lignes du modèle préparées avec les formules (comme le fichier de référence : 30 sites, 300 capacités).
+        'lignes_modele_sites' => 30,
+        'lignes_modele_capacites' => 300,
+    ],
+
+    /*
     | Grille tarifaire des boutiques (par site, niveau et type) : valeurs proposées au RÉGULATEUR, qui les ajuste
     | avant de soumettre la grille au VALIDATEUR. Loyer mensuel = surface × loyer au m² ; caution = loyer × mois de
     | caution ; avance = loyer × mois d'avance (montants arrondis au franc).

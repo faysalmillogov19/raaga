@@ -40,7 +40,7 @@
                 <ul class="mt-4 grid gap-4 tab:grid-cols-2 lg:grid-cols-3">
                     @foreach ($campagne->categories as $categorie)
                         <li class="carte flex flex-col p-5">
-                            @if ($categorie->site)<p class="text-sm font-semibold uppercase tracking-wide text-vert-fonce">{{ $categorie->site->nom }} · {{ $categorie->site->commune }}</p>@endif
+                            @if ($categorie->site)<p class="text-sm font-semibold uppercase tracking-wide text-vert-fonce">{{ $categorie->site->nom }} · {{ $categorie->site->localite() }}</p>@endif
                             <h3 class="!text-lg">{{ $categorie->libelle }}</h3>
                             @if ($categorie->description)
                                 <p class="texte-carte mt-1">{{ $categorie->description }}</p>

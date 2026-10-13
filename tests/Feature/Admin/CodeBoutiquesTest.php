@@ -93,7 +93,7 @@ class CodeBoutiquesTest extends TestCase
 
         // Le code du site, déjà utilisé dans le code des boutiques, est figé lui aussi.
         $this->en($this->gestionnaire)->put(route('admin.sites.update', $this->site), [
-            'code' => 'SAR', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation',
+            'code' => 'SAR', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'ville' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation',
         ])->assertSessionHas('erreur');
         $this->assertSame('RAA', $this->site->fresh()->code);
     }

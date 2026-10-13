@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ConventionsController;
 use App\Http\Controllers\Admin\DividendesController;
 use App\Http\Controllers\Admin\GrillesTarifairesController;
 use App\Http\Controllers\Admin\ImportBoutiquesController;
+use App\Http\Controllers\Admin\ImportSitesController;
 use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
@@ -79,6 +80,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{site}/reviser', 'reviser')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.reviser');
             Route::post('/{site}/confirmer', 'confirmer')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
             Route::post('/{site}/rejeter', 'rejeter')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
+        });
+
+        // Sites et capacités prévues en Excel : modèle, export, import avec aperçu puis confirmation (GESTIONNAIRE).
+        Route::controller(ImportSitesController::class)->prefix('sites/excel')->middleware('can:'.Droit::SitesGerer->value)->name('sites.excel.')->group(function () {
+            Route::get('/modele', 'modele')->name('modele');
+            Route::get('/export', 'exporter')->name('export');
+            Route::post('/import', 'deposer')->middleware('throttle:20,1')->name('deposer');
+            Route::get('/import', 'apercu')->name('apercu');
+            Route::post('/import/confirmer', 'confirmer')->name('confirmer');
+            Route::post('/import/annuler', 'annuler')->name('annuler');
         });
 
         // Référentiel des boutiques d'un site en Excel : modèle, export, import avec aperçu puis confirmation (GESTIONNAIRE).

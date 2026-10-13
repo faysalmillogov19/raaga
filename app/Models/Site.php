@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\Parametrable;
+use App\Enums\PhaseSite;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
 use App\Services\Backoffice\RegleGestionException;
@@ -19,12 +20,18 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * saisit et soumet ; le VALIDATEUR confirme (workflow commun). Seuls les sites confirmés entrent dans une campagne.
  */
 #[Fillable([
-    'statut', 'code', 'nom', 'region', 'commune', 'adresse', 'description', 'version',
+    'statut', 'code', 'nom', 'ville', 'arrondissement', 'region', 'commune', 'adresse', 'latitude', 'longitude',
+    'maitre_ouvrage', 'maitre_oeuvre', 'phase', 'livraison_prevue', 'cout_total', 'part_occupants', 'source_complement',
+    'reference_plans', 'version_plans', 'source_donnees', 'description', 'version',
     'cree_par', 'soumis_par', 'soumis_le', 'valide_par', 'valide_le', 'motif_rejet',
 ])]
 class Site extends Model implements Parametrable
 {
-    public const PARAMETRES = ['code', 'nom', 'region', 'commune', 'adresse', 'description'];
+    public const PARAMETRES = [
+        'code', 'nom', 'ville', 'arrondissement', 'region', 'adresse', 'latitude', 'longitude', 'maitre_ouvrage', 'maitre_oeuvre',
+        'phase', 'livraison_prevue', 'cout_total', 'part_occupants', 'source_complement', 'reference_plans', 'version_plans',
+        'source_donnees', 'description',
+    ];
 
     /** Code court du site (RAA, SAR, A04) : premier élément du code de ses boutiques. */
     public const FORMAT_CODE = '/^[A-Z0-9]{3}$/';
@@ -33,10 +40,34 @@ class Site extends Model implements Parametrable
     {
         return [
             'statut' => StatutSite::class,
+            'phase' => PhaseSite::class,
+            'livraison_prevue' => 'date',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
+            'cout_total' => 'integer',
+            'part_occupants' => 'integer',
             'version' => 'integer',
             'soumis_le' => 'datetime',
             'valide_le' => 'datetime',
         ];
+    }
+
+    /** Ville (ou commune d'un site saisi avant la fiche complète). */
+    public function localite(): ?string
+    {
+        return $this->ville ?? $this->commune;
+    }
+
+    /** Complément à financer : coût total − part attendue des occupants (calculé, jamais stocké). */
+    public function complement(): ?int
+    {
+        return $this->cout_total !== null && $this->part_occupants !== null ? $this->cout_total - $this->part_occupants : null;
+    }
+
+    /** Part des occupants en % du coût total (calculée, jamais stockée). */
+    public function partOccupantsPourcent(): ?float
+    {
+        return $this->cout_total && $this->part_occupants !== null ? $this->part_occupants / $this->cout_total * 100 : null;
     }
 
     protected static function booted(): void
@@ -135,7 +166,15 @@ class Site extends Model implements Parametrable
      */
     public function snapshotParametres(): array
     {
-        $snapshot = array_map(fn ($v) => $v, $this->only(self::PARAMETRES));
+        $snapshot = array_map(fn ($v) => match (true) {
+            $v instanceof \BackedEnum => $v->label(),
+            $v instanceof \DateTimeInterface => $v->format('m/Y'),
+            default => $v,
+        }, $this->only(self::PARAMETRES));
+        $snapshot['capacites'] = $this->capacites()->with('type')->get()
+            ->map(fn (CapaciteSite $c) => implode(' · ', array_filter([$c->niveau?->value, $c->zone, $c->type->code ?? $c->type->libelle]))
+                .' : '.($c->nombre_prevu ?? '—').' / '.($c->surfaceRetenue() !== null ? format_nombre($c->surfaceRetenue(), 2).' m²' : '—'))
+            ->implode(' ; ');
 
         $boutiques = $this->boutiques()->where('statut', '!=', StatutBoutique::Retiree)->with('type')->get();
         $snapshot['boutiques'] = $boutiques->groupBy(fn (Boutique $b) => $b->type->libelle)
@@ -169,6 +208,14 @@ class Site extends Model implements Parametrable
     public function versions(): HasMany
     {
         return $this->hasMany(SiteVersion::class)->orderBy('numero');
+    }
+
+    /**
+     * @return HasMany<CapaciteSite, $this>
+     */
+    public function capacites(): HasMany
+    {
+        return $this->hasMany(CapaciteSite::class)->orderBy('niveau')->orderBy('zone')->orderBy('type_boutique_id');
     }
 
     /**

@@ -33,7 +33,7 @@ class SitesTest extends TestCase
         $petite = TypeBoutique::query()->where('libelle', 'Petite boutique')->value('id');
 
         $this->en($this->gestionnaire)->post(route('admin.sites.store'), [
-            'code' => 'RAA', 'nom' => 'Marché central de Ouagadougou', 'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation',
+            'code' => 'RAA', 'nom' => 'Marché central de Ouagadougou', 'region' => 'Centre', 'ville' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation',
         ])->assertSessionHasNoErrors();
         $site = Site::query()->sole();
 
