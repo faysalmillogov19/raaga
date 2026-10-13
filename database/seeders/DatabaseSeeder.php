@@ -15,47 +15,55 @@ class DatabaseSeeder extends Seeder
     /** Mot de passe des comptes back-office de démonstration (12 caractères minimum). */
     public const MOT_DE_PASSE_BACKOFFICE = 'Raaga-Demo-2026!';
 
+    /** Mot de passe des autres comptes de démonstration. */
+    public const MOT_DE_PASSE_AUTRES = 'password';
+
+    /** Comptes back-office de démonstration : [nom, e-mail, rôle]. */
+    private const BACKOFFICE = [
+        ['Aminata SAWADOGO', 'superadmin@raaga.test', Role::SuperAdmin],
+        ['Issouf KABORÉ', 'superadmin2@raaga.test', Role::SuperAdmin],
+        ['Rasmata OUÉDRAOGO', 'admin@raaga.test', Role::Admin],
+        ['Mariam TRAORÉ', 'validation@raaga.test', Role::Validateur],
+        ['Boukary ZONGO', 'validation2@raaga.test', Role::Validateur],
+        ['Clarisse SOMÉ', 'regulation@raaga.test', Role::Regulateur],
+        ['Salif OUÉDRAOGO', 'sites@raaga.test', Role::GestionnaireSites],
+    ];
+
     /**
-     * Seed the application's database.
+     * Seed the application's database. Se relance sans risque (« php artisan db:seed ») :
      *
-     * - Back-office : 2 SUPER_ADMIN, 1 ADMIN, 2 VALIDATEUR, 1 REGULATEUR (mot de passe ci-dessus).
-     *   Sans TOTP enrôlé : la double authentification n'est dispensée qu'en local avec
-     *   RAAGA_TOTP_FACULTATIF_EN_LOCAL=true ; sinon l'enrôlement est demandé à la première connexion.
-     * - Autres rôles : un compte {prefixe}@raaga.test, mot de passe « password ».
+     * - Rôles : table alignée sur l'enum (RoleSeeder).
+     * - Comptes de démonstration : créés s'ils manquent ; s'ils existent, seul leur rôle est remis à jour
+     *   (jamais le mot de passe, le nom ni le TOTP). Back-office : mot de passe ci-dessus ; sans TOTP enrôlé,
+     *   la double authentification n'est dispensée qu'en local avec RAAGA_TOTP_FACULTATIF_EN_LOCAL=true.
+     *   Autres rôles : un compte {prefixe}@raaga.test, mot de passe « password ».
      * À changer immédiatement hors environnement local.
      */
     public function run(): void
     {
-        RoleModel::synchroniser();
+        $this->call(RoleSeeder::class);
         $this->call(ParametresPlateformeSeeder::class);
 
-        $backoffice = [
-            ['Aminata SAWADOGO', 'superadmin@raaga.test', Role::SuperAdmin],
-            ['Issouf KABORÉ', 'superadmin2@raaga.test', Role::SuperAdmin],
-            ['Rasmata OUÉDRAOGO', 'admin@raaga.test', Role::Admin],
-            ['Mariam TRAORÉ', 'validation@raaga.test', Role::Validateur],
-            ['Boukary ZONGO', 'validation2@raaga.test', Role::Validateur],
-            ['Clarisse SOMÉ', 'regulation@raaga.test', Role::Regulateur],
-            ['Salif OUÉDRAOGO', 'sites@raaga.test', Role::GestionnaireSites],
-        ];
-
-        foreach ($backoffice as [$nom, $email, $role]) {
-            User::factory()->role($role)->create([
-                'name' => $nom,
-                'email' => $email,
-                'password' => self::MOT_DE_PASSE_BACKOFFICE,
-            ]);
+        foreach (self::BACKOFFICE as [$nom, $email, $role]) {
+            $this->compte($nom, $email, $role, self::MOT_DE_PASSE_BACKOFFICE);
         }
 
         foreach (Role::cases() as $role) {
-            if ($role->estBackoffice()) {
+            // Les comptes institutionnels sont rattachés à une institution : ils se créent par invitation.
+            if ($role->estBackoffice() || $role->estInstitutionnel()) {
                 continue;
             }
-
-            User::factory()->role($role)->create([
-                'name' => $role->label(),
-                'email' => $role->prefix().'@raaga.test',
-            ]);
+            $this->compte($role->label(), $role->prefix().'@raaga.test', $role, self::MOT_DE_PASSE_AUTRES);
         }
+    }
+
+    /** Crée le compte s'il manque ; sinon remet seulement son rôle à jour. */
+    private function compte(string $nom, string $email, Role $role, string $motDePasse): void
+    {
+        $user = User::query()->firstOrNew(['email' => $email]);
+        if (! $user->exists) {
+            $user->forceFill(['name' => $nom, 'password' => $motDePasse, 'email_verified_at' => now()]);
+        }
+        $user->forceFill(['role_id' => RoleModel::pour($role)->id])->save();
     }
 }

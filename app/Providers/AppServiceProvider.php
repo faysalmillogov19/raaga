@@ -10,6 +10,9 @@ use App\Services\Paiement\SimulatedProvider;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Services\Sms\LogSmsProvider;
 use App\Support\VerrouEnvironnement;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Console\Events\CommandFinished;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
@@ -45,6 +48,15 @@ class AppServiceProvider extends ServiceProvider
     {
         // Données de démonstration et paiement simulé interdits en production : démarrage refusé.
         VerrouEnvironnement::verifier((string) $this->app->environment(), (bool) config('raaga.demo'), config('raaga.paiement.fournisseur'));
+
+        // Après chaque « php artisan migrate » réussi (même sans nouvelle migration) : table des rôles alignée
+        // sur l'enum (RoleSeeder, sans effet de bord).
+        Event::listen(CommandFinished::class, function (CommandFinished $evenement) {
+            if ($evenement->exitCode === 0 && in_array($evenement->command, ['migrate', 'migrate:fresh', 'migrate:refresh'], true)) {
+                $this->app->make(RoleSeeder::class)->run();
+                $evenement->output->writeln('  Rôles synchronisés (RoleSeeder).');
+            }
+        });
 
         // Une Gate par droit du back-office, d'après la matrice App\Enums\Droit::pour().
         // Un compte désactivé n'a plus aucun droit.
