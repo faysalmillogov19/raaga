@@ -6,21 +6,15 @@ use App\Enums\CanalPaiement;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-/** Paramètres d'une campagne d'attribution des boutiques, avec ses catégories (libellé, nombre, caution). */
+/**
+ * Paramètres d'une campagne d'attribution : période, paiement de la caution, plafond par personne, et
+ * caution de chaque lot (site confirmé × type de boutique). Caution vide = type non proposé sur ce site.
+ */
 class CampagneBoutiquesRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true; // Droit vérifié par le contrôleur (Gate::authorize).
-    }
-
-    protected function prepareForValidation(): void
-    {
-        // Lignes de catégorie entièrement vides (ajoutées puis laissées) : ignorées.
-        $this->merge(['categories' => array_values(array_filter(
-            (array) $this->input('categories', []),
-            fn ($c) => is_array($c) && collect($c)->filter(fn ($v) => filled($v))->isNotEmpty(),
-        ))]);
     }
 
     public function rules(): array
@@ -33,20 +27,18 @@ class CampagneBoutiquesRequest extends FormRequest
             'delai_paiement_heures' => ['required', 'integer', 'min:1', 'max:720'],
             'canaux_actifs' => ['required', 'array', 'min:1'],
             'canaux_actifs.*' => [Rule::enum(CanalPaiement::class)],
-            'categories' => ['required', 'array', 'min:1', 'max:20'],
-            'categories.*.libelle' => ['required', 'string', 'max:80'],
-            'categories.*.description' => ['nullable', 'string', 'max:300'],
-            'categories.*.nombre_boutiques' => ['required', 'integer', 'min:1', 'max:100000'],
-            'categories.*.caution' => ['required', 'integer', 'min:1', 'max:1000000000'],
+            'max_boutiques_par_personne' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'cautions' => ['required', 'array'],
+            'cautions.*' => ['array'],
+            'cautions.*.*' => ['nullable', 'integer', 'min:1', 'max:1000000000'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'categories.required' => __('admin.boutiques.erreurs.categories'),
-            'categories.min' => __('admin.boutiques.erreurs.categories'),
-            'categories.*.*' => __('admin.boutiques.erreurs.categorie_complete'),
+            'cautions.required' => __('admin.boutiques.erreurs.categories'),
+            'cautions.*.*' => __('admin.boutiques.erreurs.caution'),
         ];
     }
 
@@ -58,17 +50,12 @@ class CampagneBoutiquesRequest extends FormRequest
     /** @return array<string, mixed> */
     public function parametres(): array
     {
-        return $this->safe()->only(['nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs']);
+        return $this->safe()->only(['nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne']);
     }
 
-    /** @return list<array{libelle: string, description: ?string, nombre_boutiques: int, caution: int}> */
-    public function categories(): array
+    /** @return array<int|string, array<int|string, int|string|null>> */
+    public function cautions(): array
     {
-        return array_map(fn (array $c) => [
-            'libelle' => $c['libelle'],
-            'description' => $c['description'] ?? null,
-            'nombre_boutiques' => (int) $c['nombre_boutiques'],
-            'caution' => (int) $c['caution'],
-        ], $this->validated('categories'));
+        return (array) $this->validated('cautions');
     }
 }

@@ -10,10 +10,13 @@ use App\Http\Requests\Admin\CampagneBoutiquesRequest;
 use App\Models\CampagneBoutiques;
 use App\Models\CandidatureBoutique;
 use App\Models\ParametrageDecision;
+use App\Models\Site;
 use App\Models\TirageBoutiques;
+use App\Models\TypeBoutique;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
+use App\Services\Boutiques\LotsCampagne;
 use App\Services\Boutiques\TirageAuSort;
 use App\Services\Parametrage\WorkflowParametrage;
 use Closure;
@@ -33,6 +36,7 @@ class CampagnesBoutiquesController extends Controller
         private readonly WorkflowParametrage $workflow,
         private readonly Journal $journal,
         private readonly ConfirmationRenforcee $confirmation,
+        private readonly LotsCampagne $lots,
     ) {}
 
     public function index(): View
@@ -55,7 +59,7 @@ class CampagnesBoutiquesController extends Controller
                 'delai_paiement_heures' => 72,
                 'canaux_actifs' => array_column(CanalPaiement::cases(), 'value'),
             ]),
-            'categories' => [],
+            ...$this->donneesFormulaire(null),
             'mode' => 'creation',
         ]);
     }
@@ -64,13 +68,17 @@ class CampagnesBoutiquesController extends Controller
     {
         Gate::authorize(Droit::BoutiquesSaisir->value);
 
-        $campagne = DB::transaction(function () use ($request) {
-            $campagne = CampagneBoutiques::create([...$request->parametres(), 'statut' => StatutCampagneBoutiques::Brouillon, 'cree_par' => $request->user()->id]);
-            $this->remplacerCategories($campagne, $request->categories());
-            $this->journal->ecrire($request->user(), 'campagne_boutiques.creee', 'CampagneBoutiques', $campagne->id, null, ['nom' => $campagne->nom]);
+        try {
+            $campagne = DB::transaction(function () use ($request) {
+                $campagne = CampagneBoutiques::create([...$request->parametres(), 'statut' => StatutCampagneBoutiques::Brouillon, 'cree_par' => $request->user()->id]);
+                $this->lots->definir($campagne, $request->cautions());
+                $this->journal->ecrire($request->user(), 'campagne_boutiques.creee', 'CampagneBoutiques', $campagne->id, null, ['nom' => $campagne->nom]);
 
-            return $campagne;
-        });
+                return $campagne;
+            });
+        } catch (RegleGestionException $e) {
+            return back()->withInput()->withErrors(['cautions' => $e->getMessage()]);
+        }
 
         return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree'));
     }
@@ -84,7 +92,7 @@ class CampagnesBoutiquesController extends Controller
         $precedente = $versions->count() > 1 ? $versions->get($versions->count() - 2) : null;
 
         return view('admin.boutiques.show', [
-            'campagne' => $campagne->load('categories'),
+            'campagne' => $campagne->load('categories.site'),
             'versions' => $versions->reverse()->values(),
             'decisions' => ParametrageDecision::query()->where('objet_type', $campagne->typeParametrage())->where('objet_id', $campagne->id)
                 ->with('decideur')->orderByDesc('id')->get(),
@@ -111,7 +119,7 @@ class CampagnesBoutiquesController extends Controller
 
         return view('admin.boutiques.formulaire', [
             'campagne' => $campagne,
-            'categories' => $campagne->categories()->get(['libelle', 'description', 'nombre_boutiques', 'caution'])->toArray(),
+            ...$this->donneesFormulaire($campagne),
             'mode' => 'modification',
         ]);
     }
@@ -124,11 +132,15 @@ class CampagnesBoutiquesController extends Controller
             return redirect()->route('admin.boutiques.show', $campagne)->with('erreur', __('admin.parametrage.regles.non_modifiable'));
         }
 
-        DB::transaction(function () use ($request, $campagne) {
-            $campagne->fill($request->parametres())->save();
-            $this->remplacerCategories($campagne, $request->categories());
-            $this->journal->ecrire($request->user(), 'campagne_boutiques.modifiee', 'CampagneBoutiques', $campagne->id);
-        });
+        try {
+            DB::transaction(function () use ($request, $campagne) {
+                $campagne->fill($request->parametres())->save();
+                $this->lots->definir($campagne, $request->cautions());
+                $this->journal->ecrire($request->user(), 'campagne_boutiques.modifiee', 'CampagneBoutiques', $campagne->id);
+            });
+        } catch (RegleGestionException $e) {
+            return back()->withInput()->withErrors(['cautions' => $e->getMessage()]);
+        }
 
         return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree'));
     }
@@ -137,7 +149,13 @@ class CampagnesBoutiquesController extends Controller
     {
         Gate::authorize(Droit::BoutiquesSaisir->value);
 
-        return $this->executer($campagne, fn () => $this->workflow->soumettre($campagne, $request->user()), 'admin.parametrage.messages.soumis');
+        return $this->executer($campagne, function () use ($request, $campagne) {
+            // Nombres de boutiques recomptés dans le référentiel au moment de la soumission.
+            DB::transaction(function () use ($request, $campagne) {
+                $this->lots->definir($campagne, $this->cautionsActuelles($campagne));
+                $this->workflow->soumettre($campagne, $request->user());
+            });
+        }, 'admin.parametrage.messages.soumis');
     }
 
     public function confirmer(Request $request, CampagneBoutiques $campagne): RedirectResponse
@@ -169,7 +187,10 @@ class CampagnesBoutiquesController extends Controller
                 throw new RegleGestionException(__('admin.boutiques.regles.une_seule_ouverte'));
             }
 
-            $campagne->forceFill(['statut' => StatutCampagneBoutiques::Ouverte, 'ouverte_le' => now()])->save();
+            DB::transaction(function () use ($campagne) {
+                $this->lots->engager($campagne);
+                $campagne->forceFill(['statut' => StatutCampagneBoutiques::Ouverte, 'ouverte_le' => now()])->save();
+            });
             $this->journal->ecrire($request->user(), 'campagne_boutiques.ouverte', 'CampagneBoutiques', $campagne->id, ['statut' => 'CONFIRMEE'], ['statut' => 'OUVERTE']);
         }, 'admin.boutiques.messages.ouverte');
     }
@@ -201,13 +222,32 @@ class CampagnesBoutiquesController extends Controller
         }, 'admin.boutiques.messages.tiree');
     }
 
-    /** @param list<array<string, mixed>> $categories */
-    private function remplacerCategories(CampagneBoutiques $campagne, array $categories): void
+    /**
+     * Sites confirmés, types disponibles par site et cautions déjà saisies (formulaire).
+     *
+     * @return array<string, mixed>
+     */
+    private function donneesFormulaire(?CampagneBoutiques $campagne): array
     {
-        $campagne->categories()->delete();
-        foreach ($categories as $i => $categorie) {
-            $campagne->categories()->create([...$categorie, 'ordre' => $i + 1]);
+        $disponibilites = LotsCampagne::disponibilites();
+
+        return [
+            'sites' => Site::query()->confirmes()->whereIn('id', $disponibilites->keys())->orderBy('nom')->get(),
+            'types' => TypeBoutique::query()->orderBy('ordre')->orderBy('libelle')->get()->keyBy('id'),
+            'disponibilites' => $disponibilites,
+            'cautions' => $campagne ? $this->cautionsActuelles($campagne) : [],
+        ];
+    }
+
+    /** @return array<int, array<int, int>> */
+    private function cautionsActuelles(CampagneBoutiques $campagne): array
+    {
+        $cautions = [];
+        foreach ($campagne->categories()->whereNotNull('site_id')->get() as $lot) {
+            $cautions[$lot->site_id][$lot->type_boutique_id] = $lot->caution;
         }
+
+        return $cautions;
     }
 
     private function executer(CampagneBoutiques $campagne, Closure $action, string $message): RedirectResponse

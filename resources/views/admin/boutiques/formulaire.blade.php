@@ -5,7 +5,6 @@
     $k = __('admin.boutiques.categorie');
     $titre = __('admin.boutiques.formulaire.'.$mode);
     $dateHeure = fn ($d) => $d ? \Carbon\Carbon::parse($d)->format('Y-m-d\TH:i') : null;
-    $lignes = old('categories', $categories ?: [['libelle' => '', 'description' => '', 'nombre_boutiques' => '', 'caution' => '']]);
     $fil = [['libelle' => __('admin.boutiques.titre'), 'url' => route('admin.boutiques')]];
     if ($campagne->exists) {
         $fil[] = ['libelle' => $campagne->nom, 'url' => route('admin.boutiques.show', $campagne)];
@@ -34,39 +33,32 @@
             </div>
         </section>
 
-        {{-- Catégories : une ligne par catégorie (libellé, description, nombre de boutiques, caution) --}}
-        <section class="bo-carte !mt-0" aria-labelledby="s-categories"
-                 x-data="{ lignes: @js(array_values($lignes)) }">
-            <h2 id="s-categories" class="!text-[1.15rem]">{{ $k['titre'] }}</h2>
+        {{-- Lots : caution par site confirmé et par type de boutique (nombre compté dans le référentiel) --}}
+        <section class="bo-carte !mt-0" aria-labelledby="s-lots">
+            <h2 id="s-lots" class="!text-[1.15rem]">{{ $k['titre'] }}</h2>
             <p class="texte-carte mt-1">{{ $k['aide'] }}</p>
-            @error('categories') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-            @if ($errors->has('categories.*'))
-                <p class="message-erreur" role="alert">{{ __('admin.boutiques.erreurs.categorie_complete') }}</p>
+            @error('cautions') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+            @if ($errors->has('cautions.*'))
+                <p class="message-erreur" role="alert">{{ __('admin.boutiques.erreurs.caution') }}</p>
             @endif
 
-            <template x-for="(ligne, i) in lignes" :key="i">
-                <fieldset class="mt-4 grid gap-3 rounded-charte border border-ligne p-3 lg:grid-cols-[1.2fr_2fr_1fr_1fr_auto] lg:items-end">
-                    <legend class="sr-only" x-text="@js($k['libelle']).concat(' ', i + 1)"></legend>
-                    <div class="formulaire-champ !mt-0">
-                        <label :for="'cat-libelle-' + i">{{ $k['libelle'] }}</label>
-                        <input :id="'cat-libelle-' + i" :name="'categories[' + i + '][libelle]'" x-model="ligne.libelle" maxlength="80" class="champ" required>
+            @forelse ($sites as $site)
+                <fieldset class="mt-4 rounded-charte border border-ligne p-3">
+                    <legend class="px-1 font-bold text-encre">{{ $site->nom }} <span class="texte-carte font-normal">— {{ $site->region }} · {{ $site->commune }}</span></legend>
+                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        @foreach ($disponibilites[$site->id] as $typeId => $nombre)
+                            @php($nom = 'cautions['.$site->id.']['.$typeId.']')
+                            <div class="formulaire-champ !mt-0">
+                                <label for="caution-{{ $site->id }}-{{ $typeId }}">{{ $types[$typeId]->libelle }} <span class="texte-carte">({{ trans_choice('admin.boutiques.categorie.disponibles', $nombre, ['n' => format_nombre($nombre)]) }})</span></label>
+                                <input id="caution-{{ $site->id }}-{{ $typeId }}" name="{{ $nom }}" type="number" min="1" class="champ"
+                                       value="{{ old('cautions.'.$site->id.'.'.$typeId, $cautions[$site->id][$typeId] ?? '') }}" placeholder="{{ $k['non_propose'] }}">
+                            </div>
+                        @endforeach
                     </div>
-                    <div class="formulaire-champ !mt-0">
-                        <label :for="'cat-description-' + i">{{ $k['description'] }}</label>
-                        <input :id="'cat-description-' + i" :name="'categories[' + i + '][description]'" x-model="ligne.description" maxlength="300" class="champ">
-                    </div>
-                    <div class="formulaire-champ !mt-0">
-                        <label :for="'cat-nombre-' + i">{{ $k['nombre_boutiques'] }}</label>
-                        <input :id="'cat-nombre-' + i" :name="'categories[' + i + '][nombre_boutiques]'" x-model="ligne.nombre_boutiques" type="number" min="1" class="champ" required>
-                    </div>
-                    <div class="formulaire-champ !mt-0">
-                        <label :for="'cat-caution-' + i">{{ $k['caution'] }}</label>
-                        <input :id="'cat-caution-' + i" :name="'categories[' + i + '][caution]'" x-model="ligne.caution" type="number" min="1" class="champ" required>
-                    </div>
-                    <button type="button" class="bo-bouton bo-bouton-secondaire" @click="lignes.splice(i, 1)" x-show="lignes.length > 1">{{ $k['retirer'] }}</button>
                 </fieldset>
-            </template>
-            <button type="button" class="bo-bouton bo-bouton-secondaire mt-4" @click="lignes.push({ libelle: '', description: '', nombre_boutiques: '', caution: '' })">{{ $k['ajouter'] }}</button>
+            @empty
+                <p class="bo-message bo-message-erreur mt-4">{{ $k['aucun_site'] }} <a href="{{ route('admin.sites') }}">{{ __('admin.sites.titre') }}</a></p>
+            @endforelse
         </section>
 
         <section class="bo-carte !mt-0" aria-labelledby="s-paiement">
@@ -76,6 +68,8 @@
                                :options="collect(CanalPaiement::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()])->all()"
                                :valeurs="$campagne->canaux_actifs ?? []" class="lg:col-span-2" />
                 <x-admin.champ nom="delai_paiement_heures" :libelle="ucfirst($c['delai_paiement_heures'])" type="number" min="1" max="720" :valeur="$campagne->delai_paiement_heures" required />
+                <x-admin.champ nom="max_boutiques_par_personne" :libelle="ucfirst($c['max_boutiques_par_personne'])" type="number" min="1"
+                               :valeur="$campagne->max_boutiques_par_personne" :aide="$k['sans_plafond']" />
             </div>
         </section>
 

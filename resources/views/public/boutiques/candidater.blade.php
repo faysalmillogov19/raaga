@@ -36,6 +36,7 @@
                                :class="categorie === {{ $cat->id }} ? 'border-vert-fonce bg-vert-pale' : 'border-ligne'">
                             <input type="radio" name="categorie" value="{{ $cat->id }}" x-model.number="categorie" class="mt-1 h-5 w-5 text-vert focus:ring-0">
                             <span>
+                                @if ($cat->site)<span class="block text-sm font-semibold uppercase tracking-wide text-vert-fonce">{{ $cat->site->nom }} · {{ $cat->site->commune }}</span>@endif
                                 <span class="block font-bold text-encre">{{ $cat->libelle }}</span>
                                 @if ($cat->description)<span class="texte-carte block">{{ $cat->description }}</span>@endif
                                 <span class="mt-1 block font-semibold text-vert-fonce">{{ __('public.boutiques.caution') }} : {{ format_fcfa($cat->caution) }}</span>

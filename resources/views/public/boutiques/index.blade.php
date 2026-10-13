@@ -40,6 +40,7 @@
                 <ul class="mt-4 grid gap-4 tab:grid-cols-2 lg:grid-cols-3">
                     @foreach ($campagne->categories as $categorie)
                         <li class="carte flex flex-col p-5">
+                            @if ($categorie->site)<p class="text-sm font-semibold uppercase tracking-wide text-vert-fonce">{{ $categorie->site->nom }} · {{ $categorie->site->commune }}</p>@endif
                             <h3 class="!text-lg">{{ $categorie->libelle }}</h3>
                             @if ($categorie->description)
                                 <p class="texte-carte mt-1">{{ $categorie->description }}</p>
@@ -53,13 +54,17 @@
             </section>
 
             <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                @if ($ouverte)
+                    <a href="{{ route('boutiques.candidater') }}" class="btn-primaire">{{ $candidature ? __('public.boutiques.candidater_encore') : __('public.boutiques.candidater') }}</a>
+                @endif
                 @if ($candidature)
-                    <a href="{{ route('boutiques.candidature', $candidature->reference) }}" class="btn-primaire">{{ __('public.boutiques.voir_candidature') }}</a>
-                @elseif ($ouverte)
-                    <a href="{{ route('boutiques.candidater') }}" class="btn-primaire">{{ __('public.boutiques.candidater') }}</a>
+                    <a href="{{ route('espace', ['onglet' => 'boutiques']) }}" class="btn-secondaire">{{ __('public.boutiques.mes_candidatures') }}</a>
                 @endif
                 <a href="{{ route('boutiques.reglement') }}" class="btn-secondaire">{{ __('public.boutiques.lire_reglement') }}</a>
             </div>
+            @if ($campagne->max_boutiques_par_personne)
+                <p class="mt-3 texte-carte">{{ __('public.boutiques.plafond', ['n' => $campagne->max_boutiques_par_personne]) }}</p>
+            @endif
             @if ($ouverte && ! $candidature)
                 <p class="mt-3 texte-carte">{{ __('public.boutiques.kyc_requis') }}</p>
             @elseif (! $ouverte)

@@ -4,12 +4,16 @@ namespace Tests\Feature\Compte;
 
 use App\Enums\DocumentAccepte;
 use App\Enums\Role;
+use App\Enums\StatutBoutique;
 use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutCandidatureBoutique;
 use App\Enums\StatutKyc;
+use App\Enums\StatutSite;
 use App\Models\Acceptation;
 use App\Models\CampagneBoutiques;
 use App\Models\CandidatureBoutique;
+use App\Models\Site;
+use App\Models\TypeBoutique;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -36,8 +40,18 @@ class CandidatureBoutiqueTest extends TestCase
             'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addMonth(), 'delai_paiement_heures' => 72,
             'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'], 'version' => 2, 'cree_par' => User::factory()->create()->id, ...$attributs,
         ]);
-        $campagne->categories()->create(['ordre' => 1, 'libelle' => 'Petite boutique', 'description' => '9 m²', 'nombre_boutiques' => 2, 'caution' => 150_000]);
-        $campagne->categories()->create(['ordre' => 2, 'libelle' => 'Grande boutique', 'description' => '24 m²', 'nombre_boutiques' => 1, 'caution' => 500_000]);
+
+        // Référentiel : un site confirmé, deux types, des boutiques numérotées (engagées : la campagne est ouverte).
+        $site = Site::create(['statut' => StatutSite::Confirme, 'nom' => 'Marché central', 'region' => 'Centre', 'commune' => 'Ouagadougou',
+            'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $campagne->cree_par]);
+        foreach ([['Petite boutique', '9 m²', 2, 150_000, 'P-'], ['Grande boutique', '24 m²', 1, 500_000, 'G-']] as $i => [$libelle, $description, $nombre, $caution, $prefixe]) {
+            $type = TypeBoutique::firstOrCreate(['libelle' => $libelle], ['description' => $description]);
+            foreach (range(1, $nombre) as $n) {
+                $site->boutiques()->create(['numero' => $prefixe.$n, 'type_boutique_id' => $type->id, 'statut' => StatutBoutique::EnCampagne]);
+            }
+            $campagne->categories()->create(['ordre' => $i + 1, 'site_id' => $site->id, 'type_boutique_id' => $type->id, 'libelle' => $libelle,
+                'description' => $description, 'nombre_boutiques' => $nombre, 'caution' => $caution]);
+        }
 
         return $campagne;
     }
@@ -106,7 +120,7 @@ class CandidatureBoutiqueTest extends TestCase
             ->assertSee("500\u{00A0}000\u{00A0}FCFA")->assertSee('Caution à payer');
     }
 
-    public function test_refus_sans_les_quatre_engagements_sans_categorie_ou_en_double(): void
+    public function test_refus_sans_les_quatre_engagements_ou_sans_categorie_et_candidatures_multiples(): void
     {
         $citoyen = $this->citoyen();
 
@@ -115,13 +129,13 @@ class CandidatureBoutiqueTest extends TestCase
         $this->actingAs($citoyen)->post('/boutiques/candidater', ['engagements' => self::TOUS])->assertSessionHasErrors('categorie');
         $this->assertSame(0, CandidatureBoutique::count());
 
-        $this->actingAs($citoyen)->post('/boutiques/candidater', ['categorie' => $this->categorie('Petite boutique'), 'engagements' => self::TOUS]);
-        $this->actingAs($citoyen)->post('/boutiques/candidater', ['categorie' => $this->categorie('Grande boutique'), 'engagements' => self::TOUS])
-            ->assertSessionHasErrors(['categorie' => 'Vous avez déjà une candidature pour cette campagne.']);
-        $this->assertSame(1, CandidatureBoutique::count());
-
-        // Une deuxième visite du formulaire renvoie vers la candidature existante.
-        $this->actingAs($citoyen)->get('/boutiques/candidater')->assertRedirect(route('boutiques.candidature', CandidatureBoutique::sole()->reference));
+        // Plusieurs candidatures, y compris dans le même lot : chacune avec sa caution.
+        foreach (['Petite boutique', 'Grande boutique', 'Petite boutique'] as $categorie) {
+            $this->actingAs($citoyen)->post('/boutiques/candidater', ['categorie' => $this->categorie($categorie), 'engagements' => self::TOUS])->assertSessionHasNoErrors();
+        }
+        $this->assertSame(3, CandidatureBoutique::count());
+        $this->assertSame([150_000, 500_000, 150_000], CandidatureBoutique::query()->orderBy('id')->pluck('caution')->all());
+        $this->actingAs($citoyen)->get('/boutiques/candidater')->assertOk();
     }
 
     public function test_identite_non_verifiee_et_independance_des_actions(): void

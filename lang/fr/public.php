@@ -352,7 +352,7 @@ return [
             'boutiques' => [
                 'titre' => 'Boutiques et cautions',
                 'questions' => [
-                    ['q' => 'Qui peut candidater à une boutique ?', 'r' => 'Tout citoyen burkinabè dont l’identité a été vérifiée sur la plateforme (CNIB ou passeport et selfie). Une seule candidature par personne et par campagne.'],
+                    ['q' => 'Qui peut candidater à une boutique ?', 'r' => 'Tout citoyen burkinabè dont l’identité a été vérifiée sur la plateforme (CNIB ou passeport et selfie). Vous pouvez déposer plusieurs candidatures, sur un ou plusieurs sites, chacune avec sa caution.'],
                     ['q' => 'Comment les boutiques sont-elles attribuées ?', 'r' => 'Par tirage au sort, après la clôture des candidatures, dans chaque catégorie de boutiques, parmi les candidats qui ont payé leur caution. Le tirage est enregistré et vérifiable.'],
                     ['q' => 'Combien coûte la caution ?', 'r' => 'La caution dépend de la catégorie de boutique choisie. Son montant est affiché sur la page Boutiques et dans le règlement de la campagne.'],
                     ['q' => 'Combien de temps ai-je pour payer la caution ?', 'r' => 'Le délai est indiqué dans le règlement de la campagne. Passé ce délai sans paiement, la candidature expire.'],
@@ -729,7 +729,7 @@ return [
         'regles_titre' => 'À savoir avant de candidater',
         'regles' => [
             ['titre' => 'Tirage au sort', 'texte' => 'Payer la caution ne garantit pas d’obtenir une boutique : le nombre de boutiques de chaque catégorie est limité.'],
-            ['titre' => 'Une candidature par personne', 'texte' => 'Une seule catégorie, avec une identité vérifiée. La caution est à payer dans le délai indiqué.'],
+            ['titre' => 'Une caution par candidature', 'texte' => 'Vous pouvez candidater sur plusieurs sites et catégories, chaque candidature avec sa caution, payée dans le délai indiqué. Un plafond de boutiques par personne peut s’appliquer.'],
             ['titre' => 'Sans lien avec les actions', 'texte' => 'L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique.'],
         ],
         'faq_titre' => 'Vos questions',
@@ -753,6 +753,9 @@ return [
         'caution' => 'Caution',
         'candidater' => 'Je candidate',
         'candidater_boutique' => 'Candidater à une boutique',
+        'candidater_encore' => 'Déposer une autre candidature',
+        'mes_candidatures' => 'Mes candidatures',
+        'plafond' => 'Une même personne peut obtenir au plus :n boutique(s) dans cette campagne.',
         'voir_candidature' => 'Voir ma candidature',
         'lire_reglement' => 'Lire le règlement de la campagne',
         'kyc_requis' => 'Une identité vérifiée est nécessaire pour candidater.',

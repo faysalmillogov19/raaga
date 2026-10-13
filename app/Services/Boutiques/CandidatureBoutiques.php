@@ -15,8 +15,9 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Candidature d'un citoyen aux boutiques d'une campagne ouverte : une candidature active par personne,
- * identité vérifiée, quatre engagements acceptés et horodatés, caution figée (statut RÉSERVÉE).
+ * Candidature d'un citoyen à un lot (site × type) d'une campagne ouverte : plusieurs candidatures possibles,
+ * chacune avec sa caution ; identité vérifiée, quatre engagements acceptés et horodatés, caution figée (RÉSERVÉE).
+ * Le plafond de boutiques par personne s'applique au tirage au sort, pas à la candidature.
  * Indépendante des actions : aucune donnée de souscription n'intervient.
  */
 class CandidatureBoutiques
@@ -59,9 +60,6 @@ class CandidatureBoutiques
             }
             if (! $user->kycValide()) {
                 $erreur('identite', 'kyc');
-            }
-            if (self::active($campagne, $user)) {
-                $erreur('categorie', 'deja');
             }
             $categorie = $campagne->categories()->whereKey($categorieId)->first() ?? $erreur('categorie', 'categorie');
             if (array_diff(array_map(fn (DocumentAccepte $d) => $d->value, self::ENGAGEMENTS), $engagements)) {

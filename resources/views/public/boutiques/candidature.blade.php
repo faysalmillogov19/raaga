@@ -17,7 +17,7 @@
 
         <section class="carte p-5" aria-labelledby="candidature-titre">
             <div class="flex flex-wrap items-start justify-between gap-2">
-                <h2 id="candidature-titre" class="!text-lg">{{ $c->categorie->libelle }}</h2>
+                <h2 id="candidature-titre" class="!text-lg">{{ $c->categorie->intitule() }}</h2>
                 <span class="rounded-full px-3 py-1 text-sm font-bold {{ $badge[$c->statut->value] }}">{{ $c->statut->label() }}</span>
             </div>
             <dl class="mt-4 space-y-2 text-[0.95rem]">

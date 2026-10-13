@@ -19,13 +19,13 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 #[Table(name: 'campagnes_boutiques')]
 #[Fillable([
-    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs',
+    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne',
     'version', 'cree_par', 'soumis_par', 'soumise_le', 'valide_par', 'validee_le', 'motif_rejet',
     'ouverte_le', 'cloturee_le', 'attribuee_le',
 ])]
 class CampagneBoutiques extends Model implements Parametrable
 {
-    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs'];
+    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne'];
 
     protected function casts(): array
     {
@@ -34,6 +34,7 @@ class CampagneBoutiques extends Model implements Parametrable
             'date_ouverture' => 'datetime',
             'date_cloture' => 'datetime',
             'delai_paiement_heures' => 'integer',
+            'max_boutiques_par_personne' => 'integer',
             'canaux_actifs' => 'array',
             'version' => 'integer',
             'soumise_le' => 'datetime',
@@ -124,8 +125,8 @@ class CampagneBoutiques extends Model implements Parametrable
             $snapshot[$champ] = $valeur instanceof \DateTimeInterface ? $valeur->format(DATE_ATOM) : $valeur;
         }
 
-        $snapshot['categories'] = $this->categories()->get()
-            ->map(fn (CategorieBoutique $c) => $c->libelle.' : '.format_nombre($c->nombre_boutiques).' boutique(s), caution '.format_fcfa($c->caution))
+        $snapshot['categories'] = $this->categories()->with('site')->get()
+            ->map(fn (CategorieBoutique $c) => $c->intitule().' : '.format_nombre($c->nombre_boutiques).' boutique(s), caution '.format_fcfa($c->caution))
             ->implode(' ; ');
 
         return $snapshot;

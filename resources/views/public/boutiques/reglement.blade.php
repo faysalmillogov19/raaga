@@ -22,14 +22,15 @@
             <section><h3>Article 2 — Catégories et cautions</h3>
                 <ul class="list-disc pl-5">
                     @foreach ($c->categories as $cat)
-                        <li><strong>{{ $cat->libelle }}</strong>@if ($cat->description) ({{ $cat->description }})@endif : {{ format_nombre($cat->nombre_boutiques) }} boutique(s), caution de {{ format_fcfa($cat->caution) }}.</li>
+                        <li><strong>{{ $cat->intitule() }}</strong>@if ($cat->description) ({{ $cat->description }})@endif : {{ format_nombre($cat->nombre_boutiques) }} boutique(s), caution de {{ format_fcfa($cat->caution) }}.</li>
                     @endforeach
                 </ul></section>
 
             <section><h3>Article 3 — Candidature</h3>
                 <p>Les candidatures sont reçues du {{ $c->date_ouverture->format('d/m/Y à H\hi') }} au {{ $c->date_cloture->format('d/m/Y à H\hi') }} (heure de Ouagadougou).
-                    Chaque personne dépose une seule candidature, dans une seule catégorie. Une identité vérifiée est exigée.
-                    La caution doit être payée dans les {{ $c->delai_paiement_heures }} heures suivant la candidature, sinon la candidature expire.</p></section>
+                    Une identité vérifiée est exigée. Chaque personne peut déposer plusieurs candidatures, sur un ou plusieurs sites ; chaque candidature exige le paiement de sa caution
+                    dans les {{ $c->delai_paiement_heures }} heures, sinon elle expire.
+                    @if ($c->max_boutiques_par_personne) Une même personne ne peut pas obtenir plus de {{ $c->max_boutiques_par_personne }} boutique(s) dans cette campagne. @endif</p></section>
 
             <section><h3>Article 4 — Tirage au sort</h3>
                 <p>Après la clôture, un tirage au sort est réalisé dans chaque catégorie, parmi les candidatures dont la caution est payée.

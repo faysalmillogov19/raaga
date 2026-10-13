@@ -20,7 +20,7 @@ class AccueilController extends Controller
                 ?? CampagneBoutiques::query()->whereIn('statut', [StatutCampagneBoutiques::Cloturee, StatutCampagneBoutiques::Attribuee])->latest('cloturee_le')->first();
 
             return view('public.accueil-boutiques', [
-                'campagne' => $campagne?->load('categories'),
+                'campagne' => $campagne?->load('categories.site'),
                 'ouverte' => $campagne && CandidatureBoutiques::accepteCandidatures($campagne),
                 'questions' => array_slice(__('public.faq.groupes.boutiques.questions'), 0, 4),
             ]);

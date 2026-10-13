@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Candidature d'un citoyen à une catégorie de boutiques ; la caution est figée à la candidature. */
 #[Table(name: 'candidatures_boutiques')]
 #[Fillable([
-    'reference', 'user_id', 'campagne_boutiques_id', 'categorie_boutique_id', 'caution', 'statut',
+    'reference', 'user_id', 'campagne_boutiques_id', 'categorie_boutique_id', 'boutique_id', 'caution', 'statut',
     'expire_le', 'payee_le', 'rang_tirage', 'tiree_le',
 ])]
 class CandidatureBoutique extends Model implements Payable
@@ -54,6 +54,12 @@ class CandidatureBoutique extends Model implements Payable
     public function categorie(): BelongsTo
     {
         return $this->belongsTo(CategorieBoutique::class, 'categorie_boutique_id');
+    }
+
+    /** Boutique précise attribuée au second tirage. */
+    public function boutique(): BelongsTo
+    {
+        return $this->belongsTo(Boutique::class);
     }
 
     /**

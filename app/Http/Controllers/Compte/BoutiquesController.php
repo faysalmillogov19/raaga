@@ -27,7 +27,7 @@ class BoutiquesController extends Controller
         $user = $request->user();
 
         return view('public.boutiques.index', [
-            'campagne' => $campagne?->load('categories'),
+            'campagne' => $campagne?->load('categories.site'),
             'ouverte' => $campagne && CandidatureBoutiques::accepteCandidatures($campagne),
             'candidature' => $campagne && $user ? CandidatureBoutiques::active($campagne, $user) : null,
         ]);
@@ -39,7 +39,7 @@ class BoutiquesController extends Controller
             ->latest('id')->first();
         abort_unless($campagne, 404);
 
-        return view('public.boutiques.reglement', ['campagne' => $campagne->load('categories')]);
+        return view('public.boutiques.reglement', ['campagne' => $campagne->load('categories.site')]);
     }
 
     public function create(Request $request): View|RedirectResponse
@@ -47,12 +47,8 @@ class BoutiquesController extends Controller
         $campagne = CampagneBoutiques::ouverte();
         abort_unless($campagne && CandidatureBoutiques::accepteCandidatures($campagne), 404);
 
-        if ($existante = CandidatureBoutiques::active($campagne, $request->user())) {
-            return redirect()->route('boutiques.candidature', $existante->reference);
-        }
-
         return view('public.boutiques.candidater', [
-            'campagne' => $campagne->load('categories'),
+            'campagne' => $campagne->load('categories.site'),
             'user' => $request->user(),
             'engagements' => CandidatureBoutiques::ENGAGEMENTS,
         ]);
