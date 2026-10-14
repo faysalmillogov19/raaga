@@ -20,10 +20,10 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
- * Niveaux et zones, deux référentiels gérés comme les types de boutiques. GESTIONNAIRE DES SITES ET BOUTIQUES : ajoute
- * (soumis au VALIDATEUR), modifie le libellé, la description, le rang ou l'ordre à tout moment, désactive ou réactive,
- * supprime un élément jamais utilisé et non « par défaut ». Code jamais modifié. VALIDATEUR : valide ou rejette.
- * Autres profils : lecture seule. « {liste} » vaut « niveaux » ou « zones ».
+ * Niveaux et zones : deux onglets (tableau filtrable, une fiche par élément), gérés comme les types de boutiques.
+ * GESTIONNAIRE DES SITES ET BOUTIQUES : ajoute (soumis au VALIDATEUR), modifie le libellé, la description, le rang ou
+ * l'ordre à tout moment, désactive ou réactive, supprime un élément jamais utilisé et non « par défaut ». Code jamais
+ * modifié. VALIDATEUR : valide ou rejette. Autres profils : lecture seule. « {liste} » vaut « niveaux » ou « zones ».
  */
 class NiveauxZonesController extends Controller
 {
@@ -32,17 +32,32 @@ class NiveauxZonesController extends Controller
 
     public function __construct(private readonly Journal $journal) {}
 
-    public function index(): View
+    public function index(string $liste): View
     {
         Gate::authorize(Droit::SitesVoir->value);
-        $parNiveau = Boutique::query()->whereNotNull('niveau')->selectRaw('niveau, count(*) as n')->groupBy('niveau')->pluck('n', 'niveau');
-        $parBloc = Boutique::query()->whereNotNull('bloc')->selectRaw('bloc, count(*) as n')->groupBy('bloc')->pluck('n', 'bloc');
+        $classe = $this->classe($liste);
+        $niveaux = $liste === 'niveaux';
+        $colonne = $niveaux ? 'niveau' : 'bloc';
+        $parCode = Boutique::query()->whereNotNull($colonne)->selectRaw($colonne.', count(*) as n')->groupBy($colonne)->pluck('n', $colonne);
 
-        return view('admin.zones.index', [
-            'niveaux' => Niveau::query()->orderBy('rang')->orderBy('code')->get()
-                ->each(fn (Niveau $n) => $n->setAttribute('boutiques_count', (int) ($parNiveau[$n->code] ?? 0))),
-            'zones' => ZoneSite::query()->orderBy('ordre')->orderBy('code')->get()
-                ->each(fn (ZoneSite $z) => $z->setAttribute('boutiques_count', (int) ($parBloc[$z->code] ?? 0))),
+        return view('admin.zones.liste', [
+            'liste' => $liste,
+            'elements' => $classe::query()->orderBy($niveaux ? 'rang' : 'ordre')->orderBy('code')->get()
+                ->each(fn (Model $e) => $e->setAttribute('boutiques_count', (int) ($parCode[$e->code] ?? 0))),
+        ]);
+    }
+
+    /** Fiche : détail, modification (GESTIONNAIRE), validation (VALIDATEUR), historique des versions. */
+    public function show(string $liste, int $id): View
+    {
+        Gate::authorize(Droit::SitesVoir->value);
+        $element = $this->element($liste, $id);
+
+        return view('admin.zones.fiche', [
+            'liste' => $liste,
+            'element' => $element,
+            'utilisations' => $element->nombreUtilisations(),
+            'versions' => $element->versions(),
         ]);
     }
 
@@ -68,7 +83,7 @@ class NiveauxZonesController extends Controller
         });
         $this->journal->ecrire($request->user(), $classe::typeReferentiel().'.cree', class_basename($classe), $element->id, null, $donnees);
 
-        return $this->retour('admin.zones.messages.creee');
+        return redirect()->route('admin.referencement.'.$liste)->with('succes', __('admin.zones.messages.creee'));
     }
 
     /** Libellé, description, rang ou ordre : à tout moment, sans validation. */
@@ -78,7 +93,7 @@ class NiveauxZonesController extends Controller
         $element = $this->element($liste, $id);
         $donnees = $request->validate($this->reglesLibres($liste), [], __('admin.zones.attributs'));
 
-        return $this->executer(function () use ($request, $element, $donnees) {
+        return $this->executer($liste, $element, function () use ($request, $element, $donnees) {
             $avant = $element->only(array_keys($donnees));
             $element->fill($donnees);
             if (! $element->isDirty()) {
@@ -92,27 +107,33 @@ class NiveauxZonesController extends Controller
 
     public function activer(Request $request, string $liste, int $id): RedirectResponse
     {
-        return $this->activation($request, $this->element($liste, $id), true);
+        return $this->activation($request, $liste, $this->element($liste, $id), true);
     }
 
     public function desactiver(Request $request, string $liste, int $id): RedirectResponse
     {
-        return $this->activation($request, $this->element($liste, $id), false);
+        return $this->activation($request, $liste, $this->element($liste, $id), false);
     }
 
-    /** Suppression : jamais pour un élément « par défaut » ni pour un élément utilisé. */
+    /** Suppression : jamais pour un élément « par défaut » ni pour un élément utilisé. Retour à la liste. */
     public function destroy(Request $request, string $liste, int $id): RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
         $element = $this->element($liste, $id);
 
-        return $this->executer(function () use ($request, $element) {
-            if ($element->par_defaut || $element->nombreUtilisations() > 0) {
-                throw new RegleGestionException(__($element->par_defaut ? 'admin.zones.regles.defaut' : 'admin.zones.regles.utilisee'));
-            }
-            $this->journal->ecrire($request->user(), $element::typeReferentiel().'.supprime', class_basename($element), $element->id, ['code' => $element->code, 'libelle' => $element->libelle]);
-            $element->delete();
-        }, 'admin.zones.messages.supprimee');
+        try {
+            DB::transaction(function () use ($request, $element) {
+                if ($element->par_defaut || $element->nombreUtilisations() > 0) {
+                    throw new RegleGestionException(__($element->par_defaut ? 'admin.zones.regles.defaut' : 'admin.zones.regles.utilisee'));
+                }
+                $this->journal->ecrire($request->user(), $element::typeReferentiel().'.supprime', class_basename($element), $element->id, ['code' => $element->code, 'libelle' => $element->libelle]);
+                $element->delete();
+            });
+        } catch (RegleGestionException $e) {
+            return redirect()->route('admin.referencement.'.$liste)->with('erreur', $e->getMessage());
+        }
+
+        return redirect()->route('admin.referencement.'.$liste)->with('succes', __('admin.zones.messages.supprimee'));
     }
 
     public function confirmer(Request $request, string $liste, int $id): RedirectResponse
@@ -120,7 +141,7 @@ class NiveauxZonesController extends Controller
         Gate::authorize(Droit::SitesConfirmer->value);
         $element = $this->element($liste, $id);
 
-        return $this->executer(function () use ($request, $element) {
+        return $this->executer($liste, $element, function () use ($request, $element) {
             $this->exigerEnAttente($request, $element);
             $element->forceFill(['statut' => StatutTypeBoutique::Valide, 'valide_par' => $request->user()->id, 'valide_le' => now(), 'motif_rejet' => null])->save();
             $element->creerVersion($request->user(), __('admin.types.motifs.confirmation'));
@@ -134,7 +155,7 @@ class NiveauxZonesController extends Controller
         $element = $this->element($liste, $id);
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
 
-        return $this->executer(function () use ($request, $element, $motif) {
+        return $this->executer($liste, $element, function () use ($request, $element, $motif) {
             $this->exigerEnAttente($request, $element);
             $element->forceFill(['statut' => StatutTypeBoutique::Rejete, 'motif_rejet' => $motif])->save();
             $element->creerVersion($request->user(), __('admin.types.motifs.rejet', ['motif' => $motif]));
@@ -142,11 +163,11 @@ class NiveauxZonesController extends Controller
         }, 'admin.zones.messages.rejetee');
     }
 
-    private function activation(Request $request, Model $element, bool $actif): RedirectResponse
+    private function activation(Request $request, string $liste, Niveau|ZoneSite $element, bool $actif): RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
 
-        return $this->executer(function () use ($request, $element, $actif) {
+        return $this->executer($liste, $element, function () use ($request, $element, $actif) {
             $element->forceFill(['actif' => $actif])->save();
             $element->creerVersion($request->user(), __($actif ? 'admin.types.motifs.reactivation' : 'admin.types.motifs.desactivation'));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().($actif ? '.reactive' : '.desactive'), class_basename($element), $element->id);
@@ -183,19 +204,16 @@ class NiveauxZonesController extends Controller
         }
     }
 
-    private function executer(Closure $action, string $message): RedirectResponse
+    /** Action sur un élément ; retour à sa fiche, avec le message ou l'erreur. */
+    private function executer(string $liste, Niveau|ZoneSite $element, Closure $action, string $message): RedirectResponse
     {
+        $fiche = redirect()->route('admin.referencement.zones.show', [$liste, $element->id]);
         try {
             DB::transaction($action);
         } catch (RegleGestionException $e) {
-            return redirect()->route('admin.referencement.zones')->with('erreur', $e->getMessage());
+            return $fiche->with('erreur', $e->getMessage());
         }
 
-        return $this->retour($message);
-    }
-
-    private function retour(string $message): RedirectResponse
-    {
-        return redirect()->route('admin.referencement.zones')->with('succes', __($message));
+        return $fiche->with('succes', __($message));
     }
 }

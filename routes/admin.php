@@ -83,15 +83,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Référencement : niveaux et zones, boutiques de tous les sites, capacités prévues, imports.
         Route::prefix('referencement')->name('referencement.')->group(function () {
-            Route::controller(NiveauxZonesController::class)->prefix('niveaux-zones')->name('zones')->group(function () {
-                Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
-                Route::post('/{liste}', 'store')->whereIn('liste', ['niveaux', 'zones'])->middleware('can:'.Droit::SitesGerer->value)->name('.store');
-                Route::put('/{liste}/{id}', 'update')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('.update');
-                Route::post('/{liste}/{id}/activer', 'activer')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('.activer');
-                Route::post('/{liste}/{id}/desactiver', 'desactiver')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('.desactiver');
-                Route::delete('/{liste}/{id}', 'destroy')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('.destroy');
-                Route::post('/{liste}/{id}/confirmer', 'confirmer')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
-                Route::post('/{liste}/{id}/rejeter', 'rejeter')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
+            // Niveaux et zones : deux onglets, une fiche par élément ; mêmes actions pour les deux listes.
+            Route::controller(NiveauxZonesController::class)->group(function () {
+                Route::get('/niveaux', 'index')->defaults('liste', 'niveaux')->middleware('can:'.Droit::SitesVoir->value)->name('niveaux');
+                Route::get('/zones', 'index')->defaults('liste', 'zones')->middleware('can:'.Droit::SitesVoir->value)->name('zones');
+                Route::permanentRedirect('/niveaux-zones', '/admin/referencement/niveaux')->name('niveaux-zones'); // Ancienne adresse (un seul onglet).
+                Route::get('/{liste}/{id}', 'show')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesVoir->value)->name('zones.show');
+                Route::post('/{liste}', 'store')->whereIn('liste', ['niveaux', 'zones'])->middleware('can:'.Droit::SitesGerer->value)->name('zones.store');
+                Route::put('/{liste}/{id}', 'update')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('zones.update');
+                Route::post('/{liste}/{id}/activer', 'activer')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('zones.activer');
+                Route::post('/{liste}/{id}/desactiver', 'desactiver')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('zones.desactiver');
+                Route::delete('/{liste}/{id}', 'destroy')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('zones.destroy');
+                Route::post('/{liste}/{id}/confirmer', 'confirmer')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('zones.confirmer');
+                Route::post('/{liste}/{id}/rejeter', 'rejeter')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('zones.rejeter');
             });
             Route::controller(ReferentielBoutiquesController::class)->prefix('boutiques')->name('boutiques')->middleware('can:'.Droit::SitesVoir->value)->group(function () {
                 Route::get('/', 'index');

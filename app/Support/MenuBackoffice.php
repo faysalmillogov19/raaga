@@ -46,7 +46,10 @@ final class MenuBackoffice
                 ['cle' => 'sites', 'route' => 'admin.sites', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
                     'exclure' => ['admin.sites.types', 'admin.sites.types.*', 'admin.sites.excel.*', 'admin.sites.boutiques-excel.*']],
                 ['cle' => 'types', 'route' => 'admin.sites.types', 'droit' => Droit::SitesVoir, 'icone' => 'referentiels', 'etape' => 0],
-                ['cle' => 'niveaux_zones', 'route' => 'admin.referencement.zones', 'droit' => Droit::SitesVoir, 'icone' => 'tranches', 'etape' => 0],
+                ['cle' => 'niveaux', 'route' => 'admin.referencement.niveaux', 'droit' => Droit::SitesVoir, 'icone' => 'tranches', 'etape' => 0,
+                    'inclure' => ['admin.referencement.zones.*'], 'liste' => 'niveaux'],
+                ['cle' => 'zones', 'route' => 'admin.referencement.zones', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
+                    'exclure' => ['admin.referencement.zones.*'], 'inclure' => ['admin.referencement.zones.*'], 'liste' => 'zones'],
                 ['cle' => 'boutiques_referentiel', 'route' => 'admin.referencement.boutiques', 'droit' => Droit::SitesVoir, 'icone' => 'boutiques', 'etape' => 0],
                 ['cle' => 'capacites', 'route' => 'admin.referencement.capacites', 'droit' => Droit::SitesVoir, 'icone' => 'simulations', 'etape' => 0],
                 ['cle' => 'grille', 'route' => 'admin.boutiques.grilles', 'droit' => Droit::GrilleVoir, 'icone' => 'dividendes', 'etape' => 0],
@@ -106,6 +109,10 @@ final class MenuBackoffice
     /** L'entrée est-elle celle de la page affichée ? (route et sous-routes, moins les exclusions, plus les inclusions) */
     public static function estActive(array $entree): bool
     {
+        if (isset($entree['liste']) && request()->routeIs('admin.referencement.zones.*')) {
+            return request()->route('liste') === $entree['liste'];
+        }
+
         return (request()->routeIs($entree['route'], $entree['route'].'.*') && ! request()->routeIs(...($entree['exclure'] ?? ['-'])))
             || request()->routeIs(...($entree['inclure'] ?? ['-']));
     }
@@ -132,9 +139,15 @@ final class MenuBackoffice
                 $gere => TypeBoutique::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
-            'niveaux_zones' => match (true) {
-                $valide => ZoneSite::query()->where('statut', StatutTypeBoutique::AValider)->count() + Niveau::query()->where('statut', StatutTypeBoutique::AValider)->count(),
-                $gere => ZoneSite::query()->where('statut', StatutTypeBoutique::Rejete)->count() + Niveau::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
+            // VALIDATEUR : niveaux et zones à valider ; GESTIONNAIRE : niveaux et zones rejetés.
+            'niveaux' => match (true) {
+                $valide => Niveau::query()->where('statut', StatutTypeBoutique::AValider)->count(),
+                $gere => Niveau::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
+                default => 0,
+            },
+            'zones' => match (true) {
+                $valide => ZoneSite::query()->where('statut', StatutTypeBoutique::AValider)->count(),
+                $gere => ZoneSite::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
             // GESTIONNAIRE : boutiques sans niveau (à compléter avant soumission) et capacités incomplètes.

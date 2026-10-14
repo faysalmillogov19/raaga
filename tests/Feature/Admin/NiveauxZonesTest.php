@@ -180,12 +180,15 @@ class NiveauxZonesTest extends TestCase
         $r1 = $this->niveau('R1');
         $a = $this->zone('A');
         foreach ([$this->validateur, $this->regulateur, User::factory()->role(Role::SuperAdmin)->create()] as $profil) {
-            $this->en($profil)->get(route('admin.referencement.zones'))->assertOk()->assertSee('R+1')->assertSee('Bloc A')->assertDontSee('Ajouter un niveau');
+            $this->en($profil)->get(route('admin.referencement.niveaux'))->assertOk()->assertSee('R+1')->assertDontSee('Ajouter un niveau')->assertDontSee('>Supprimer<', false);
+            $this->en($profil)->get(route('admin.referencement.zones'))->assertOk()->assertSee('Bloc A')->assertDontSee('Ajouter une zone');
+            $this->en($profil)->get(route('admin.referencement.zones.show', ['niveaux', $r1->id]))->assertOk()->assertDontSee('Désactiver');
             $this->en($profil)->post(route('admin.referencement.zones.store', 'niveaux'), ['code' => 'R5', 'libelle' => 'R+5', 'rang' => 5])->assertForbidden();
             $this->en($profil)->put(route('admin.referencement.zones.update', ['niveaux', $r1->id]), ['libelle' => 'X', 'rang' => 1])->assertForbidden();
             $this->en($profil)->post(route('admin.referencement.zones.desactiver', ['zones', $a->id]))->assertForbidden();
             $this->en($profil)->delete(route('admin.referencement.zones.destroy', ['zones', $a->id]))->assertForbidden();
         }
+        $this->en(User::factory()->role(Role::Admin)->create())->get(route('admin.referencement.niveaux'))->assertForbidden();
         $this->en(User::factory()->role(Role::Admin)->create())->get(route('admin.referencement.zones'))->assertForbidden();
         // Le GESTIONNAIRE ne valide jamais.
         $this->en($this->gestionnaire)->post(route('admin.referencement.zones.confirmer', ['zones', $a->id]))->assertForbidden();
