@@ -3,6 +3,7 @@
 namespace Tests\Feature\Publique;
 
 use App\Enums\Role;
+use App\Services\Plateforme\ParametresPlateforme;
 use App\Support\ImagesPlateforme;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -43,6 +44,18 @@ class LogoTest extends TestCase
         foreach ([400, 600, 700, 800] as $graisse) {
             $this->assertFileExists(public_path("fonts/public-sans-{$graisse}.woff2"));
         }
+    }
+
+    public function test_les_armoiries_officielles_restent_affichees_quand_la_base_est_vide(): void
+    {
+        // Base neuve : aucun fichier déposé dans les paramètres ; les armoiries versionnées avec le code sont servies.
+        $this->assertNull(app(ParametresPlateforme::class)->get('identite.armoiries'));
+        $this->assertSame(public_path('armoiries.png'), ImagesPlateforme::chemin('armoiries'));
+        $this->assertGreaterThan(50_000, filesize(public_path('armoiries.png')), 'armoiries officielles, pas un écusson provisoire');
+
+        $reponse = $this->get(ImagesPlateforme::url('armoiries'))->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->assertSame(file_get_contents(public_path('armoiries.png')), $reponse->streamedContent() ?: $reponse->getContent());
+        $this->get('/')->assertOk()->assertSee(e(ImagesPlateforme::url('armoiries')), false);
     }
 
     public function test_les_fichiers_du_logo_sont_servis(): void

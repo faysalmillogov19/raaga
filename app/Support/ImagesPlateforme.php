@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Services\Plateforme\ParametresPlateforme;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -20,7 +21,8 @@ final class ImagesPlateforme
      * @var array<string, array{0: ?string, 1: ?string}> champ => [fichier 2x (ou SVG), fichier 1x]
      */
     public const DEFAUTS = [
-        'armoiries' => ['armoiries.svg', null],
+        // Armoiries officielles du Burkina Faso, versionnées avec le code : affichées même si la base est vidée.
+        'armoiries' => ['armoiries.png', null],
         'logoHorizontal' => ['images/logo/raaga-logo-horizontal-96.png', 'images/logo/raaga-logo-horizontal-48.png'],
         'logoHorizontalBlanc' => [null, null],
         'logoSymbole' => ['images/logo/raaga-symbole-64.png', 'images/logo/raaga-symbole-32.png'],
@@ -35,7 +37,12 @@ final class ImagesPlateforme
     /** Fichier déposé dans les paramètres (chemin absolu), ou null. */
     private static function depose(string $champ): ?string
     {
-        $chemin = app(ParametresPlateforme::class)->get('identite.'.$champ);
+        try {
+            $chemin = app(ParametresPlateforme::class)->get('identite.'.$champ);
+        } catch (QueryException) {
+            // Base vide ou pas encore migrée : image fournie.
+            return null;
+        }
         $disque = Storage::disk('local');
 
         return $chemin && $disque->exists($chemin) ? $disque->path($chemin) : null;
