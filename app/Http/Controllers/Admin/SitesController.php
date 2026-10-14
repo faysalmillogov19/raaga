@@ -268,16 +268,18 @@ class SitesController extends Controller
     }
 
     /** Remise en révision d'un site confirmé (ajout de boutiques…) : il devra être soumis et confirmé de nouveau. */
+    /** Site validé : seul le VALIDATEUR en autorise la modification (motif obligatoire) ; le site repasse en brouillon. */
     public function reviser(Request $request, Site $site): RedirectResponse
     {
-        Gate::authorize(Droit::SitesGerer->value);
+        Gate::authorize(Droit::SitesConfirmer->value);
+        $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
 
-        return $this->executer($site, function () use ($request, $site) {
+        return $this->executer($site, function () use ($request, $site, $motif) {
             if ($site->statut !== StatutSite::Confirme) {
                 throw new RegleGestionException(__('admin.sites.regles.revision_confirme'));
             }
             $site->forceFill(['statut' => StatutSite::Brouillon])->save();
-            $this->journal->ecrire($request->user(), 'site.revision', 'Site', $site->id, ['statut' => 'CONFIRME'], ['statut' => 'BROUILLON']);
+            $this->journal->ecrire($request->user(), 'site.modification_autorisee', 'Site', $site->id, ['statut' => 'CONFIRME'], ['statut' => 'BROUILLON', 'motif' => $motif]);
         }, 'admin.sites.messages.revision');
     }
 

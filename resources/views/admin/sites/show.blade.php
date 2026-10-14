@@ -27,10 +27,7 @@
                     <x-slot:declencheur>{{ __('admin.parametrage.actions.soumettre') }}</x-slot:declencheur>
                 </x-admin.confirmation>
             @elseif ($gerer && $site->statut === StatutSite::Confirme)
-                <x-admin.confirmation id="reviser" :titre="__('admin.sites.actions.reviser')" :message="__('admin.sites.confirmations.reviser')"
-                                      :action="route('admin.sites.reviser', $site)" :bouton="__('admin.sites.actions.reviser')">
-                    <x-slot:declencheur>{{ __('admin.sites.actions.reviser') }}</x-slot:declencheur>
-                </x-admin.confirmation>
+                <p class="texte-carte">{{ __('admin.sites.valide_verrouille') }}</p>
             @endif
 
             @can(Droit::SitesConfirmer->value)
@@ -42,6 +39,12 @@
                     <x-admin.confirmation id="rejeter" :titre="__('admin.parametrage.actions.rejeter')" :message="__('admin.parametrage.confirmations.rejeter')"
                                           :action="route('admin.sites.rejeter', $site)" :bouton="__('admin.parametrage.actions.rejeter')" motif danger>
                         <x-slot:declencheur>{{ __('admin.parametrage.actions.rejeter') }}</x-slot:declencheur>
+                    </x-admin.confirmation>
+                @endif
+                @if ($site->statut === StatutSite::Confirme)
+                    <x-admin.confirmation id="reviser" :titre="__('admin.sites.actions.reviser')" :message="__('admin.sites.confirmations.reviser')"
+                                          :action="route('admin.sites.reviser', $site)" :bouton="__('admin.sites.actions.reviser')" motif>
+                        <x-slot:declencheur>{{ __('admin.sites.actions.reviser') }}</x-slot:declencheur>
                     </x-admin.confirmation>
                 @endif
             @endcan

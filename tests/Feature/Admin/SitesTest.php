@@ -92,10 +92,17 @@ class SitesTest extends TestCase
         $this->assertSame(StatutSite::Confirme, $site->refresh()->statut);
         $this->assertSame(2, $site->version);
 
-        // Révision pour ajouter des boutiques ; une boutique engagée reste verrouillée.
+        // Site validé : plus modifiable, sauf si le VALIDATEUR l'autorise (motif obligatoire) ; une boutique engagée reste verrouillée.
         $engagee = $site->boutiques()->first();
         $engagee->forceFill(['statut' => StatutBoutique::EnCampagne])->save();
-        $this->en($this->gestionnaire)->post(route('admin.sites.reviser', $site))->assertSessionHas('succes');
+        $this->en($this->gestionnaire)->get(route('admin.sites.show', $site))->assertOk()
+            ->assertSee('Seul le VALIDATEUR peut en autoriser la modification.')->assertDontSee('Autoriser la modification');
+        $this->en($this->gestionnaire)->post(route('admin.sites.reviser', $site), ['motif' => 'Ajout de boutiques'])->assertForbidden();
+        $this->en($this->gestionnaire)->get(route('admin.sites.edit', $site))->assertSessionHas('erreur');
+        $this->en($this->validateur)->get(route('admin.sites.show', $site))->assertOk()->assertSee('Autoriser la modification');
+        $this->en($this->validateur)->post(route('admin.sites.reviser', $site))->assertSessionHasErrors('motif');
+        $this->assertSame(StatutSite::Confirme, $site->refresh()->statut);
+        $this->en($this->validateur)->post(route('admin.sites.reviser', $site), ['motif' => 'Ajout de boutiques au R+2'])->assertSessionHas('succes');
         $this->assertSame(StatutSite::Brouillon, $site->refresh()->statut);
         $this->en($this->gestionnaire)->delete(route('admin.referencement.boutiques.destroy', $engagee))->assertSessionHas('erreur');
         $this->assertModelExists($engagee);

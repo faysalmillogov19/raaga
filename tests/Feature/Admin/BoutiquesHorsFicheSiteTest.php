@@ -134,7 +134,7 @@ class BoutiquesHorsFicheSiteTest extends TestCase
         // Boutique d'un site confirmé : consultable, modification et suppression inactives avec leur motif.
         $figee = $this->confirme->boutiques()->sole();
         $page->assertSee(route('admin.referencement.boutiques.show', $figee))->assertDontSee(route('admin.referencement.boutiques.edit', $figee))
-            ->assertSee('Impossible : site soumis ou confirmé (remettez-le en révision)');
+            ->assertSee('Impossible : site soumis ou validé (demandez au VALIDATEUR d’autoriser la modification)');
 
         $this->en($this->gestionnaire)->delete(route('admin.referencement.boutiques.destroy', $libre))->assertSessionHas('succes');
         $this->assertSoftDeleted($libre);

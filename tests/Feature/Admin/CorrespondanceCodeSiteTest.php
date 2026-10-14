@@ -115,13 +115,13 @@ class CorrespondanceCodeSiteTest extends TestCase
         $this->raa->forceFill(['statut' => StatutSite::Confirme])->save();
 
         $this->apercu(null, [['SAR', 'R1', 'A', 1, null], ['RAA', 'R1', 'A', 1, null]])
-            ->assertSee('Le site RAA est confirmé : l’import est refusé. Remettez-le d’abord en révision', false);
+            ->assertSee('Le site RAA est confirmé : l’import est refusé. Demandez d’abord au VALIDATEUR d’autoriser sa modification', false);
         $this->confirmer(null)->assertSessionHas('erreur');
         $this->assertSame(0, Boutique::query()->count()); // Rien pour SAR non plus : tout ou rien.
 
         // Site confirmé choisi : refusé dès le dépôt, avec le même message.
         $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.deposer'), ['site_id' => $this->raa->id, 'fichier' => $this->fichier([['RAA', 'R1', 'A', 1, null]])])
-            ->assertSessionHas('erreur', fn ($m) => str_contains($m, 'Remettez-le d’abord en révision'));
+            ->assertSessionHas('erreur', fn ($m) => str_contains($m, 'Demandez d’abord au VALIDATEUR d’autoriser sa modification'));
     }
 
     public function test_regle_6_changement_de_code_recalcule_les_boutiques_et_l_ancien_code_est_refuse(): void
