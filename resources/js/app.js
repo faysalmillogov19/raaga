@@ -265,6 +265,64 @@ Alpine.data('pieceKyc', ({ maxOctets, messages }) => ({
     },
 }));
 
+/*
+ * Tableau de données (<x-tableau>) : la recherche (300 ms), les filtres, le tri et la pagination rechargent seulement
+ * le bloc des résultats, puis l'adresse est mise à jour (rechargement et partage du lien). En cas d'échec, la page
+ * complète est chargée.
+ */
+Alpine.data('tableau', () => ({
+    charge: false,
+    controleur: null,
+    init() {
+        window.addEventListener('popstate', () => {
+            if (document.contains(this.$el)) {
+                window.location.reload();
+            }
+        });
+    },
+    soumettre() {
+        const url = new URL(this.$refs.formulaire.action, window.location.origin);
+        new FormData(this.$refs.formulaire).forEach((valeur, cle) => {
+            if (String(valeur) !== '' && !(cle === 'lignes' && valeur === '25')) {
+                url.searchParams.set(cle, valeur);
+            }
+        });
+        this.charger(url.toString());
+    },
+    suivre(evenement) {
+        const lien = evenement.target.closest('a[data-tableau-lien]');
+        if (!lien || evenement.ctrlKey || evenement.metaKey || evenement.shiftKey) {
+            return;
+        }
+        evenement.preventDefault();
+        this.charger(lien.href);
+    },
+    async charger(url) {
+        this.controleur?.abort();
+        this.controleur = new AbortController();
+        this.charge = true;
+        try {
+            const reponse = await fetch(url, {
+                headers: { 'X-Tableau': this.$el.dataset.tableau, 'X-Requested-With': 'XMLHttpRequest' },
+                signal: this.controleur.signal,
+            });
+            if (!reponse.ok) {
+                throw new Error(String(reponse.status));
+            }
+            this.$refs.resultats.innerHTML = await reponse.text();
+            window.history.pushState({}, '', url);
+            // Le tri choisi par un en-tête est conservé pour les recherches suivantes.
+            this.$refs.formulaire.elements.tri.value = new URL(url, window.location.origin).searchParams.get('tri') ?? '';
+        } catch (erreur) {
+            if (erreur.name !== 'AbortError') {
+                window.location.href = url;
+            }
+        } finally {
+            this.charge = false;
+        }
+    },
+}));
+
 window.Alpine = Alpine;
 
 Alpine.start();

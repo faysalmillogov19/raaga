@@ -755,6 +755,31 @@ return [
         ],
     ],
 
+    // Tableau de données réutilisable (<x-tableau>).
+    'donnees' => [
+        'afficher' => 'Afficher',
+        'lignes' => 'lignes',
+        'rechercher' => 'Rechercher',
+        'tous' => 'Tous',
+        'appliquer' => 'Appliquer',
+        'effacer' => 'Effacer les filtres',
+        'exporter' => 'Exporter',
+        'exporter_aide' => 'Exporter le résultat filtré (Excel)',
+        'chargement' => 'Chargement…',
+        'trier' => 'Trier par « :colonne »',
+        'croissant' => 'tri croissant',
+        'decroissant' => 'tri décroissant',
+        'info' => 'Affichage de :de à :a sur :n lignes',
+        'info_filtre' => 'Affichage de :de à :a sur :n lignes (filtrées sur :total)',
+        'pagination' => 'Pagination',
+        'precedent' => 'Précédent',
+        'suivant' => 'Suivant',
+        'page' => 'Page :n',
+        'vide_titre' => 'Aucun résultat',
+        'vide' => 'Aucune ligne ne correspond à la recherche ou aux filtres.',
+        'vide_liste' => 'La liste est vide pour le moment.',
+    ],
+
     'referencement' => [
         'boutiques' => [
             'titre' => 'Boutiques',
@@ -879,7 +904,11 @@ return [
             'ordre' => 'Ordre',
             'statut' => 'Statut',
             'utilise_par' => 'Utilisé par',
+            'actions' => 'Actions',
         ],
+        'filtre_actif' => 'Activation',
+        'actif' => 'Actif',
+        'voir' => 'Voir la fiche',
         'champs' => [
             'code' => 'Code',
             'libelle' => 'Libellé',
@@ -984,6 +1013,7 @@ return [
             'statut' => 'Statut',
             'boutiques' => 'Boutiques',
             'version' => 'Version',
+            'cout_total' => 'Coût total (FCFA)',
             'actions' => 'Actions',
         ],
         'liste' => [

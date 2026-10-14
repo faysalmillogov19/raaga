@@ -66,35 +66,6 @@
     {{-- Journal de tous les imports --}}
     <section class="bo-carte" aria-labelledby="journal-titre">
         <h2 id="journal-titre" class="!text-[1.15rem]">{{ $i['journal_titre'] }}</h2>
-        @if ($journal->isEmpty())
-            <x-etat-vide icone="info" :titre="$i['vide_titre']">{{ $i['vide'] }}</x-etat-vide>
-        @else
-            <div class="mt-3 overflow-x-auto">
-                <table class="bo-tableau">
-                    <thead><tr>@foreach ($i['colonnes'] as $libelle)<th scope="col">{{ $libelle }}</th>@endforeach</tr></thead>
-                    <tbody>
-                        @foreach ($journal as $entree)
-                            @php($v = $entree->nouvelle_valeur ?? [])
-                            <tr>
-                                <td class="whitespace-nowrap">{{ $entree->created_at->format('d/m/Y H:i') }}</td>
-                                <td>{{ $entree->acteur?->name ?? '—' }}</td>
-                                <td>{{ $i['types'][$entree->action] ?? $entree->action }}</td>
-                                <td>{{ $entree->action === 'boutiques.importees' ? ($sites[$entree->entite_id] ?? '—') : $i['tous_sites'] }}</td>
-                                <td>{{ $v['fichier'] ?? '—' }}<br>
-                                    @if (! empty($v['chemin']))
-                                        <a href="{{ route('admin.referencement.imports.fichier', $entree) }}" class="font-semibold text-vert-fonce underline underline-offset-2">{{ $i['telecharger'] }}</a>
-                                    @else
-                                        <span class="texte-carte">{{ $i['indisponible'] }}</span>
-                                    @endif</td>
-                                <td class="text-sm">{{ $entree->action === 'sites.importes'
-                                    ? __('admin.imports.resultat_sites', ['crees' => $v['sites_crees'] ?? 0, 'maj' => $v['sites_mis_a_jour'] ?? 0, 'inchanges' => $v['sites_inchanges'] ?? 0, 'capacites' => $v['capacites'] ?? 0])
-                                    : __('admin.imports.resultat_boutiques', ['crees' => $v['creees'] ?? 0, 'maj' => $v['mises_a_jour'] ?? 0, 'inchanges' => $v['inchangees'] ?? 0]) }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="mt-4">{{ $journal->links() }}</div>
-        @endif
+        <x-tableau :t="$tableau" :libelle="$i['journal_titre']" class="mt-3" />
     </section>
 </x-admin.layout>

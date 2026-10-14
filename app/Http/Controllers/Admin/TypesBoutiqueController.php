@@ -9,13 +9,20 @@ use App\Models\HistoriqueCode;
 use App\Models\TypeBoutique;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
+use App\Support\Tableau\Colonne;
+use App\Support\Tableau\Filtre;
+use App\Support\Tableau\ResultatTableau;
+use App\Support\Tableau\Tableau;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Types de boutiques. GESTIONNAIRE DES SITES ET BOUTIQUES : ajoute un type (soumis au VALIDATEUR), modifie libellé,
@@ -26,13 +33,44 @@ class TypesBoutiqueController extends Controller
 {
     public function __construct(private readonly Journal $journal) {}
 
-    public function index(): View
+    public function index(Request $request): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::SitesVoir->value);
+        $t = __('admin.types');
+        $c = $t['colonnes'];
+        $ouiNon = [1 => $t['oui'], 0 => $t['non']];
 
-        return view('admin.types.index', [
-            'types' => TypeBoutique::query()->withCount('boutiques')->orderBy('ordre')->orderBy('libelle')->get(),
-        ]);
+        return Tableau::pour(TypeBoutique::query(), 'types')
+            ->colonnes([
+                Colonne::make('code', $c['code'])->triable()->recherchable()->classe('font-mono font-semibold'),
+                Colonne::make('libelle', $c['libelle'])->triable()->recherchable(['libelle', 'description'])
+                    ->valeur(fn (TypeBoutique $x) => new HtmlString('<a href="'.e(route('admin.sites.types.show', $x)).'" class="font-bold text-vert-fonce underline underline-offset-2">'.e($x->libelle).'</a>'
+                        .($x->par_defaut ? ' <span class="bo-etiquette bo-etiquette-neutre">'.e($t['par_defaut']).'</span>' : '')
+                        .($x->description ? '<br><span class="texte-carte">'.e($x->description).'</span>' : '')))
+                    ->texte(fn (TypeBoutique $x) => $x->libelle),
+                Colonne::make('attribuable', $c['attribuable'])->triable()
+                    ->valeur(fn (TypeBoutique $x) => new HtmlString(e($x->attribuable ? $t['oui'] : $t['non']).($x->attribuable_demande !== null
+                        ? '<br><span class="bo-etiquette bo-etiquette-attention">'.e($x->attribuable_demande ? $t['demande_oui'] : $t['demande_non']).'</span>' : '')))
+                    ->texte(fn (TypeBoutique $x) => $x->attribuable ? $t['oui'] : $t['non']),
+                Colonne::make('ordre', $c['ordre'])->numerique()->triable(),
+                Colonne::make('statut', $c['statut'])->triable()
+                    ->valeur(fn (TypeBoutique $x) => new HtmlString('<span class="bo-etiquette '.match ($x->statut) {
+                        StatutTypeBoutique::Valide => 'bo-etiquette-succes', StatutTypeBoutique::AValider => 'bo-etiquette-attention', default => 'bo-etiquette-echec',
+                    }.'">'.e($x->statut->label()).'</span>'.($x->actif ? '' : ' <span class="bo-etiquette bo-etiquette-neutre">'.e($t['desactive']).'</span>')))
+                    ->texte(fn (TypeBoutique $x) => $x->statut->label().($x->actif ? '' : ' · '.$t['desactive'])),
+                Colonne::make('utilise_par', $c['utilise_par'])->numerique()->triable('boutiques_count')->avec(fn ($q) => $q->withCount('boutiques'))
+                    ->valeur(fn (TypeBoutique $x) => trans_choice('admin.types.boutiques', $x->boutiques_count, ['n' => format_nombre($x->boutiques_count)]))
+                    ->texte(fn (TypeBoutique $x) => $x->boutiques_count),
+                Colonne::make('actions', $c['actions'])->vue('admin.types._actions', 'type')->exportable(false),
+            ])
+            ->filtres([
+                Filtre::make('statut', $c['statut'], collect(StatutTypeBoutique::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()])->all(), 'statut'),
+                Filtre::make('actif', $t['filtre_actif'], [1 => $t['actif'], 0 => $t['desactive']], 'actif'),
+                Filtre::make('attribuable', $c['attribuable'], $ouiNon, 'attribuable'),
+            ])
+            ->triParDefaut('ordre')
+            ->export('Raaga_types-boutiques')
+            ->repondre($request, fn (ResultatTableau $resultat) => view('admin.types.index', ['tableau' => $resultat]));
     }
 
     public function show(TypeBoutique $type): View

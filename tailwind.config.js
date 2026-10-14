@@ -7,6 +7,9 @@ export default {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        // Classes des colonnes de tableaux de données, déclarées dans les contrôleurs.
+        './app/Http/Controllers/**/*.php',
+        './app/Support/**/*.php',
     ],
 
     theme: {

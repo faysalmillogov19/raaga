@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\EtatPhysiqueBoutique;
+use App\Enums\PhaseSite;
 use App\Enums\PositionBoutique;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
@@ -18,13 +19,20 @@ use App\Services\Backoffice\RegleGestionException;
 use App\Services\Parametrage\WorkflowParametrage;
 use App\Services\Sites\ComparaisonCapacites;
 use App\Support\FicheSite;
+use App\Support\Tableau\Colonne;
+use App\Support\Tableau\Filtre;
+use App\Support\Tableau\ResultatTableau;
+use App\Support\Tableau\Tableau;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Référentiel des sites du marché et de leurs boutiques, tenu en amont des campagnes.
@@ -34,17 +42,43 @@ class SitesController extends Controller
 {
     public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal) {}
 
-    public function index(): View
+    /** Liste des sites : tableau de données (recherche, filtres, tri, pagination, export) ; coût total réservé aux profils financiers. */
+    public function index(Request $request): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::SitesVoir->value);
+        $c = __('admin.sites.colonnes');
+        $statut = fn (Site $s) => new HtmlString(view('admin.parametrage._statut', ['statut' => $s->statut])->render());
 
-        return view('admin.sites.index', [
-            'sites' => Site::query()->withCount([
-                'boutiques' => fn ($q) => $q->where('statut', '!=', StatutBoutique::Retiree),
-                'boutiquesSansNiveau',
-            ])->orderBy('nom')->get(),
-            'types' => TypeBoutique::query()->utilisables()->count(),
-        ]);
+        return Tableau::pour(Site::query(), 'sites')
+            ->colonnes([
+                Colonne::make('code', $c['code'])->triable()->recherchable()->classe('font-mono font-semibold'),
+                Colonne::make('nom', $c['nom'])->triable()->recherchable()
+                    ->valeur(fn (Site $s) => new HtmlString('<a href="'.e(route('admin.sites.show', $s)).'" class="font-bold text-vert-fonce underline underline-offset-2">'.e($s->nom).'</a>'))
+                    ->texte(fn (Site $s) => $s->nom),
+                Colonne::make('lieu', $c['lieu'])->triable('ville')->recherchable(['ville', 'commune', 'arrondissement'])
+                    ->valeur(fn (Site $s) => trim(($s->localite() ?? '—').($s->arrondissement ? ' · '.$s->arrondissement : ''))),
+                Colonne::make('phase', $c['phase'])->triable()->valeur(fn (Site $s) => $s->phase?->label()),
+                Colonne::make('statut', $c['statut'])->triable()->valeur($statut)->texte(fn (Site $s) => $s->statut->label()),
+                Colonne::make('boutiques', $c['boutiques'])->numerique()->triable('boutiques_count')
+                    ->avec(fn ($q) => $q->withCount(['boutiques' => fn ($b) => $b->where('statut', '!=', StatutBoutique::Retiree), 'boutiquesSansNiveau']))
+                    ->valeur(fn (Site $s) => new HtmlString(e(format_nombre($s->boutiques_count)).($s->boutiques_sans_niveau_count > 0
+                        ? '<br><span class="text-sm font-semibold text-rouge">'.e(trans_choice('admin.sites.boutiques.sans_niveau_alerte', $s->boutiques_sans_niveau_count, ['n' => $s->boutiques_sans_niveau_count])).'</span>' : '')))
+                    ->texte(fn (Site $s) => $s->boutiques_count),
+                Colonne::make('version', $c['version'])->numerique()->triable()->valeur(fn (Site $s) => $s->version ?: '—'),
+                // Donnée financière : jamais calculée ni envoyée au GESTIONNAIRE DES SITES ET BOUTIQUES.
+                Colonne::make('cout_total', $c['cout_total'])->numerique()->droit(Droit::BoutiquesVoir)->avec(fn ($q) => $q->with('finances'))
+                    ->valeur(fn (Site $s) => $s->finances?->cout_total !== null ? format_nombre($s->finances->cout_total) : '—')
+                    ->texte(fn (Site $s) => $s->finances?->cout_total),
+                Colonne::make('actions', $c['actions'])->vue('admin.sites._actions', 'site')->exportable(false),
+            ])
+            ->filtres([
+                Filtre::make('statut', $c['statut'], collect(StatutSite::cases())->mapWithKeys(fn ($x) => [$x->value => $x->label()])->all(), 'statut'),
+                Filtre::make('phase', $c['phase'], collect(PhaseSite::cases())->mapWithKeys(fn ($x) => [$x->value => $x->label()])->all(), 'phase'),
+                Filtre::make('ville', ucfirst(__('admin.sites.champs.ville')), Site::query()->whereNotNull('ville')->distinct()->orderBy('ville')->pluck('ville', 'ville')->all(), 'ville'),
+            ])
+            ->triParDefaut('nom')
+            ->export('Raaga_liste-sites')
+            ->repondre($request, fn (ResultatTableau $t) => view('admin.sites.index', ['tableau' => $t]));
     }
 
     // ------------------------------------------------------------------ Sites

@@ -57,13 +57,13 @@ class ReferencementTest extends TestCase
 
         // Tous sites confondus.
         $this->en($this->validateur)->get(route('admin.referencement.boutiques'))->assertOk()
-            ->assertSee('4 boutiques')->assertSee('RAA-R1-A-001')->assertSee('SAR-R1-A-002');
+            ->assertSee('Affichage de 1 à 4 sur 4 lignes')->assertSee('RAA-R1-A-001')->assertSee('SAR-R1-A-002');
 
         // Filtré par site : seules ses boutiques, et l'export suit le même filtre.
         $this->en($this->validateur)->get(route('admin.referencement.boutiques', ['site' => $sar->id]))->assertOk()
-            ->assertSee('2 boutiques')->assertSee('SAR-R1-A-001')->assertDontSee('RAA-R1-A-001');
+            ->assertSee('Affichage de 1 à 2 sur 2 lignes (filtrées sur 4)')->assertSee('SAR-R1-A-001')->assertDontSee('RAA-R1-A-001');
         $this->en($this->validateur)->get(route('admin.referencement.boutiques', ['site' => $sar->id, 'q' => '002']))->assertOk()
-            ->assertSee('1 boutique')->assertSee('SAR-R1-A-002')->assertDontSee('SAR-R1-A-001');
+            ->assertSee('Affichage de 1 à 1 sur 1 lignes (filtrées sur 4)')->assertSee('SAR-R1-A-002')->assertDontSee('SAR-R1-A-001');
         $this->en($this->validateur)->get(route('admin.referencement.boutiques.export', ['site' => $sar->id]))->assertOk()
             ->assertHeader('content-disposition');
     }

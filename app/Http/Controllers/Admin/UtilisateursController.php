@@ -9,6 +9,10 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\Backoffice\GestionUtilisateurs;
 use App\Services\Backoffice\RegleGestionException;
+use App\Support\Tableau\Colonne;
+use App\Support\Tableau\Filtre;
+use App\Support\Tableau\ResultatTableau;
+use App\Support\Tableau\Tableau;
 use App\Support\Telephone;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,8 +20,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Onglet « Utilisateurs back-office » (SUPER_ADMIN) : comptes des 4 profils du back-office.
@@ -26,43 +33,50 @@ use Illuminate\View\View;
  */
 class UtilisateursController extends Controller
 {
-    private const TRIS = ['nom' => 'name', 'inscription' => 'created_at', 'connexion' => 'derniere_connexion_le'];
-
     public function __construct(private readonly GestionUtilisateurs $gestion) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::UtilisateursGerer->value);
-
+        $u = __('admin.utilisateurs');
+        $c = $u['colonnes'];
         $roles = RoleEnum::backoffice();
+        $invitations = null; // Invitations en attente, lues une seule fois.
+        $statut = function (User $x) use (&$invitations) {
+            $invitations ??= DB::table('invitations')->whereNull('utilisee_le')->whereNull('annulee_le')->where('expire_le', '>', now())->pluck('user_id')->all();
 
-        $requete = User::query()
-            ->whereHas('role', fn (Builder $q) => $q->whereIn('code', array_map(fn ($r) => $r->value, $roles)))
-            ->when($request->filled('q'), function (Builder $q) use ($request) {
-                $terme = trim((string) $request->query('q'));
-                $chiffres = Telephone::chiffresLocaux($terme);
-                $q->where(function (Builder $q) use ($terme, $chiffres) {
-                    $q->where('name', 'like', "%{$terme}%")->orWhere('email', 'like', "%{$terme}%");
-                    if (strlen($chiffres) >= 4) {
-                        $q->orWhere('telephone', 'like', "%{$chiffres}%");
-                    }
-                });
-            })
-            ->when($request->filled('role') && RoleEnum::tryFrom((string) $request->query('role')), fn (Builder $q) => $q->whereHas('role', fn (Builder $r) => $r->where('code', $request->query('role'))))
-            ->when($request->query('statut') === 'actif', fn (Builder $q) => $q->where('actif', true))
-            ->when($request->query('statut') === 'desactive', fn (Builder $q) => $q->where('actif', false));
+            return new HtmlString(view('admin.utilisateurs._statut', ['u' => $x, 'invitation' => in_array($x->id, $invitations, true)])->render());
+        };
 
-        $tri = array_key_exists((string) $request->query('tri'), self::TRIS) ? $request->query('tri') : 'nom';
-        $sens = $request->query('sens') === 'desc' ? 'desc' : 'asc';
-
-        return view('admin.utilisateurs.index', [
-            'roles' => $roles,
-            'utilisateurs' => $requete->orderBy(self::TRIS[$tri], $sens)->orderBy('id')->paginate(25)->withQueryString(),
-            'tri' => $tri,
-            'sens' => $sens,
-            'invitationsEnAttente' => DB::table('invitations')->whereNull('utilisee_le')->whereNull('annulee_le')
-                ->where('expire_le', '>', now())->pluck('user_id')->all(),
-        ]);
+        return Tableau::pour(User::query()->with('role')->whereHas('role', fn (Builder $q) => $q->whereIn('code', array_map(fn ($r) => $r->value, $roles))), 'utilisateurs')
+            ->colonnes([
+                Colonne::make('nom', $c['nom'])->triable('name')
+                    ->recherchable(function (Builder $q, string $terme) {
+                        $q->where('name', 'like', "%{$terme}%")->orWhere('email', 'like', "%{$terme}%");
+                        if (strlen($chiffres = Telephone::chiffresLocaux($terme)) >= 4) {
+                            $q->orWhere('telephone', 'like', "%{$chiffres}%");
+                        }
+                    })
+                    ->valeur(fn (User $x) => new HtmlString('<a href="'.e(route('admin.utilisateurs.show', $x)).'" class="font-bold text-vert-fonce underline underline-offset-2">'.e($x->name).'</a>'))
+                    ->texte(fn (User $x) => $x->name),
+                Colonne::make('email', $c['email'])->triable(),
+                Colonne::make('role', $c['role'])
+                    ->valeur(fn (User $x) => new HtmlString('<span class="bo-badge '.e($x->codeRole()->badgeClasse()).'">'.e($x->codeRole()->badge()).'</span>'))
+                    ->texte(fn (User $x) => $x->codeRole()->label()),
+                Colonne::make('statut', $c['statut'])->valeur($statut),
+                Colonne::make('totp', $c['totp'])->valeur(fn (User $x) => $x->totpActive() ? $u['totp_active'] : $u['totp_inactive']),
+                Colonne::make('connexion', $c['connexion'])->triable('derniere_connexion_le')->classe('whitespace-nowrap')
+                    ->valeur(fn (User $x) => $x->derniere_connexion_le?->format('d/m/Y H:i') ?? $u['jamais']),
+            ])
+            ->filtres([
+                Filtre::make('role', $c['role'], collect($roles)->mapWithKeys(fn ($r) => [$r->value => $r->label()])->all(),
+                    fn (Builder $q, string $v) => $q->whereHas('role', fn (Builder $r) => $r->where('code', $v))),
+                Filtre::make('statut', $c['statut'], ['actif' => $u['statuts']['actif'], 'desactive' => $u['statuts']['desactive']],
+                    fn (Builder $q, string $v) => $q->where('actif', $v === 'actif')),
+            ])
+            ->triParDefaut('nom')
+            ->export('Raaga_utilisateurs-backoffice')
+            ->repondre($request, fn (ResultatTableau $t) => view('admin.utilisateurs.index', ['tableau' => $t]));
     }
 
     public function show(User $utilisateur): View

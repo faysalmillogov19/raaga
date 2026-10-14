@@ -687,6 +687,26 @@
         margin-top: 18px;
     }
 
+    /* Back-office sous 768 px : la barre supérieure passe à la ligne au lieu de déborder (aucun défilement horizontal). */
+    @media (max-width: 767px) {
+        .bo-principal {
+            min-width: 0;
+        }
+
+        .bo-haut {
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            padding: 8px 16px;
+        }
+
+        .bo-compte {
+            flex-wrap: wrap;
+            flex-shrink: 1;
+            min-width: 0;
+            gap: 8px;
+        }
+    }
+
     /* Espace institutionnel sur mobile (< 768 px) : menu déroulant avec libellés, marges de 16 px. */
     .bo-menu-mobile {
         display: none;
@@ -800,6 +820,227 @@
         text-align: right;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
+    }
+
+    /* Tableau de données (<x-tableau>) : barre d'outils, lignes zébrées, survol, tri, pagination. */
+    .bo-donnees-outils {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .bo-donnees-ligne {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .bo-donnees-lignes,
+    .bo-donnees-recherche {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: .9rem;
+        color: var(--texte);
+    }
+
+    .bo-donnees-recherche input {
+        width: min(280px, 60vw);
+    }
+
+    .bo-donnees-filtres {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    .bo-donnees-cadre {
+        overflow-x: auto;
+    }
+
+    .bo-tableau-donnees tbody tr:nth-child(even) {
+        background: var(--fond);
+    }
+
+    .bo-tableau-donnees tbody tr:hover {
+        background: var(--vert-pale);
+    }
+
+    .bo-tri {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .bo-tri:hover {
+        color: var(--vert-fonce);
+    }
+
+    .bo-tri-fleche {
+        font-size: .7rem;
+    }
+
+    th[aria-sort="ascending"] .bo-tri,
+    th[aria-sort="descending"] .bo-tri {
+        color: var(--vert-fonce);
+    }
+
+    .bo-donnees-pied {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .bo-pagination {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .bo-pagination a,
+    .bo-pagination span {
+        display: inline-flex;
+        min-width: 36px;
+        min-height: 36px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        border: 1px solid var(--ligne);
+        border-radius: 6px;
+        font-size: .9rem;
+        color: var(--vert-fonce);
+        background: #fff;
+    }
+
+    .bo-pagination a:hover {
+        background: var(--vert-pale);
+    }
+
+    .bo-pagination a[aria-current="page"] {
+        background: var(--vert-fonce);
+        border-color: var(--vert-fonce);
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .bo-pagination span[aria-disabled="true"] {
+        color: var(--gris);
+        background: var(--fond);
+    }
+
+    .bo-pagination span[aria-hidden="true"] {
+        border-color: transparent;
+        background: transparent;
+        color: var(--gris);
+    }
+
+    .bo-donnees-chargement {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 48px;
+        background: rgba(255, 255, 255, .7);
+        font-weight: 700;
+        color: var(--vert-fonce);
+    }
+
+    /* Sous 768 px : chaque ligne devient une carte « libellé : valeur », sans défilement horizontal. */
+    @media (max-width: 767px) {
+        .bo-donnees-cadre {
+            overflow-x: visible;
+        }
+
+        .bo-tableau-donnees thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        .bo-tableau-donnees,
+        .bo-tableau-donnees tbody,
+        .bo-tableau-donnees tr,
+        .bo-tableau-donnees td {
+            display: block;
+            width: 100%;
+        }
+
+        .bo-tableau-donnees tr {
+            margin-bottom: 12px;
+            border: 1px solid var(--ligne);
+            border-radius: 8px;
+            padding: 4px 0;
+        }
+
+        .bo-tableau-donnees td {
+            display: grid;
+            grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+            justify-items: start;
+            gap: 12px;
+            border-bottom: 1px solid var(--ligne);
+            text-align: left;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .bo-tableau-donnees td:last-child {
+            border-bottom: 0;
+        }
+
+        .bo-tableau-donnees td::before {
+            content: attr(data-libelle);
+            font-size: .78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--gris);
+        }
+
+        .bo-tableau-donnees td.montant {
+            text-align: left;
+            white-space: normal;
+        }
+
+        .bo-tableau-donnees td::before {
+            overflow-wrap: anywhere;
+            font-size: .72rem;
+            letter-spacing: 0;
+        }
+
+        .bo-donnees-recherche {
+            width: 100%;
+        }
+
+        /* Très petits écrans : libellé au-dessus de la valeur. */
+        @media (max-width: 479px) {
+            .bo-tableau-donnees td {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 2px;
+                padding: 8px 12px;
+            }
+        }
+
+        .bo-donnees-recherche input {
+            flex: 1;
+            width: auto;
+            min-width: 0;
+        }
+
+        .bo-donnees-pied {
+            justify-content: center;
+        }
     }
 
     .bo-etiquette {

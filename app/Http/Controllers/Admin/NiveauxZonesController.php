@@ -10,14 +10,21 @@ use App\Models\Niveau;
 use App\Models\ZoneSite;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
+use App\Support\Tableau\Colonne;
+use App\Support\Tableau\Filtre;
+use App\Support\Tableau\ResultatTableau;
+use App\Support\Tableau\Tableau;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Niveaux et zones : deux onglets (tableau filtrable, une fiche par élément), gérés comme les types de boutiques.
@@ -32,19 +39,43 @@ class NiveauxZonesController extends Controller
 
     public function __construct(private readonly Journal $journal) {}
 
-    public function index(string $liste): View
+    public function index(Request $request, string $liste): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::SitesVoir->value);
         $classe = $this->classe($liste);
         $niveaux = $liste === 'niveaux';
-        $colonne = $niveaux ? 'niveau' : 'bloc';
-        $parCode = Boutique::query()->whereNotNull($colonne)->selectRaw($colonne.', count(*) as n')->groupBy($colonne)->pluck('n', $colonne);
+        $z = __('admin.zones');
+        $table = (new $classe)->getTable();
+        // Boutiques qui portent ce code (niveau, ou bloc pour une zone) : sous-requête, triable.
+        $compte = Boutique::query()->selectRaw('count(*)')->whereColumn($niveaux ? 'niveau' : 'bloc', $table.'.code');
+        $statut = fn (Model $e) => new HtmlString('<span class="bo-etiquette '.match ($e->statut) {
+            StatutTypeBoutique::Valide => 'bo-etiquette-succes', StatutTypeBoutique::AValider => 'bo-etiquette-attention', default => 'bo-etiquette-echec',
+        }.'">'.e($e->statut->label()).'</span>'.($e->actif ? '' : ' <span class="bo-etiquette bo-etiquette-neutre">'.e($z['desactive']).'</span>'));
 
-        return view('admin.zones.liste', [
-            'liste' => $liste,
-            'elements' => $classe::query()->orderBy($niveaux ? 'rang' : 'ordre')->orderBy('code')->get()
-                ->each(fn (Model $e) => $e->setAttribute('boutiques_count', (int) ($parCode[$e->code] ?? 0))),
-        ]);
+        return Tableau::pour($classe::query()->select($table.'.*'), $liste)
+            ->colonnes([
+                Colonne::make('code', $z['colonnes']['code'])->triable()->recherchable()->classe('font-mono font-semibold'),
+                Colonne::make('libelle', $z['colonnes']['libelle'])->triable()->recherchable(),
+                $niveaux ? null : Colonne::make('description', $z['colonnes']['description'])->recherchable(),
+                Colonne::make($niveaux ? 'rang' : 'ordre', $z['colonnes'][$niveaux ? 'rang' : 'ordre'])->numerique()->triable(),
+                Colonne::make('statut', $z['colonnes']['statut'])->triable()->valeur($statut)
+                    ->texte(fn (Model $e) => $e->statut->label().($e->actif ? '' : ' · '.$z['desactive'])),
+                Colonne::make('par_defaut', $z['colonnes']['par_defaut'])->triable()
+                    ->valeur(fn (Model $e) => $e->par_defaut ? new HtmlString('<span class="bo-etiquette bo-etiquette-neutre">'.e($z['par_defaut']).'</span>') : $z['non'])
+                    ->texte(fn (Model $e) => $e->par_defaut ? $z['oui'] : $z['non']),
+                Colonne::make('utilise', $z['colonnes']['utilisation'])->numerique()->triable('boutiques_count')->avec(fn ($q) => $q->addSelect(['boutiques_count' => $compte]))
+                    ->valeur(fn (Model $e) => trans_choice('admin.zones.boutiques', (int) $e->boutiques_count, ['n' => format_nombre((int) $e->boutiques_count)]))
+                    ->texte(fn (Model $e) => (int) $e->boutiques_count),
+                Colonne::make('actions', $z['colonnes']['actions'])->vue('admin.zones._actions', 'el')->exportable(false),
+            ])
+            ->filtres([
+                Filtre::make('statut', $z['colonnes']['statut'], collect(StatutTypeBoutique::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()])->all(), 'statut'),
+                Filtre::make('actif', __('admin.types.filtre_actif'), [1 => __('admin.types.actif'), 0 => $z['desactive']], 'actif'),
+                Filtre::make('par_defaut', $z['colonnes']['par_defaut'], [1 => $z['oui'], 0 => $z['non']], 'par_defaut'),
+            ])
+            ->triParDefaut($niveaux ? 'rang' : 'ordre')
+            ->export($niveaux ? 'Raaga_niveaux' : 'Raaga_zones')
+            ->repondre($request, fn (ResultatTableau $t) => view('admin.zones.liste', ['liste' => $liste, 'tableau' => $t]));
     }
 
     /** Fiche : détail, modification (GESTIONNAIRE), validation (VALIDATEUR), historique des versions. */
