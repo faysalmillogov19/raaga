@@ -27,6 +27,16 @@ final class AppendOnlyTable
                     "CREATE TRIGGER {$trigger} BEFORE {$operation} ON {$table} "
                     ."BEGIN SELECT RAISE(ABORT, '{$message}'); END"
                 ),
+                'pgsql' => (function () use ($trigger, $operation, $table, $message): void {
+                    DB::unprepared(
+                        "CREATE OR REPLACE FUNCTION {$trigger}() RETURNS trigger AS \$\$ "
+                        ."BEGIN RAISE EXCEPTION '{$message}'; END; \$\$ LANGUAGE plpgsql"
+                    );
+                    DB::unprepared(
+                        "CREATE TRIGGER {$trigger} BEFORE {$operation} ON {$table} "
+                        ."FOR EACH ROW EXECUTE FUNCTION {$trigger}()"
+                    );
+                })(),
                 default => null,
             };
         }
@@ -35,7 +45,14 @@ final class AppendOnlyTable
     public static function unprotect(string $table): void
     {
         foreach (['UPDATE', 'DELETE'] as $operation) {
-            DB::unprepared('DROP TRIGGER IF EXISTS '.self::triggerName($table, $operation));
+            $trigger = self::triggerName($table, $operation);
+
+            if (DB::getDriverName() === 'pgsql') {
+                DB::unprepared("DROP TRIGGER IF EXISTS {$trigger} ON {$table}");
+                DB::unprepared("DROP FUNCTION IF EXISTS {$trigger}()");
+            } else {
+                DB::unprepared("DROP TRIGGER IF EXISTS {$trigger}");
+            }
         }
     }
 
