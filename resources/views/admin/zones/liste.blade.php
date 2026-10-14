@@ -23,8 +23,10 @@
         <p class="texte-carte max-w-3xl">{{ $z[$liste.'_aide'] }} {{ $z['regles_communes'] }}</p>
 
         @if ($gerer)
-            <details class="mt-4 rounded-charte border border-ligne p-4" @if ($errors->any()) open @endif>
-                <summary class="cursor-pointer font-semibold text-vert-fonce">{{ $z[$liste.'_ajouter'] }}</summary>
+            <details class="mt-4" @if ($errors->any()) open @endif>
+                <summary class="bo-bouton-icone bo-bouton-icone-principal" aria-label="{{ $z[$liste.'_ajouter'] }}" data-infobulle="{{ $z[$liste.'_ajouter'] }}">
+                    <x-icon name="plus" class="h-[18px] w-[18px]" />
+                </summary>
                 <form method="POST" action="{{ route('admin.referencement.zones.store', $liste) }}" class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" novalidate>
                     @csrf
                     <x-admin.champ nom="code" :libelle="$z['colonnes']['code']" :maxlength="$niveaux ? 3 : 5" required autocomplete="off" :aide="$z[$liste.'_code_aide']" />
@@ -35,7 +37,7 @@
                         <x-admin.champ nom="description" :libelle="$z['colonnes']['description']" maxlength="300" />
                         <x-admin.champ nom="ordre" :libelle="$z['colonnes']['ordre']" type="number" min="0" max="9999" />
                     @endif
-                    <div class="flex items-end"><button type="submit" class="bo-bouton bo-bouton-principal">{{ $z['ajouter'] }}</button></div>
+                    <div class="flex items-end pb-1"><x-admin.bouton-icone type="submit" icone="check" variante="principal" :intitule="$z[$liste.'_ajouter']" :infobulle="$z['ajouter']" /></div>
                 </form>
             </details>
         @endif
@@ -98,13 +100,14 @@
                             <td>@if ($el->par_defaut)<span class="bo-etiquette bo-etiquette-neutre">{{ $z['par_defaut'] }}</span>@else{{ $z['non'] }}@endif</td>
                             <td class="montant">{{ trans_choice('admin.zones.boutiques', $el->boutiques_count, ['n' => format_nombre($el->boutiques_count)]) }}</td>
                             <td>
-                                <div class="flex flex-wrap gap-2">
-                                    <a href="{{ route('admin.referencement.zones.show', [$liste, $el->id]) }}" class="bo-bouton bo-bouton-secondaire">{{ $gerer ? $z['modifier'] : $z['voir'] }}<span class="sr-only"> {{ $el->code }}</span></a>
+                                <div class="flex gap-2">
+                                    <x-admin.bouton-icone :href="route('admin.referencement.zones.show', [$liste, $el->id])" :icone="$gerer ? 'modifier' : 'voir'"
+                                                          :intitule="($gerer ? $z['modifier'] : $z['voir']).' '.$el->code" :infobulle="$gerer ? $z['modifier'] : $z['voir']" />
                                     @if ($gerer)
                                         <form method="POST" action="{{ route('admin.referencement.zones.destroy', [$liste, $el->id]) }}">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="bo-bouton bo-bouton-danger" @disabled(! $supprimable)
-                                                    title="{{ $supprimable ? '' : ($el->par_defaut ? $z['regles']['defaut'] : $z['regles']['utilisee']) }}">{{ $z['supprimer'] }}<span class="sr-only"> {{ $el->code }}</span></button>
+                                            <x-admin.bouton-icone type="submit" icone="supprimer" variante="danger" :intitule="$z['supprimer'].' '.$el->code" :disabled="! $supprimable"
+                                                                  :infobulle="$supprimable ? $z['supprimer'] : ($el->par_defaut ? $z['suppression_defaut'] : $z['suppression_utilise'])" />
                                         </form>
                                     @endif
                                 </div>

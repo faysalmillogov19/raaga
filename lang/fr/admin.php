@@ -713,6 +713,8 @@ return [
         'oui' => 'Oui',
         'non' => 'Non',
         'aucun_resultat' => 'Aucune ligne ne correspond à ces filtres.',
+        'suppression_defaut' => 'Suppression impossible : élément « par défaut » (désactivez-le)',
+        'suppression_utilise' => 'Suppression impossible : élément utilisé (désactivez-le)',
         'modifier' => 'Modifier',
         'voir' => 'Voir',
         'modifier_titre' => 'Modifier',
