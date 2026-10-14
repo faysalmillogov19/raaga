@@ -98,7 +98,7 @@ class ProfilsSupportTest extends TestCase
     {
         $this->connecterBackoffice(Role::Admin);
 
-        $this->get('/admin')->assertOk()->assertSee('bo-badge bo-badge-admin', false)->assertSee('ADMIN');
+        $this->get('/admin')->assertOk()->assertSee('<span class="adm-profil-role">'.e(Role::Admin->label()).'</span>', false);
         foreach (['/admin/assistance', '/admin/demandes', '/admin/contenus'] as $url) {
             $this->get($url)->assertOk();
         }

@@ -32,6 +32,14 @@ export default {
                 gris: { DEFAULT: '#5E6B63', clair: '#C9D2CC', inactif: '#B9C4BD' },
                 ligne: '#D9E0DB',
                 fond: '#F5F7F5',
+                // Charte du back-office : variables du thème (clair ou Forêt), définies dans resources/css/admin.css.
+                adm: {
+                    bg: 'var(--bg)', card: 'var(--card)', text: 'var(--text)', muted: 'var(--muted)', line: 'var(--line)', zebra: 'var(--zebra)', hover: 'var(--hover)',
+                    primary: 'var(--primary)', 'primary-hover': 'var(--primary-hover)', soft: 'var(--soft)', 'soft-text': 'var(--soft-text)', danger: 'var(--danger)',
+                    field: 'var(--field)', 'ok-bg': 'var(--ok-bg)', 'ok-text': 'var(--ok-text)', 'warn-bg': 'var(--warn-bg)', 'warn-text': 'var(--warn-text)',
+                    'err-bg': 'var(--err-bg)', 'err-text': 'var(--err-text)', 'info-bg': 'var(--info-bg)', 'info-text': 'var(--info-text)',
+                    'neutral-bg': 'var(--neutral-bg)', 'neutral-text': 'var(--neutral-text)', bar: 'var(--bar)', track: 'var(--track)',
+                },
             },
             borderRadius: {
                 charte: '6px',

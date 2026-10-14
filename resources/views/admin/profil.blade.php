@@ -67,6 +67,25 @@
                 <h2 id="securite-titre" class="!text-[1.15rem]">{{ __('admin.profil.securite') }}</h2>
                 <p class="mt-2">{{ $user->totpActive() ? __('admin.profil.securite_active', ['date' => $user->totp_active_le->format('d/m/Y')]) : __('admin.profil.securite_inactive') }}</p>
             </section>
+
+            {{-- Préférences : thème du back-office, mémorisé pour le compte. --}}
+            <section class="bo-carte" id="preferences" aria-labelledby="preferences-titre">
+                <h2 id="preferences-titre" class="!text-[1.15rem]">{{ __('admin.cadre.preferences_titre') }}</h2>
+                <p class="texte-carte mt-1">{{ __('admin.cadre.preferences_aide') }}</p>
+                <form method="POST" action="{{ route('admin.preferences.theme') }}" class="mt-3">
+                    @csrf
+                    <fieldset class="flex flex-wrap gap-4">
+                        <legend class="sr-only">{{ __('admin.cadre.theme') }}</legend>
+                        @foreach (\App\Http\Controllers\Admin\CadreController::THEMES as $choix)
+                            <label class="flex min-h-[44px] items-center gap-2">
+                                <input type="radio" name="theme" value="{{ $choix }}" @checked(($user->theme_backoffice ?? 'clair') === $choix)>
+                                {{ __('admin.cadre.theme_'.$choix) }}
+                            </label>
+                        @endforeach
+                    </fieldset>
+                    <button type="submit" class="bo-bouton bo-bouton-principal mt-3">{{ __('admin.cadre.enregistrer') }}</button>
+                </form>
+            </section>
         </div>
     </div>
 </x-admin.layout>

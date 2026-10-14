@@ -323,6 +323,82 @@ Alpine.data('tableau', () => ({
     },
 }));
 
+/*
+ * Cadre du back-office : barre latérale ouverte ou fermée (choix mémorisé sur cet appareil ; fermée par défaut sur
+ * mobile), thème clair ou Forêt (mémorisé pour l'utilisateur, côté serveur), notifications marquées comme lues.
+ */
+const jeton = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+const envoyer = (url, donnees = {}) => fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': jeton(), 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify(donnees),
+});
+
+Alpine.data('cadreAdmin', ({ theme = 'clair', urlTheme = '', urlLues = '' } = {}) => ({
+    theme,
+    ouvert: true,
+    init() {
+        const mobile = window.matchMedia('(max-width: 1023px)').matches;
+        let memorise = null;
+        try {
+            memorise = localStorage.getItem('raaga.admin.menu');
+        } catch {
+            // Stockage indisponible : valeur par défaut.
+        }
+        this.ouvert = mobile ? false : memorise !== 'ferme';
+    },
+    basculerMenu() {
+        this.ouvert = !this.ouvert;
+        if (!window.matchMedia('(max-width: 1023px)').matches) {
+            try {
+                localStorage.setItem('raaga.admin.menu', this.ouvert ? 'ouvert' : 'ferme');
+            } catch {
+                // Sans stockage, le choix n'est pas mémorisé.
+            }
+        }
+    },
+    async basculerTheme() {
+        const precedent = this.theme;
+        this.theme = this.theme === 'foret' ? 'clair' : 'foret';
+        try {
+            const reponse = await envoyer(urlTheme, { theme: this.theme });
+            if (!reponse.ok) {
+                throw new Error(String(reponse.status));
+            }
+        } catch {
+            this.theme = precedent;
+        }
+    },
+    marquerLues() {
+        envoyer(urlLues).catch(() => {});
+    },
+}));
+
+// Recherche globale : les dernières recherches sont proposées au focus (conservées sur cet appareil).
+Alpine.data('rechercheGlobale', () => ({
+    ouverte: false,
+    recentes: [],
+    init() {
+        try {
+            this.recentes = JSON.parse(localStorage.getItem('raaga.admin.recherches') ?? '[]').slice(0, 5);
+        } catch {
+            this.recentes = [];
+        }
+    },
+    memoriser() {
+        const terme = this.$refs.champ.value.trim();
+        if (!terme) {
+            return;
+        }
+        this.recentes = [terme, ...this.recentes.filter((t) => t !== terme)].slice(0, 5);
+        try {
+            localStorage.setItem('raaga.admin.recherches', JSON.stringify(this.recentes));
+        } catch {
+            // Sans stockage, rien n'est conservé.
+        }
+    },
+}));
+
 window.Alpine = Alpine;
 
 Alpine.start();

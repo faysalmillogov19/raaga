@@ -1,0 +1,684 @@
+/*
+ * Charte du back-office (/admin uniquement) : thèmes clair et Forêt, cadre (bandeau, barre latérale, barre du haut,
+ * contenu) et rattachement des composants existants (bo-*) aux variables du thème. Chargé seulement par
+ * <x-admin.layout>, après app.css : le site public et l'espace citoyen ne sont pas concernés.
+ */
+
+/* ------------------------------------------------------------------ Thèmes */
+
+.theme-clair {
+    --bg: #E3F4E8; --card: #FFFFFF; --text: #17221C; --muted: #52645A; --line: #DCEBE1; --zebra: #F6FBF8; --hover: #EAF6EE;
+    --side: #E3F4E8; --side-text: #15402A; --side-muted: #3F6A51; --side-active: #C2E8CF; --side-head: #3B7A54; --side-border: #C8E3D1; --side-hover: #D3EEDC;
+    --primary: #1B7F45; --primary-hover: #166B3A; --primary-text: #FFFFFF; --soft: #DDF3E5; --soft-text: #0B5E2E; --danger: #B3122A; --field: #FFFFFF;
+    --ok-bg: #DDF3E5; --ok-text: #0B5E2E; --warn-bg: #FFF4C2; --warn-text: #5E4800; --err-bg: #FCE6E9; --err-text: #A10E1F;
+    --info-bg: #E7EEF9; --info-text: #22437A; --neutral-bg: #ECEFED; --neutral-text: #3E4A43; --disabled-bg: #E6EBE8; --disabled-text: #7C8A82;
+    --bar: #4CB876; --track: #E1EFE6;
+}
+
+.theme-foret {
+    --bg: #0E1714; --card: #16231E; --text: #E5EFE9; --muted: #A3B8AC; --line: #26372F; --zebra: #1A2A23; --hover: #1F3229;
+    --side: #0A2418; --side-text: #E2F0E7; --side-muted: #94BBA3; --side-active: #13603A; --side-head: #7FA98F; --side-border: rgba(255, 255, 255, .14); --side-hover: rgba(255, 255, 255, .08);
+    --primary: #1E9655; --primary-hover: #23A862; --primary-text: #FFFFFF; --soft: #163C28; --soft-text: #9FE0B8; --danger: #C8203A; --field: #101B17;
+    --ok-bg: #163C28; --ok-text: #9FE0B8; --warn-bg: #3D3410; --warn-text: #F6DE7A; --err-bg: #431820; --err-text: #F7A9B4;
+    --info-bg: #1B2B45; --info-text: #A9C4F0; --neutral-bg: #24302B; --neutral-text: #C7D3CC; --disabled-bg: #22302A; --disabled-text: #6F8478;
+    --bar: #2FB36A; --track: #22342C;
+    color-scheme: dark;
+}
+
+/* Jetons historiques des composants bo-* rattachés au thème. */
+.theme-clair,
+.theme-foret {
+    --vert: var(--primary);
+    --vert-fonce: var(--primary);
+    --vert-pale: var(--soft);
+    --rouge: var(--danger);
+    --rouge-pale: var(--err-bg);
+    --jaune-pale: var(--warn-bg);
+    --encre: var(--text);
+    --texte: var(--text);
+    --gris: var(--muted);
+    --ligne: var(--line);
+    --fond: var(--zebra);
+    --piste: var(--track);
+    --tricolore-rouge: #CE1126;
+    --tricolore-jaune: #FCD116;
+    --tricolore-vert: #00843D;
+}
+
+/* ------------------------------------------------------------------ Base */
+
+body.adm {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Contour de focus jaune 3 px sur tout élément cliquable. */
+.adm :focus-visible {
+    outline: 3px solid #FCD116 !important;
+    outline-offset: 2px;
+}
+
+.adm a,
+.adm button,
+.adm summary {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Couleurs utilitaires des vues existantes, rattachées au thème. */
+.adm .text-vert-fonce,
+.adm .text-vert { color: var(--soft-text); }
+.adm .text-encre,
+.adm .text-texte { color: var(--text); }
+.adm .text-gris { color: var(--muted); }
+.adm .text-rouge { color: var(--err-text); }
+.adm .bg-vert-pale { background-color: var(--soft); }
+.adm .bg-fond { background-color: var(--zebra); }
+.adm .bg-white { background-color: var(--card); }
+.adm .border-ligne { border-color: var(--line); }
+.adm .texte-carte { color: var(--muted); }
+
+/* ------------------------------------------------------------------ Cadre */
+
+.adm-bandeau {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 40;
+    height: 4px;
+    background: linear-gradient(90deg, var(--tricolore-rouge) 0 33.34%, var(--tricolore-jaune) 33.34% 66.67%, var(--tricolore-vert) 66.67%);
+}
+
+.adm-cadre {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    min-height: 100vh;
+    padding-top: 4px;
+}
+
+.adm-cadre.adm-ferme {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.adm-ferme .adm-lateral {
+    display: none;
+}
+
+/* Barre latérale */
+.adm-lateral {
+    position: sticky;
+    top: 4px;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 4px);
+    overflow-y: auto;
+    background: var(--side);
+    border-right: 1px solid var(--side-border);
+    color: var(--side-text);
+}
+
+.adm-marque {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 16px 12px;
+    color: var(--side-text);
+    text-decoration: none;
+}
+
+.adm-logo {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: var(--primary-text);
+    font-weight: 800;
+    font-size: 15px;
+}
+
+.adm-marque-nom {
+    display: block;
+    font-weight: 800;
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.adm-marque-sous {
+    display: block;
+    font-size: 11px;
+    color: var(--side-muted);
+}
+
+.adm-nav {
+    padding: 0 8px 16px;
+}
+
+.adm-groupe {
+    margin: 18px 8px 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--side-head);
+}
+
+.adm-nav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* Lien de menu : 40 px de haut, zone cliquable étendue à 44 px par un padding vertical de la liste. */
+.adm-nav li {
+    padding: 2px 0;
+}
+
+.adm-nav .bo-lien {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    color: var(--side-text);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.adm-nav .bo-lien:hover {
+    background: var(--side-hover);
+}
+
+.adm-nav .bo-lien-actif,
+.adm-nav .bo-lien-actif:hover {
+    background: var(--side-active);
+    font-weight: 700;
+}
+
+.adm-compteur {
+    display: inline-flex;
+    min-width: 20px;
+    height: 20px;
+    margin-left: auto;
+    padding: 0 6px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 99px;
+    background: #FCD116;
+    color: #3B2F00;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.adm-version {
+    margin-top: auto;
+    padding: 14px 16px;
+    border-top: 1px solid var(--side-border);
+    font-size: 11px;
+    color: var(--side-muted);
+}
+
+/* Barre du haut */
+.adm-principal {
+    min-width: 0;
+}
+
+.adm-haut {
+    position: sticky;
+    top: 4px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 64px;
+    padding: 10px 24px;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+}
+
+.adm-icone {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.adm-icone:hover {
+    background: var(--hover);
+}
+
+.adm-icone svg {
+    width: 18px;
+    height: 18px;
+}
+
+.adm-pastille {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+}
+
+.adm-pastille-jaune {
+    background: #FCD116;
+    color: #3B2F00;
+}
+
+.adm-pastille-rouge {
+    background: #CE1126;
+    color: #fff;
+}
+
+.adm-recherche {
+    position: relative;
+    flex: 1;
+    max-width: 480px;
+}
+
+.adm-recherche input {
+    width: 100%;
+    height: 44px;
+    padding: 0 12px 0 38px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--field);
+    color: var(--text);
+    font: inherit;
+}
+
+.adm-recherche input::placeholder {
+    color: var(--muted);
+}
+
+.adm-recherche-icone {
+    position: absolute;
+    top: 13px;
+    left: 12px;
+    width: 18px;
+    height: 18px;
+    color: var(--muted);
+    pointer-events: none;
+}
+
+.adm-outils {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.adm-deroulant {
+    position: relative;
+}
+
+.adm-panneau {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 50;
+    width: min(320px, calc(100vw - 32px));
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+}
+
+.adm-recherche .adm-panneau {
+    left: 0;
+    right: auto;
+    width: 100%;
+}
+
+.adm-panneau-titre {
+    margin: 4px 8px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.adm-panneau-lien {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.adm-panneau-lien:hover {
+    background: var(--hover);
+}
+
+.adm-panneau-vide {
+    margin: 8px 10px 10px;
+    color: var(--muted);
+}
+
+.adm-profil {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 4px 12px 4px 6px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.adm-avatar {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 99px;
+    background: var(--primary);
+    color: var(--primary-text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.adm-profil-nom {
+    display: block;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.adm-profil-role {
+    display: block;
+    font-size: 11px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.adm-panneau-entete {
+    padding: 8px 10px 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+}
+
+/* Contenu */
+.adm-contenu {
+    width: 100%;
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.adm-fil ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.adm-fil a {
+    color: var(--muted);
+    text-decoration: none;
+}
+
+.adm-fil a:hover {
+    color: var(--text);
+    text-decoration: underline;
+}
+
+.adm-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 24px;
+    margin-bottom: 20px;
+}
+
+.adm .adm-titre {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: var(--text);
+}
+
+.adm-sous-titre {
+    margin: 4px 0 0;
+    color: var(--muted);
+}
+
+.adm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* ------------------------------------------------------------------ Composants existants rattachés au thème */
+
+.adm .bo-carte {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--text);
+}
+
+.adm h1,
+.adm h2,
+.adm h3 {
+    color: var(--text);
+}
+
+.adm .champ {
+    background-color: var(--field);
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.adm .bo-message {
+    border-radius: 10px;
+    background: var(--ok-bg);
+    color: var(--ok-text);
+    border-color: transparent;
+}
+
+.adm .bo-message-erreur {
+    background: var(--err-bg);
+    color: var(--err-text);
+}
+
+.adm .bo-bouton {
+    min-height: 44px;
+    border-radius: 10px;
+}
+
+.adm .bo-bouton-principal {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-text);
+}
+
+.adm .bo-bouton-principal:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.adm .bo-bouton-secondaire {
+    background: var(--card);
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.adm .bo-bouton-secondaire:hover {
+    background: var(--hover);
+}
+
+.adm .bo-bouton-danger {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+}
+
+.adm .bo-bouton-icone {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.adm .bo-bouton-icone-secondaire {
+    background: var(--card);
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.adm .bo-bouton-icone-principal {
+    background: var(--primary);
+    color: var(--primary-text);
+}
+
+.adm .bo-bouton-icone:disabled {
+    background: var(--disabled-bg);
+    color: var(--disabled-text);
+}
+
+/* Statuts : toujours écrits en toutes lettres ; la couleur aide. */
+.adm .bo-etiquette {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.adm .bo-etiquette-succes { background: var(--ok-bg); color: var(--ok-text); }
+.adm .bo-etiquette-attention { background: var(--warn-bg); color: var(--warn-text); }
+.adm .bo-etiquette-echec { background: var(--err-bg); color: var(--err-text); }
+.adm .bo-etiquette-info { background: var(--info-bg); color: var(--info-text); }
+.adm .bo-etiquette-neutre { background: var(--neutral-bg); color: var(--neutral-text); }
+
+.adm .bo-tableau th {
+    color: var(--muted);
+    border-bottom-color: var(--line);
+}
+
+.adm .bo-tableau td {
+    border-bottom-color: var(--line);
+}
+
+.adm .bo-tableau-donnees tbody tr:nth-child(even) {
+    background: var(--zebra);
+}
+
+.adm .bo-tableau-donnees tbody tr:hover {
+    background: var(--hover);
+}
+
+.adm .bo-pagination a,
+.adm .bo-pagination span {
+    min-width: 44px;
+    min-height: 44px;
+    background: var(--card);
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.adm .bo-pagination a[aria-current="page"] {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-text);
+}
+
+.adm .bo-pagination span[aria-disabled="true"] {
+    background: var(--disabled-bg);
+    color: var(--disabled-text);
+}
+
+.adm .bo-donnees-chargement {
+    background: color-mix(in srgb, var(--card) 70%, transparent);
+}
+
+.adm .bo-dialogue {
+    background: var(--card);
+    color: var(--text);
+}
+
+/* ------------------------------------------------------------------ Mobile : barre latérale au-dessus du contenu */
+
+@media (max-width: 1023px) {
+    .adm-cadre,
+    .adm-cadre.adm-ferme {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adm-lateral {
+        position: static;
+        height: auto;
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--side-border);
+    }
+
+    .adm-version {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .adm-haut {
+        flex-wrap: wrap;
+        padding: 8px 16px;
+    }
+
+    .adm-recherche {
+        order: 3;
+        flex-basis: 100%;
+        max-width: none;
+    }
+
+    .adm-profil-texte {
+        display: none;
+    }
+
+    .adm-contenu {
+        padding: 16px;
+    }
+}

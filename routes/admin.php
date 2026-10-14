@@ -3,6 +3,7 @@
 use App\Enums\Droit;
 use App\Http\Controllers\Admin\AppelsFondsController;
 use App\Http\Controllers\Admin\AssistanceController;
+use App\Http\Controllers\Admin\CadreController;
 use App\Http\Controllers\Admin\CampagnesBoutiquesController;
 use App\Http\Controllers\Admin\CapacitesController;
 use App\Http\Controllers\Admin\ConnexionController;
@@ -81,6 +82,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Pièces d'identité des citoyens : VALIDATEUR uniquement (l'écran KYC viendra avec le lot KYC).
         Route::get('/kyc/pieces/{document}', PiecesKycController::class)->whereNumber('document')->middleware('can:'.Droit::KycVoirPieces->value)->name('kyc.piece');
+
+        // Barre du haut : thème mémorisé par utilisateur, notifications, recherche globale.
+        Route::post('/preferences/theme', [CadreController::class, 'theme'])->name('preferences.theme');
+        Route::post('/notifications/lues', [CadreController::class, 'notificationsLues'])->name('notifications.lues');
+        Route::get('/recherche', [CadreController::class, 'recherche'])->name('recherche');
 
         // Mon profil : chaque compte back-office met à jour ses propres informations (jamais son rôle).
         Route::get('/profil', [ProfilController::class, 'show'])->name('profil');
