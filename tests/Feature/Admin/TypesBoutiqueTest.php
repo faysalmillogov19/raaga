@@ -107,14 +107,14 @@ class TypesBoutiqueTest extends TestCase
         ]);
         $chemin = tempnam(sys_get_temp_dir(), 'locaux').'.xlsx';
         (new Xlsx($classeur))->save($chemin);
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.deposer', $site), ['fichier' => new UploadedFile($chemin, 'locaux.xlsx', null, null, true)]);
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.deposer'), ['site_id' => $site->id, 'fichier' => new UploadedFile($chemin, 'locaux.xlsx', null, null, true)]);
 
-        $this->en($this->gestionnaire)->get(route('admin.sites.import', $site))->assertOk()->assertSee('Type ETAL désactivé : il ne peut plus être utilisé.');
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.confirmer', $site))->assertSessionHas('erreur');
+        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.import', $site))->assertOk()->assertSee('Type ETAL désactivé : il ne peut plus être utilisé.');
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $site))->assertSessionHas('erreur');
         $this->assertSame(0, Boutique::query()->count());
 
         // Absent aussi de la saisie : refusé dans le formulaire d'ajout d'une boutique.
-        $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.store', $site), ['niveau' => 'RC', 'bloc' => 'E', 'numero' => 1, 'type_boutique_id' => $this->type('ETAL')->id, 'etat_physique' => 'LIVREE'])
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.store', $site), ['niveau' => 'RC', 'bloc' => 'E', 'numero' => 1, 'type_boutique_id' => $this->type('ETAL')->id, 'etat_physique' => 'LIVREE'])
             ->assertSessionHasErrors('type_boutique_id');
     }
 

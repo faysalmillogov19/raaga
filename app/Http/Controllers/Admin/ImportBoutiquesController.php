@@ -20,13 +20,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * Boutiques en Excel (GESTIONNAIRE DES SITES ET BOUTIQUES) : modèle, export et import en deux temps — aperçu sans
  * écriture, puis confirmation tout ou rien, seulement si le fichier ne contient aucune erreur (les avertissements
- * ne bloquent pas). Import depuis la fiche d'un site, ou combiné (plusieurs sites existants, depuis « Sites et boutiques »).
+ * ne bloquent pas). Import pour un site choisi dans la liste (onglet Boutiques ou Imports), ou combiné (plusieurs sites
+ * existants) : le site choisi tient lieu de site de référence (colonne Site vide → son code ; autre site → erreur).
  */
 class ImportBoutiquesController extends Controller
 {
     public function __construct(private readonly ReferentielExcel $excel) {}
 
-    // ------------------------------------------------------------------ Depuis la fiche d'un site
+    // ------------------------------------------------------------------ Pour un site
 
     public function modele(Site $site): StreamedResponse|RedirectResponse
     {
@@ -49,13 +50,24 @@ class ImportBoutiquesController extends Controller
         return $this->exigerModifiable($site) ?? $this->depot($request, $site);
     }
 
-    /** Depuis l'onglet « Imports » : le site est choisi dans la liste, puis l'import suit le circuit de sa fiche. */
+    /** Onglet Boutiques ou Imports : le site est choisi dans la liste (brouillon ou révision), puis l'import suit son circuit. */
     public function deposerPourSite(Request $request): RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
-        $site = Site::query()->findOrFail($request->validate(['site_id' => ['required', 'integer']], [], ['site_id' => __('admin.imports.site')])['site_id']);
 
-        return $this->deposer($request, $site);
+        return $this->deposer($request, $this->siteChoisi($request));
+    }
+
+    /** Modèle pré-rempli du site choisi (brouillon ou révision). */
+    public function modelePourSite(Request $request): StreamedResponse|RedirectResponse
+    {
+        return $this->modele($this->siteChoisi($request));
+    }
+
+    /** Export du référentiel du site choisi, quel que soit son statut. */
+    public function exporterPourSite(Request $request): StreamedResponse
+    {
+        return $this->exporter($this->siteChoisi($request));
     }
 
     public function apercu(Request $request, Site $site): View|RedirectResponse
@@ -77,7 +89,7 @@ class ImportBoutiquesController extends Controller
         Gate::authorize(Droit::SitesGerer->value);
         $request->session()->forget($this->cle($site));
 
-        return redirect()->route('admin.sites.show', $site);
+        return $this->retour($site);
     }
 
     // ------------------------------------------------------------------ Import combiné (plusieurs sites)
@@ -142,7 +154,7 @@ class ImportBoutiquesController extends Controller
             'empreinte' => hash_file('sha256', Storage::disk($config['disque'])->path($chemin)),
         ]);
 
-        return $site ? redirect()->route('admin.sites.import', $site) : redirect()->route('admin.sites.boutiques-excel.apercu');
+        return $site ? redirect()->route('admin.referencement.boutiques.excel.import', $site) : redirect()->route('admin.sites.boutiques-excel.apercu');
     }
 
     /** Aperçu : lignes valides, avertissements, erreurs et totaux ; rien n'est enregistré. */
@@ -171,7 +183,7 @@ class ImportBoutiquesController extends Controller
         try {
             $compte = $this->excel->importer($this->excel->analyser($site, $this->chemin($depot)), $request->user(), $depot['nom'], $depot['empreinte'], $depot['chemin']);
         } catch (RegleGestionException $e) {
-            return ($site ? redirect()->route('admin.sites.import', $site) : redirect()->route('admin.sites.boutiques-excel.apercu'))->with('erreur', $e->getMessage());
+            return ($site ? redirect()->route('admin.referencement.boutiques.excel.import', $site) : redirect()->route('admin.sites.boutiques-excel.apercu'))->with('erreur', $e->getMessage());
         }
         $request->session()->forget($this->cle($site));
 
@@ -184,12 +196,19 @@ class ImportBoutiquesController extends Controller
     private function exigerModifiable(Site $site): ?RedirectResponse
     {
         return $site->estModifiable() ? null
-            : redirect()->route('admin.sites.show', $site)->with('erreur', $this->excel->motifVerrouille($site));
+            : $this->retour($site)->with('erreur', $this->excel->motifVerrouille($site));
     }
 
     private function retour(?Site $site): RedirectResponse
     {
-        return $site ? redirect()->route('admin.sites.show', $site) : redirect()->route('admin.sites');
+        return $site ? redirect()->route('admin.referencement.boutiques', ['site' => $site->id]) : redirect()->route('admin.sites');
+    }
+
+    private function siteChoisi(Request $request): Site
+    {
+        Gate::authorize(Droit::SitesGerer->value);
+
+        return Site::query()->findOrFail($request->validate(['site_id' => ['required', 'integer']], [], ['site_id' => __('admin.imports.site')])['site_id']);
     }
 
     private function chemin(array $depot): string

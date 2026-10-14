@@ -41,10 +41,10 @@ class SitesTest extends TestCase
         ])->assertSessionHasNoErrors();
         $site = Site::query()->sole();
 
-        $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.serie', $site), [
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.serie', $site), [
             'niveau' => 'R1', 'bloc' => 'A', 'debut' => 1, 'fin' => 40, 'surface' => 9, 'type_boutique_id' => $petite, 'etat_physique' => 'LIVREE',
         ])->assertSessionHasNoErrors();
-        $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.store', $site), [
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.store', $site), [
             'niveau' => 'RC', 'bloc' => 'K', 'numero' => 1, 'type_boutique_id' => TypeBoutique::query()->where('libelle', 'Kiosque')->value('id'), 'etat_physique' => 'LIVREE',
         ])->assertSessionHasNoErrors();
 
@@ -61,7 +61,7 @@ class SitesTest extends TestCase
         $this->assertTrue($site->boutiques()->get()->every(fn ($b) => $b->statut === StatutBoutique::Disponible));
 
         // Une série qui recouvre des numéros existants est refusée.
-        $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.serie', $site), [
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.serie', $site), [
             'niveau' => 'R1', 'bloc' => 'A', 'debut' => 39, 'fin' => 45, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE',
         ])->assertSessionHasErrors('debut');
         $this->assertSame(41, $site->boutiques()->count());
@@ -73,7 +73,7 @@ class SitesTest extends TestCase
 
         // Le gestionnaire ne confirme jamais ; soumis, le site n'est plus modifiable.
         $this->en($this->gestionnaire)->post(route('admin.sites.confirmer', $site))->assertForbidden();
-        $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.store', $site), ['niveau' => 'RC', 'bloc' => 'X', 'numero' => 1, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE'])
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.store', $site), ['niveau' => 'RC', 'bloc' => 'X', 'numero' => 1, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE'])
             ->assertSessionHas('erreur');
     }
 
@@ -82,7 +82,8 @@ class SitesTest extends TestCase
         $site = $this->siteAvecBoutiques();
         $this->en($this->gestionnaire)->post(route('admin.sites.soumettre', $site));
 
-        $this->en($this->validateur)->get(route('admin.sites.show', $site))->assertOk()->assertSee('RAA-R1-A-001')->assertSee('Soumis à confirmation');
+        $this->en($this->validateur)->get(route('admin.sites.show', $site))->assertOk()->assertSee('Soumis à confirmation');
+        $this->en($this->validateur)->get(route('admin.referencement.boutiques', ['site' => $site->id]))->assertOk()->assertSee('RAA-R1-A-001');
         $this->en($this->validateur)->post(route('admin.sites.rejeter', $site), ['motif' => 'Surface manquante sur le kiosque'])->assertSessionHas('succes');
         $this->assertSame(StatutSite::Brouillon, $site->refresh()->statut);
 
@@ -96,10 +97,10 @@ class SitesTest extends TestCase
         $engagee->forceFill(['statut' => StatutBoutique::EnCampagne])->save();
         $this->en($this->gestionnaire)->post(route('admin.sites.reviser', $site))->assertSessionHas('succes');
         $this->assertSame(StatutSite::Brouillon, $site->refresh()->statut);
-        $this->en($this->gestionnaire)->delete(route('admin.sites.boutiques.destroy', [$site, $engagee]))->assertSessionHas('erreur');
+        $this->en($this->gestionnaire)->delete(route('admin.referencement.boutiques.destroy', $engagee))->assertSessionHas('erreur');
         $this->assertModelExists($engagee);
         $libre = $site->boutiques()->where('statut', StatutBoutique::Disponible)->first();
-        $this->en($this->gestionnaire)->delete(route('admin.sites.boutiques.destroy', [$site, $libre]))->assertSessionHas('succes');
+        $this->en($this->gestionnaire)->delete(route('admin.referencement.boutiques.destroy', $libre))->assertSessionHas('succes');
         $this->assertSoftDeleted($libre);
     }
 
@@ -112,9 +113,10 @@ class SitesTest extends TestCase
 
         foreach ([$this->regulateur, User::factory()->role(Role::SuperAdmin)->create()] as $profil) {
             $this->en($profil)->get(route('admin.sites'))->assertOk();
-            $this->en($profil)->get(route('admin.sites.show', $site))->assertOk()->assertSee('RAA-R1-A-001');
+            $this->en($profil)->get(route('admin.sites.show', $site))->assertOk();
+            $this->en($profil)->get(route('admin.referencement.boutiques', ['site' => $site->id]))->assertOk()->assertSee('RAA-R1-A-001')->assertDontSee('Ajouter des boutiques');
             $this->en($profil)->get(route('admin.sites.create'))->assertForbidden();
-            $this->en($profil)->post(route('admin.sites.boutiques.store', $site), ['numero' => 'Z-1'])->assertForbidden();
+            $this->en($profil)->post(route('admin.referencement.boutiques.store', $site), ['numero' => 'Z-1'])->assertForbidden();
         }
 
         // Le gestionnaire des sites et boutiques ne touche ni aux campagnes, ni aux tranches.

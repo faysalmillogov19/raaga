@@ -60,13 +60,13 @@ class ImportBoutiquesTest extends TestCase
 
     private function deposer(UploadedFile $fichier): TestResponse
     {
-        return $this->en($this->gestionnaire)->post(route('admin.sites.import.deposer', $this->site), ['fichier' => $fichier]);
+        return $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.deposer'), ['site_id' => $this->site->id, 'fichier' => $fichier]);
     }
 
     public function test_import_valide_a_partir_du_modele(): void
     {
         // Le modèle téléchargé sert de base : onglet « Locaux », colonnes en ligne 1.
-        $reponse = $this->en($this->gestionnaire)->get(route('admin.sites.modele', $this->site))->assertOk();
+        $reponse = $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.modele', ['site_id' => $this->site->id]))->assertOk();
         $modele = tempnam(sys_get_temp_dir(), 'modele');
         file_put_contents($modele, $reponse->streamedContent());
         $classeur = IOFactory::load($modele);
@@ -79,14 +79,14 @@ class ImportBoutiquesTest extends TestCase
             [null, null, null, null, null, null, null, null],
             ['RAA', 'RC', 'K', 3, 'ETAL', 4, null, null],
         ], $classeur);
-        $this->deposer($fichier)->assertRedirect(route('admin.sites.import', $this->site));
+        $this->deposer($fichier)->assertRedirect(route('admin.referencement.boutiques.excel.import', $this->site));
 
         // Aperçu : rien n'est encore enregistré.
-        $this->en($this->gestionnaire)->get(route('admin.sites.import', $this->site))->assertOk()
+        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.import', $this->site))->assertOk()
             ->assertSee('3 lignes valides')->assertSee('R+1')->assertSee('Rez-de-chaussée')->assertDontSee('erreur');
         $this->assertSame(0, Boutique::query()->count());
 
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.confirmer', $this->site))->assertSessionHas('succes');
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $this->site))->assertSessionHas('succes');
         $this->assertSame(['RAA-R1-A-001', 'RAA-R1-A-002', 'RAA-RC-K-003'], Boutique::query()->orderBy('code')->pluck('code')->all());
         $this->assertSame('9.50', Boutique::query()->where('code', 'RAA-R1-A-002')->value('surface'));
         $this->assertSame('Vitrine', Boutique::query()->where('code', 'RAA-R1-A-001')->value('observations'));
@@ -100,7 +100,7 @@ class ImportBoutiquesTest extends TestCase
 
         // Export dans le même format.
         $export = tempnam(sys_get_temp_dir(), 'export');
-        file_put_contents($export, $this->en($this->gestionnaire)->get(route('admin.sites.export', $this->site))->assertOk()->streamedContent());
+        file_put_contents($export, $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.export', ['site_id' => $this->site->id]))->assertOk()->streamedContent());
         $feuille = IOFactory::load($export)->getSheetByName('Locaux');
         $this->assertSame(['RAA', 'R1', 'A', 1, 'BOUT'], [$feuille->getCell('B2')->getValue(), $feuille->getCell('C2')->getValue(),
             $feuille->getCell('D2')->getValue(), $feuille->getCell('E2')->getValue(), $feuille->getCell('F2')->getValue()]);
@@ -113,12 +113,12 @@ class ImportBoutiquesTest extends TestCase
             ['RAA', 'R1', 'A', 1, 'BOUT', 9, null, null],
         ]));
 
-        $this->en($this->gestionnaire)->get(route('admin.sites.import', $this->site))->assertOk()
+        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.import', $this->site))->assertOk()
             ->assertSee('Ligne 2 : site SAR inconnu. Vouliez-vous dire RAA ?')->assertSee('Niveau R9 inconnu.')
             ->assertSee('Nombre entier de 1 à 999')->assertSee('Type « XX » inconnu', false)->assertSee('Surface supérieure à 0')
             ->assertSee('Confirmer l’import', false);
 
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.confirmer', $this->site))->assertSessionHas('erreur');
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $this->site))->assertSessionHas('erreur');
         $this->assertSame(0, Boutique::withTrashed()->count());
         $this->assertFalse(AuditLog::query()->where('action', 'boutiques.importees')->exists());
     }
@@ -130,9 +130,9 @@ class ImportBoutiquesTest extends TestCase
             ['RAA', 'R1', 'A', '007', 'BOUT', 12, null, null],
         ]));
 
-        $this->en($this->gestionnaire)->get(route('admin.sites.import', $this->site))->assertOk()
+        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.import', $this->site))->assertOk()
             ->assertSee('Doublon : le code RAA-R1-A-007 figure déjà ligne 2.');
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.confirmer', $this->site))->assertSessionHas('erreur');
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $this->site))->assertSessionHas('erreur');
         $this->assertSame(0, Boutique::query()->count());
     }
 
@@ -146,15 +146,15 @@ class ImportBoutiquesTest extends TestCase
             ['RAA', 'R1', 'A', 1, 'BOUT', 15, null, null],
             ['RAA', 'R1', 'A', 2, 'BOUT', 15, null, null],
         ]));
-        $this->en($this->gestionnaire)->get(route('admin.sites.import', $this->site))->assertOk()
+        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.import', $this->site))->assertOk()
             ->assertSee('La boutique RAA-R1-A-002 est dans une campagne : elle ne peut pas être modifiée.');
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.confirmer', $this->site))->assertSessionHas('erreur');
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $this->site))->assertSessionHas('erreur');
         $this->assertSame('9.00', $engagee->fresh()->surface);
         $this->assertSame('9.00', $libre->fresh()->surface);
 
         // Sans la boutique engagée, la boutique libre est mise à jour (même code).
         $this->deposer($this->fichier([['RAA', 'R1', 'A', 1, 'BOUT', 15, null, null]]));
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.confirmer', $this->site))->assertSessionHas('succes');
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $this->site))->assertSessionHas('succes');
         $this->assertSame('15.00', $libre->fresh()->surface);
         $this->assertSame(2, Boutique::query()->count());
     }
@@ -162,11 +162,11 @@ class ImportBoutiquesTest extends TestCase
     public function test_les_autres_profils_n_ont_pas_acces(): void
     {
         foreach ([$this->validateur, $this->regulateur, User::factory()->role(Role::SuperAdmin)->create(), User::factory()->role(Role::Admin)->create()] as $profil) {
-            $this->en($profil)->get(route('admin.sites.modele', $this->site))->assertForbidden();
-            $this->en($profil)->get(route('admin.sites.export', $this->site))->assertForbidden();
-            $this->en($profil)->post(route('admin.sites.import.deposer', $this->site), ['fichier' => $this->fichier([['RAA', 'R1', 'A', 1, 'BOUT', 9, null, null]])])->assertForbidden();
-            $this->en($profil)->get(route('admin.sites.import', $this->site))->assertForbidden();
-            $this->en($profil)->post(route('admin.sites.import.confirmer', $this->site))->assertForbidden();
+            $this->en($profil)->get(route('admin.referencement.boutiques.excel.modele', ['site_id' => $this->site->id]))->assertForbidden();
+            $this->en($profil)->get(route('admin.referencement.boutiques.excel.export', ['site_id' => $this->site->id]))->assertForbidden();
+            $this->en($profil)->post(route('admin.referencement.boutiques.excel.deposer'), ['site_id' => $this->site->id, 'fichier' => $this->fichier([['RAA', 'R1', 'A', 1, 'BOUT', 9, null, null]])])->assertForbidden();
+            $this->en($profil)->get(route('admin.referencement.boutiques.excel.import', $this->site))->assertForbidden();
+            $this->en($profil)->post(route('admin.referencement.boutiques.excel.import.confirmer', $this->site))->assertForbidden();
         }
         $this->assertSame(0, Boutique::query()->count());
         $this->assertSame([], Storage::disk('local')->allFiles());

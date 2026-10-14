@@ -58,6 +58,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Anciennes adresses du référentiel (avant le groupe « Référencement ») : redirection permanente.
     Route::get('/sites/{chemin?}', function (?string $chemin = null) {
         $chemin = (string) $chemin;
+        if (preg_match('#^(\d+)/(boutiques|excel)(/|$)#', $chemin, $m)) {
+            return redirect(url('admin/referencement/boutiques').'?site='.$m[1], 301);
+        }
         $nouveau = match (true) {
             $chemin === '' => 'referencement/sites',
             str_starts_with($chemin, 'types') => 'referencement/'.$chemin,
@@ -68,6 +71,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         return redirect(url('admin/'.$nouveau).(request()->getQueryString() ? '?'.request()->getQueryString() : ''), 301);
     })->where('chemin', '.*');
+    Route::get('/referencement/sites/{site}/{chemin}', fn (string $site) => redirect(url('admin/referencement/boutiques').'?site='.$site, 301))
+        ->whereNumber('site')->where('chemin', '(boutiques|excel)(/.*)?');
     Route::get('/boutiques/grilles/{chemin?}', fn (?string $chemin = null) => redirect(url('admin/referencement/grille'.($chemin ? '/'.$chemin : '')), 301))
         ->where('chemin', '.*');
 
@@ -98,6 +103,25 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::post('/{liste}/{id}/confirmer', 'confirmer')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('zones.confirmer');
                 Route::post('/{liste}/{id}/rejeter', 'rejeter')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('zones.rejeter');
             });
+            // Boutiques : ajout (site choisi d'abord), fiche, Excel ; seulement sur un site en brouillon ou en révision (sauf export).
+            Route::prefix('boutiques')->name('boutiques.')->middleware('can:'.Droit::SitesGerer->value)->group(function () {
+                Route::get('/ajouter', [ReferentielBoutiquesController::class, 'ajouter'])->name('ajouter');
+                Route::controller(SitesController::class)->group(function () {
+                    Route::post('/sites/{site}', 'ajouterBoutique')->whereNumber('site')->name('store');
+                    Route::post('/sites/{site}/serie', 'genererBoutiques')->whereNumber('site')->name('serie');
+                    Route::get('/{boutique}/modifier', 'editBoutique')->whereNumber('boutique')->name('edit');
+                    Route::put('/{boutique}', 'updateBoutique')->whereNumber('boutique')->name('update');
+                    Route::delete('/{boutique}', 'supprimerBoutique')->whereNumber('boutique')->name('destroy');
+                });
+                Route::controller(ImportBoutiquesController::class)->prefix('excel')->name('excel.')->group(function () {
+                    Route::get('/modele', 'modelePourSite')->name('modele');
+                    Route::get('/export', 'exporterPourSite')->name('export');
+                    Route::post('/import', 'deposerPourSite')->middleware('throttle:20,1')->name('deposer');
+                    Route::get('/sites/{site}/import', 'apercu')->whereNumber('site')->name('import');
+                    Route::post('/sites/{site}/import/confirmer', 'confirmer')->whereNumber('site')->name('import.confirmer');
+                    Route::post('/sites/{site}/import/annuler', 'annuler')->whereNumber('site')->name('import.annuler');
+                });
+            });
             Route::controller(ReferentielBoutiquesController::class)->prefix('boutiques')->name('boutiques')->middleware('can:'.Droit::SitesVoir->value)->group(function () {
                 Route::get('/', 'index');
                 Route::get('/export', 'exporter')->name('.export');
@@ -124,7 +148,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{type}/rejeter', 'rejeter')->whereNumber('type')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
         });
 
-        // Sites et boutiques (référentiel, en amont des campagnes) : GESTIONNAIRE DES SITES ET BOUTIQUES saisit, VALIDATEUR confirme.
+        // Sites (référentiel, en amont des campagnes) : GESTIONNAIRE DES SITES ET BOUTIQUES saisit, VALIDATEUR confirme.
         Route::controller(SitesController::class)->prefix('referencement/sites')->name('sites')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
             Route::get('/creer', 'create')->middleware('can:'.Droit::SitesGerer->value)->name('.create');
@@ -132,11 +156,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/{site}', 'show')->whereNumber('site')->middleware('can:'.Droit::SitesVoir->value)->name('.show');
             Route::get('/{site}/modifier', 'edit')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.edit');
             Route::put('/{site}', 'update')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.update');
-            Route::post('/{site}/boutiques', 'ajouterBoutique')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.boutiques.store');
-            Route::post('/{site}/boutiques/serie', 'genererBoutiques')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.boutiques.serie');
-            Route::get('/{site}/boutiques/{boutique}/modifier', 'editBoutique')->whereNumber(['site', 'boutique'])->middleware('can:'.Droit::SitesGerer->value)->name('.boutiques.edit');
-            Route::put('/{site}/boutiques/{boutique}', 'updateBoutique')->whereNumber(['site', 'boutique'])->middleware('can:'.Droit::SitesGerer->value)->name('.boutiques.update');
-            Route::delete('/{site}/boutiques/{boutique}', 'supprimerBoutique')->whereNumber(['site', 'boutique'])->middleware('can:'.Droit::SitesGerer->value)->name('.boutiques.destroy');
             Route::post('/{site}/soumettre', 'soumettre')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.soumettre');
             Route::post('/{site}/reviser', 'reviser')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.reviser');
             Route::post('/{site}/confirmer', 'confirmer')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
@@ -170,16 +189,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/import', 'apercuCombine')->name('apercu');
             Route::post('/import/confirmer', 'confirmerCombine')->name('confirmer');
             Route::post('/import/annuler', 'annulerCombine')->name('annuler');
-        });
-
-        // Référentiel des boutiques d'un site en Excel : modèle, export, import avec aperçu puis confirmation (GESTIONNAIRE).
-        Route::controller(ImportBoutiquesController::class)->prefix('referencement/sites/{site}')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('sites.')->group(function () {
-            Route::get('/excel/modele', 'modele')->name('modele');
-            Route::get('/excel/export', 'exporter')->name('export');
-            Route::post('/excel/import', 'deposer')->middleware('throttle:20,1')->name('import.deposer');
-            Route::get('/excel/import', 'apercu')->name('import');
-            Route::post('/excel/import/confirmer', 'confirmer')->name('import.confirmer');
-            Route::post('/excel/import/annuler', 'annuler')->name('import.annuler');
         });
 
         // Grilles tarifaires des boutiques (une par site) : RÉGULATEUR saisit et soumet, VALIDATEUR confirme.

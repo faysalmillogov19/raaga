@@ -73,7 +73,7 @@ class GestionnaireSansFinancierTest extends TestCase
 
     public function test_les_exports_du_gestionnaire_n_ont_aucune_colonne_financiere(): void
     {
-        foreach ([route('admin.sites.excel.export'), route('admin.referencement.boutiques.export'), route('admin.sites.export', $this->site)] as $url) {
+        foreach ([route('admin.sites.excel.export'), route('admin.referencement.boutiques.export'), route('admin.referencement.boutiques.excel.export', ['site_id' => $this->site->id])] as $url) {
             $fichier = tempnam(sys_get_temp_dir(), 'export');
             file_put_contents($fichier, $this->en($this->gestionnaire)->get($url)->assertOk()->streamedContent());
             foreach (IOFactory::load($fichier)->getAllSheets() as $onglet) {

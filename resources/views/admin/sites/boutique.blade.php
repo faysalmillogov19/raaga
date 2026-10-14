@@ -4,8 +4,8 @@
     $numeroMax = str_repeat('9', \App\Models\Boutique::CHIFFRES_NUMERO);
 @endphp
 
-<x-admin.layout :titre="$titre" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $site->nom, 'url' => route('admin.sites.show', $site)], ['libelle' => $boutique->reference()]]">
-    <form method="POST" action="{{ route('admin.sites.boutiques.update', [$site, $boutique]) }}" class="bo-carte !mt-0 space-y-4" novalidate>
+<x-admin.layout :titre="$titre" :fil="[['libelle' => __('admin.referencement.boutiques.titre'), 'url' => route('admin.referencement.boutiques', ['site' => $site->id])], ['libelle' => $boutique->reference(), 'url' => route('admin.referencement.boutiques.show', $boutique)], ['libelle' => __('admin.referencement.boutiques.modifier')]]">
+    <form method="POST" action="{{ route('admin.referencement.boutiques.update', $boutique) }}" class="bo-carte !mt-0 space-y-4" novalidate>
         @csrf @method('PUT')
 
         @if ($boutique->code)
@@ -30,7 +30,7 @@
 
         <div class="flex gap-3">
             <button type="submit" class="bo-bouton bo-bouton-principal">{{ $b['enregistrer'] }}</button>
-            <a href="{{ route('admin.sites.show', $site) }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.tranches.formulaire.annuler') }}</a>
+            <a href="{{ route('admin.referencement.boutiques.show', $boutique) }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.tranches.formulaire.annuler') }}</a>
         </div>
     </form>
 </x-admin.layout>

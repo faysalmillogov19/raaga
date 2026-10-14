@@ -61,18 +61,18 @@ class CorrespondanceCodeSiteTest extends TestCase
         return new UploadedFile($chemin, 'locaux.xlsx', null, null, true);
     }
 
-    /** Import depuis la fiche d'un site ($site) ou combiné (null) : dépôt puis aperçu. */
+    /** Import pour un site choisi ($site) ou combiné (null) : dépôt puis aperçu. */
     private function apercu(?Site $site, array $lignes): TestResponse
     {
-        $this->en($this->gestionnaire)->post($site ? route('admin.sites.import.deposer', $site) : route('admin.sites.boutiques-excel.deposer'),
-            ['fichier' => $this->fichier($lignes)]);
+        $this->en($this->gestionnaire)->post($site ? route('admin.referencement.boutiques.excel.deposer') : route('admin.sites.boutiques-excel.deposer'),
+            ['site_id' => $site?->id, 'fichier' => $this->fichier($lignes)]);
 
-        return $this->en($this->gestionnaire)->get($site ? route('admin.sites.import', $site) : route('admin.sites.boutiques-excel.apercu'))->assertOk();
+        return $this->en($this->gestionnaire)->get($site ? route('admin.referencement.boutiques.excel.import', $site) : route('admin.sites.boutiques-excel.apercu'))->assertOk();
     }
 
     private function confirmer(?Site $site): TestResponse
     {
-        return $this->en($this->gestionnaire)->post($site ? route('admin.sites.import.confirmer', $site) : route('admin.sites.boutiques-excel.confirmer'));
+        return $this->en($this->gestionnaire)->post($site ? route('admin.referencement.boutiques.excel.import.confirmer', $site) : route('admin.sites.boutiques-excel.confirmer'));
     }
 
     public function test_regle_1_le_code_site_est_normalise(): void
@@ -82,10 +82,10 @@ class CorrespondanceCodeSiteTest extends TestCase
         $this->assertSame(['RAA-R1-A-001', 'SAR-R1-A-001'], Boutique::query()->orderBy('code')->pluck('code')->all());
     }
 
-    public function test_regle_2_site_vide_depuis_la_fiche_d_un_site(): void
+    public function test_regle_2_site_vide_pour_le_site_choisi(): void
     {
         $this->apercu($this->raa, [[null, 'R1', 'A', 1, null], ['', 'R1', 'A', 2, null], ['RAA', 'R1', 'A', 3, null]])
-            ->assertSee('2 lignes sans code site : le code du site ouvert (RAA) leur est appliqué.');
+            ->assertSee('2 lignes sans code site : le code du site choisi (RAA) leur est appliqué.');
         // Un avertissement n'empêche pas la confirmation.
         $this->confirmer($this->raa)->assertSessionHas('succes');
         $this->assertSame(3, $this->raa->boutiques()->count());
@@ -119,8 +119,8 @@ class CorrespondanceCodeSiteTest extends TestCase
         $this->confirmer(null)->assertSessionHas('erreur');
         $this->assertSame(0, Boutique::query()->count()); // Rien pour SAR non plus : tout ou rien.
 
-        // Depuis la fiche du site confirmé : refusé dès le dépôt, avec le même message.
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.deposer', $this->raa), ['fichier' => $this->fichier([['RAA', 'R1', 'A', 1, null]])])
+        // Site confirmé choisi : refusé dès le dépôt, avec le même message.
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.deposer'), ['site_id' => $this->raa->id, 'fichier' => $this->fichier([['RAA', 'R1', 'A', 1, null]])])
             ->assertSessionHas('erreur', fn ($m) => str_contains($m, 'Remettez-le d’abord en révision'));
     }
 

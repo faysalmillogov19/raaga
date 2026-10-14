@@ -68,7 +68,7 @@ class NiveauxZonesTest extends TestCase
 
     private function ajouterBoutique(string $niveau, int $numero = 1): TestResponse
     {
-        return $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.store', $this->site), [
+        return $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.store', $this->site), [
             'niveau' => $niveau, 'bloc' => 'A', 'numero' => $numero, 'type_boutique_id' => $this->type->id, 'etat_physique' => 'LIVREE',
         ]);
     }
@@ -134,14 +134,14 @@ class NiveauxZonesTest extends TestCase
         $this->en($this->gestionnaire)->post(route('admin.referencement.zones.desactiver', ['zones', $this->zone('BP')->id]))->assertSessionHas('succes');
 
         // Boutiques : niveau désactivé ou inconnu refusé.
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.deposer', $this->site), ['fichier' => $this->fichier('Locaux', [
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.deposer'), ['site_id' => $this->site->id, 'fichier' => $this->fichier('Locaux', [
             ['Code (calculé)', 'Site', 'Niveau', 'Bloc ou zone', 'Numéro', 'Type', 'Surface (m²)'],
             [null, 'RAA', 'R2', 'A', 2, 'BOUT', 9],
             [null, 'RAA', 'R7', 'A', 3, 'BOUT', 9],
         ])]);
-        $this->en($this->gestionnaire)->get(route('admin.sites.import', $this->site))->assertOk()
+        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.import', $this->site))->assertOk()
             ->assertSee('Niveau R2 désactivé : il ne peut plus être utilisé.')->assertSee('Niveau R7 inconnu.');
-        $this->en($this->gestionnaire)->post(route('admin.sites.import.confirmer', $this->site))->assertSessionHas('erreur');
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $this->site))->assertSessionHas('erreur');
 
         // Capacités : zone désactivée refusée.
         $classeur = new Spreadsheet;
@@ -153,8 +153,8 @@ class NiveauxZonesTest extends TestCase
         $this->en($this->gestionnaire)->get(route('admin.sites.excel.apercu'))->assertOk()->assertSee('Zone BP désactivée : elle ne peut plus être utilisée.');
 
         $this->assertSame(1, Boutique::query()->count());
-        // La boutique existante garde son niveau désactivé, affiché sur la fiche du site ; son code ne change pas.
-        $this->en($this->gestionnaire)->get(route('admin.sites.show', $this->site))->assertOk()->assertSee('R+2')->assertSee('RAA-R2-A-001');
+        // La boutique existante garde son niveau désactivé, affiché dans l'onglet Boutiques ; son code ne change pas.
+        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques', ['site' => $this->site->id]))->assertOk()->assertSee('R+2')->assertSee('RAA-R2-A-001');
         $this->assertSame('RAA-R2-A-001', $existante->fresh()->code);
     }
 

@@ -2,14 +2,13 @@
     $x = __('admin.sites.excel');
     $erreurs = $analyse->erreurs();
     $valides = count($analyse->lignes());
-    // Import depuis la fiche d'un site, ou import combiné (plusieurs sites) depuis « Sites et boutiques ».
-    $fil = [['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')]];
-    if ($site) {
-        $fil[] = ['libelle' => $site->nom, 'url' => route('admin.sites.show', $site)];
-    }
+    // Import pour un site choisi (onglet Boutiques ou Imports), ou import combiné (plusieurs sites).
+    $fil = $site
+        ? [['libelle' => __('admin.referencement.boutiques.titre'), 'url' => route('admin.referencement.boutiques', ['site' => $site->id])], ['libelle' => $site->nom]]
+        : [['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')]];
     $fil[] = ['libelle' => $x['apercu_titre']];
-    $routeConfirmer = $site ? route('admin.sites.import.confirmer', $site) : route('admin.sites.boutiques-excel.confirmer');
-    $routeAnnuler = $site ? route('admin.sites.import.annuler', $site) : route('admin.sites.boutiques-excel.annuler');
+    $routeConfirmer = $site ? route('admin.referencement.boutiques.excel.import.confirmer', $site) : route('admin.sites.boutiques-excel.confirmer');
+    $routeAnnuler = $site ? route('admin.referencement.boutiques.excel.import.annuler', $site) : route('admin.sites.boutiques-excel.annuler');
 @endphp
 
 <x-admin.layout :titre="$x['apercu_titre']" :fil="$fil">

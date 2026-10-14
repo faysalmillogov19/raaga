@@ -40,7 +40,7 @@ class CodeBoutiquesTest extends TestCase
 
     private function ajouter(array $champs = []): TestResponse
     {
-        return $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.store', $this->site), [
+        return $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.store', $this->site), [
             'niveau' => 'R1', 'bloc' => 'a', 'numero' => 45, 'type_boutique_id' => $this->type->id, 'etat_physique' => 'LIVREE', ...$champs,
         ]);
     }
@@ -55,7 +55,7 @@ class CodeBoutiquesTest extends TestCase
         $this->assertSame(1, Boutique::query()->count());
 
         // Une série qui recouvre un code existant est refusée en entier.
-        $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.serie', $this->site), [
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.serie', $this->site), [
             'niveau' => 'R1', 'bloc' => 'A', 'debut' => 40, 'fin' => 50, 'type_boutique_id' => $this->type->id, 'etat_physique' => 'LIVREE',
         ])->assertSessionHasErrors('debut');
         $this->assertSame(1, Boutique::query()->count());
@@ -72,7 +72,7 @@ class CodeBoutiquesTest extends TestCase
         $boutique = Boutique::query()->sole();
 
         // La fiche se modifie, pas les éléments du code (ignorés par le formulaire).
-        $this->en($this->gestionnaire)->put(route('admin.sites.boutiques.update', [$this->site, $boutique]), [
+        $this->en($this->gestionnaire)->put(route('admin.referencement.boutiques.update', $boutique), [
             'niveau' => 'R2', 'bloc' => 'Z', 'numero' => 9, 'type_boutique_id' => $this->type->id, 'etat_physique' => 'EN_TRAVAUX', 'coffret' => 'C-12',
         ])->assertSessionHas('succes');
         $boutique->refresh();
@@ -103,12 +103,12 @@ class CodeBoutiquesTest extends TestCase
         $this->ajouter()->assertSessionHas('succes');
         $boutique = Boutique::query()->sole();
 
-        $this->en($this->gestionnaire)->delete(route('admin.sites.boutiques.destroy', [$this->site, $boutique]))->assertSessionHas('succes');
+        $this->en($this->gestionnaire)->delete(route('admin.referencement.boutiques.destroy', $boutique))->assertSessionHas('succes');
         $this->assertSoftDeleted($boutique);
         $this->assertSame('RAA-R1-A-045', Boutique::withTrashed()->sole()->code);
 
         $this->ajouter()->assertSessionHas('erreur');
-        $this->en($this->gestionnaire)->post(route('admin.sites.boutiques.serie', $this->site), [
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.serie', $this->site), [
             'niveau' => 'R1', 'bloc' => 'A', 'debut' => 44, 'fin' => 46, 'type_boutique_id' => $this->type->id, 'etat_physique' => 'LIVREE',
         ])->assertSessionHasErrors('debut');
         $this->assertSame(0, Boutique::query()->count());
@@ -124,7 +124,7 @@ class CodeBoutiquesTest extends TestCase
         $this->assertSame(StatutSite::Brouillon, $this->site->fresh()->statut);
 
         // Fiche complétée : le code est calculé, le site peut être soumis.
-        $this->en($this->gestionnaire)->put(route('admin.sites.boutiques.update', [$this->site, $ancienne]), [
+        $this->en($this->gestionnaire)->put(route('admin.referencement.boutiques.update', $ancienne), [
             'niveau' => 'RC', 'bloc' => 'A', 'numero' => 1, 'type_boutique_id' => $this->type->id, 'etat_physique' => 'LIVREE',
         ])->assertSessionHas('succes');
         $this->assertSame('RAA-RC-A-001', $ancienne->fresh()->code);

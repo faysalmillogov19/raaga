@@ -15,6 +15,7 @@ use App\Models\ZoneSite;
 use App\Services\Boutiques\ReferentielExcel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -22,7 +23,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Toutes les boutiques, tous sites confondus : recherche par code, filtres, compteurs, export Excel, fiche avec
- * historique. La création et l'import restent sur la fiche du site, pour garder le lien avec le site.
+ * historique. Ajout et import Excel pour un site choisi dans la liste (en brouillon ou en révision) ; les actions
+ * elles-mêmes restent celles de SitesController et d'ImportBoutiquesController.
  */
 class ReferentielBoutiquesController extends Controller
 {
@@ -47,6 +49,22 @@ class ReferentielBoutiquesController extends Controller
             'sites' => Site::query()->orderBy('code')->get(['id', 'code', 'nom']),
             'types' => TypeBoutique::query()->orderBy('ordre')->orderBy('libelle')->get(['id', 'code', 'libelle']),
             'zones' => ZoneSite::query()->orderBy('id')->get(['code', 'libelle']),
+            'sitesModifiables' => $this->sitesModifiables(),
+            'imports' => ($filtres['site'] ?? null) && ($site = Site::query()->find($filtres['site'])) ? ImportBoutiquesController::journal($site) : collect(),
+        ]);
+    }
+
+    /** Ajout de boutiques : on choisit d'abord le site (brouillon ou révision, avec un code), puis une boutique ou une série. */
+    public function ajouter(Request $request): View
+    {
+        Gate::authorize(Droit::SitesGerer->value);
+        $sites = $this->sitesModifiables();
+        $choisi = $request->integer('site') ?: null;
+
+        return view('admin.referencement.ajouter', [
+            'sites' => $sites,
+            'site' => $choisi ? $sites->firstWhere('id', $choisi) : null,
+            'types' => TypeBoutique::query()->utilisables()->orderBy('ordre')->orderBy('libelle')->get(),
         ]);
     }
 
@@ -67,6 +85,12 @@ class ReferentielBoutiquesController extends Controller
             'journal' => AuditLog::query()->where('entite_type', 'Boutique')->where('entite_id', (string) $boutique->id)->with('acteur')->latest('id')->get(),
             'anciensCodes' => HistoriqueCode::query()->boutiques()->where('objet_id', $boutique->id)->orderBy('id')->get(),
         ]);
+    }
+
+    /** Sites où l'on peut ajouter, importer ou modifier des boutiques : brouillon ou révision, avec un code. */
+    private function sitesModifiables(): Collection
+    {
+        return Site::query()->whereNotNull('code')->orderBy('code')->get()->filter->estModifiable()->values();
     }
 
     /** @return array<string, mixed> */

@@ -27,7 +27,7 @@ class ReferencementTest extends TestCase
             '/admin/sites' => '/admin/referencement/sites',
             '/admin/sites/creer' => '/admin/referencement/sites/creer',
             '/admin/sites/'.$site->id => '/admin/referencement/sites/'.$site->id,
-            '/admin/sites/'.$site->id.'/excel/import' => '/admin/referencement/sites/'.$site->id.'/excel/import',
+            '/admin/sites/'.$site->id.'/excel/import' => '/admin/referencement/boutiques?site='.$site->id,
             '/admin/sites/types' => '/admin/referencement/types',
             '/admin/sites/types/3' => '/admin/referencement/types/3',
             '/admin/sites/excel/import' => '/admin/referencement/imports/sites/import',

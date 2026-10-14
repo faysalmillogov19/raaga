@@ -84,8 +84,6 @@ class SitesController extends Controller
 
         return view('admin.sites.show', [
             'site' => $site,
-            'boutiques' => $site->boutiques()->with('type')->get(),
-            'types' => TypeBoutique::query()->utilisables()->orderBy('ordre')->orderBy('libelle')->get(),
             'versions' => $versions->reverse()->values(),
             'decisions' => ParametrageDecision::query()->where('objet_type', 'site')->where('objet_id', $site->id)->with('decideur')->orderByDesc('id')->get(),
             'differentiel' => $differentiel,
@@ -119,7 +117,7 @@ class SitesController extends Controller
         }, 'admin.sites.messages.enregistre');
     }
 
-    // ------------------------------------------------------------------ Boutiques du site
+    // ------------------------------------------------------------------ Boutiques d'un site (onglet Boutiques du Référencement)
 
     public function ajouterBoutique(Request $request, Site $site): RedirectResponse
     {
@@ -136,7 +134,7 @@ class SitesController extends Controller
             $this->exigerCodeSite($site);
             $boutique = $site->boutiques()->create([...$donnees, 'numero' => $this->numero($donnees['numero']), 'statut' => StatutBoutique::Disponible]);
             $this->journal->ecrire($request->user(), 'boutique.creee', 'Boutique', $boutique->id, null, ['site' => $site->id, 'code' => $boutique->code]);
-        }, 'admin.sites.boutiques.ajoutee');
+        }, 'admin.sites.boutiques.ajoutee', true);
     }
 
     /** Série : même niveau et même bloc, numéros du début à la fin (RAA-R1-A-001 à RAA-R1-A-040). */
@@ -169,20 +167,20 @@ class SitesController extends Controller
                 }
             });
             $this->journal->ecrire($request->user(), 'boutiques.generees', 'Site', $site->id, null, ['nombre' => count($codes), 'de' => $codes[0], 'a' => end($codes)]);
-        }, 'admin.sites.boutiques.generees');
+        }, 'admin.sites.boutiques.generees', true);
     }
 
     /** Fiche d'une boutique : niveau, bloc et numéro ne se saisissent que tant que le code manque (boutiques saisies avant les codes). */
-    public function editBoutique(Site $site, Boutique $boutique): View|RedirectResponse
+    public function editBoutique(Boutique $boutique): View|RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
-        abort_unless($boutique->site_id === $site->id, 404);
+        $site = $boutique->site;
 
         if (! $site->estModifiable()) {
-            return redirect()->route('admin.sites.show', $site)->with('erreur', __('admin.parametrage.regles.non_modifiable'));
+            return redirect()->route('admin.referencement.boutiques.show', $boutique)->with('erreur', __('admin.parametrage.regles.non_modifiable'));
         }
         if ($boutique->statut->verrouillee()) {
-            return redirect()->route('admin.sites.show', $site)->with('erreur', __('admin.sites.boutiques.verrouillee'));
+            return redirect()->route('admin.referencement.boutiques.show', $boutique)->with('erreur', __('admin.sites.boutiques.verrouillee'));
         }
 
         return view('admin.sites.boutique', [
@@ -193,10 +191,10 @@ class SitesController extends Controller
         ]);
     }
 
-    public function updateBoutique(Request $request, Site $site, Boutique $boutique): RedirectResponse
+    public function updateBoutique(Request $request, Boutique $boutique): RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
-        abort_unless($boutique->site_id === $site->id, 404);
+        $site = $boutique->site;
         $this->majuscules($request, ['bloc']);
         $donnees = $request->validate([
             ...($boutique->code === null ? [...$this->reglesCode(), 'numero' => $this->regleNumero()] : []),
@@ -214,13 +212,13 @@ class SitesController extends Controller
             $avant = $boutique->only(array_keys($donnees));
             $boutique->fill($donnees)->save();
             $this->journal->ecrire($request->user(), 'boutique.modifiee', 'Boutique', $boutique->id, $avant, [...$boutique->only(array_keys($donnees)), 'code' => $boutique->code]);
-        }, 'admin.sites.boutiques.modifiee');
+        }, 'admin.sites.boutiques.modifiee', true);
     }
 
-    public function supprimerBoutique(Request $request, Site $site, Boutique $boutique): RedirectResponse
+    public function supprimerBoutique(Request $request, Boutique $boutique): RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
-        abort_unless($boutique->site_id === $site->id, 404);
+        $site = $boutique->site;
 
         return $this->executer($site, function () use ($request, $site, $boutique) {
             $this->exigerBrouillon($site);
@@ -230,7 +228,7 @@ class SitesController extends Controller
             // Suppression logique : la boutique garde son code, qui ne sera jamais réutilisé.
             $this->journal->ecrire($request->user(), 'boutique.supprimee', 'Boutique', $boutique->id, ['site' => $site->id, 'code' => $boutique->reference()]);
             $boutique->delete();
-        }, 'admin.sites.boutiques.supprimee');
+        }, 'admin.sites.boutiques.supprimee', true);
     }
 
     // ------------------------------------------------------------------ Workflow
@@ -367,14 +365,16 @@ class SitesController extends Controller
         }
     }
 
-    private function executer(Site $site, Closure $action, string $message): RedirectResponse
+    /** Retour à la fiche du site, ou à l'onglet Boutiques filtré sur le site pour les actions sur ses boutiques. */
+    private function executer(Site $site, Closure $action, string $message, bool $boutiques = false): RedirectResponse
     {
+        $retour = $boutiques ? redirect()->route('admin.referencement.boutiques', ['site' => $site->id]) : redirect()->route('admin.sites.show', $site);
         try {
             $action();
         } catch (RegleGestionException $e) {
-            return redirect()->route('admin.sites.show', $site)->with('erreur', $e->getMessage());
+            return $retour->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.sites.show', $site)->with('succes', __($message));
+        return $retour->with('succes', __($message));
     }
 }
