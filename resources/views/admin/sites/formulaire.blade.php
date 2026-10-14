@@ -64,14 +64,10 @@
             </div>
         </section>
 
-        {{-- Financement : complément et part en % calculés à l'affichage --}}
-        <section class="bo-carte !mt-0" aria-labelledby="s-financement">
-            <h2 id="s-financement" class="!text-[1.15rem]">{{ $f['sections']['financement'] }}</h2>
-            <p class="texte-carte mt-1">{{ $f['financement_aide'] }}</p>
+        {{-- Sources et description (les données financières sont saisies par le RÉGULATEUR, à part) --}}
+        <section class="bo-carte !mt-0" aria-labelledby="s-sources">
+            <h2 id="s-sources" class="!text-[1.15rem]">{{ $f['sections']['sources'] }}</h2>
             <div class="mt-3 grid gap-4 lg:grid-cols-2">
-                <x-admin.champ nom="cout_total" :libelle="ucfirst($c['cout_total'])" :valeur="$site->cout_total" type="number" min="0" step="1" inputmode="numeric" />
-                <x-admin.champ nom="part_occupants" :libelle="ucfirst($c['part_occupants'])" :valeur="$site->part_occupants" type="number" min="0" step="1" inputmode="numeric" />
-                <x-admin.champ nom="source_complement" :libelle="ucfirst($c['source_complement'])" :valeur="$site->source_complement" maxlength="200" />
                 <x-admin.champ nom="source_donnees" :libelle="ucfirst($c['source_donnees'])" :valeur="$site->source_donnees" maxlength="300" />
                 <div class="formulaire-champ !mt-0 lg:col-span-2">
                     <label for="description">{{ ucfirst($c['description']) }}</label>

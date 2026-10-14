@@ -1,7 +1,6 @@
 @php
     use App\Enums\Droit;
     use App\Enums\StatutTypeBoutique;
-    use App\Enums\UniteLoyer;
 
     $t = __('admin.types');
     $gerer = auth()->user()->can(Droit::SitesGerer->value);
@@ -25,7 +24,6 @@
                             <td><a href="{{ route('admin.sites.types.show', $type) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $type->libelle }}</a>
                                 @if ($type->par_defaut) <span class="bo-etiquette bo-etiquette-neutre">{{ $t['par_defaut'] }}</span>@endif
                                 @if ($type->description)<br><span class="texte-carte">{{ $type->description }}</span>@endif</td>
-                            <td>{{ $type->unite_loyer->label() }}</td>
                             <td>{{ $type->attribuable ? $t['oui'] : $t['non'] }}
                                 @if ($type->attribuable_demande !== null)<br><span class="bo-etiquette bo-etiquette-attention">{{ $type->attribuable_demande ? $t['demande_oui'] : $t['demande_non'] }}</span>@endif</td>
                             <td class="montant">{{ $type->ordre }}</td>
@@ -53,7 +51,6 @@
                 <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" maxlength="80" required />
                 <x-admin.champ nom="ordre" :libelle="$t['champs']['ordre']" type="number" min="0" max="9999" />
                 <x-admin.champ nom="description" :libelle="$t['champs']['description']" maxlength="300" class="lg:col-span-3" />
-                @include('admin.types._unite', ['valeur' => null, 'verrouille' => false])
                 <div class="formulaire-champ !mt-0">
                     <label for="attribuable">{{ $t['champs']['attribuable'] }}</label>
                     <select id="attribuable" name="attribuable" class="champ @error('attribuable') est-invalide @enderror" required>

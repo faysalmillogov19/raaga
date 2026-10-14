@@ -72,10 +72,10 @@
                         @php($ligne = $lignes[GrilleTarifaire::cle($c['niveau']->code, $c['type']->id)] ?? null)
                         <tr>
                             <td>{{ $c['niveau']->label() }}</td>
-                            <td>{{ $c['type']->code ? $c['type']->code.' · ' : '' }}{{ $c['type']->libelle }}<br><span class="texte-carte">{{ $c['type']->unite_loyer->label() }}</span></td>
+                            <td>{{ $c['type']->code ? $c['type']->code.' · ' : '' }}{{ $c['type']->libelle }}</td>
                             <td class="montant">{{ format_nombre($c['nombre']) }}</td>
                             @if ($ligne)
-                                <td class="montant">{{ format_fcfa($ligne->loyer_m2) }}</td>
+                                <td class="montant">{{ format_fcfa($ligne->loyer_m2) }}<br><span class="texte-carte">{{ $ligne->unite_loyer->label() }}</span></td>
                                 <td class="montant">{{ format_nombre($ligne->mois_caution) }}</td>
                                 <td class="montant">{{ format_nombre($ligne->mois_avance) }}</td>
                                 <td><ul class="space-y-1 text-sm">
@@ -83,7 +83,7 @@
                                         @if ($surface === '')
                                             <li class="font-semibold text-rouge">{{ __('admin.grilles.surface_manquante', ['n' => $n]) }}</li>
                                         @else
-                                            @php($m = GrilleTarifaire::montants((float) $surface, $ligne->loyer_m2, $ligne->mois_caution, $ligne->mois_avance, $c['type']->unite_loyer))
+                                            @php($m = GrilleTarifaire::montants((float) $surface, $ligne->loyer_m2, $ligne->mois_caution, $ligne->mois_avance, $ligne->unite_loyer))
                                             <li>{{ __('admin.grilles.exemple', ['surface' => format_nombre((float) $surface, 2), 'n' => $n,
                                                 'loyer' => format_fcfa($m['loyer_mensuel']), 'caution' => format_fcfa($m['caution']), 'avance' => format_fcfa($m['avance'])]) }}</li>
                                         @endif

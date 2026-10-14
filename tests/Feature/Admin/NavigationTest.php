@@ -26,7 +26,7 @@ class NavigationTest extends TestCase
     private const MENUS = [
         'superadmin' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'plateforme', 'securite', 'audit', 'parametres', 'connexions'],
         'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme'],
-        'gestionnaire_sites' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports'],
+        'gestionnaire_sites' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'imports'],
         'validateur' => ['tableau', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels'],
         'regulateur' => ['tableau', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels'],
     ];

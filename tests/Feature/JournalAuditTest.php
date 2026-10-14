@@ -63,6 +63,6 @@ class JournalAuditTest extends TestCase
     {
         $tables = collect(DB::select('SHOW TRIGGERS'))->pluck('Table')->unique()->sort()->values()->all();
 
-        $this->assertSame(['acceptations', 'affectations_boutiques', 'audit_logs', 'campagne_boutiques_versions', 'convention_versions', 'distribution_versions', 'grille_tarifaire_versions', 'historique_codes', 'lignes_registre', 'lignes_registre_a', 'parametrage_decisions', 'parametres_plateforme_versions', 'referentiel_versions', 'site_versions', 'tirages_boutiques', 'tranche_versions', 'type_boutique_versions'], $tables);
+        $this->assertSame(['acceptations', 'affectations_boutiques', 'audit_logs', 'campagne_boutiques_versions', 'convention_versions', 'distribution_versions', 'grille_tarifaire_versions', 'historique_codes', 'lignes_registre', 'lignes_registre_a', 'parametrage_decisions', 'parametres_plateforme_versions', 'referentiel_versions', 'site_finance_versions', 'site_versions', 'tirages_boutiques', 'tranche_versions', 'type_boutique_versions'], $tables);
     }
 }

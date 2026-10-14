@@ -5,17 +5,23 @@ namespace Tests\Support;
 use App\Enums\StatutGrilleTarifaire;
 use App\Models\GrilleTarifaire;
 use App\Models\Site;
+use App\Models\TypeBoutique;
 
 /** Grille tarifaire saisie par le RÉGULATEUR puis confirmée par le VALIDATEUR (circuit réel, par HTTP). */
 trait GrillesTarifaires
 {
-    /** @param array<string, array<int, array{0: int, 1: int, 2: int}>> $lignes [niveau][type_id] => [loyer_m2, mois_caution, mois_avance] */
+    /**
+     * @param  array<string, array<int, array{0: int, 1: int, 2: int, 3?: string}>>  $lignes  [niveau][type_id] => [loyer, mois_caution, mois_avance, unité]
+     *                                                                                        (unité par défaut : celle proposée pour le type)
+     */
     protected function grilleConfirmee(Site $site, array $lignes): GrilleTarifaire
     {
         $saisie = [];
         foreach ($lignes as $niveau => $parType) {
-            foreach ($parType as $typeId => [$loyer, $caution, $avance]) {
-                $saisie[$niveau][$typeId] = ['loyer_m2' => $loyer, 'mois_caution' => $caution, 'mois_avance' => $avance];
+            foreach ($parType as $typeId => $ligne) {
+                [$loyer, $caution, $avance] = $ligne;
+                $unite = $ligne[3] ?? config('raaga.grille_tarifaire.unite_par_type')[TypeBoutique::query()->whereKey($typeId)->value('code')] ?? 'm2';
+                $saisie[$niveau][$typeId] = ['unite_loyer' => $unite, 'loyer_m2' => $loyer, 'mois_caution' => $caution, 'mois_avance' => $avance];
             }
         }
         if ($site->grilleTarifaire()->where('statut', StatutGrilleTarifaire::Confirme)->exists()) {

@@ -1,4 +1,4 @@
-{{-- Fiche du site : localisation, projet, financement (complément et part en % calculés). --}}
+{{-- Fiche du site : localisation, projet, plans et sources. Aucune donnée financière (section à part, hors GESTIONNAIRE). --}}
 @php
     $c = __('admin.sites.champs');
     $vide = __('admin.sites.fiche.non_renseigne');
@@ -7,13 +7,7 @@
         'latitude' => $site->latitude !== null ? $site->latitude.' · '.$site->longitude : null,
         'maitre_ouvrage' => $site->maitre_ouvrage, 'maitre_oeuvre' => $site->maitre_oeuvre, 'phase' => $site->phase?->label(),
         'livraison_prevue' => $site->livraison_prevue?->translatedFormat('F Y'),
-        'cout_total' => $site->cout_total !== null ? format_fcfa($site->cout_total) : null,
-        'part_occupants' => $site->part_occupants !== null ? __('admin.sites.fiche.part', [
-            'montant' => format_fcfa($site->part_occupants),
-            'pourcent' => $site->partOccupantsPourcent() !== null ? format_nombre($site->partOccupantsPourcent(), 1).' %' : $vide,
-        ]) : null,
-        'complement' => $site->complement() !== null ? format_fcfa($site->complement()) : null,
-        'source_complement' => $site->source_complement, 'reference_plans' => $site->reference_plans, 'version_plans' => $site->version_plans,
+        'reference_plans' => $site->reference_plans, 'version_plans' => $site->version_plans,
         'source_donnees' => $site->source_donnees,
     ];
 @endphp

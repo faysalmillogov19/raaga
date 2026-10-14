@@ -40,13 +40,12 @@ class ReferentielSitesExcel
 
     /** Colonnes dans l'ordre du fichier (libellés : lang/fr/admin.php, admin.sites.import.colonnes_*). */
     public const COLONNES_SITES = ['code', 'nom', 'ville', 'arrondissement', 'adresse', 'latitude', 'longitude', 'maitre_ouvrage', 'maitre_oeuvre',
-        'phase', 'livraison_prevue', 'cout_total', 'part_occupants', 'complement', 'part_pourcent', 'source_complement', 'reference_plans',
-        'version_plans', 'source_donnees', 'controle'];
+        'phase', 'livraison_prevue', 'reference_plans', 'version_plans', 'source_donnees', 'controle'];
 
     public const COLONNES_CAPACITES = ['site', 'niveau', 'zone', 'type', 'nombre_prevu', 'surface_unitaire', 'surface_totale', 'surface_retenue',
         'source', 'observations', 'controle'];
 
-    private const CALCULEES = ['complement', 'part_pourcent', 'surface_retenue', 'controle'];
+    private const CALCULEES = ['surface_retenue', 'controle'];
 
     /** Fond des en-têtes de colonnes calculées (gris-vert, comme le fichier de référence). */
     private const FOND_CALCULE = 'DCE5DF';
@@ -81,8 +80,8 @@ class ReferentielSitesExcel
         // Données (export).
         $ligneC = 2;
         foreach ($sites->values() as $i => $site) {
-            $valeurs = [...$site->only(['code', 'nom', 'arrondissement', 'adresse', 'maitre_ouvrage', 'maitre_oeuvre', 'cout_total', 'part_occupants',
-                'source_complement', 'reference_plans', 'version_plans', 'source_donnees']),
+            $valeurs = [...$site->only(['code', 'nom', 'arrondissement', 'adresse', 'maitre_ouvrage', 'maitre_oeuvre',
+                'reference_plans', 'version_plans', 'source_donnees']),
                 'ville' => $site->localite(), 'latitude' => $site->latitude !== null ? (float) $site->latitude : null,
                 'longitude' => $site->longitude !== null ? (float) $site->longitude : null, 'phase' => $site->phase?->label(),
                 'livraison_prevue' => $site->livraison_prevue ? DateExcel::PHPToExcel($site->livraison_prevue) : null];
@@ -104,12 +103,10 @@ class ReferentielSitesExcel
         $finS = max($sites->count() + 1, $config['lignes_modele_sites'] + 1);
         $finC = max($ligneC - 1, $config['lignes_modele_capacites'] + 1);
         $k = __('admin.sites.import.controle');
-        [$L, $M, $A, $B, $Cv] = [$colS('cout_total'), $colS('part_occupants'), $colS('code'), $colS('nom'), $colS('ville')];
+        [$A, $B, $Cv] = [$colS('code'), $colS('nom'), $colS('ville')];
         for ($r = 2; $r <= $finS; $r++) {
-            $s->setCellValue($colS('complement').$r, "=IF(OR({$L}{$r}=\"\",{$M}{$r}=\"\"),\"\",{$L}{$r}-{$M}{$r})");
-            $s->setCellValue($colS('part_pourcent').$r, "=IF(OR({$L}{$r}=\"\",{$M}{$r}=\"\",N({$L}{$r})=0),\"\",{$M}{$r}/{$L}{$r})");
             $s->setCellValue($colS('controle').$r, "=IF({$A}{$r}=\"\",\"\",IF(COUNTIF(\${$A}\$2:\${$A}\${$finS},{$A}{$r})>1,\"{$k['doublon']}\",IF(LEN({$A}{$r})<>3,\"{$k['code']}\","
-                ."IF(OR({$B}{$r}=\"\",{$Cv}{$r}=\"\"),\"{$k['incomplet']}\",IF(AND({$L}{$r}<>\"\",{$M}{$r}>{$L}{$r}),\"{$k['part']}\",\"{$k['ok']}\")))))");
+                ."IF(OR({$B}{$r}=\"\",{$Cv}{$r}=\"\"),\"{$k['incomplet']}\",\"{$k['ok']}\"))))");
         }
         [$cA, $cB, $cC, $cD, $cE, $cF, $cG, $cH] = array_map($colC, ['site', 'niveau', 'zone', 'type', 'nombre_prevu', 'surface_unitaire', 'surface_totale', 'surface_retenue']);
         $onglet = "'".self::ONGLET_SITES."'";
@@ -121,8 +118,6 @@ class ReferentielSitesExcel
         }
 
         // Formats et listes déroulantes.
-        $s->getStyle("{$L}2:{$colS('complement')}{$finS}")->getNumberFormat()->setFormatCode('#,##0;\-#,##0;\-');
-        $s->getStyle("{$colS('part_pourcent')}2:{$colS('part_pourcent')}{$finS}")->getNumberFormat()->setFormatCode('0.0%;\-0.0%;\-');
         $s->getStyle("{$colS('livraison_prevue')}2:{$colS('livraison_prevue')}{$finS}")->getNumberFormat()->setFormatCode('mm/yyyy');
         $this->liste($s, $colS('phase'), $finS, '"'.implode(',', array_map(fn (PhaseSite $p) => $p->label(), PhaseSite::cases())).'"');
         $this->liste($c, $cA, $finC, "{$onglet}!\${$A}\$2:\${$A}\${$finS}");
@@ -256,13 +251,10 @@ class ReferentielSitesExcel
             $d['code'] = $v['code'] === null ? null : mb_strtoupper((string) $v['code']);
             $d['phase'] = $v['phase'] === null ? null : (PhaseSite::depuis((string) $v['phase'])?->value ?? (string) $v['phase']);
             $d['livraison_prevue'] = $this->mois($v['livraison_prevue'] ?? null);
-            foreach (['cout_total', 'part_occupants'] as $cle) {
-                $d[$cle] = $this->montant($v[$cle] ?? null);
-            }
             foreach (['latitude', 'longitude'] as $cle) {
                 $d[$cle] = is_string($v[$cle] ?? null) ? str_replace(',', '.', $v[$cle]) : ($v[$cle] ?? null);
             }
-            foreach (['nom', 'ville', 'arrondissement', 'adresse', 'maitre_ouvrage', 'maitre_oeuvre', 'source_complement', 'reference_plans', 'version_plans', 'source_donnees'] as $cle) {
+            foreach (['nom', 'ville', 'arrondissement', 'adresse', 'maitre_ouvrage', 'maitre_oeuvre', 'reference_plans', 'version_plans', 'source_donnees'] as $cle) {
                 $d[$cle] = isset($v[$cle]) ? (string) $v[$cle] : null;
             }
 

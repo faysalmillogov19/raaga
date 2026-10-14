@@ -46,12 +46,13 @@ class GrilleTarifaire extends Model implements Parametrable
         return ['loyer_mensuel' => $loyer, 'caution' => $loyer * $moisCaution, 'avance' => $loyer * $moisAvance];
     }
 
-    /** Valeurs proposées au RÉGULATEUR pour une nouvelle ligne (configuration). @return array{mois_caution: int, mois_avance: ?int} */
+    /** Valeurs proposées au RÉGULATEUR pour une nouvelle ligne (configuration). @return array{unite_loyer: string, mois_caution: int, mois_avance: ?int} */
     public static function valeursProposees(string $niveau, ?TypeBoutique $type): array
     {
         $config = config('raaga.grille_tarifaire');
 
         return [
+            'unite_loyer' => $config['unite_par_type'][$type?->code] ?? UniteLoyer::M2->value,
             'mois_caution' => (int) $config['mois_caution'],
             'mois_avance' => $config['mois_avance_par_type'][$type?->code] ?? $config['mois_avance_par_niveau'][$niveau] ?? null,
         ];
@@ -139,11 +140,11 @@ class GrilleTarifaire extends Model implements Parametrable
 
         return [
             'grille' => $lignes->map(fn (GrilleTarifaireLigne $l) => __('admin.grilles.resume_ligne', [
-                'niveau' => $l->libelleNiveau(), 'type' => $l->type->libelle, 'loyer' => format_fcfa($l->loyer_m2),
+                'niveau' => $l->libelleNiveau(), 'type' => $l->type->libelle, 'loyer' => format_fcfa($l->loyer_m2), 'unite' => $l->unite_loyer->label(),
                 'caution' => $l->mois_caution, 'avance' => $l->mois_avance,
             ]))->implode(' ; '),
             'lignes' => $lignes->mapWithKeys(fn (GrilleTarifaireLigne $l) => [self::cle($l->niveau, $l->type_boutique_id) => [
-                'loyer_m2' => $l->loyer_m2, 'mois_caution' => $l->mois_caution, 'mois_avance' => $l->mois_avance,
+                'unite_loyer' => $l->unite_loyer->value, 'loyer_m2' => $l->loyer_m2, 'mois_caution' => $l->mois_caution, 'mois_avance' => $l->mois_avance,
             ]])->all(),
         ];
     }

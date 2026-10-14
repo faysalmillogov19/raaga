@@ -18,8 +18,7 @@
                     @else
                         <ul class="mt-1 space-y-1">
                             @foreach ($sites as $code => $s)
-                                <li><span class="font-mono font-semibold">{{ $code }}</span> — {{ $s['donnees']['nom'] }}
-                                    @if (($s['donnees']['cout_total'] ?? null) !== null)<span class="texte-carte"> · {{ format_fcfa($s['donnees']['cout_total']) }}</span>@endif</li>
+                                <li><span class="font-mono font-semibold">{{ $code }}</span> — {{ $s['donnees']['nom'] }}</li>
                             @endforeach
                         </ul>
                     @endif

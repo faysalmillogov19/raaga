@@ -15,7 +15,6 @@
             @unless ($type->actif) · {{ $t['desactive'] }}@endunless
             @if ($type->par_defaut) <span class="bo-etiquette bo-etiquette-neutre">{{ $t['par_defaut'] }}</span>@endif</h2>
         <dl class="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-4">
-            <div><dt class="texte-carte">{{ $t['champs']['unite_loyer'] }}</dt><dd class="font-semibold">{{ $type->unite_loyer->label() }}</dd></div>
             <div><dt class="texte-carte">{{ $t['champs']['attribuable'] }}</dt><dd class="font-semibold">{{ $type->attribuable ? $t['oui'] : $t['non'] }}
                 @if ($type->attribuable_demande !== null)<br><span class="bo-etiquette bo-etiquette-attention">{{ $type->attribuable_demande ? $t['demande_oui'] : $t['demande_non'] }}</span>@endif</dd></div>
             <div><dt class="texte-carte">{{ $t['colonnes']['utilise_par'] }}</dt><dd class="font-semibold">{{ trans_choice('admin.types.boutiques', $type->boutiques_count, ['n' => format_nombre($type->boutiques_count)]) }}</dd></div>
@@ -55,7 +54,7 @@
     </section>
 
     @if ($gerer)
-        {{-- Libellé, description, ordre (libres) ; unité du loyer (si aucune grille confirmée n'utilise le type) --}}
+        {{-- Libellé, description, ordre (libres) --}}
         <section class="bo-carte" aria-labelledby="modif-titre">
             <h2 id="modif-titre" class="!text-[1.15rem]">{{ $t['modifier_titre'] }}</h2>
             <form method="POST" action="{{ route('admin.sites.types.update', $type) }}" class="mt-3 grid gap-4 lg:grid-cols-3" novalidate>
@@ -65,7 +64,6 @@
                 <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" :valeur="$type->libelle" maxlength="80" required />
                 <x-admin.champ nom="ordre" :libelle="$t['champs']['ordre']" :valeur="$type->ordre" type="number" min="0" max="9999" required />
                 <x-admin.champ nom="description" :libelle="$t['champs']['description']" :valeur="$type->description" maxlength="300" class="lg:col-span-2" />
-                @include('admin.types._unite', ['valeur' => $type->unite_loyer, 'verrouille' => $uniteFigee])
                 <div><button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.tranches.formulaire.enregistrer') }}</button></div>
             </form>
         </section>
@@ -96,7 +94,7 @@
                             <td class="whitespace-nowrap">{{ $v->created_at->format('d/m/Y H:i') }}</td>
                             <td>{{ $v->auteur?->name ?? $t['systeme'] }}</td>
                             <td>{{ $v->motif }}</td>
-                            <td class="text-sm">{{ $p['libelle'] }} · {{ \App\Enums\UniteLoyer::tryFrom((string) $p['unite_loyer'])?->label() }} · {{ $p['attribuable'] ? $t['attribuable_court'] : $t['non_attribuable_court'] }}{{ $p['actif'] ? '' : ' · '.$t['desactive'] }}</td>
+                            <td class="text-sm">{{ $p['libelle'] }} · {{ $p['attribuable'] ? $t['attribuable_court'] : $t['non_attribuable_court'] }}{{ $p['actif'] ? '' : ' · '.$t['desactive'] }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="5">{{ $t['aucune_version'] }}</td></tr>

@@ -29,8 +29,8 @@ class SitesTest extends TestCase
     private function siteAvecBoutiques(): Site
     {
         // Types ajoutés par le gestionnaire, utilisables après validation.
-        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'BOUT', 'libelle' => 'Petite boutique', 'description' => '9 m²', 'unite_loyer' => 'm2', 'attribuable' => 1])->assertSessionHas('succes');
-        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'ETAL', 'libelle' => 'Kiosque', 'unite_loyer' => 'unite', 'attribuable' => 1]);
+        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'BOUT', 'libelle' => 'Petite boutique', 'description' => '9 m²', 'attribuable' => 1])->assertSessionHas('succes');
+        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'ETAL', 'libelle' => 'Kiosque', 'attribuable' => 1]);
         foreach (TypeBoutique::all() as $type) {
             $this->en($this->validateur)->post(route('admin.sites.types.confirmer', $type))->assertSessionHas('succes');
         }

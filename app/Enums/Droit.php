@@ -248,7 +248,7 @@ enum Droit: string
             // Référentiel des sites et des boutiques uniquement : saisie et soumission, jamais de confirmation.
             Role::GestionnaireSites => [
                 self::TableauDeBordVoir,
-                self::SitesVoir, self::SitesGerer, self::GrilleVoir, self::ImportsVoir,
+                self::SitesVoir, self::SitesGerer, self::ImportsVoir,
             ],
             Role::Regulateur => [
                 self::TableauDeBordVoir,

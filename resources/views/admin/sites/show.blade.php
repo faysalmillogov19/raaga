@@ -59,6 +59,16 @@
     @endif
 
     @include('admin.sites._fiche')
+
+    {{-- Données financières : jamais pour le GESTIONNAIRE DES SITES ET BOUTIQUES (écran protégé côté serveur). --}}
+    @can(Droit::BoutiquesVoir->value)
+        <section class="bo-carte" aria-labelledby="finances-titre">
+            <h2 id="finances-titre" class="!text-[1.15rem]">{{ __('admin.sites.finances.titre') }}
+                @if ($site->finances)@include('admin.parametrage._statut', ['statut' => $site->finances->statut])@endif</h2>
+            <p class="texte-carte mt-1 max-w-3xl">{{ __('admin.sites.finances.aide') }}</p>
+            <a href="{{ route('admin.sites.finances', $site) }}" class="bo-bouton bo-bouton-secondaire mt-3">{{ __('admin.sites.finances.voir') }}</a>
+        </section>
+    @endcan
     @include('admin.sites._capacites')
 
     {{-- Boutiques du site --}}

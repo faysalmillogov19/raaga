@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 #[Fillable([
     'statut', 'code', 'nom', 'ville', 'arrondissement', 'region', 'commune', 'adresse', 'latitude', 'longitude',
-    'maitre_ouvrage', 'maitre_oeuvre', 'phase', 'livraison_prevue', 'cout_total', 'part_occupants', 'source_complement',
+    'maitre_ouvrage', 'maitre_oeuvre', 'phase', 'livraison_prevue',
     'reference_plans', 'version_plans', 'source_donnees', 'description', 'version',
     'cree_par', 'soumis_par', 'soumis_le', 'valide_par', 'valide_le', 'motif_rejet',
 ])]
@@ -29,7 +29,7 @@ class Site extends Model implements Parametrable
 {
     public const PARAMETRES = [
         'code', 'nom', 'ville', 'arrondissement', 'region', 'adresse', 'latitude', 'longitude', 'maitre_ouvrage', 'maitre_oeuvre',
-        'phase', 'livraison_prevue', 'cout_total', 'part_occupants', 'source_complement', 'reference_plans', 'version_plans',
+        'phase', 'livraison_prevue', 'reference_plans', 'version_plans',
         'source_donnees', 'description',
     ];
 
@@ -44,8 +44,6 @@ class Site extends Model implements Parametrable
             'livraison_prevue' => 'date',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
-            'cout_total' => 'integer',
-            'part_occupants' => 'integer',
             'version' => 'integer',
             'soumis_le' => 'datetime',
             'valide_le' => 'datetime',
@@ -58,16 +56,14 @@ class Site extends Model implements Parametrable
         return $this->ville ?? $this->commune;
     }
 
-    /** Complément à financer : coût total − part attendue des occupants (calculé, jamais stocké). */
-    public function complement(): ?int
+    /**
+     * Données financières (RÉGULATEUR → VALIDATEUR), jamais visibles du GESTIONNAIRE DES SITES ET BOUTIQUES.
+     *
+     * @return HasOne<SiteFinance, $this>
+     */
+    public function finances(): HasOne
     {
-        return $this->cout_total !== null && $this->part_occupants !== null ? $this->cout_total - $this->part_occupants : null;
-    }
-
-    /** Part des occupants en % du coût total (calculée, jamais stockée). */
-    public function partOccupantsPourcent(): ?float
-    {
-        return $this->cout_total && $this->part_occupants !== null ? $this->part_occupants / $this->cout_total * 100 : null;
+        return $this->hasOne(SiteFinance::class);
     }
 
     protected static function booted(): void

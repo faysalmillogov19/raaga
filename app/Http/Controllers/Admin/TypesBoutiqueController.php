@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\StatutTypeBoutique;
-use App\Enums\UniteLoyer;
 use App\Http\Controllers\Controller;
 use App\Models\HistoriqueCode;
 use App\Models\TypeBoutique;
@@ -20,8 +19,7 @@ use Illuminate\View\View;
 
 /**
  * Types de boutiques. GESTIONNAIRE DES SITES ET BOUTIQUES : ajoute un type (soumis au VALIDATEUR), modifie libellé,
- * description et ordre à tout moment, l'unité du loyer tant qu'aucune grille confirmée n'utilise le type, demande un
- * changement d'« attribuable par tirage » (soumis au VALIDATEUR), désactive ou réactive, supprime un type jamais
+ * description et ordre à tout moment, demande un changement d'« attribuable par tirage » (soumis au VALIDATEUR), désactive ou réactive, supprime un type jamais
  * utilisé et non « par défaut ». VALIDATEUR : confirme ou rejette. Autres profils : lecture seule.
  */
 class TypesBoutiqueController extends Controller
@@ -44,7 +42,6 @@ class TypesBoutiqueController extends Controller
         return view('admin.types.show', [
             'type' => $type->loadCount('boutiques'),
             'versions' => $type->versions()->with('auteur')->get(),
-            'uniteFigee' => $type->uniteFigee(),
             'utilise' => $type->estUtilise(),
         ]);
     }
@@ -62,7 +59,6 @@ class TypesBoutiqueController extends Controller
                 fn (string $a, mixed $v, Closure $echec) => HistoriqueCode::query()->where('objet_type', HistoriqueCode::TYPE)->where('ancien_code', $v)->exists()
                     ? $echec(__('admin.types.regles.code_reutilise')) : null],
             ...$this->reglesLibres(),
-            'unite_loyer' => ['required', Rule::enum(UniteLoyer::class)],
             'attribuable' => ['required', 'boolean'],
         ], [], __('admin.types.attributs'));
 
@@ -79,20 +75,16 @@ class TypesBoutiqueController extends Controller
         return redirect()->route('admin.sites.types')->with('succes', __('admin.types.messages.cree'));
     }
 
-    /** Libellé, description, ordre (à tout moment) et unité du loyer (si aucune grille confirmée n'utilise le type). */
+    /** Libellé, description et ordre : modifiables à tout moment. L'unité du loyer relève de la grille tarifaire. */
     public function update(Request $request, TypeBoutique $type): RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
         $donnees = $request->validate([
             ...$this->reglesLibres($type),
-            'unite_loyer' => ['required', Rule::enum(UniteLoyer::class)],
         ], [], __('admin.types.attributs'));
 
         return $this->executer($type, function () use ($request, $type, $donnees) {
-            if ($donnees['unite_loyer'] !== $type->unite_loyer->value && $type->uniteFigee()) {
-                throw new RegleGestionException(__('admin.types.regles.unite_figee'));
-            }
-            $avant = $type->only(['libelle', 'description', 'ordre', 'unite_loyer']);
+            $avant = $type->only(['libelle', 'description', 'ordre']);
             $type->fill($donnees)->save();
             $type->creerVersion($request->user(), __('admin.types.motifs.modification'));
             $this->journal->ecrire($request->user(), 'type_boutique.modifie', 'TypeBoutique', $type->id, $avant, $type->only(array_keys($avant)));

@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\ProfilController;
 use App\Http\Controllers\Admin\ReferentielBoutiquesController;
 use App\Http\Controllers\Admin\RegistreAController;
 use App\Http\Controllers\Admin\SectionController;
+use App\Http\Controllers\Admin\SiteFinancesController;
 use App\Http\Controllers\Admin\SitesController;
 use App\Http\Controllers\Admin\TranchesController;
 use App\Http\Controllers\Admin\TypesBoutiqueController;
@@ -140,6 +141,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{site}/reviser', 'reviser')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.reviser');
             Route::post('/{site}/confirmer', 'confirmer')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
             Route::post('/{site}/rejeter', 'rejeter')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
+        });
+
+        // Données financières d'un site : RÉGULATEUR saisit et soumet, VALIDATEUR confirme ; jamais le GESTIONNAIRE (403).
+        Route::controller(SiteFinancesController::class)->prefix('referencement/sites/{site}/finances')->whereNumber('site')->name('sites.finances')->group(function () {
+            Route::get('/', 'show')->middleware('can:'.Droit::BoutiquesVoir->value);
+            Route::put('/', 'update')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.update');
+            Route::post('/soumettre', 'soumettre')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.soumettre');
+            Route::post('/reviser', 'reviser')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.reviser');
+            Route::post('/confirmer', 'confirmer')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.confirmer');
+            Route::post('/rejeter', 'rejeter')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.rejeter');
         });
 
         // Sites et capacités prévues en Excel : modèle, export, import avec aperçu puis confirmation (GESTIONNAIRE).

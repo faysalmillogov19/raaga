@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\StatutTypeBoutique;
-use App\Enums\UniteLoyer;
 use App\Services\Backoffice\RegleGestionException;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -19,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * imports et des nouvelles campagnes ; les boutiques existantes le gardent. Chaque changement crée une version.
  */
 #[Table(name: 'types_boutiques')]
-#[Fillable(['code', 'libelle', 'description', 'unite_loyer', 'attribuable', 'actif', 'par_defaut', 'statut', 'ordre'])]
+#[Fillable(['code', 'libelle', 'description', 'attribuable', 'actif', 'par_defaut', 'statut', 'ordre'])]
 class TypeBoutique extends Model
 {
     /** Code du type : 2 à 5 lettres majuscules (BOUT, MAG, ETAL, CF). */
@@ -31,7 +30,6 @@ class TypeBoutique extends Model
     protected function casts(): array
     {
         return [
-            'unite_loyer' => UniteLoyer::class,
             'statut' => StatutTypeBoutique::class,
             // « attribuable » faux : type jamais proposé au tirage au sort (chambre froide mutualisée).
             'attribuable' => 'boolean',
@@ -85,20 +83,13 @@ class TypeBoutique extends Model
             || CategorieBoutique::query()->where('type_boutique_id', $this->id)->exists();
     }
 
-    /** Une grille confirmée (version en vigueur) a une ligne pour ce type : l'unité du loyer ne change plus. */
-    public function uniteFigee(): bool
-    {
-        return GrilleTarifaire::query()->get()->contains(fn (GrilleTarifaire $g) => collect($g->confirmee()['lignes'] ?? [])
-            ->keys()->contains(fn (string $cle) => str_ends_with($cle, '|'.$this->id)));
-    }
-
     public function creerVersion(?User $auteur, string $motif): TypeBoutiqueVersion
     {
         $numero = (int) TypeBoutiqueVersion::query()->where('type_boutique_id', $this->id)->max('numero') + 1;
         $version = TypeBoutiqueVersion::create([
             'type_boutique_id' => $this->id, 'numero' => $numero, 'auteur_id' => $auteur?->id, 'motif' => $motif, 'created_at' => now(),
             'parametres' => [
-                'code' => $this->code, 'libelle' => $this->libelle, 'description' => $this->description, 'unite_loyer' => $this->unite_loyer?->value,
+                'code' => $this->code, 'libelle' => $this->libelle, 'description' => $this->description,
                 'attribuable' => $this->attribuable, 'actif' => $this->actif, 'ordre' => $this->ordre, 'statut' => $this->statut?->value,
             ],
         ]);

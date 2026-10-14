@@ -15,13 +15,11 @@ use Illuminate\Validation\Rule;
 final class FicheSite
 {
     /**
-     * @param  array<string, mixed>|null  $donnees  ligne importée (sinon la requête) : sert à comparer la part au coût
+     * @param  array<string, mixed>|null  $donnees  ligne importée (sinon la requête)
      * @return array<string, list<mixed>>
      */
     public static function regles(?Site $site = null, bool $codeUnique = true, ?array $donnees = null): array
     {
-        $cout = fn () => $donnees === null ? request()->input('cout_total') : ($donnees['cout_total'] ?? null);
-
         return [
             'code' => ['required', 'string', 'regex:'.Site::FORMAT_CODE, ...($codeUnique ? [Rule::unique('sites', 'code')->ignore($site?->id),
                 // L'ancien code d'un autre site n'est jamais réutilisé.
@@ -38,10 +36,6 @@ final class FicheSite
             'maitre_oeuvre' => ['nullable', 'string', 'max:200'],
             'phase' => ['nullable', Rule::enum(PhaseSite::class)],
             'livraison_prevue' => ['nullable', 'date_format:Y-m'],
-            'cout_total' => ['nullable', 'integer', 'min:0', 'max:999999999999999'],
-            'part_occupants' => ['nullable', 'integer', 'min:0', 'max:999999999999999',
-                fn (string $attribut, mixed $valeur, \Closure $echec) => self::partValide($valeur, $cout()) ?: $echec(__('admin.sites.erreurs.part_cout'))],
-            'source_complement' => ['nullable', 'string', 'max:200'],
             'reference_plans' => ['nullable', 'string', 'max:200'],
             'version_plans' => ['nullable', 'string', 'max:60'],
             'source_donnees' => ['nullable', 'string', 'max:300'],

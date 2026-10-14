@@ -6,7 +6,6 @@ use App\Enums\Role;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
-use App\Enums\UniteLoyer;
 use App\Models\Boutique;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -45,11 +44,10 @@ class TypesBoutiqueTest extends TestCase
     {
         $this->assertSame(['BOUT', 'CF', 'ETAL', 'MAG', 'PF', 'POSTE', 'PP', 'PV', 'REST'], TypeBoutique::query()->orderBy('code')->pluck('code')->all());
         $this->assertTrue(TypeBoutique::all()->every(fn ($t) => $t->par_defaut && $t->actif && $t->statut === StatutTypeBoutique::Valide));
-        $this->assertSame([UniteLoyer::Redevance, false], [$this->type('CF')->unite_loyer, $this->type('CF')->attribuable]);
-        $this->assertSame(UniteLoyer::Unite, $this->type('ETAL')->unite_loyer);
+        $this->assertFalse($this->type('CF')->attribuable);
 
         // Le GESTIONNAIRE modifie et désactive des types par défaut.
-        $this->en($this->gestionnaire)->put(route('admin.sites.types.update', $this->type('BOUT')), ['libelle' => 'Boutique standard', 'ordre' => 5, 'unite_loyer' => 'm2'])
+        $this->en($this->gestionnaire)->put(route('admin.sites.types.update', $this->type('BOUT')), ['libelle' => 'Boutique standard', 'ordre' => 5])
             ->assertSessionHas('succes');
         $this->en($this->gestionnaire)->post(route('admin.sites.types.desactiver', $this->type('MAG')))->assertSessionHas('succes');
 
@@ -64,7 +62,7 @@ class TypesBoutiqueTest extends TestCase
     public function test_le_code_n_est_jamais_modifiable(): void
     {
         $bout = $this->type('BOUT');
-        $this->en($this->gestionnaire)->put(route('admin.sites.types.update', $bout), ['code' => 'XXX', 'libelle' => 'Boutique', 'ordre' => 1, 'unite_loyer' => 'm2'])
+        $this->en($this->gestionnaire)->put(route('admin.sites.types.update', $bout), ['code' => 'XXX', 'libelle' => 'Boutique', 'ordre' => 1])
             ->assertSessionHas('succes');
         $this->assertSame('BOUT', $bout->fresh()->code);
 
@@ -78,7 +76,7 @@ class TypesBoutiqueTest extends TestCase
         $this->en($this->gestionnaire)->delete(route('admin.sites.types.destroy', $this->type('REST')))->assertSessionHas('erreur');
 
         // Type ajouté par le gestionnaire, validé, puis utilisé par une boutique.
-        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'KIOS', 'libelle' => 'Kiosque', 'unite_loyer' => 'unite', 'attribuable' => 1])->assertSessionHas('succes');
+        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'KIOS', 'libelle' => 'Kiosque', 'attribuable' => 1])->assertSessionHas('succes');
         $kiosque = $this->type('KIOS');
         $this->assertSame(StatutTypeBoutique::AValider, $kiosque->statut);
         $this->en($this->validateur)->post(route('admin.sites.types.confirmer', $kiosque))->assertSessionHas('succes');
@@ -89,9 +87,9 @@ class TypesBoutiqueTest extends TestCase
         $this->assertModelExists($kiosque);
 
         // Inutilisé et non « par défaut » : supprimé, son code n'est jamais réutilisé.
-        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'TEMP', 'libelle' => 'Temporaire', 'unite_loyer' => 'm2', 'attribuable' => 1]);
+        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'TEMP', 'libelle' => 'Temporaire', 'attribuable' => 1]);
         $this->en($this->gestionnaire)->delete(route('admin.sites.types.destroy', $this->type('TEMP')))->assertSessionHas('succes');
-        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'TEMP', 'libelle' => 'Autre', 'unite_loyer' => 'm2', 'attribuable' => 1])
+        $this->en($this->gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'TEMP', 'libelle' => 'Autre', 'attribuable' => 1])
             ->assertSessionHasErrors('code');
     }
 
@@ -126,8 +124,8 @@ class TypesBoutiqueTest extends TestCase
         foreach ([$this->validateur, $this->regulateur, User::factory()->role(Role::SuperAdmin)->create()] as $profil) {
             $this->en($profil)->get(route('admin.sites.types'))->assertOk()->assertSee('Par défaut')->assertDontSee('Ajouter le type');
             $this->en($profil)->get(route('admin.sites.types.show', $bout))->assertOk()->assertDontSee('Modifier le type');
-            $this->en($profil)->post(route('admin.sites.types.store'), ['code' => 'NEW', 'libelle' => 'Nouveau', 'unite_loyer' => 'm2', 'attribuable' => 1])->assertForbidden();
-            $this->en($profil)->put(route('admin.sites.types.update', $bout), ['libelle' => 'X', 'ordre' => 1, 'unite_loyer' => 'm2'])->assertForbidden();
+            $this->en($profil)->post(route('admin.sites.types.store'), ['code' => 'NEW', 'libelle' => 'Nouveau', 'attribuable' => 1])->assertForbidden();
+            $this->en($profil)->put(route('admin.sites.types.update', $bout), ['libelle' => 'X', 'ordre' => 1])->assertForbidden();
             $this->en($profil)->post(route('admin.sites.types.desactiver', $bout))->assertForbidden();
             $this->en($profil)->delete(route('admin.sites.types.destroy', $bout))->assertForbidden();
         }

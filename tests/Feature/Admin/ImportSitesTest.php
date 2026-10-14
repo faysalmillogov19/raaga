@@ -28,8 +28,7 @@ class ImportSitesTest extends TestCase
 
     /** En-têtes du fichier de référence « Raaga_import_sites.xlsx », ligne 1. */
     private const ENTETES_SITES = ['Code site', 'Nom officiel', 'Ville', 'Arrondissement', 'Adresse', 'Latitude', 'Longitude', "Maître d'ouvrage", "Maître d'œuvre",
-        'Phase', 'Livraison prévue', 'Coût total (FCFA)', 'Part attendue des occupants (FCFA)', 'Complément à financer (FCFA)', 'Part des occupants (%)',
-        'Source du complément', 'Référence des plans', 'Version des plans', 'Source des données', 'Contrôle'];
+        'Phase', 'Livraison prévue', 'Référence des plans', 'Version des plans', 'Source des données', 'Contrôle'];
 
     private const ENTETES_CAPACITES = ['Code site', 'Niveau', 'Zone', 'Type de local', 'Nombre prévu', 'Surface unitaire (m²)', 'Surface totale saisie (m²)',
         'Surface retenue (m²)', 'Source', 'Observations', 'Contrôle'];
@@ -47,7 +46,7 @@ class ImportSitesTest extends TestCase
     }
 
     /**
-     * Classeur au format de référence : sites [code, nom, ville, arrondissement, phase, coût, part] et capacités
+     * Classeur au format de référence : sites [code, nom, ville, arrondissement, phase] et capacités
      * [site, niveau, zone, type, nombre, surface unitaire, surface totale] (les colonnes calculées restent vides).
      */
     private function fichier(array $sites, array $capacites, ?Spreadsheet $classeur = null): UploadedFile
@@ -57,9 +56,9 @@ class ImportSitesTest extends TestCase
             $classeur->getActiveSheet()->setTitle('Sites')->fromArray(self::ENTETES_SITES);
             $classeur->createSheet()->setTitle('Capacités')->fromArray(self::ENTETES_CAPACITES);
         }
-        foreach ($sites as $i => [$code, $nom, $ville, $arrondissement, $phase, $cout, $part]) {
+        foreach ($sites as $i => [$code, $nom, $ville, $arrondissement, $phase]) {
             $classeur->getSheetByName('Sites')->fromArray([$code, $nom, $ville, $arrondissement], null, 'A'.($i + 2));
-            $classeur->getSheetByName('Sites')->setCellValue('J'.($i + 2), $phase)->setCellValue('L'.($i + 2), $cout)->setCellValue('M'.($i + 2), $part);
+            $classeur->getSheetByName('Sites')->setCellValue('J'.($i + 2), $phase);
         }
         foreach ($capacites as $i => $ligne) {
             $classeur->getSheetByName('Capacités')->fromArray($ligne, null, 'A'.($i + 2));
@@ -87,7 +86,7 @@ class ImportSitesTest extends TestCase
         file_put_contents($modele, $this->en($this->gestionnaire)->get(route('admin.sites.excel.modele'))->assertOk()->streamedContent());
         $classeur = IOFactory::load($modele);
         $this->assertSame(['Sites', 'Capacités'], $classeur->getSheetNames());
-        $this->assertSame([self::ENTETES_SITES], $classeur->getSheetByName('Sites')->rangeToArray('A1:T1'));
+        $this->assertSame([self::ENTETES_SITES], $classeur->getSheetByName('Sites')->rangeToArray('A1:O1'));
         $this->assertSame([self::ENTETES_CAPACITES], $classeur->getSheetByName('Capacités')->rangeToArray('A1:K1'));
 
         // SAR existe en brouillon : il est mis à jour ; RAA est créé.
@@ -105,14 +104,12 @@ class ImportSitesTest extends TestCase
 
         // Aperçu : rien n'est enregistré.
         $this->en($this->gestionnaire)->get(route('admin.sites.excel.apercu'))->assertOk()
-            ->assertSee('Sites à créer (en brouillon) (1)')->assertSee('Sites à mettre à jour (1)')->assertSee('Capacités prévues (4)')
-            ->assertSee("16\u{00A0}245\u{00A0}000\u{00A0}000\u{00A0}FCFA", false);
+            ->assertSee('Sites à créer (en brouillon) (1)')->assertSee('Sites à mettre à jour (1)')->assertSee('Capacités prévues (4)');
         $this->assertSame(1, Site::query()->count());
 
         $this->en($this->gestionnaire)->post(route('admin.sites.excel.confirmer'))->assertSessionHas('succes');
         $raa = Site::query()->where('code', 'RAA')->sole();
-        $this->assertSame([StatutSite::Brouillon, 'Ouagadougou', '1', PhaseSite::Etudes, 10421000000], [$raa->statut, $raa->ville, $raa->arrondissement, $raa->phase, $raa->complement()]);
-        $this->assertEqualsWithDelta(35.85, $raa->partOccupantsPourcent(), 0.01);
+        $this->assertSame([StatutSite::Brouillon, 'Ouagadougou', '1', PhaseSite::Etudes], [$raa->statut, $raa->ville, $raa->arrondissement, $raa->phase]);
         $this->assertSame(['Marché moderne de Sarfalao', 'Bobo-Dioulasso', PhaseSite::Aps], [$sar->fresh()->nom, $sar->fresh()->ville, $sar->fresh()->phase]);
         $this->assertSame(3, $raa->capacites()->count());
         $this->assertEqualsWithDelta(1840.4, $raa->capacites()->where('niveau', 'R1')->sole()->surfaceRetenue(), 0.001);
@@ -128,7 +125,7 @@ class ImportSitesTest extends TestCase
         $bout = TypeBoutique::query()->where('code', 'BOUT')->value('id');
         $raa->boutiques()->create(['niveau' => 'R1', 'bloc' => 'A', 'numero' => '001', 'surface' => 8.6, 'type_boutique_id' => $bout, 'statut' => StatutBoutique::Disponible]);
         $this->en($this->validateur)->get(route('admin.sites.show', $raa))->assertOk()
-            ->assertSee('Capacité prévue / référentiel')->assertSee('Nombre : -213')->assertSee("10\u{00A0}421\u{00A0}000\u{00A0}000\u{00A0}FCFA", false);
+            ->assertSee('Capacité prévue / référentiel')->assertSee('Nombre : -213');
     }
 
     public function test_un_fichier_avec_erreurs_est_refuse_sans_rien_ecrire(): void
@@ -143,7 +140,7 @@ class ImportSitesTest extends TestCase
 
         $this->en($this->gestionnaire)->get(route('admin.sites.excel.apercu'))->assertOk()
             ->assertSee('Le format de Code site n’est pas valide.', false)->assertSee('Le champ « Ville » est obligatoire', false)
-            ->assertSee('La part attendue des occupants ne peut pas dépasser le coût total.')->assertSee('Valeur non autorisée (valeurs possibles : Études')
+            ->assertSee('Valeur non autorisée (valeurs possibles : Études')
             ->assertSee('Site XXX absent de l’onglet « Sites » et de la plateforme.', false)->assertSee('Type « INCONNU » inconnu', false)
             ->assertSee('Capacités');
 

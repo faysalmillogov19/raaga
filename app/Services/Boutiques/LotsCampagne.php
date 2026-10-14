@@ -4,10 +4,12 @@ namespace App\Services\Boutiques;
 
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
+use App\Enums\UniteLoyer;
 use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
 use App\Models\CategorieBoutique;
 use App\Models\GrilleTarifaire;
+use App\Models\GrilleTarifaireLigne;
 use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -102,9 +104,15 @@ class LotsCampagne
             return null;
         }
 
+        // Unité lue sur la ligne de grille (versions antérieures à ce champ : unité de la ligne actuelle, sinon au m²).
+        $unite = UniteLoyer::tryFrom((string) ($ligne['unite_loyer'] ?? ''))
+            ?? GrilleTarifaireLigne::query()->whereHas('grille', fn ($q) => $q->where('site_id', $lot->site_id))
+                ->where('niveau', $lot->niveau)->where('type_boutique_id', $lot->type_boutique_id)->first()?->unite_loyer
+            ?? UniteLoyer::M2;
+
         return [
-            'grille_version' => $grille['version'], ...$ligne,
-            ...GrilleTarifaire::montants((float) $lot->surface, $ligne['loyer_m2'], $ligne['mois_caution'], $ligne['mois_avance'], $lot->type->unite_loyer),
+            'grille_version' => $grille['version'], 'loyer_m2' => $ligne['loyer_m2'], 'mois_caution' => $ligne['mois_caution'], 'mois_avance' => $ligne['mois_avance'],
+            ...GrilleTarifaire::montants((float) $lot->surface, $ligne['loyer_m2'], $ligne['mois_caution'], $ligne['mois_avance'], $unite),
         ];
     }
 
