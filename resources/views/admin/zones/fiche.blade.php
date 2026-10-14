@@ -13,10 +13,10 @@
     <section class="bo-carte !mt-0" aria-labelledby="etat-titre">
         <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} : {{ $element->statut->label() }}
             @unless ($element->actif) · {{ $z['desactive'] }}@endunless
-            @if ($element->par_defaut) <span class="bo-etiquette bo-etiquette-neutre">{{ $z['par_defaut'] }}</span>@endif</h2>
+            @if ($element->par_defaut) <x-admin.badge-statut :statut="$z['par_defaut']" variante="neutre" />@endif</h2>
         <p class="texte-carte mt-1">{{ trans_choice('admin.zones.utilisations', $utilisations, ['n' => format_nombre($utilisations)]) }} · {{ __('admin.types.version') }} {{ $element->version ?: '—' }}</p>
         @if ($element->motif_rejet)
-            <p class="bo-message bo-message-erreur mt-4 !mb-0" role="alert">{{ __('admin.parametrage.motif_rejet', ['motif' => $element->motif_rejet]) }}</p>
+            <x-admin.message type="erreur" class="mt-4 !mb-0">{{ __('admin.parametrage.motif_rejet', ['motif' => $element->motif_rejet]) }}</x-admin.message>
         @endif
 
         <div class="mt-4 flex flex-wrap gap-3">
@@ -34,9 +34,9 @@
             @endcan
             @if ($gerer)
                 <form method="POST" action="{{ route('admin.referencement.zones.'.($element->actif ? 'desactiver' : 'activer'), [$liste, $element->id]) }}">@csrf
-                    <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $element->actif ? $z['desactiver'] : $z['activer'] }}</button></form>
+                    <x-admin.bouton variante="contour" type="submit">{{ $element->actif ? $z['desactiver'] : $z['activer'] }}</x-admin.bouton></form>
                 <form method="POST" action="{{ route('admin.referencement.zones.destroy', [$liste, $element->id]) }}">@csrf @method('DELETE')
-                    <button type="submit" class="bo-bouton bo-bouton-danger" @disabled(! $supprimable)>{{ $z['supprimer'] }}</button></form>
+                    <x-admin.bouton type="submit" variante="danger" :disabled="! $supprimable">{{ $z['supprimer'] }}</x-admin.bouton></form>
             @endif
         </div>
         @if ($gerer && ! $supprimable)<p class="texte-carte mt-2">{{ $element->par_defaut ? $z['regles']['defaut'] : $z['regles']['utilisee'] }}</p>@endif
@@ -57,7 +57,7 @@
                     <x-admin.champ nom="ordre" :libelle="$z['colonnes']['ordre']" :valeur="$element->ordre" type="number" min="0" max="9999" />
                     <x-admin.champ nom="description" :libelle="$z['colonnes']['description']" :valeur="$element->description" maxlength="300" class="lg:col-span-3" />
                 @endif
-                <div><button type="submit" class="bo-bouton bo-bouton-principal">{{ $z['enregistrer'] }}</button></div>
+                <div><x-admin.bouton variante="principal" type="submit">{{ $z['enregistrer'] }}</x-admin.bouton></div>
             </form>
         @else
             <dl class="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-4">

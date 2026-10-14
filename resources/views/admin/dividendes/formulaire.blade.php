@@ -48,12 +48,8 @@
                 <x-admin.champ nom="ag_date" :libelle="ucfirst($c['ag_date'])" type="date" :valeur="$date($d->ag_date)" required />
                 <x-admin.champ nom="ag_pv_numero" :libelle="ucfirst($c['ag_pv_numero'])" :valeur="$d->ag_pv_numero" required maxlength="60" />
                 @if ($mode !== 'avenant')
-                    <div class="formulaire-champ !mt-0">
-                        <label for="pv">{{ ucfirst($c['pv']) }}</label>
-                        <input id="pv" name="pv" type="file" accept="application/pdf" class="champ @error('pv') est-invalide @enderror">
-                        <p class="aide-champ">{{ $d->pv_nom_original ? __('admin.dividendes.formulaire.pv_actuel', ['nom' => $d->pv_nom_original]).' · ' : '' }}{{ __('admin.dividendes.formulaire.pv_aide') }}</p>
-                        @error('pv') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-                    </div>
+                    <x-admin.depot-fichier nom="pv" id="pv" :libelle="ucfirst($c['pv'])" formats=".pdf" accept="application/pdf"
+                                           :aide="($d->pv_nom_original ? __('admin.dividendes.formulaire.pv_actuel', ['nom' => $d->pv_nom_original]).' · ' : '').__('admin.dividendes.formulaire.pv_aide')" />
                 @endif
             </div>
         </section>
@@ -99,8 +95,8 @@
         </section>
 
         <div class="flex gap-3">
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ $mode === 'avenant' ? __('admin.dividendes.formulaire.soumettre_avenant') : __('admin.dividendes.formulaire.enregistrer') }}</button>
-            <a href="{{ $d->exists ? route('admin.dividendes.show', $d) : route('admin.dividendes') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.dividendes.formulaire.annuler') }}</a>
+            <x-admin.bouton variante="principal" type="submit">{{ $mode === 'avenant' ? __('admin.dividendes.formulaire.soumettre_avenant') : __('admin.dividendes.formulaire.enregistrer') }}</x-admin.bouton>
+            <x-admin.bouton variante="contour" href="{{ $d->exists ? route('admin.dividendes.show', $d) : route('admin.dividendes') }}">{{ __('admin.dividendes.formulaire.annuler') }}</x-admin.bouton>
         </div>
     </form>
 </x-admin.layout>

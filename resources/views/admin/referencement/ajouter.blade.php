@@ -10,7 +10,7 @@
         <h2 id="site-titre" class="!text-[1.15rem]">{{ $r['ajouter'] }}</h2>
         <p class="texte-carte mt-1 max-w-3xl">{{ $r['ajouter_intro'] }}</p>
         @if ($sites->isEmpty())
-            <p class="bo-message bo-message-erreur mt-4 !mb-0" role="status">{{ $r['aucun_site_modifiable'] }}</p>
+            <x-admin.message type="erreur" class="mt-4 !mb-0">{{ $r['aucun_site_modifiable'] }}</x-admin.message>
         @else
             <form method="GET" action="{{ route('admin.referencement.boutiques.ajouter') }}" class="mt-3 flex flex-wrap items-end gap-3">
                 <div class="formulaire-champ !mt-0">
@@ -22,7 +22,7 @@
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $r['continuer'] }}</button>
+                <x-admin.bouton variante="contour" type="submit">{{ $r['continuer'] }}</x-admin.bouton>
             </form>
         @endif
     </section>
@@ -32,7 +32,7 @@
         <section class="bo-carte" aria-labelledby="saisie-titre">
             <h2 id="saisie-titre" class="!text-[1.15rem]">{{ __('admin.referencement.boutiques.site_choisi', ['site' => $site->code.' · '.$site->nom]) }}</h2>
             @if ($types->isEmpty())
-                <p class="bo-message bo-message-erreur mt-4">{{ __('admin.sites.types.aucun') }} <a href="{{ route('admin.sites.types') }}">{{ __('admin.types.titre') }}</a></p>
+                <x-admin.message type="erreur" class="mt-4">{{ __('admin.sites.types.aucun') }} <a href="{{ route('admin.sites.types') }}">{{ __('admin.types.titre') }}</a></x-admin.message>
             @else
                 <div class="mt-4 grid gap-[18px] xl:grid-cols-2">
                     <form method="POST" action="{{ route('admin.referencement.boutiques.serie', $site) }}" class="rounded-charte border border-ligne p-4" novalidate>
@@ -45,7 +45,7 @@
                             <x-admin.champ nom="fin" :libelle="$b['fin']" type="number" min="1" max="{{ $numeroMax }}" required />
                             @include('admin.sites._champs-fiche', ['prefixe' => 'serie', 'boutique' => null])
                         </div>
-                        <button type="submit" class="bo-bouton bo-bouton-principal mt-3">{{ $b['generer'] }}</button>
+                        <x-admin.bouton variante="principal" class="mt-3" type="submit">{{ $b['generer'] }}</x-admin.bouton>
                     </form>
 
                     <form method="POST" action="{{ route('admin.referencement.boutiques.store', $site) }}" class="rounded-charte border border-ligne p-4" novalidate>
@@ -58,7 +58,7 @@
                                 <p id="unique-numero-aide" class="aide-champ">{{ $b['numero_aide'] }}</p></div>
                             @include('admin.sites._champs-fiche', ['prefixe' => 'unique', 'boutique' => null])
                         </div>
-                        <button type="submit" class="bo-bouton bo-bouton-principal mt-3">{{ $b['ajouter'] }}</button>
+                        <x-admin.bouton variante="principal" class="mt-3" type="submit">{{ $b['ajouter'] }}</x-admin.bouton>
                     </form>
                 </div>
             @endif

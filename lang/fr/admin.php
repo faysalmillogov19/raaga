@@ -17,6 +17,42 @@ return [
     'menu_principal' => 'Menu du back-office',
     'a_traiter' => '{1} 1 élément à traiter|[2,*] :n éléments à traiter',
 
+    // Composants de la charte (/admin/charte).
+    'composants' => [
+        'circuit' => [
+            'brouillon' => 'Enregistrer le brouillon',
+            'soumettre' => 'Soumettre au validateur',
+            'confirmer' => 'Confirmer',
+            'rejeter' => 'Rejeter',
+            'reviser' => 'Remettre en révision',
+        ],
+        'motif_obligatoire' => 'Motif',
+        'motif_facultatif' => 'Motif (facultatif)',
+        'depot_titre' => 'Déposez le fichier ici ou choisissez-le',
+        'depot_aide' => ':formats uniquement, :taille Mo maximum. Rien n’est enregistré avant l’aperçu.',
+        'depot_choisir' => 'Choisir un fichier',
+        'chargement' => 'Chargement…',
+        'charte' => [
+            'titre' => 'Boutons, statuts et formulaires',
+            'sous_titre' => 'Composants communs à tous les écrans du back-office.',
+            'boutons' => 'Boutons',
+            'variantes' => 'Variantes',
+            'tailles' => 'Tailles',
+            'icones' => 'Avec icône, icône seule, chargement',
+            'circuit' => 'Circuit de validation',
+            'statuts' => 'Statuts',
+            'statuts_circuit' => 'Circuit de validation',
+            'statuts_physique' => 'Statut physique de la boutique',
+            'statuts_commercial' => 'Statut commercial de la boutique',
+            'statuts_imports' => 'Imports',
+            'statuts_note' => 'Un statut est toujours écrit en toutes lettres : la couleur aide, elle ne suffit jamais.',
+            'champs' => 'Champs de formulaire',
+            'messages' => 'Messages',
+            'onglets' => 'Onglets et pagination',
+            'confirmations' => 'Fenêtres de confirmation',
+        ],
+    ],
+
     // Cadre du back-office : barre latérale, barre du haut, menus déroulants.
     'cadre' => [
         'nom' => 'Raaga',

@@ -2,7 +2,7 @@
     <div class="bo-carte !mt-0">
         <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
             <p class="texte-carte max-w-3xl">{{ __('admin.utilisateurs.intro.backoffice') }}</p>
-            <a href="{{ route('admin.utilisateurs.inviter') }}" class="bo-bouton bo-bouton-principal">{{ __('admin.utilisateurs.inviter') }}</a>
+            <x-admin.bouton variante="principal" href="{{ route('admin.utilisateurs.inviter') }}">{{ __('admin.utilisateurs.inviter') }}</x-admin.bouton>
         </div>
 
         <x-tableau :t="$tableau" :libelle="__('admin.utilisateurs.titre')" />

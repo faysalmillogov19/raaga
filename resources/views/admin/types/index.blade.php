@@ -29,7 +29,7 @@
                     </select>
                     @error('attribuable') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 </div>
-                <div class="flex items-end"><button type="submit" class="bo-bouton bo-bouton-principal">{{ $t['ajouter'] }}</button></div>
+                <div class="flex items-end"><x-admin.bouton variante="principal" type="submit">{{ $t['ajouter'] }}</x-admin.bouton></div>
             </form>
         </section>
     @endif

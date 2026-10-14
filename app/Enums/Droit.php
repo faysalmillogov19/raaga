@@ -45,6 +45,8 @@ enum Droit: string
 
     case UtilisateursGerer = 'utilisateurs.gerer';
     case ConnexionsVoir = 'connexions.voir';
+    // Page de contrôle visuel de la charte du back-office (SUPER_ADMIN).
+    case CharteVoir = 'charte.voir';
 
     case ReferentielsVoir = 'referentiels.voir';
     case ReferentielsGerer = 'referentiels.gerer';
@@ -216,7 +218,7 @@ enum Droit: string
                 self::InstitutionsInterlocuteur, self::RegistreAVoir,
                 self::ApprobationsTraiter,
                 self::UtilisateursGerer,
-                self::SecuriteGerer, self::ConnexionsVoir,
+                self::SecuriteGerer, self::ConnexionsVoir, self::CharteVoir,
                 self::AuditVoir,
                 self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
                 self::SitesVoir, self::GrilleVoir, self::ImportsVoir,

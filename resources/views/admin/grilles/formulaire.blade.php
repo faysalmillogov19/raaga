@@ -16,7 +16,7 @@
         ]) }}</p>
         <p class="texte-carte mt-1 max-w-3xl">{{ $g['calcul'] }}</p>
         @if ($errors->any())
-            <p class="bo-message bo-message-erreur mt-3" role="alert">{{ $errors->first() }}</p>
+            <x-admin.message type="erreur" class="mt-3">{{ $errors->first() }}</x-admin.message>
         @endif
 
         <div class="mt-4 overflow-x-auto">
@@ -62,8 +62,8 @@
         </div>
 
         <div class="mt-4 flex gap-3">
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.tranches.formulaire.enregistrer') }}</button>
-            <a href="{{ route('admin.boutiques.grilles.show', $site) }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.tranches.formulaire.annuler') }}</a>
+            <x-admin.circuit />
+            <x-admin.bouton variante="contour" href="{{ route('admin.boutiques.grilles.show', $site) }}">{{ __('admin.tranches.formulaire.annuler') }}</x-admin.bouton>
         </div>
     </form>
 </x-admin.layout>

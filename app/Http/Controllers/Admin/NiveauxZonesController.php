@@ -10,6 +10,7 @@ use App\Models\Niveau;
 use App\Models\ZoneSite;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
+use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
 use App\Support\Tableau\ResultatTableau;
@@ -48,9 +49,7 @@ class NiveauxZonesController extends Controller
         $table = (new $classe)->getTable();
         // Boutiques qui portent ce code (niveau, ou bloc pour une zone) : sous-requête, triable.
         $compte = Boutique::query()->selectRaw('count(*)')->whereColumn($niveaux ? 'niveau' : 'bloc', $table.'.code');
-        $statut = fn (Model $e) => new HtmlString('<span class="bo-etiquette '.match ($e->statut) {
-            StatutTypeBoutique::Valide => 'bo-etiquette-succes', StatutTypeBoutique::AValider => 'bo-etiquette-attention', default => 'bo-etiquette-echec',
-        }.'">'.e($e->statut->label()).'</span>'.($e->actif ? '' : ' <span class="bo-etiquette bo-etiquette-neutre">'.e($z['desactive']).'</span>'));
+        $statut = fn (Model $e) => new HtmlString(BadgeStatut::html($e->statut)->toHtml().($e->actif ? '' : ' '.BadgeStatut::html($z['desactive'])->toHtml()));
 
         return Tableau::pour($classe::query()->select($table.'.*'), $liste)
             ->colonnes([
@@ -61,7 +60,7 @@ class NiveauxZonesController extends Controller
                 Colonne::make('statut', $z['colonnes']['statut'])->triable()->valeur($statut)
                     ->texte(fn (Model $e) => $e->statut->label().($e->actif ? '' : ' · '.$z['desactive'])),
                 Colonne::make('par_defaut', $z['colonnes']['par_defaut'])->triable()
-                    ->valeur(fn (Model $e) => $e->par_defaut ? new HtmlString('<span class="bo-etiquette bo-etiquette-neutre">'.e($z['par_defaut']).'</span>') : $z['non'])
+                    ->valeur(fn (Model $e) => $e->par_defaut ? new HtmlString(''.BadgeStatut::html($z['par_defaut'], 'info')->toHtml()) : $z['non'])
                     ->texte(fn (Model $e) => $e->par_defaut ? $z['oui'] : $z['non']),
                 Colonne::make('utilise', $z['colonnes']['utilisation'])->numerique()->triable('boutiques_count')->avec(fn ($q) => $q->addSelect(['boutiques_count' => $compte]))
                     ->valeur(fn (Model $e) => trans_choice('admin.zones.boutiques', (int) $e->boutiques_count, ['n' => format_nombre((int) $e->boutiques_count)]))

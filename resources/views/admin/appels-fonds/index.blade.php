@@ -59,6 +59,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">{{ $appels->links() }}</div>
+        <div class="mt-4">{{ $appels->links('admin._pagination') }}</div>
     </section>
 </x-admin.layout>

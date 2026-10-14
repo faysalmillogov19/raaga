@@ -3,7 +3,7 @@
 <x-admin.layout :titre="$i['titre']" :fil="[['libelle' => $i['titre']]]">
     <div class="bo-carte !mt-0">
         <div class="mb-4 flex justify-end">
-            <a href="{{ route('admin.institutions.create') }}" class="bo-bouton bo-bouton-principal">{{ $i['nouvelle'] }}</a>
+            <x-admin.bouton variante="principal" href="{{ route('admin.institutions.create') }}">{{ $i['nouvelle'] }}</x-admin.bouton>
         </div>
         <div class="overflow-x-auto">
             <table class="bo-tableau">
@@ -25,6 +25,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">{{ $institutions->links() }}</div>
+        <div class="mt-4">{{ $institutions->links('admin._pagination') }}</div>
     </div>
 </x-admin.layout>

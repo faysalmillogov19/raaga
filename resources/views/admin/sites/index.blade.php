@@ -8,8 +8,8 @@
             <p class="texte-carte max-w-3xl">{{ __('admin.sites.intro') }}</p>
             @if ($gerer)
                 <div class="flex flex-wrap gap-3">
-                    <a href="{{ route('admin.referencement.imports') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.menu.imports') }}</a>
-                    <a href="{{ route('admin.sites.create') }}" class="bo-bouton bo-bouton-principal">{{ __('admin.sites.nouveau') }}</a>
+                    <x-admin.bouton variante="contour" href="{{ route('admin.referencement.imports') }}">{{ __('admin.menu.imports') }}</x-admin.bouton>
+                    <x-admin.bouton variante="principal" href="{{ route('admin.sites.create') }}">{{ __('admin.sites.nouveau') }}</x-admin.bouton>
                 </div>
             @endif
         </div>

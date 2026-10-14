@@ -200,10 +200,10 @@
                 </div>
 
                 @if (session('succes'))
-                    <p class="bo-message" role="status">{{ session('succes') }}</p>
+                    <x-admin.message type="ok">{{ session('succes') }}</x-admin.message>
                 @endif
                 @if (session('erreur'))
-                    <p class="bo-message bo-message-erreur" role="alert">{{ session('erreur') }}</p>
+                    <x-admin.message type="erreur">{{ session('erreur') }}</x-admin.message>
                 @endif
 
                 {{ $slot }}

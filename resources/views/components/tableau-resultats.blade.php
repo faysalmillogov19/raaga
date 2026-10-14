@@ -3,7 +3,7 @@
 <div data-tableau-resultats>
     @if ($t->exportable && $t->filtrees > 0)
         <div class="mb-2 flex justify-end">
-            <a href="{{ $t->urlExport() }}" class="bo-bouton bo-bouton-secondaire" title="{{ $l['exporter_aide'] }}">{{ $l['exporter'] }}</a>
+            <x-admin.bouton variante="contour" icone="exporter" href="{{ $t->urlExport() }}" title="{{ $l['exporter_aide'] }}">{{ $l['exporter'] }}</x-admin.bouton>
         </div>
     @endif
 
@@ -49,36 +49,6 @@
             {{ __($t->estFiltre() ? 'admin.donnees.info_filtre' : 'admin.donnees.info', ['de' => format_nombre($t->premiereLigne()), 'a' => format_nombre($t->derniereLigne()),
                 'n' => format_nombre($t->filtrees), 'total' => format_nombre($t->total)]) }}
         </p>
-        @if ($t->derniere() > 1)
-            <nav aria-label="{{ $l['pagination'] }}">
-                <ul class="bo-pagination">
-                    <li>
-                        @if ($t->page > 1)
-                            <a href="{{ $t->urlPage($t->page - 1) }}" data-tableau-lien rel="prev">{{ $l['precedent'] }}</a>
-                        @else
-                            <span aria-disabled="true">{{ $l['precedent'] }}</span>
-                        @endif
-                    </li>
-                    @foreach ($t->pages() as $p)
-                        <li>
-                            @if ($p === null)
-                                <span aria-hidden="true">…</span>
-                            @elseif ($p === $t->page)
-                                <a href="{{ $t->urlPage($p) }}" data-tableau-lien aria-current="page" aria-label="{{ __('admin.donnees.page', ['n' => $p]) }}">{{ $p }}</a>
-                            @else
-                                <a href="{{ $t->urlPage($p) }}" data-tableau-lien aria-label="{{ __('admin.donnees.page', ['n' => $p]) }}">{{ $p }}</a>
-                            @endif
-                        </li>
-                    @endforeach
-                    <li>
-                        @if ($t->page < $t->derniere())
-                            <a href="{{ $t->urlPage($t->page + 1) }}" data-tableau-lien rel="next">{{ $l['suivant'] }}</a>
-                        @else
-                            <span aria-disabled="true">{{ $l['suivant'] }}</span>
-                        @endif
-                    </li>
-                </ul>
-            </nav>
-        @endif
+        <x-admin.pagination :page="$t->page" :derniere="$t->derniere()" :url="fn (int $p) => $t->urlPage($p)" lien="data-tableau-lien" />
     </div>
 </div>

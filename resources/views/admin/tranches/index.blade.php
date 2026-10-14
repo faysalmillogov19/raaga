@@ -2,7 +2,7 @@
     <div class="bo-carte">
         @can(\App\Enums\Droit::TranchesSaisir->value)
             <div class="mb-4 flex justify-end">
-                <a href="{{ route('admin.tranches.create') }}" class="bo-bouton bo-bouton-principal">{{ __('admin.tranches.nouvelle') }}</a>
+                <x-admin.bouton variante="principal" href="{{ route('admin.tranches.create') }}">{{ __('admin.tranches.nouvelle') }}</x-admin.bouton>
             </div>
         @endcan
 
@@ -19,7 +19,7 @@
                     @forelse ($tranches as $t)
                         <tr>
                             <td><a href="{{ route('admin.tranches.show', $t) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $t->nom }}</a></td>
-                            <td>@include('admin.parametrage._statut', ['statut' => $t->statut])</td>
+                            <td><x-admin.badge-statut :statut="$t->statut" /></td>
                             <td class="montant">{{ format_fcfa($t->objectif_montant) }}</td>
                             <td class="whitespace-nowrap">{{ $t->date_ouverture?->format('d/m/Y') }} → {{ $t->date_cloture?->format('d/m/Y') }}</td>
                             <td>{{ $t->version ?: '—' }}</td>
@@ -31,6 +31,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">{{ $tranches->links() }}</div>
+        <div class="mt-4">{{ $tranches->links('admin._pagination') }}</div>
     </div>
 </x-admin.layout>

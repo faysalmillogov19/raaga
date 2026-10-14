@@ -41,11 +41,11 @@
                     <x-slot:declencheur>{{ $x['confirmer'] }}</x-slot:declencheur>
                 </x-admin.confirmation>
             @else
-                <button type="button" class="bo-bouton bo-bouton-principal" disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</button>
+                <x-admin.bouton variante="principal" type="button"  disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</x-admin.bouton>
             @endif
             <form method="POST" action="{{ route('admin.sites.excel.annuler') }}">
                 @csrf
-                <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $x['annuler'] }}</button>
+                <x-admin.bouton variante="contour" type="submit">{{ $x['annuler'] }}</x-admin.bouton>
             </form>
         </div>
     </section>

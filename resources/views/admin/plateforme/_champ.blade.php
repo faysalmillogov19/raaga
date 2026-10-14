@@ -250,7 +250,7 @@
                         </tbody>
                     </table>
                 </div>
-                <button type="button" class="bo-bouton bo-bouton-secondaire mt-3" @click="lignes.push({ ...nouvelle })">{{ $p('ajouter_ligne') }}</button>
+                <x-admin.bouton variante="contour" class="mt-3" type="button"  x-on:click="lignes.push({ ...nouvelle })">{{ $p('ajouter_ligne') }}</x-admin.bouton>
                 @if ($type === 'financement')
                     <p class="texte-carte mt-3" aria-live="polite">
                         <span x-text="@js(__('admin.plateforme.aides.total_financement', ['total' => '__T__', 'cout' => '__C__'])).replace('__T__', fcfa(totalLignes)).replace('__C__', fcfa(cout || 0))"></span>

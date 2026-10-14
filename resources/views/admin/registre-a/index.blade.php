@@ -24,7 +24,7 @@
                 <p class="texte-carte mt-1 max-w-3xl">{{ $r['intro'] }}</p>
             </div>
             @can(\App\Enums\Droit::RegistreAExporter->value)
-                <a href="{{ route('admin.registre-a.export') }}" class="bo-bouton bo-bouton-secondaire">{{ $r['exporter'] }}</a>
+                <x-admin.bouton variante="contour" href="{{ route('admin.registre-a.export') }}">{{ $r['exporter'] }}</x-admin.bouton>
             @endcan
         </div>
         <div class="mt-3 overflow-x-auto">
@@ -47,6 +47,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">{{ $lignes->links() }}</div>
+        <div class="mt-4">{{ $lignes->links('admin._pagination') }}</div>
     </section>
 </x-admin.layout>

@@ -39,7 +39,7 @@
                     @endforeach
                 </select>
             </div>
-            <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ __('admin.utilisateurs.filtrer') }}</button>
+            <x-admin.bouton variante="contour" type="submit">{{ __('admin.utilisateurs.filtrer') }}</x-admin.bouton>
             @if (request()->hasAny(['q', 'type', 'statut', 'kyc']))
                 <a href="{{ route('admin.assistance') }}" class="lien-action">{{ __('admin.utilisateurs.reinitialiser_filtres') }}</a>
             @endif
@@ -78,6 +78,6 @@
             </table>
         </div>
 
-        <div class="mt-4">{{ $utilisateurs->links() }}</div>
+        <div class="mt-4">{{ $utilisateurs->links('admin._pagination') }}</div>
     </div>
 </x-admin.layout>

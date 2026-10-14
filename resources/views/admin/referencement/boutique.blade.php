@@ -22,9 +22,9 @@
             @endforeach
         </dl>
         <div class="mt-4 flex flex-wrap gap-3">
-            <a href="{{ route('admin.sites.show', $boutique->site) }}" class="bo-bouton bo-bouton-secondaire">{{ $b['voir_site'] }}</a>
+            <x-admin.bouton variante="contour" href="{{ route('admin.sites.show', $boutique->site) }}">{{ $b['voir_site'] }}</x-admin.bouton>
             @if ($modifiable)
-                <a href="{{ route('admin.referencement.boutiques.edit', $boutique) }}" class="bo-bouton bo-bouton-principal">{{ $b['modifier'] }}</a>
+                <x-admin.bouton variante="principal" href="{{ route('admin.referencement.boutiques.edit', $boutique) }}">{{ $b['modifier'] }}</x-admin.bouton>
                 <x-admin.confirmation id="supprimer-boutique" :titre="$b['supprimer']" :message="$b['confirmer_suppression']"
                                       :action="route('admin.referencement.boutiques.destroy', $boutique)" :bouton="$b['supprimer']" danger>
                     <x-slot:declencheur>{{ $b['supprimer'] }}</x-slot:declencheur>

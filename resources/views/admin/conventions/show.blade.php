@@ -11,37 +11,37 @@
     <section class="bo-carte !mt-0" aria-labelledby="etat-titre">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} : @include('admin.parametrage._statut', ['statut' => $convention->statut])</h2>
+                <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} : <x-admin.badge-statut :statut="$convention->statut" /></h2>
                 <p class="texte-carte mt-1">{{ $convention->institution->denomination }} · {{ $convention->version ? __('admin.parametrage.version', ['n' => $convention->version]) : __('admin.parametrage.aucune_version') }}</p>
             </div>
             @if ($convention->pdf_chemin)
-                <a href="{{ route('admin.conventions.pdf', $convention) }}" class="bo-bouton bo-bouton-secondaire" target="_blank">{{ $c['pdf'] }}</a>
+                <x-admin.bouton variante="contour" href="{{ route('admin.conventions.pdf', $convention) }}"  target="_blank">{{ $c['pdf'] }}</x-admin.bouton>
             @endif
         </div>
 
         @if ($convention->motif_rejet && $convention->estModifiable())
-            <p class="bo-message bo-message-erreur mt-4 !mb-0" role="alert">{{ __('admin.parametrage.motif_rejet', ['motif' => $convention->motif_rejet]) }}</p>
+            <x-admin.message type="erreur" class="mt-4 !mb-0">{{ __('admin.parametrage.motif_rejet', ['motif' => $convention->motif_rejet]) }}</x-admin.message>
         @endif
 
         <div class="mt-4 flex flex-wrap gap-3">
             @can(Droit::ConventionsSaisir->value)
                 @if ($convention->estModifiable())
-                    <a href="{{ route('admin.conventions.edit', $convention) }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.parametrage.actions.modifier') }}</a>
-                    <x-admin.confirmation id="soumettre" :titre="__('admin.parametrage.actions.soumettre')" :message="__('admin.parametrage.confirmations.soumettre')"
+                    <x-admin.bouton variante="contour" href="{{ route('admin.conventions.edit', $convention) }}">{{ __('admin.parametrage.actions.modifier') }}</x-admin.bouton>
+                    <x-admin.confirmation etape="soumettre" id="soumettre" :titre="__('admin.parametrage.actions.soumettre')" :message="__('admin.parametrage.confirmations.soumettre')"
                                           :action="route('admin.conventions.soumettre', $convention)" :bouton="__('admin.parametrage.actions.soumettre')">
                         <x-slot:declencheur>{{ __('admin.parametrage.actions.soumettre') }}</x-slot:declencheur>
                     </x-admin.confirmation>
                 @elseif ($convention->champsAvenantAutorises() !== [])
-                    <a href="{{ route('admin.conventions.avenant', $convention) }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.parametrage.actions.avenant') }}</a>
+                    <x-admin.bouton variante="contour" href="{{ route('admin.conventions.avenant', $convention) }}">{{ __('admin.parametrage.actions.avenant') }}</x-admin.bouton>
                 @endif
             @endcan
             @can(Droit::ConventionsConfirmer->value)
                 @if ($convention->estSoumis())
-                    <x-admin.confirmation id="confirmer" :titre="__('admin.parametrage.actions.confirmer')" :message="__('admin.parametrage.confirmations.confirmer')"
+                    <x-admin.confirmation etape="confirmer" id="confirmer" :titre="__('admin.parametrage.actions.confirmer')" :message="__('admin.parametrage.confirmations.confirmer')"
                                           :action="route('admin.conventions.confirmer', $convention)" :bouton="__('admin.parametrage.actions.confirmer')">
                         <x-slot:declencheur>{{ __('admin.parametrage.actions.confirmer') }}</x-slot:declencheur>
                     </x-admin.confirmation>
-                    <x-admin.confirmation id="rejeter" :titre="__('admin.parametrage.actions.rejeter')" :message="__('admin.parametrage.confirmations.rejeter')"
+                    <x-admin.confirmation etape="rejeter" id="rejeter" :titre="__('admin.parametrage.actions.rejeter')" :message="__('admin.parametrage.confirmations.rejeter')"
                                           :action="route('admin.conventions.rejeter', $convention)" :bouton="__('admin.parametrage.actions.rejeter')" motif danger>
                         <x-slot:declencheur>{{ __('admin.parametrage.actions.rejeter') }}</x-slot:declencheur>
                     </x-admin.confirmation>
@@ -76,7 +76,7 @@
             @elseif ($convention->signatureEnAttente())
                 <p class="mt-2">{{ __('institutionnel.bo.conventions.depot', ['date' => $convention->signature_deposee_le->format('d/m/Y'), 'nom' => $convention->signataire?->name]) }}</p>
                 <div class="mt-3 flex flex-wrap gap-3">
-                    <a href="{{ route('admin.conventions.pdf-signe', $convention) }}" class="bo-bouton bo-bouton-secondaire" target="_blank">{{ $c['telecharger_signee'] }}</a>
+                    <x-admin.bouton variante="contour" href="{{ route('admin.conventions.pdf-signe', $convention) }}"  target="_blank">{{ $c['telecharger_signee'] }}</x-admin.bouton>
                     @can(Droit::ConventionsConfirmer->value)
                         <x-admin.confirmation id="attester" :titre="$c['attester']" :message="$c['attester_message']" :action="route('admin.conventions.attester', $convention)" :bouton="$c['attester']">
                             <x-slot:declencheur>{{ $c['attester'] }}</x-slot:declencheur>

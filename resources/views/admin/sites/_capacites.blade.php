@@ -59,7 +59,7 @@
                                     <td>{{ $cap->libelleNiveau() ?? '—' }}</td><td>{{ $cap->zone ?? '—' }}</td><td>{{ $cap->type->code ?? $cap->type->libelle }}</td>
                                     <td class="montant">{{ $cap->nombre_prevu !== null ? format_nombre($cap->nombre_prevu) : '—' }}</td>
                                     <td class="montant">{{ $surface($cap->surface_unitaire !== null ? (float) $cap->surface_unitaire : null) }}</td>
-                                    <td class="montant">{{ $surface($cap->surfaceRetenue()) }}@if ($cap->estIncomplete())<br><span class="bo-etiquette bo-etiquette-attention">{{ $k['a_completer'] }}</span>@endif</td>
+                                    <td class="montant">{{ $surface($cap->surfaceRetenue()) }}@if ($cap->estIncomplete())<br><x-admin.badge-statut :statut="$k['a_completer']" variante="avertissement" />@endif</td>
                                     <td>{{ $cap->source ?? '—' }}</td><td>{{ $cap->observations ?? '—' }}</td>
                                 </tr>
                             @endforeach

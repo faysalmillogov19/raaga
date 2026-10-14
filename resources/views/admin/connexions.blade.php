@@ -37,6 +37,6 @@
             </table>
         </div>
 
-        <div class="mt-4">{{ $connexions->links() }}</div>
+        <div class="mt-4">{{ $connexions->links('admin._pagination') }}</div>
     </div>
 </x-admin.layout>

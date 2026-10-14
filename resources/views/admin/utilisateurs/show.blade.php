@@ -70,7 +70,7 @@
                         @if ($utilisateur->estVerrouille())
                             <form method="POST" action="{{ route('admin.utilisateurs.deverrouiller', $utilisateur) }}">
                                 @csrf
-                                <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ __('admin.utilisateurs.actions.deverrouiller') }}</button>
+                                <x-admin.bouton variante="contour" type="submit">{{ __('admin.utilisateurs.actions.deverrouiller') }}</x-admin.bouton>
                             </form>
                         @endif
                     @endif

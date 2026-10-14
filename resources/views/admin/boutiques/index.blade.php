@@ -3,9 +3,9 @@
         <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
             <p class="texte-carte max-w-3xl">{{ __('admin.boutiques.intro') }}</p>
             <div class="flex flex-wrap gap-3">
-                <a href="{{ route('admin.boutiques.grilles') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.grilles.titre') }}</a>
+                <x-admin.bouton variante="contour" href="{{ route('admin.boutiques.grilles') }}">{{ __('admin.grilles.titre') }}</x-admin.bouton>
                 @can(\App\Enums\Droit::BoutiquesSaisir->value)
-                    <a href="{{ route('admin.boutiques.create') }}" class="bo-bouton bo-bouton-principal">{{ __('admin.boutiques.nouvelle') }}</a>
+                    <x-admin.bouton variante="principal" href="{{ route('admin.boutiques.create') }}">{{ __('admin.boutiques.nouvelle') }}</x-admin.bouton>
                 @endcan
             </div>
         </div>
@@ -24,7 +24,7 @@
                     @forelse ($campagnes as $c)
                         <tr>
                             <td><a href="{{ route('admin.boutiques.show', $c) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $c->nom }}</a></td>
-                            <td>@include('admin.parametrage._statut', ['statut' => $c->statut])</td>
+                            <td><x-admin.badge-statut :statut="$c->statut" /></td>
                             <td class="whitespace-nowrap">{{ $c->date_ouverture?->format('d/m/Y') }} → {{ $c->date_cloture?->format('d/m/Y') }}</td>
                             <td class="montant">{{ format_nombre((int) $c->categories_sum_nombre_boutiques) }}</td>
                             <td>{{ $c->version ?: '—' }}</td>
@@ -35,6 +35,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">{{ $campagnes->links() }}</div>
+        <div class="mt-4">{{ $campagnes->links('admin._pagination') }}</div>
     </div>
 </x-admin.layout>

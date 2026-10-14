@@ -11,7 +11,7 @@
 
     <div class="bo-carte">
         @can(\App\Enums\Droit::ConventionsSaisir->value)
-            <div class="mb-4 flex justify-end"><a href="{{ route('admin.conventions.create') }}" class="bo-bouton bo-bouton-principal">{{ $c['nouvelle'] }}</a></div>
+            <div class="mb-4 flex justify-end"><x-admin.bouton variante="principal" href="{{ route('admin.conventions.create') }}">{{ $c['nouvelle'] }}</x-admin.bouton></div>
         @endcan
         <div class="overflow-x-auto">
             <table class="bo-tableau">
@@ -21,7 +21,7 @@
                         <tr>
                             <td><a href="{{ route('admin.conventions.show', $convention) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $convention->reference }}</a></td>
                             <td>{{ $convention->institution->nomCourt() }}</td>
-                            <td>@include('admin.parametrage._statut', ['statut' => $convention->statut])</td>
+                            <td><x-admin.badge-statut :statut="$convention->statut" /></td>
                             <td class="montant">{{ format_nombre($convention->nb_actions) }}</td>
                             <td class="montant">{{ format_fcfa($convention->montant_engage) }}</td>
                             <td>{{ $convention->estSignee() ? $convention->signee_le->format('d/m/Y') : ($convention->signatureEnAttente() ? __('institutionnel.bo.conventions.depot', ['date' => $convention->signature_deposee_le->format('d/m/Y'), 'nom' => '']) : '—') }}</td>
@@ -32,6 +32,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">{{ $conventions->links() }}</div>
+        <div class="mt-4">{{ $conventions->links('admin._pagination') }}</div>
     </div>
 </x-admin.layout>

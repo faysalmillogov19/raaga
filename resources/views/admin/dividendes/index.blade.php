@@ -2,7 +2,7 @@
     <div class="bo-carte">
         @can(\App\Enums\Droit::DividendesSaisir->value)
             <div class="mb-4 flex justify-end">
-                <a href="{{ route('admin.dividendes.create') }}" class="bo-bouton bo-bouton-principal">{{ __('admin.dividendes.nouvelle') }}</a>
+                <x-admin.bouton variante="principal" href="{{ route('admin.dividendes.create') }}">{{ __('admin.dividendes.nouvelle') }}</x-admin.bouton>
             </div>
         @endcan
 
@@ -14,7 +14,7 @@
                         <tr>
                             <td><a href="{{ route('admin.dividendes.show', $d) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $d->exercice }}</a></td>
                             <td>{{ $d->classe_actions->value }}</td>
-                            <td>@include('admin.parametrage._statut', ['statut' => $d->statut])</td>
+                            <td><x-admin.badge-statut :statut="$d->statut" /></td>
                             <td>{{ $d->mode_calcul->label() }}</td>
                             <td class="montant">{{ $d->montant_global ? format_fcfa($d->montant_global) : format_fcfa((int) $d->dividende_brut_par_action).' / action' }}</td>
                             <td>{{ $d->date_arrete?->format('d/m/Y') }}</td>
@@ -26,6 +26,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">{{ $distributions->links() }}</div>
+        <div class="mt-4">{{ $distributions->links('admin._pagination') }}</div>
     </div>
 </x-admin.layout>

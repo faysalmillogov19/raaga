@@ -125,8 +125,8 @@
         @endif
 
         <div class="flex gap-3">
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ $mode === 'avenant' ? __('admin.tranches.formulaire.soumettre_avenant') : __('admin.tranches.formulaire.enregistrer') }}</button>
-            <a href="{{ $t->exists ? route('admin.tranches.show', $t) : route('admin.tranches') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.tranches.formulaire.annuler') }}</a>
+            <x-admin.bouton variante="principal" type="submit">{{ $mode === 'avenant' ? __('admin.tranches.formulaire.soumettre_avenant') : __('admin.tranches.formulaire.enregistrer') }}</x-admin.bouton>
+            <x-admin.bouton variante="contour" href="{{ $t->exists ? route('admin.tranches.show', $t) : route('admin.tranches') }}">{{ __('admin.tranches.formulaire.annuler') }}</x-admin.bouton>
         </div>
     </form>
 </x-admin.layout>

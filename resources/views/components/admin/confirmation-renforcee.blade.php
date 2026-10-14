@@ -2,7 +2,7 @@
 
 {{-- Action critique : le mot « CONFIRMER » et un nouveau code TOTP sont exigés (vérifiés côté serveur). --}}
 <div x-data="{ mot: '' }">
-    <button type="button" class="bo-bouton bo-bouton-principal" @click="$refs.dialogue.showModal()" aria-haspopup="dialog">{{ $bouton }}</button>
+    <x-admin.bouton x-on:click="$refs.dialogue.showModal()" aria-haspopup="dialog">{{ $bouton }}</x-admin.bouton>
 
     <dialog x-ref="dialogue" class="bo-dialogue" aria-labelledby="{{ $id }}-titre">
         <form method="POST" action="{{ $action }}">
@@ -26,8 +26,8 @@
             @endif
 
             <div class="mt-5 flex justify-end gap-3">
-                <button type="button" class="bo-bouton bo-bouton-secondaire" @click="$refs.dialogue.close()">{{ __('admin.confirmation.annuler') }}</button>
-                <button type="submit" class="bo-bouton bo-bouton-principal" :disabled="mot !== @js(\App\Services\Backoffice\ConfirmationRenforcee::MOT)">{{ $bouton }}</button>
+                <x-admin.bouton variante="contour" x-on:click="$refs.dialogue.close()">{{ __('admin.confirmation.annuler') }}</x-admin.bouton>
+                <button type="submit" class="adm-btn adm-btn-principal adm-btn-normal" :disabled="mot !== @js(\App\Services\Backoffice\ConfirmationRenforcee::MOT)">{{ $bouton }}</button>
             </div>
         </form>
     </dialog>

@@ -8,8 +8,8 @@
             @include('admin.referencement._capacite-champs', ['capacite' => $capacite])
         </div>
         <div class="mt-4 flex gap-3">
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ $k['enregistrer'] }}</button>
-            <a href="{{ route('admin.referencement.capacites', ['site' => $capacite->site_id]) }}" class="bo-bouton bo-bouton-secondaire">{{ $k['annuler'] }}</a>
+            <x-admin.bouton variante="principal" type="submit">{{ $k['enregistrer'] }}</x-admin.bouton>
+            <x-admin.bouton variante="contour" href="{{ route('admin.referencement.capacites', ['site' => $capacite->site_id]) }}">{{ $k['annuler'] }}</x-admin.bouton>
         </div>
     </form>
 </x-admin.layout>

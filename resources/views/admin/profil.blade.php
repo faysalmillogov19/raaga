@@ -31,7 +31,7 @@
                            class="champ @error('mot_de_passe_actuel', 'informations') est-invalide @enderror">
                     @error('mot_de_passe_actuel', 'informations') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 </div>
-                <button type="submit" class="bo-bouton bo-bouton-principal mt-5">{{ __('admin.profil.enregistrer') }}</button>
+                <x-admin.bouton variante="principal" class="mt-5" type="submit">{{ __('admin.profil.enregistrer') }}</x-admin.bouton>
             </form>
         </section>
 
@@ -58,7 +58,7 @@
                         <label for="mdp-confirmation">{{ __('admin.profil.confirmation') }}</label>
                         <input id="mdp-confirmation" name="password_confirmation" type="password" required autocomplete="new-password" class="champ">
                     </div>
-                    <button type="submit" class="bo-bouton bo-bouton-principal mt-5">{{ __('admin.profil.changer') }}</button>
+                    <x-admin.bouton variante="principal" class="mt-5" type="submit">{{ __('admin.profil.changer') }}</x-admin.bouton>
                 </form>
             </section>
 
@@ -83,7 +83,7 @@
                             </label>
                         @endforeach
                     </fieldset>
-                    <button type="submit" class="bo-bouton bo-bouton-principal mt-3">{{ __('admin.cadre.enregistrer') }}</button>
+                    <x-admin.bouton variante="principal" class="mt-3" type="submit">{{ __('admin.cadre.enregistrer') }}</x-admin.bouton>
                 </form>
             </section>
         </div>

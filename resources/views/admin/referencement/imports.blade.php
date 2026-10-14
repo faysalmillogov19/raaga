@@ -1,7 +1,6 @@
 @php
     $i = __('admin.imports');
     $gerer = auth()->user()->can(\App\Enums\Droit::SitesGerer->value);
-    $fichier = fn (string $nom, string $id) => '<input id="'.$id.'" name="'.$nom.'" type="file" required class="champ" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">';
 @endphp
 
 <x-admin.layout :titre="$i['titre']" :fil="[['libelle' => $i['titre']]]">
@@ -15,13 +14,13 @@
             <section class="bo-carte !mt-0" aria-labelledby="imp-sites">
                 <h2 id="imp-sites" class="!text-base">{{ $i['sites_titre'] }}</h2>
                 <p class="texte-carte">{{ $i['sites_aide'] }}</p>
-                <a href="{{ route('admin.sites.excel.modele') }}" class="bo-bouton bo-bouton-secondaire mt-3">{{ __('admin.sites.import.modele') }}</a>
-                <a href="{{ route('admin.sites.excel.export') }}" class="bo-bouton bo-bouton-secondaire mt-3">{{ __('admin.sites.import.exporter') }}</a>
+                <x-admin.bouton variante="contour" class="mt-3" href="{{ route('admin.sites.excel.modele') }}">{{ __('admin.sites.import.modele') }}</x-admin.bouton>
+                <x-admin.bouton variante="contour" class="mt-3" href="{{ route('admin.sites.excel.export') }}">{{ __('admin.sites.import.exporter') }}</x-admin.bouton>
                 <form method="POST" action="{{ route('admin.sites.excel.deposer') }}" enctype="multipart/form-data" class="mt-3 space-y-3" novalidate>
                     @csrf
-                    <div class="formulaire-champ !mt-0"><label for="fichier-sites">{{ __('admin.sites.import.importer') }}</label>{!! $fichier('fichier_sites', 'fichier-sites') !!}</div>
+                    <x-admin.depot-fichier nom="fichier_sites" id="fichier-sites" :libelle="__('admin.sites.import.importer')" required />
                     @error('fichier_sites') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-                    <button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.sites.import.importer') }}</button>
+                    <x-admin.bouton variante="principal" type="submit">{{ __('admin.sites.import.importer') }}</x-admin.bouton>
                 </form>
             </section>
 
@@ -41,9 +40,9 @@
                                 @foreach ($sitesModifiables as $s)<option value="{{ $s->id }}">{{ $s->code }} · {{ $s->nom }}</option>@endforeach
                             </select>
                         </div>
-                        <div class="formulaire-champ !mt-0"><label for="fichier-site">{{ __('admin.sites.excel.importer') }}</label>{!! $fichier('fichier', 'fichier-site') !!}</div>
+                        <x-admin.depot-fichier nom="fichier" id="fichier-site" :libelle="__('admin.sites.excel.importer')" required />
                         @error('site_id') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-                        <button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.sites.excel.importer') }}</button>
+                        <x-admin.bouton variante="principal" type="submit">{{ __('admin.sites.excel.importer') }}</x-admin.bouton>
                     </form>
                 @endif
             </section>
@@ -52,12 +51,12 @@
             <section class="bo-carte !mt-0" aria-labelledby="imp-combine">
                 <h2 id="imp-combine" class="!text-base">{{ $i['combine_titre'] }}</h2>
                 <p class="texte-carte">{{ $i['combine_aide'] }}</p>
-                <a href="{{ route('admin.sites.boutiques-excel.modele') }}" class="bo-bouton bo-bouton-secondaire mt-3">{{ __('admin.sites.excel.modele') }}</a>
+                <x-admin.bouton variante="contour" class="mt-3" href="{{ route('admin.sites.boutiques-excel.modele') }}">{{ __('admin.sites.excel.modele') }}</x-admin.bouton>
                 <form method="POST" action="{{ route('admin.sites.boutiques-excel.deposer') }}" enctype="multipart/form-data" class="mt-3 space-y-3" novalidate>
                     @csrf
-                    <div class="formulaire-champ !mt-0"><label for="fichier-combine">{{ __('admin.sites.excel.combine_importer') }}</label>{!! $fichier('fichier', 'fichier-combine') !!}</div>
+                    <x-admin.depot-fichier nom="fichier" id="fichier-combine" :libelle="__('admin.sites.excel.combine_importer')" required />
                     @error('fichier') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-                    <button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.sites.excel.combine_importer') }}</button>
+                    <x-admin.bouton variante="principal" type="submit">{{ __('admin.sites.excel.combine_importer') }}</x-admin.bouton>
                 </form>
             </section>
         </div>

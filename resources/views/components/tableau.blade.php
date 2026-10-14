@@ -47,7 +47,7 @@
 
         {{-- Sans JavaScript : envoi manuel du formulaire. --}}
         <div class="flex flex-wrap items-center gap-3" x-show="false">
-            <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $l['appliquer'] }}</button>
+            <x-admin.bouton variante="contour" type="submit">{{ $l['appliquer'] }}</x-admin.bouton>
         </div>
     </form>
 

@@ -13,7 +13,7 @@
                         @php($confirmee = $site->grilleTarifaire?->confirmee())
                         <tr>
                             <td><a href="{{ route('admin.boutiques.grilles.show', $site) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $site->code ? $site->code.' · ' : '' }}{{ $site->nom }}</a></td>
-                            <td>@if ($site->grilleTarifaire)@include('admin.parametrage._statut', ['statut' => $site->grilleTarifaire->statut])@else<span class="texte-carte">{{ $g['aucune_grille'] }}</span>@endif</td>
+                            <td>@if ($site->grilleTarifaire)<x-admin.badge-statut :statut="$site->grilleTarifaire->statut" />@else<span class="texte-carte">{{ $g['aucune_grille'] }}</span>@endif</td>
                             <td>{{ $confirmee['version'] ?? '—' }}</td>
                         </tr>
                     @empty

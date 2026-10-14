@@ -11,10 +11,10 @@
 <x-admin.layout :titre="$f['titre'].' — '.$site->nom" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $site->nom, 'url' => route('admin.sites.show', $site)], ['libelle' => $f['titre']]]">
     <section class="bo-carte !mt-0" aria-labelledby="etat-titre">
         <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} :
-            @if ($finances)@include('admin.parametrage._statut', ['statut' => $finances->statut])@else{{ $f['aucune'] }}@endif</h2>
+            @if ($finances)<x-admin.badge-statut :statut="$finances->statut" />@else{{ $f['aucune'] }}@endif</h2>
         <p class="texte-carte mt-1 max-w-3xl">{{ $f['aide'] }}</p>
         @if ($finances?->motif_rejet && $finances->statut === StatutGrilleTarifaire::Brouillon)
-            <p class="bo-message bo-message-erreur mt-4 !mb-0" role="alert">{{ __('admin.parametrage.motif_rejet', ['motif' => $finances->motif_rejet]) }}</p>
+            <x-admin.message type="erreur" class="mt-4 !mb-0">{{ __('admin.parametrage.motif_rejet', ['motif' => $finances->motif_rejet]) }}</x-admin.message>
         @endif
 
         @if ($finances)
@@ -29,12 +29,12 @@
 
         <div class="mt-4 flex flex-wrap gap-3">
             @if ($modifiable && $finances)
-                <x-admin.confirmation id="soumettre" :titre="__('admin.parametrage.actions.soumettre')" :message="__('admin.parametrage.confirmations.soumettre')"
+                <x-admin.confirmation etape="soumettre" id="soumettre" :titre="__('admin.parametrage.actions.soumettre')" :message="__('admin.parametrage.confirmations.soumettre')"
                                       :action="route('admin.sites.finances.soumettre', $site)" :bouton="__('admin.parametrage.actions.soumettre')">
                     <x-slot:declencheur>{{ __('admin.parametrage.actions.soumettre') }}</x-slot:declencheur>
                 </x-admin.confirmation>
             @elseif ($saisir && $finances?->statut === StatutGrilleTarifaire::Confirme)
-                <x-admin.confirmation id="reviser" :titre="__('admin.grilles.actions.reviser')" :message="__('admin.grilles.confirmations.reviser')"
+                <x-admin.confirmation etape="reviser" id="reviser" :titre="__('admin.grilles.actions.reviser')" :message="__('admin.grilles.confirmations.reviser')"
                                       :action="route('admin.sites.finances.reviser', $site)" :bouton="__('admin.grilles.actions.reviser')">
                     <x-slot:declencheur>{{ __('admin.grilles.actions.reviser') }}</x-slot:declencheur>
                 </x-admin.confirmation>
@@ -42,11 +42,11 @@
 
             @can(Droit::BoutiquesConfirmer->value)
                 @if ($finances?->estSoumis())
-                    <x-admin.confirmation id="confirmer" :titre="__('admin.parametrage.actions.confirmer')" :message="__('admin.parametrage.confirmations.confirmer')"
+                    <x-admin.confirmation etape="confirmer" id="confirmer" :titre="__('admin.parametrage.actions.confirmer')" :message="__('admin.parametrage.confirmations.confirmer')"
                                           :action="route('admin.sites.finances.confirmer', $site)" :bouton="__('admin.parametrage.actions.confirmer')">
                         <x-slot:declencheur>{{ __('admin.parametrage.actions.confirmer') }}</x-slot:declencheur>
                     </x-admin.confirmation>
-                    <x-admin.confirmation id="rejeter" :titre="__('admin.parametrage.actions.rejeter')" :message="__('admin.parametrage.confirmations.rejeter')"
+                    <x-admin.confirmation etape="rejeter" id="rejeter" :titre="__('admin.parametrage.actions.rejeter')" :message="__('admin.parametrage.confirmations.rejeter')"
                                           :action="route('admin.sites.finances.rejeter', $site)" :bouton="__('admin.parametrage.actions.rejeter')" motif danger>
                         <x-slot:declencheur>{{ __('admin.parametrage.actions.rejeter') }}</x-slot:declencheur>
                     </x-admin.confirmation>
@@ -72,7 +72,7 @@
                 <x-admin.champ nom="cout_total" :libelle="ucfirst($libelles['cout_total'])" type="number" min="0" :valeur="$finances?->cout_total" />
                 <x-admin.champ nom="part_occupants" :libelle="ucfirst($libelles['part_occupants'])" type="number" min="0" :valeur="$finances?->part_occupants" />
                 <x-admin.champ nom="source_complement" :libelle="ucfirst($libelles['source_complement'])" maxlength="200" :valeur="$finances?->source_complement" />
-                <div><button type="submit" class="bo-bouton bo-bouton-principal">{{ $f['enregistrer'] }}</button></div>
+                <div><x-admin.bouton variante="principal" type="submit">{{ $f['enregistrer'] }}</x-admin.bouton></div>
             </form>
         </section>
     @endif

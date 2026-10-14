@@ -62,12 +62,8 @@
                 <label for="droits_particuliers">{{ $champs['droits_particuliers'] }}</label>
                 <textarea id="droits_particuliers" name="droits_particuliers" rows="3" class="champ">{{ old('droits_particuliers', $convention->droits_particuliers) }}</textarea>
             </div>
-                <div class="formulaire-champ !mt-0 lg:col-span-2">
-                    <label for="pdf">{{ $champs['pdf'] }}</label>
-                    <input id="pdf" name="pdf" type="file" accept="application/pdf" class="champ @error('pdf') est-invalide @enderror">
-                    @if ($convention->pdf_nom_original)<p class="aide-champ">{{ $convention->pdf_nom_original }}</p>@endif
-                    @error('pdf') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-                </div>
+                <x-admin.depot-fichier nom="pdf" id="pdf" :libelle="$champs['pdf']" formats=".pdf" accept="application/pdf" :taille-mo="10" class="lg:col-span-2"
+                                       :aide="$convention->pdf_nom_original ?: null" />
         </section>
 
         <section class="bo-carte" aria-labelledby="echeancier-titre">
@@ -91,7 +87,7 @@
                     </tbody>
                 </table>
             </div>
-            <button type="button" class="bo-bouton bo-bouton-secondaire mt-3" @click="lignes.push({ libelle: '', echeance: '', type: 'pourcentage', valeur: '' })">{{ $c['ajouter'] }}</button>
+            <x-admin.bouton variante="contour" class="mt-3" type="button"  x-on:click="lignes.push({ libelle: '', echeance: '', type: 'pourcentage', valeur: '' })">{{ $c['ajouter'] }}</x-admin.bouton>
             <p class="mt-3 font-semibold" :class="total() === engage ? 'text-vert-fonce' : 'text-rouge'"
                x-text="@js(__('institutionnel.bo.conventions.total', ['total' => '__T__', 'engage' => '__E__'])).replace('__T__', fcfa(total())).replace('__E__', fcfa(engage))"></p>
             @error('echeancier') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
@@ -101,8 +97,8 @@
         </section>
 
         <div class="flex gap-3">
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ $c['enregistrer'] }}</button>
-            <a href="{{ $convention->exists ? route('admin.conventions.show', $convention) : route('admin.conventions') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.confirmation.annuler') }}</a>
+            <x-admin.bouton variante="principal" type="submit">{{ $c['enregistrer'] }}</x-admin.bouton>
+            <x-admin.bouton variante="contour" href="{{ $convention->exists ? route('admin.conventions.show', $convention) : route('admin.conventions') }}">{{ __('admin.confirmation.annuler') }}</x-admin.bouton>
         </div>
     </form>
 </x-admin.layout>

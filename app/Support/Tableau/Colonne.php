@@ -3,6 +3,7 @@
 namespace App\Support\Tableau;
 
 use App\Enums\Droit;
+use App\Support\BadgeStatut;
 use Closure;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +18,9 @@ use Illuminate\Support\HtmlString;
  */
 final class Colonne
 {
+    /** Anciennes variantes de badge (succes, attention, echec) → variantes de la charte. */
+    private const VARIANTES = ['succes' => 'ok', 'attention' => 'avertissement', 'echec' => 'erreur'];
+
     private ?Closure $valeur = null;
 
     private ?Closure $texte = null;
@@ -198,7 +202,7 @@ final class Colonne
         if ($this->badge) {
             [$libelle, $variante] = ($this->badge)($ligne);
 
-            return new HtmlString('<span class="bo-etiquette bo-etiquette-'.e($variante).'">'.e($libelle).'</span>');
+            return BadgeStatut::html($libelle, self::VARIANTES[$variante] ?? $variante);
         }
         $valeur = $this->valeur ? ($this->valeur)($ligne) : $ligne->getAttribute($this->cle);
 

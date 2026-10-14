@@ -9,6 +9,7 @@ use App\Models\HistoriqueCode;
 use App\Models\TypeBoutique;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
+use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
 use App\Support\Tableau\ResultatTableau;
@@ -45,18 +46,16 @@ class TypesBoutiqueController extends Controller
                 Colonne::make('code', $c['code'])->triable()->recherchable()->classe('font-mono font-semibold'),
                 Colonne::make('libelle', $c['libelle'])->triable()->recherchable(['libelle', 'description'])
                     ->valeur(fn (TypeBoutique $x) => new HtmlString('<a href="'.e(route('admin.sites.types.show', $x)).'" class="font-bold text-vert-fonce underline underline-offset-2">'.e($x->libelle).'</a>'
-                        .($x->par_defaut ? ' <span class="bo-etiquette bo-etiquette-neutre">'.e($t['par_defaut']).'</span>' : '')
+                        .($x->par_defaut ? ' '.BadgeStatut::html($t['par_defaut'], 'info')->toHtml() : '')
                         .($x->description ? '<br><span class="texte-carte">'.e($x->description).'</span>' : '')))
                     ->texte(fn (TypeBoutique $x) => $x->libelle),
                 Colonne::make('attribuable', $c['attribuable'])->triable()
                     ->valeur(fn (TypeBoutique $x) => new HtmlString(e($x->attribuable ? $t['oui'] : $t['non']).($x->attribuable_demande !== null
-                        ? '<br><span class="bo-etiquette bo-etiquette-attention">'.e($x->attribuable_demande ? $t['demande_oui'] : $t['demande_non']).'</span>' : '')))
+                        ? '<br>'.BadgeStatut::html($x->attribuable_demande ? $t['demande_oui'] : $t['demande_non'], 'avertissement')->toHtml() : '')))
                     ->texte(fn (TypeBoutique $x) => $x->attribuable ? $t['oui'] : $t['non']),
                 Colonne::make('ordre', $c['ordre'])->numerique()->triable(),
                 Colonne::make('statut', $c['statut'])->triable()
-                    ->valeur(fn (TypeBoutique $x) => new HtmlString('<span class="bo-etiquette '.match ($x->statut) {
-                        StatutTypeBoutique::Valide => 'bo-etiquette-succes', StatutTypeBoutique::AValider => 'bo-etiquette-attention', default => 'bo-etiquette-echec',
-                    }.'">'.e($x->statut->label()).'</span>'.($x->actif ? '' : ' <span class="bo-etiquette bo-etiquette-neutre">'.e($t['desactive']).'</span>')))
+                    ->valeur(fn (TypeBoutique $x) => new HtmlString(BadgeStatut::html($x->statut)->toHtml().($x->actif ? '' : ' '.BadgeStatut::html($t['desactive'])->toHtml())))
                     ->texte(fn (TypeBoutique $x) => $x->statut->label().($x->actif ? '' : ' · '.$t['desactive'])),
                 Colonne::make('utilise_par', $c['utilise_par'])->numerique()->triable('boutiques_count')->avec(fn ($q) => $q->withCount('boutiques'))
                     ->valeur(fn (TypeBoutique $x) => trans_choice('admin.types.boutiques', $x->boutiques_count, ['n' => format_nombre($x->boutiques_count)]))

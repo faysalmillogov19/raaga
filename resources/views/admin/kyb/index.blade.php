@@ -11,7 +11,7 @@
                             <td><a href="{{ route('admin.kyb.show', $d['institution']) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $d['institution']->denomination }}</a></td>
                             <td><x-institutionnel.statut :statut="$d['institution']->statut" /></td>
                             <td>{{ __('institutionnel.bo.institutions.pieces', ['valides' => $d['validees'], 'total' => count(\App\Enums\TypeDocumentKyb::cases())]) }}</td>
-                            <td>@if ($d['a_verifier'])<span class="bo-etiquette bo-etiquette-attention">{{ __('institutionnel.bo.kyb.a_verifier', ['n' => $d['a_verifier']]) }}</span>@endif</td>
+                            <td>@if ($d['a_verifier'])<x-admin.badge-statut :statut="__('institutionnel.bo.kyb.a_verifier', ['n' => $d['a_verifier']])" variante="avertissement" />@endif</td>
                         </tr>
                     @empty
                         <tr><td>{{ $k['aucun'] }}</td></tr>

@@ -13,25 +13,25 @@
     <section class="bo-carte !mt-0" aria-labelledby="etat-titre">
         <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} : {{ $type->statut->label() }}
             @unless ($type->actif) · {{ $t['desactive'] }}@endunless
-            @if ($type->par_defaut) <span class="bo-etiquette bo-etiquette-neutre">{{ $t['par_defaut'] }}</span>@endif</h2>
+            @if ($type->par_defaut) <x-admin.badge-statut :statut="$t['par_defaut']" variante="neutre" />@endif</h2>
         <dl class="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-4">
             <div><dt class="texte-carte">{{ $t['champs']['attribuable'] }}</dt><dd class="font-semibold">{{ $type->attribuable ? $t['oui'] : $t['non'] }}
-                @if ($type->attribuable_demande !== null)<br><span class="bo-etiquette bo-etiquette-attention">{{ $type->attribuable_demande ? $t['demande_oui'] : $t['demande_non'] }}</span>@endif</dd></div>
+                @if ($type->attribuable_demande !== null)<br><x-admin.badge-statut :statut="$type->attribuable_demande ? $t['demande_oui'] : $t['demande_non']" variante="avertissement" />@endif</dd></div>
             <div><dt class="texte-carte">{{ $t['colonnes']['utilise_par'] }}</dt><dd class="font-semibold">{{ trans_choice('admin.types.boutiques', $type->boutiques_count, ['n' => format_nombre($type->boutiques_count)]) }}</dd></div>
             <div><dt class="texte-carte">{{ $t['version'] }}</dt><dd class="font-semibold">{{ $type->version ?: '—' }}</dd></div>
         </dl>
         @if ($type->motif_rejet)
-            <p class="bo-message bo-message-erreur mt-4 !mb-0" role="alert">{{ __('admin.parametrage.motif_rejet', ['motif' => $type->motif_rejet]) }}</p>
+            <x-admin.message type="erreur" class="mt-4 !mb-0">{{ __('admin.parametrage.motif_rejet', ['motif' => $type->motif_rejet]) }}</x-admin.message>
         @endif
 
         <div class="mt-4 flex flex-wrap gap-3">
             @can(Droit::SitesConfirmer->value)
                 @if ($enAttente)
-                    <x-admin.confirmation id="confirmer" :titre="$t['actions']['confirmer']" :message="$t['confirmations']['confirmer']"
+                    <x-admin.confirmation etape="confirmer" id="confirmer" :titre="$t['actions']['confirmer']" :message="$t['confirmations']['confirmer']"
                                           :action="route('admin.sites.types.confirmer', $type)" :bouton="$t['actions']['confirmer']">
                         <x-slot:declencheur>{{ $t['actions']['confirmer'] }}</x-slot:declencheur>
                     </x-admin.confirmation>
-                    <x-admin.confirmation id="rejeter" :titre="$t['actions']['rejeter']" :message="$t['confirmations']['rejeter']"
+                    <x-admin.confirmation etape="rejeter" id="rejeter" :titre="$t['actions']['rejeter']" :message="$t['confirmations']['rejeter']"
                                           :action="route('admin.sites.types.rejeter', $type)" :bouton="$t['actions']['rejeter']" motif danger>
                         <x-slot:declencheur>{{ $t['actions']['rejeter'] }}</x-slot:declencheur>
                     </x-admin.confirmation>
@@ -40,13 +40,13 @@
             @if ($gerer)
                 @if ($type->statut === StatutTypeBoutique::Rejete)
                     <form method="POST" action="{{ route('admin.sites.types.soumettre', $type) }}">@csrf
-                        <button type="submit" class="bo-bouton bo-bouton-principal">{{ $t['actions']['soumettre'] }}</button></form>
+                        <x-admin.bouton variante="principal" type="submit">{{ $t['actions']['soumettre'] }}</x-admin.bouton></form>
                 @endif
                 <form method="POST" action="{{ route('admin.sites.types.'.($type->actif ? 'desactiver' : 'activer'), $type) }}">@csrf
-                    <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $type->actif ? $t['actions']['desactiver'] : $t['actions']['activer'] }}</button></form>
+                    <x-admin.bouton variante="contour" type="submit">{{ $type->actif ? $t['actions']['desactiver'] : $t['actions']['activer'] }}</x-admin.bouton></form>
                 @if (! $type->par_defaut && ! $utilise)
                     <form method="POST" action="{{ route('admin.sites.types.destroy', $type) }}">@csrf @method('DELETE')
-                        <button type="submit" class="bo-bouton bo-bouton-danger">{{ $t['actions']['supprimer'] }}</button></form>
+                        <x-admin.bouton variante="danger" type="submit">{{ $t['actions']['supprimer'] }}</x-admin.bouton></form>
                 @endif
             @endif
         </div>
@@ -64,7 +64,7 @@
                 <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" :valeur="$type->libelle" maxlength="80" required />
                 <x-admin.champ nom="ordre" :libelle="$t['champs']['ordre']" :valeur="$type->ordre" type="number" min="0" max="9999" required />
                 <x-admin.champ nom="description" :libelle="$t['champs']['description']" :valeur="$type->description" maxlength="300" class="lg:col-span-2" />
-                <div><button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.tranches.formulaire.enregistrer') }}</button></div>
+                <div><x-admin.circuit /></div>
             </form>
         </section>
 
@@ -75,7 +75,7 @@
             <form method="POST" action="{{ route('admin.sites.types.attribuable', $type) }}" class="mt-3 flex flex-wrap items-end gap-3" novalidate>
                 @csrf
                 <input type="hidden" name="attribuable" value="{{ $type->attribuable ? 0 : 1 }}">
-                <button type="submit" class="bo-bouton bo-bouton-secondaire" @disabled($type->attribuable_demande !== null)>{{ $type->attribuable ? $t['actions']['rendre_non_attribuable'] : $t['actions']['rendre_attribuable'] }}</button>
+                <x-admin.bouton type="submit" variante="contour" :disabled="$type->attribuable_demande !== null">{{ $type->attribuable ? $t['actions']['rendre_non_attribuable'] : $t['actions']['rendre_attribuable'] }}</x-admin.bouton>
             </form>
         </section>
     @endif

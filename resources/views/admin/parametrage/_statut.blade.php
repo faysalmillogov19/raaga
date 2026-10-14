@@ -1,9 +1,2 @@
-@php
-    $classe = match ($statut->value) {
-        'BROUILLON' => 'bo-etiquette-neutre',
-        'SOUMISE', 'SOUMIS', 'EN_ATTENTE' => 'bo-etiquette-attention',
-        'REJETE' => 'bo-etiquette-echec',
-        default => 'bo-etiquette-succes',
-    };
-@endphp
-<span class="bo-etiquette {{ $classe }}">{{ $statut->label() }}</span>
+{{-- Ancien partiel conservé : relais vers <x-admin.badge-statut>. --}}
+<x-admin.badge-statut :statut="$statut" />

@@ -55,7 +55,7 @@
                     </div>
                 </fieldset>
             @empty
-                <p class="bo-message bo-message-erreur mt-4">{{ $k['aucun_site'] }} <a href="{{ route('admin.sites') }}">{{ __('admin.sites.titre') }}</a></p>
+                <x-admin.message type="erreur" class="mt-4">{{ $k['aucun_site'] }} <a href="{{ route('admin.sites') }}">{{ __('admin.sites.titre') }}</a></x-admin.message>
             @endforelse
         </section>
 
@@ -72,8 +72,8 @@
         </section>
 
         <div class="flex gap-3">
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.tranches.formulaire.enregistrer') }}</button>
-            <a href="{{ $campagne->exists ? route('admin.boutiques.show', $campagne) : route('admin.boutiques') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.tranches.formulaire.annuler') }}</a>
+            <x-admin.circuit />
+            <x-admin.bouton variante="contour" href="{{ $campagne->exists ? route('admin.boutiques.show', $campagne) : route('admin.boutiques') }}">{{ __('admin.tranches.formulaire.annuler') }}</x-admin.bouton>
         </div>
     </form>
 </x-admin.layout>

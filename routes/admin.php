@@ -87,6 +87,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/preferences/theme', [CadreController::class, 'theme'])->name('preferences.theme');
         Route::post('/notifications/lues', [CadreController::class, 'notificationsLues'])->name('notifications.lues');
         Route::get('/recherche', [CadreController::class, 'recherche'])->name('recherche');
+        // Charte du back-office : tous les composants, pour contrôle visuel (SUPER_ADMIN).
+        Route::view('/charte', 'admin.charte')->middleware('can:'.Droit::CharteVoir->value)->name('charte');
 
         // Mon profil : chaque compte back-office met à jour ses propres informations (jamais son rôle).
         Route::get('/profil', [ProfilController::class, 'show'])->name('profil');

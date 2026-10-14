@@ -77,8 +77,8 @@
         </section>
 
         <div class="flex gap-3">
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ __('admin.tranches.formulaire.enregistrer') }}</button>
-            <a href="{{ $site->exists ? route('admin.sites.show', $site) : route('admin.sites') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.tranches.formulaire.annuler') }}</a>
+            <x-admin.circuit />
+            <x-admin.bouton variante="contour" href="{{ $site->exists ? route('admin.sites.show', $site) : route('admin.sites') }}">{{ __('admin.tranches.formulaire.annuler') }}</x-admin.bouton>
         </div>
     </form>
 </x-admin.layout>

@@ -35,12 +35,12 @@
 
         @if ($analyse->avertissements() !== [])
             {{-- Avertissements : n'empêchent pas la confirmation. --}}
-            <div class="bo-message mt-4 !mb-0" role="status">
+            <x-admin.message type="avertissement" class="mt-4 !mb-0">
                 <p class="font-semibold">{{ $x['avertissements_titre'] }}</p>
                 <ul class="mt-1 list-disc pl-5">
                     @foreach ($analyse->avertissements() as $avertissement)<li>{{ $avertissement }}</li>@endforeach
                 </ul>
-            </div>
+            </x-admin.message>
         @endif
 
         <div class="mt-5 flex flex-wrap gap-3">
@@ -50,11 +50,11 @@
                     <x-slot:declencheur>{{ $x['confirmer'] }}</x-slot:declencheur>
                 </x-admin.confirmation>
             @else
-                <button type="button" class="bo-bouton bo-bouton-principal" disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</button>
+                <x-admin.bouton variante="principal" type="button"  disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</x-admin.bouton>
             @endif
             <form method="POST" action="{{ $routeAnnuler }}">
                 @csrf
-                <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $x['annuler'] }}</button>
+                <x-admin.bouton variante="contour" type="submit">{{ $x['annuler'] }}</x-admin.bouton>
             </form>
         </div>
     </section>

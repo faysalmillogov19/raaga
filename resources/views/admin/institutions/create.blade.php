@@ -16,8 +16,8 @@
         <x-admin.champ nom="signataire_email" :libelle="$i['champs']['signataire_email']" type="email" required />
 
         <div class="flex gap-3 lg:col-span-2">
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ $i['creer'] }}</button>
-            <a href="{{ route('admin.institutions') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.confirmation.annuler') }}</a>
+            <x-admin.bouton variante="principal" type="submit">{{ $i['creer'] }}</x-admin.bouton>
+            <x-admin.bouton variante="contour" href="{{ route('admin.institutions') }}">{{ __('admin.confirmation.annuler') }}</x-admin.bouton>
         </div>
     </form>
 </x-admin.layout>

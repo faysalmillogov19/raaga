@@ -47,7 +47,7 @@
 
         @if ($onglet === 'parametres')
             @if ($section === 'projet')
-                <p class="bo-message mt-4 !mb-0">{{ $p('aides.pas_de_tranche') }}</p>
+                <x-admin.message type="ok" class="mt-4 !mb-0">{{ $p('aides.pas_de_tranche') }}</x-admin.message>
             @endif
 
             @if ($modifiable)
@@ -76,19 +76,19 @@
                     <input type="hidden" name="confirmation_sensible" :value="confirme ? 1 : 0" value="{{ old('confirmation_sensible', 0) }}">
 
                     @error('confirmation_sensible')
-                        <div class="bo-message bo-message-erreur" role="alert">
+                        <x-admin.message type="erreur">
                             <p>{{ $message }}</p>
                             <label class="mt-2 inline-flex items-center gap-2 font-semibold">
                                 <input type="checkbox" x-model="confirme"> {{ $p('sensible.confirmer') }}
                             </label>
-                        </div>
+                        </x-admin.message>
                     @enderror
 
                     @if ($errors->any() && ! $errors->has('confirmation_sensible'))
-                        <div class="bo-message bo-message-erreur" role="alert">
+                        <x-admin.message type="erreur">
                             <p class="font-bold">{{ $p('erreurs.non_enregistre') }}</p>
                             @if ($errors->has('armoiries'))<p class="mt-1">{{ $p('erreurs.armoiries_refusees') }}</p>@endif
-                        </div>
+                        </x-admin.message>
                     @endif
 
                     <div class="grid gap-x-6 gap-y-5 lg:grid-cols-2">
@@ -98,17 +98,16 @@
                     </div>
 
                     <div class="mt-6 flex flex-wrap gap-3">
-                        <button type="submit" class="bo-bouton bo-bouton-principal">{{ $p('enregistrer') }}</button>
-                        <button type="submit" class="bo-bouton bo-bouton-secondaire" formaction="{{ route('admin.plateforme.apercu', $section) }}" formtarget="_blank">{{ $p('apercu') }}</button>
+                        <x-admin.bouton variante="principal" type="submit">{{ $p('enregistrer') }}</x-admin.bouton>
+                        <x-admin.bouton variante="contour" type="submit"  formaction="{{ route('admin.plateforme.apercu', $section) }}" formtarget="_blank">{{ $p('apercu') }}</x-admin.bouton>
                     </div>
 
                     <dialog x-ref="dialogueSensible" class="bo-dialogue" aria-labelledby="sensible-titre">
                         <h2 id="sensible-titre" class="!text-[1.2rem]">{{ $p('sensible.titre') }}</h2>
                         <p class="mt-2">{{ $p('sensible.message') }}</p>
                         <div class="mt-5 flex justify-end gap-3">
-                            <button type="button" class="bo-bouton bo-bouton-secondaire" @click="$refs.dialogueSensible.close()">{{ __('admin.confirmation.annuler') }}</button>
-                            <button type="button" class="bo-bouton bo-bouton-principal"
-                                    @click="confirme = true; $refs.dialogueSensible.close(); $nextTick(() => $refs.formulaire.requestSubmit())">{{ $p('sensible.confirmer') }}</button>
+                            <x-admin.bouton variante="contour" type="button"  x-on:click="$refs.dialogueSensible.close()">{{ __('admin.confirmation.annuler') }}</x-admin.bouton>
+                            <x-admin.bouton x-on:click="confirme = true; $refs.dialogueSensible.close(); $nextTick(() => $refs.formulaire.requestSubmit())">{{ $p('sensible.confirmer') }}</x-admin.bouton>
                         </div>
                     </dialog>
                 </form>

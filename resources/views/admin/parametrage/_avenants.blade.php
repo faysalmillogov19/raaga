@@ -5,7 +5,7 @@
         <div class="mt-4 rounded-charte border border-ligne p-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="font-bold text-encre">{{ __('admin.parametrage.avenant_numero', ['n' => $avenant->id]) }}
-                    <span class="ml-2">@include('admin.parametrage._statut', ['statut' => $avenant->statut])</span></p>
+                    <span class="ml-2"><x-admin.badge-statut :statut="$avenant->statut" /></span></p>
                 <p class="texte-carte">{{ $avenant->auteur?->name }} · {{ $avenant->created_at?->format('d/m/Y H:i') }}</p>
             </div>
             <p class="mt-1">{{ $avenant->motif }}</p>

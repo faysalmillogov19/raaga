@@ -34,7 +34,7 @@
                     @foreach ($decisions as $d)
                         <tr>
                             <td>{{ $d->version }}</td>
-                            <td>@include('admin.parametrage._statut', ['statut' => $d->decision])</td>
+                            <td><x-admin.badge-statut :statut="$d->decision" /></td>
                             <td class="whitespace-nowrap">{{ $d->created_at?->format('d/m/Y H:i') }}</td>
                             <td>{{ $d->decideur?->name }}</td>
                             <td>{{ $d->motif ?? '—' }}</td>

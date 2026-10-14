@@ -12,7 +12,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
             <p class="texte-carte max-w-3xl">{{ $b['intro'] }}</p>
             @if ($gerer)
-                <a href="{{ route('admin.referencement.boutiques.ajouter', $sitesModifiables->contains('id', $siteFiltre) ? ['site' => $siteFiltre] : []) }}" class="bo-bouton bo-bouton-principal">{{ $b['ajouter'] }}</a>
+                <x-admin.bouton variante="principal" href="{{ route('admin.referencement.boutiques.ajouter', $sitesModifiables->contains('id', $siteFiltre) ? ['site' => $siteFiltre] : []) }}">{{ $b['ajouter'] }}</x-admin.bouton>
             @endif
         </div>
 
@@ -29,7 +29,7 @@
                     @csrf
                     <p class="texte-carte">{{ $b['excel_import_aide'] }}</p>
                     @if ($sitesModifiables->isEmpty())
-                        <p class="bo-message bo-message-erreur mt-3 !mb-0" role="status">{{ $b['aucun_site_modifiable'] }}</p>
+                        <x-admin.message type="erreur" class="mt-3 !mb-0">{{ $b['aucun_site_modifiable'] }}</x-admin.message>
                     @else
                         <div class="mt-3 grid gap-3 sm:grid-cols-2">
                             <div class="formulaire-champ !mt-0">
@@ -42,17 +42,12 @@
                                 </select>
                                 @error('site_id') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                             </div>
-                            <div class="formulaire-champ !mt-0">
-                                <label for="import-fichier">{{ $x['importer'] }}</label>
-                                <input id="import-fichier" name="fichier" type="file" class="champ @error('fichier') est-invalide @enderror"
-                                       accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-                                @error('fichier') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-                            </div>
+                            <x-admin.depot-fichier nom="fichier" id="import-fichier" :libelle="$x['importer']" :taille-mo="config('raaga.referentiel_boutiques.taille_max_ko') / 1024" />
                         </div>
                         <div class="mt-3 flex flex-wrap gap-3">
-                            <button type="submit" formmethod="GET" formaction="{{ route('admin.referencement.boutiques.excel.modele') }}" formenctype="application/x-www-form-urlencoded" formnovalidate
-                                    class="bo-bouton bo-bouton-secondaire">{{ $x['modele'] }}</button>
-                            <button type="submit" class="bo-bouton bo-bouton-principal">{{ $x['importer'] }}</button>
+                            <x-admin.bouton type="submit" variante="contour" icone="exporter" formmethod="GET" :formaction="route('admin.referencement.boutiques.excel.modele')"
+                                            formenctype="application/x-www-form-urlencoded" formnovalidate>{{ $x['modele'] }}</x-admin.bouton>
+                            <x-admin.bouton variante="principal" type="submit">{{ $x['importer'] }}</x-admin.bouton>
                         </div>
                     @endif
                 </form>
@@ -69,7 +64,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $x['exporter'] }}</button>
+                        <x-admin.bouton variante="contour" type="submit">{{ $x['exporter'] }}</x-admin.bouton>
                     </div>
                 </form>
             </div>

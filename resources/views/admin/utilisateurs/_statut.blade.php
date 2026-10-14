@@ -1,9 +1,9 @@
 @if (! $u->actif)
-    <span class="bo-etiquette bo-etiquette-echec">{{ __('admin.utilisateurs.statuts.desactive') }}</span>
+    <x-admin.badge-statut :statut="__('admin.utilisateurs.statuts.desactive')" variante="erreur" />
 @elseif ($u->estVerrouille())
-    <span class="bo-etiquette bo-etiquette-attention">{{ __('admin.utilisateurs.statuts.verrouille') }}</span>
+    <x-admin.badge-statut :statut="__('admin.utilisateurs.statuts.verrouille')" variante="avertissement" />
 @elseif ($invitation && ! $u->password)
-    <span class="bo-etiquette bo-etiquette-neutre">{{ __('admin.utilisateurs.statuts.invitation') }}</span>
+    <x-admin.badge-statut :statut="__('admin.utilisateurs.statuts.invitation')" variante="neutre" />
 @else
-    <span class="bo-etiquette bo-etiquette-succes">{{ __('admin.utilisateurs.statuts.actif') }}</span>
+    <x-admin.badge-statut :statut="__('admin.utilisateurs.statuts.actif')" variante="ok" />
 @endif

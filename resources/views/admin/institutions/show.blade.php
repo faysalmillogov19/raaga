@@ -22,7 +22,7 @@
                 <dd>{{ __('institutionnel.bo.institutions.pieces', ['valides' => $pieces->where('statut', \App\Enums\StatutDocumentKyc::Valide)->count(), 'total' => count(TypeDocumentKyb::cases())]) }}</dd>
             </dl>
             @if ($institution->motif_suspension)
-                <p class="bo-message bo-message-erreur mt-3 !mb-0">{{ $institution->motif_suspension }}</p>
+                <x-admin.message type="erreur" class="mt-3 !mb-0">{{ $institution->motif_suspension }}</x-admin.message>
             @endif
             <div class="mt-4">
                 @if ($institution->estSuspendue())
@@ -46,7 +46,7 @@
                     @foreach (['interlocuteur_nom' => 'text', 'interlocuteur_email' => 'email', 'interlocuteur_telephone' => 'tel'] as $champ => $type)
                         <x-admin.champ :nom="$champ" :libelle="$i['champs'][$champ]" :type="$type" :valeur="$institution->{$champ}" />
                     @endforeach
-                    <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $o['enregistrer'] }}</button>
+                    <x-admin.bouton variante="contour" type="submit">{{ $o['enregistrer'] }}</x-admin.bouton>
                 </form>
             @else
                 <dl class="bo-definitions mt-3">
@@ -87,7 +87,7 @@
             <x-admin.champ nom="nom" :libelle="$o['nom']" required />
             <x-admin.champ nom="email" :libelle="$o['email']" type="email" required />
             <x-admin.liste nom="role" :libelle="$o['role']" :options="collect(RoleEnum::institutionnels())->mapWithKeys(fn ($r) => [$r->value => __('institutionnel.statuts_role.'.$r->value)])->all()" :valeur="RoleEnum::InstitutionSignataire->value" />
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ $i['inviter'] }}</button>
+            <x-admin.bouton variante="principal" type="submit">{{ $i['inviter'] }}</x-admin.bouton>
         </form>
     </section>
 

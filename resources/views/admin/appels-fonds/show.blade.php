@@ -11,7 +11,7 @@
     <section class="bo-carte !mt-0" aria-labelledby="appel-titre">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <h2 id="appel-titre" class="!text-[1.15rem]">{{ $appel->libelle }}</h2>
-            <a href="{{ route('admin.appels-fonds.avis', $appel) }}" class="bo-bouton bo-bouton-secondaire" target="_blank">{{ $a['avis_appel'] }}</a>
+            <x-admin.bouton variante="contour" href="{{ route('admin.appels-fonds.avis', $appel) }}"  target="_blank">{{ $a['avis_appel'] }}</x-admin.bouton>
         </div>
         <dl class="bo-definitions mt-3">
             <dt>{{ $col['institution'] }}</dt><dd>{{ $appel->institution->denomination }}</dd>
@@ -48,7 +48,7 @@
                             <x-admin.champ nom="montant_recu" :libelle="$a['montant_recu']" type="number" min="1" :valeur="$d->montant" required />
                             <x-admin.champ nom="recu_le" :libelle="$a['recu_le']" type="date" :valeur="$d->date_virement->toDateString()" required />
                             <x-admin.champ nom="reference_releve" :libelle="$a['reference_releve']" required />
-                            <button type="submit" class="bo-bouton bo-bouton-principal">{{ $a['rapprocher'] }}</button>
+                            <x-admin.bouton variante="principal" type="submit">{{ $a['rapprocher'] }}</x-admin.bouton>
                         </form>
                         <div class="mt-3">
                             <x-admin.confirmation :id="'rejeter-'.$d->id" :titre="$a['rejeter']" :message="$a['rejeter_message']" :action="route('admin.appels-fonds.rejeter', $d)" :bouton="$a['rejeter']" motif danger>

@@ -14,7 +14,7 @@
     </nav>
 
     @if ($source === 'registre' && $r->nbBeneficiaires === 0)
-        <p class="bo-message bo-message-erreur" role="status">{{ $s('registre_vide') }}</p>
+        <x-admin.message type="erreur">{{ $s('registre_vide') }}</x-admin.message>
     @endif
 
     <section class="bo-carte !mt-0" aria-labelledby="synthese-titre">
@@ -63,6 +63,6 @@
     <section class="bo-carte" aria-labelledby="controle-titre">
         <h2 id="controle-titre" class="!text-[1.15rem]">{{ $s('controle') }}</h2>
         <p class="mt-1">{{ $s('egalite') }}</p>
-        <p class="bo-message mt-3 !mb-0">{{ $s('egalite_ok', ['total' => format_fcfa($totalControle), 'global' => format_fcfa($r->montantGlobal)]) }}</p>
+        <x-admin.message type="ok" class="mt-3 !mb-0">{{ $s('egalite_ok', ['total' => format_fcfa($totalControle), 'global' => format_fcfa($r->montantGlobal)]) }}</x-admin.message>
     </section>
 </x-admin.layout>

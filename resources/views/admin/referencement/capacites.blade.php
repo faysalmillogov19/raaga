@@ -29,7 +29,7 @@
                 <p class="texte-carte mt-1 max-w-3xl">{{ $k['liste_aide'] }}</p>
             </div>
             @if ($gerer)
-                <a href="{{ route('admin.referencement.imports') }}" class="bo-bouton bo-bouton-secondaire">{{ $k['importer'] }}</a>
+                <x-admin.bouton variante="contour" href="{{ route('admin.referencement.imports') }}">{{ $k['importer'] }}</x-admin.bouton>
             @endif
         </div>
 
@@ -39,7 +39,7 @@
                     <x-icon name="plus" class="h-[18px] w-[18px]" />
                 </summary>
                 @if ($sitesModifiables->isEmpty())
-                    <p class="bo-message bo-message-erreur mt-3 !mb-0" role="status">{{ $k['aucun_site_modifiable'] }}</p>
+                    <x-admin.message type="erreur" class="mt-3 !mb-0">{{ $k['aucun_site_modifiable'] }}</x-admin.message>
                 @else
                     <form method="POST" action="{{ route('admin.referencement.capacites.store') }}" class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" novalidate>
                         @csrf
@@ -155,7 +155,7 @@
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $k['afficher'] }}</button>
+                <x-admin.bouton variante="contour" type="submit">{{ $k['afficher'] }}</x-admin.bouton>
             </form>
         </div>
         @if ($site)

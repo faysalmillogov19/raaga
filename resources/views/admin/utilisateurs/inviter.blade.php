@@ -27,8 +27,8 @@
                 @error('role') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
             </div>
             <div class="mt-6 flex gap-3">
-                <button type="submit" class="bo-bouton bo-bouton-principal" :disabled="envoi">{{ __('admin.utilisateurs.formulaire.envoyer') }}</button>
-                <a href="{{ route('admin.utilisateurs') }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.confirmation.annuler') }}</a>
+                <x-admin.bouton variante="principal" type="submit" x-bind:disabled="envoi">{{ __('admin.utilisateurs.formulaire.envoyer') }}</x-admin.bouton>
+                <x-admin.bouton variante="contour" href="{{ route('admin.utilisateurs') }}">{{ __('admin.confirmation.annuler') }}</x-admin.bouton>
             </div>
         </form>
     </div>

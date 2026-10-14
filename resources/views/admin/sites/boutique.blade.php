@@ -29,8 +29,8 @@
         </div>
 
         <div class="flex gap-3">
-            <button type="submit" class="bo-bouton bo-bouton-principal">{{ $b['enregistrer'] }}</button>
-            <a href="{{ route('admin.referencement.boutiques.show', $boutique) }}" class="bo-bouton bo-bouton-secondaire">{{ __('admin.tranches.formulaire.annuler') }}</a>
+            <x-admin.bouton variante="principal" type="submit">{{ $b['enregistrer'] }}</x-admin.bouton>
+            <x-admin.bouton variante="contour" href="{{ route('admin.referencement.boutiques.show', $boutique) }}">{{ __('admin.tranches.formulaire.annuler') }}</x-admin.bouton>
         </div>
     </form>
 </x-admin.layout>

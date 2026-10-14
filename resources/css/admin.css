@@ -682,3 +682,295 @@ body.adm {
         padding: 16px;
     }
 }
+
+/* ------------------------------------------------------------------ Composants de la charte (<x-admin.*>) */
+
+/* Boutons : petit 34 px / coins 8, normal 44 px / coins 10, grand 52 px / coins 12 ; gras 600. */
+.adm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid transparent;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .15s, border-color .15s, color .15s;
+}
+
+.adm-btn-petit { min-height: 34px; padding: 0 12px; border-radius: 8px; font-size: 13px; }
+.adm-btn-normal { min-height: 44px; padding: 0 16px; border-radius: 10px; font-size: 14px; }
+.adm-btn-grand { min-height: 52px; padding: 0 22px; border-radius: 12px; font-size: 15px; }
+.adm-btn-icone.adm-btn-petit { width: 34px; padding: 0; }
+.adm-btn-icone.adm-btn-normal { width: 44px; padding: 0; }
+.adm-btn-icone.adm-btn-grand { width: 52px; padding: 0; }
+
+.adm-btn-principal { background: var(--primary); border-color: var(--primary); color: var(--primary-text); }
+.adm-btn-principal:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.adm-btn-secondaire { background: var(--soft); border-color: var(--soft); color: var(--soft-text); }
+.adm-btn-secondaire:hover { filter: brightness(.97); }
+.adm-btn-contour { background: var(--card); border-color: var(--line); color: var(--text); }
+.adm-btn-contour:hover { background: var(--hover); }
+.adm-btn-discret { background: transparent; border-color: transparent; color: var(--primary); }
+.adm-btn-discret:hover { background: var(--hover); }
+.adm-btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.adm-btn-danger:hover { filter: brightness(.92); }
+.adm-btn-rejet { background: var(--card); border-color: var(--danger); color: var(--err-text); }
+.adm-btn-rejet:hover { background: var(--err-bg); }
+
+.adm-btn:disabled,
+.adm-btn[aria-disabled="true"] {
+    background: var(--disabled-bg);
+    border-color: var(--disabled-bg);
+    color: var(--disabled-text);
+    cursor: not-allowed;
+    filter: none;
+}
+
+.adm-btn.adm-btn-charge:disabled {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-text);
+    opacity: .85;
+    cursor: progress;
+}
+
+.adm-btn-svg { width: 18px; height: 18px; }
+
+.adm-btn-roue {
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 99px;
+    animation: adm-tourne .8s linear infinite;
+}
+
+@keyframes adm-tourne { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .adm-btn-roue { animation-duration: 2.4s; }
+}
+
+/* Anciennes classes de boutons : même rendu que les composants. */
+.adm .bo-bouton { min-height: 44px; padding: 0 16px; border-radius: 10px; font-weight: 600; }
+.adm .bo-bouton-secondaire { background: var(--card); border: 1px solid var(--line); color: var(--text); }
+
+/* Statuts : 12 px gras, coins 6 px, texte toujours écrit. */
+.adm-badge,
+.adm .bo-etiquette {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.adm-badge-neutre { background: var(--neutral-bg); color: var(--neutral-text); }
+.adm-badge-info { background: var(--info-bg); color: var(--info-text); }
+.adm-badge-ok { background: var(--ok-bg); color: var(--ok-text); }
+.adm-badge-avertissement { background: var(--warn-bg); color: var(--warn-text); }
+.adm-badge-erreur { background: var(--err-bg); color: var(--err-text); }
+
+/* Champs */
+.adm .champ {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background-color: var(--field);
+    color: var(--text);
+    font: inherit;
+    box-shadow: none;
+}
+
+.adm textarea.champ { min-height: 88px; }
+
+.adm .champ.est-invalide,
+.adm .champ[aria-invalid="true"],
+.adm .adm-depot.est-invalide {
+    border: 2px solid var(--err-text);
+}
+
+.adm .adm-verrouille,
+.adm .champ[readonly] {
+    background: var(--disabled-bg);
+    color: var(--text);
+    font-weight: 600;
+}
+
+.adm .adm-libelle,
+.adm .formulaire-champ > label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.adm .aide-champ {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.adm .message-erreur {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--err-text);
+}
+
+.adm-requis { color: var(--err-text); }
+
+.adm-choix { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+
+.adm-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    cursor: pointer;
+}
+
+.adm-option input[type="radio"],
+.adm-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.adm fieldset { margin: 0; padding: 0; border: 0; }
+
+/* Interrupteur (role="switch") */
+.adm .adm-option input.adm-interrupteur {
+    appearance: none;
+    position: relative;
+    width: 40px;
+    height: 24px;
+    border-radius: 99px;
+    background: var(--disabled-text);
+    cursor: pointer;
+    transition: background-color .15s;
+}
+
+.adm .adm-option input.adm-interrupteur::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 99px;
+    background: #fff;
+    transition: transform .15s;
+}
+
+.adm .adm-option input.adm-interrupteur:checked { background: var(--primary); }
+.adm .adm-option input.adm-interrupteur:checked::after { transform: translateX(16px); }
+
+/* Dépôt de fichier */
+.adm-depot {
+    position: relative;
+    display: grid;
+    gap: 6px;
+    justify-items: start;
+    padding: 18px;
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+    background: var(--zebra);
+}
+
+.adm-depot-survol { border-color: var(--primary); background: var(--hover); }
+.adm-depot-champ { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.adm-depot:focus-within { outline: 3px solid #FCD116; outline-offset: 2px; }
+.adm-depot-titre { margin: 0; font-weight: 600; color: var(--text); }
+.adm-depot-aide { margin: 0; font-size: 12px; color: var(--muted); }
+.adm-depot-nom { margin: 0; font-weight: 600; color: var(--soft-text); }
+
+/* Messages */
+.adm-message,
+.adm .bo-message {
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.adm-message-ok,
+.adm .bo-message { background: var(--ok-bg); color: var(--ok-text); }
+.adm-message-info { background: var(--info-bg); color: var(--info-text); }
+.adm-message-avertissement { background: var(--warn-bg); color: var(--warn-text); }
+.adm-message-erreur,
+.adm .bo-message.bo-message-erreur { background: var(--err-bg); color: var(--err-text); }
+
+/* Onglets */
+.adm-onglets ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--line);
+    list-style: none;
+}
+
+.adm-onglet {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    color: var(--muted);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.adm-onglet:hover { color: var(--text); }
+.adm-onglet-actif { border-bottom-color: var(--primary); color: var(--text); }
+
+/* Fenêtre de confirmation */
+.adm .adm-dialogue {
+    width: min(520px, calc(100vw - 32px));
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--text);
+}
+
+.adm .adm-dialogue::backdrop { background: rgba(10, 20, 15, .45); }
+.adm .adm-dialogue-titre { margin: 0; font-size: 18px; font-weight: 700; }
+
+/* Intertitre de section (petites majuscules), page charte et cartes. */
+.adm-intertitre {
+    margin: 18px 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.adm .bo-pagination span[aria-hidden="true"] {
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+}
+
+/* Cases et boutons radio : couleur du thème (y compris avec le module de formulaires de Tailwind). */
+.adm input[type="radio"],
+.adm input[type="checkbox"]:not(.adm-interrupteur) {
+    color: var(--primary);
+    accent-color: var(--primary);
+    border-color: var(--muted);
+    background-color: var(--field);
+}
