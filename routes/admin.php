@@ -128,6 +128,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::get('/{boutique}', 'show')->whereNumber('boutique')->name('.show');
             });
             Route::get('/capacites', [CapacitesController::class, 'index'])->middleware('can:'.Droit::SitesVoir->value)->name('capacites');
+            Route::controller(CapacitesController::class)->prefix('capacites')->name('capacites.')->middleware('can:'.Droit::SitesGerer->value)->group(function () {
+                Route::post('/', 'store')->name('store');
+                Route::get('/{capacite}/modifier', 'edit')->whereNumber('capacite')->name('edit');
+                Route::put('/{capacite}', 'update')->whereNumber('capacite')->name('update');
+                Route::delete('/{capacite}', 'destroy')->whereNumber('capacite')->name('destroy');
+            });
             Route::get('/imports', [ImportsController::class, 'index'])->middleware('can:'.Droit::ImportsVoir->value)->name('imports');
             Route::get('/imports/{journal}/fichier', [ImportsController::class, 'fichier'])->whereNumber('journal')->middleware('can:'.Droit::ImportsVoir->value)->name('imports.fichier');
             Route::post('/imports/boutiques-site', [ImportBoutiquesController::class, 'deposerPourSite'])->middleware(['can:'.Droit::SitesGerer->value, 'throttle:20,1'])->name('imports.boutiques-site');

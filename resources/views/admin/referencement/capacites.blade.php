@@ -1,29 +1,167 @@
-@php($k = __('admin.referencement.capacites'))
+@php
+    use App\Enums\Droit;
+
+    $k = __('admin.referencement.capacites');
+    $z = __('admin.zones');
+    $gerer = auth()->user()->can(Droit::SitesGerer->value);
+    $surface = fn (?float $s) => $s === null ? '—' : format_nombre($s, fmod($s, 1.0) == 0.0 ? 0 : 2);
+    $libelleSite = fn ($s) => ($s->code ? $s->code.' · ' : '').$s->nom;
+    // Colonnes filtrables : clé => [libellé, type de filtre].
+    $colonnes = [
+        'site' => [$k['colonnes']['site'], 'texte'],
+        'niveau' => [$k['colonnes']['niveau'], 'texte'],
+        'zone' => [$k['colonnes']['zone'], 'texte'],
+        'type' => [$k['colonnes']['type'], 'texte'],
+        'nombre' => [$k['colonnes']['nombre'], 'texte'],
+        'unitaire' => [$k['colonnes']['surface_unitaire'], 'texte'],
+        'retenue' => [$k['colonnes']['surface_retenue'], 'texte'],
+        'etat' => [$k['colonnes']['etat'], 'etat'],
+        'source' => [$k['colonnes']['source'], 'texte'],
+    ];
+    $initial = collect($colonnes)->map(fn () => '')->put('site', $filtreSite ? $libelleSite($filtreSite) : '');
+@endphp
 
 <x-admin.layout :titre="$k['titre']" :fil="[['libelle' => $k['titre']]]">
     <div class="bo-carte !mt-0">
-        <p class="texte-carte max-w-3xl">{{ $k['intro'] }}</p>
-        @if ($sites->isEmpty())
-            <x-etat-vide icone="info" :titre="$k['vide_titre']" :lien="auth()->user()->can(\App\Enums\Droit::SitesGerer->value) ? route('admin.referencement.imports') : null" :libelle-lien="$k['importer']">{{ $k['vide'] }}</x-etat-vide>
-        @else
-            <form method="GET" action="{{ route('admin.referencement.capacites') }}" class="mt-4 flex flex-wrap items-end gap-3">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <h2 class="!text-[1.15rem]">{{ $k['liste_titre'] }}</h2>
+                <p class="texte-carte mt-1 max-w-3xl">{{ $k['liste_aide'] }}</p>
+            </div>
+            @if ($gerer)
+                <a href="{{ route('admin.referencement.imports') }}" class="bo-bouton bo-bouton-secondaire">{{ $k['importer'] }}</a>
+            @endif
+        </div>
+
+        @if ($gerer)
+            <details class="mt-4" @if ($errors->any()) open @endif>
+                <summary class="bo-bouton-icone bo-bouton-icone-principal" aria-label="{{ $k['ajouter'] }}" data-infobulle="{{ $k['ajouter'] }}">
+                    <x-icon name="plus" class="h-[18px] w-[18px]" />
+                </summary>
+                @if ($sitesModifiables->isEmpty())
+                    <p class="bo-message bo-message-erreur mt-3 !mb-0" role="status">{{ $k['aucun_site_modifiable'] }}</p>
+                @else
+                    <form method="POST" action="{{ route('admin.referencement.capacites.store') }}" class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" novalidate>
+                        @csrf
+                        <p class="texte-carte sm:col-span-2 xl:col-span-4">{{ $k['ajouter_aide'] }}</p>
+                        <div class="formulaire-champ !mt-0">
+                            <label for="cap-site">{{ ucfirst($k['champs']['site_id']) }}</label>
+                            <select id="cap-site" name="site_id" class="champ @error('site_id') est-invalide @enderror" required>
+                                <option value="">{{ $k['choisir_option'] }}</option>
+                                @foreach ($sitesModifiables as $s)
+                                    <option value="{{ $s->id }}" @selected((int) old('site_id', $filtreSite?->id) === $s->id)>{{ $libelleSite($s) }}</option>
+                                @endforeach
+                            </select>
+                            @error('site_id') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+                        </div>
+                        @include('admin.referencement._capacite-champs', ['capacite' => null])
+                        <div class="flex items-end pb-1"><x-admin.bouton-icone type="submit" icone="check" variante="principal" :intitule="$k['ajouter']" /></div>
+                    </form>
+                @endif
+            </details>
+        @endif
+
+        {{-- Tableau : un champ de recherche par colonne (filtrage dans la page). --}}
+        <div class="mt-4 overflow-x-auto"
+             x-data="{ f: @js($initial),
+                       voit(tr) { return Object.entries(this.f).every(([c, v]) => ! v || (tr.dataset[c] || '').toLowerCase().includes(String(v).toLowerCase())) },
+                       aucun() { return [...this.$root.querySelectorAll('tr[data-ligne]')].every(tr => ! this.voit(tr)) } }">
+            <table class="bo-tableau">
+                <thead>
+                    <tr>
+                        @foreach ($colonnes as $cle => [$libelle])
+                            <th scope="col" @class(['montant' => in_array($cle, ['nombre', 'unitaire', 'retenue'], true)])>{{ $libelle }}</th>
+                        @endforeach
+                        <th scope="col">{{ $k['colonnes']['actions'] }}</th>
+                    </tr>
+                    <tr>
+                        @foreach ($colonnes as $cle => [$libelle, $filtre])
+                            <td>
+                                <label for="filtre-{{ $cle }}" class="sr-only">{{ __('admin.zones.filtrer', ['colonne' => $libelle]) }}</label>
+                                @if ($filtre === 'etat')
+                                    <select id="filtre-{{ $cle }}" x-model="f.{{ $cle }}" class="champ !py-1 text-sm">
+                                        <option value="">{{ $z['tous'] }}</option>
+                                        <option value="{{ $k['complete'] }}">{{ $k['complete'] }}</option>
+                                        <option value="{{ $k['a_completer'] }}">{{ $k['a_completer'] }}</option>
+                                    </select>
+                                @else
+                                    <input id="filtre-{{ $cle }}" x-model="f.{{ $cle }}" type="search" class="champ !py-1 text-sm" placeholder="{{ $z['rechercher'] }}" autocomplete="off">
+                                @endif
+                            </td>
+                        @endforeach
+                        <td></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($toutes as $cap)
+                        @php
+                            $niveau = $cap->niveau ? $cap->niveau.' · '.($cap->libelleNiveau() ?? '') : $k['tous_niveaux'];
+                            $type = ($cap->type->code ? $cap->type->code.' · ' : '').$cap->type->libelle;
+                            $etat = $cap->estIncomplete() ? $k['a_completer'] : $k['complete'];
+                            $unitaire = $surface($cap->surface_unitaire !== null ? (float) $cap->surface_unitaire : null);
+                            $retenue = $surface($cap->surfaceRetenue());
+                            $modifiable = $cap->site->estModifiable();
+                            $nom = $libelleSite($cap->site).' — '.$niveau.' — '.$type;
+                        @endphp
+                        <tr x-show="voit($el)" data-ligne
+                            data-site="{{ $libelleSite($cap->site) }}" data-niveau="{{ $niveau }}" data-zone="{{ $cap->zone ?? '' }}" data-type="{{ $type }}"
+                            data-nombre="{{ $cap->nombre_prevu ?? '' }}" data-unitaire="{{ $unitaire }}" data-retenue="{{ $retenue }}" data-etat="{{ $etat }}"
+                            data-source="{{ $cap->source ?? '' }}">
+                            <td>{{ $libelleSite($cap->site) }}</td>
+                            <td>{{ $niveau }}</td>
+                            <td>{{ $cap->zone ?? '—' }}</td>
+                            <td>{{ $type }}</td>
+                            <td class="montant">{{ $cap->nombre_prevu !== null ? format_nombre($cap->nombre_prevu) : '—' }}</td>
+                            <td class="montant">{{ $unitaire }}</td>
+                            <td class="montant">{{ $retenue }}</td>
+                            <td><span @class(['bo-etiquette', 'bo-etiquette-succes' => ! $cap->estIncomplete(), 'bo-etiquette-attention' => $cap->estIncomplete()])>{{ $etat }}</span></td>
+                            <td>{{ $cap->source ?? '—' }}@if ($cap->observations)<br><span class="texte-carte">{{ $cap->observations }}</span>@endif</td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <x-admin.bouton-icone :href="route('admin.referencement.boutiques', array_filter(['site' => $cap->site_id, 'niveau' => $cap->niveau, 'zone' => $cap->zone, 'type' => $cap->type_boutique_id]))"
+                                                          icone="voir" :intitule="$k['voir'].' : '.$nom" :infobulle="$k['voir']" />
+                                    @if ($gerer)
+                                        @if ($modifiable)
+                                            <x-admin.bouton-icone :href="route('admin.referencement.capacites.edit', $cap)" icone="modifier" :intitule="$k['modifier'].' : '.$nom" :infobulle="$k['modifier']" />
+                                        @else
+                                            <x-admin.bouton-icone icone="modifier" :intitule="$k['modifier'].' : '.$nom" :infobulle="$k['site_fige']" disabled />
+                                        @endif
+                                        <form method="POST" action="{{ route('admin.referencement.capacites.destroy', $cap) }}">
+                                            @csrf @method('DELETE')
+                                            <x-admin.bouton-icone type="submit" icone="supprimer" variante="danger" :intitule="$k['supprimer'].' : '.$nom" :disabled="! $modifiable"
+                                                                  :infobulle="$modifiable ? $k['supprimer'] : $k['site_fige']" />
+                                        </form>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                    <tr x-show="aucun()" x-cloak><td colspan="{{ count($colonnes) + 1 }}">{{ $toutes->isEmpty() ? $k['aucune'] : $z['aucun_resultat'] }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- Comparaison avec le référentiel, pour le site choisi. --}}
+    @if ($sites->isNotEmpty())
+        <div class="bo-carte">
+            <h2 class="!text-[1.15rem]">{{ $k['comparaison_titre'] }}</h2>
+            <form method="GET" action="{{ route('admin.referencement.capacites') }}" class="mt-3 flex flex-wrap items-end gap-3">
                 <div class="formulaire-champ !mt-0">
                     <label for="site">{{ $k['choisir'] }}</label>
                     <select id="site" name="site" class="champ">
                         @foreach ($sites as $s)
-                            <option value="{{ $s->id }}" @selected($site?->id === $s->id)>{{ $s->code ? $s->code.' · ' : '' }}{{ $s->nom }} ({{ trans_choice('admin.zones.capacites', $s->capacites_count, ['n' => format_nombre($s->capacites_count)]) }})</option>
+                            <option value="{{ $s->id }}" @selected($site?->id === $s->id)>{{ $libelleSite($s) }} ({{ trans_choice('admin.zones.capacites', $s->capacites_count, ['n' => format_nombre($s->capacites_count)]) }})</option>
                         @endforeach
                     </select>
                 </div>
                 <button type="submit" class="bo-bouton bo-bouton-secondaire">{{ $k['afficher'] }}</button>
-                @can(\App\Enums\Droit::SitesGerer->value)
-                    <a href="{{ route('admin.referencement.imports') }}" class="bo-bouton bo-bouton-secondaire">{{ $k['importer'] }}</a>
-                @endcan
             </form>
+        </div>
+        @if ($site)
+            @include('admin.sites._capacites', ['site' => $site, 'capacites' => collect(), 'comparaison' => $comparaison])
         @endif
-    </div>
-
-    @if ($site)
-        @include('admin.sites._capacites', ['site' => $site, 'capacites' => $capacites, 'comparaison' => $comparaison])
+    @else
+        <x-etat-vide icone="info" :titre="$k['vide_titre']" :lien="$gerer ? route('admin.referencement.imports') : null" :libelle-lien="$k['importer']">{{ $k['vide'] }}</x-etat-vide>
     @endif
 </x-admin.layout>
