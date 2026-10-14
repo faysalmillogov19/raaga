@@ -1,9 +1,9 @@
 {{--
-    Accueil de la phase 1 (boutiques) : bannière, chiffres clés, étapes, ce que l'on verse, sites, questions, aide.
+    Accueil de la phase 1 (boutiques) : carrousel, chiffres clés, étapes, ce que l'on verse, sites, questions, aide.
     Chiffres et dates lus dans la base ou les paramètres de la plateforme ; aucun montant.
 --}}
 @php
-    use App\Support\BanniereAccueil;
+    use App\Support\Diapositives;
 
     $a = __('public.accueil_raaga');
     $numeroVert = plateforme('contacts.numeroVert');
@@ -13,25 +13,15 @@
 @endphp
 
 <x-public.layout :titre="$a['titre_page']">
-    <x-slot:head>
-        {{-- Bannière chargée en priorité (image la plus adaptée à l'écran). --}}
-        <link rel="preload" as="image" type="image/webp" imagesrcset="{{ BanniereAccueil::srcset() }}" imagesizes="100vw" fetchpriority="high">
-    </x-slot:head>
+    @if ($premiere = $diapositives->first())
+        <x-slot:head>
+            {{-- Première image du carrousel chargée en priorité (la plus adaptée à l'écran). --}}
+            <link rel="preload" as="image" type="image/webp" imagesrcset="{{ Diapositives::srcset($premiere['image']) }}" imagesizes="100vw" fetchpriority="high">
+        </x-slot:head>
+    @endif
 
-    {{-- 1. Bannière --}}
-    <section class="acc-banniere" aria-labelledby="acc-titre">
-        <img src="{{ BanniereAccueil::url(1280) }}" srcset="{{ BanniereAccueil::srcset() }}" sizes="100vw" alt="{{ $a['image_alt'] }}"
-             class="acc-banniere-image" fetchpriority="high" decoding="async" width="1920" height="1080">
-        <div class="acc-banniere-voile" aria-hidden="true"></div>
-        <div class="conteneur acc-banniere-contenu">
-            <h1 id="acc-titre" class="acc-titre">{{ $a['titre'] }}</h1>
-            <p class="acc-sous-titre">{{ $a['sous_titre'] }}</p>
-            <div class="acc-banniere-boutons">
-                <a href="{{ $urlCandidater }}" class="acc-btn acc-btn-jaune">{{ $a['candidater'] }}</a>
-                <a href="#comment" class="acc-btn acc-btn-contour">{{ $a['comment'] }}</a>
-            </div>
-        </div>
-    </section>
+    {{-- 1. Carrousel --}}
+    <x-public.carrousel :diapositives="$diapositives" :url-candidater="$urlCandidater" />
 
     {{-- 2. Chiffres clés --}}
     <section class="acc-chiffres" aria-labelledby="acc-chiffres-titre">
@@ -116,7 +106,7 @@
                 <ul class="acc-sites">
                     @foreach ($sites as $site)
                         <li class="acc-carte acc-site">
-                            <img src="{{ BanniereAccueil::url(640) }}" alt="" loading="lazy" decoding="async" width="640" height="360" class="acc-site-image">
+                            <img src="{{ asset('images/accueil/banniere-640.webp') }}" alt="" loading="lazy" decoding="async" width="640" height="360" class="acc-site-image">
                             <div class="acc-site-texte">
                                 <h3 class="acc-h3">{{ $site->nom }}</h3>
                                 @if ($site->localite())<p class="acc-site-ville"><x-icon name="lieu" class="h-4 w-4" /> {{ $site->localite() }}</p>@endif

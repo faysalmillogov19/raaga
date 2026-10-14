@@ -661,6 +661,129 @@ document.addEventListener('click', async (evenement) => {
     compteurs.forEach((compteur) => comptage.observe(compteur));
 })();
 
+/*
+ * Carrousel de l'accueil (sans bibliothèque) : glissement au doigt natif (scroll-snap), fondu à l'arrivée d'une
+ * diapositive, lecture automatique toutes les 6 s suspendue au survol, au focus, onglet caché ou sur « Pause », jamais
+ * lancée si l'utilisateur réduit les animations. Seule la diapositive visible est exposée (aria-hidden + inert).
+ * Les images suivantes ne sont chargées qu'à l'approche de leur tour.
+ */
+document.querySelectorAll('[data-carrousel]').forEach((carrousel) => {
+    const piste = carrousel.querySelector('[data-piste]');
+    const diapos = [...carrousel.querySelectorAll('[data-diapo]')];
+    const points = [...carrousel.querySelectorAll('[data-point]')];
+    const lecture = carrousel.querySelector('[data-lecture]');
+    const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let actuelle = 0;
+    let enLecture = !reduit;
+    let survol = false;
+    let focus = false;
+    let minuterie = null;
+
+    const charger = (i) => {
+        const image = diapos[(i + diapos.length) % diapos.length].querySelector('img[data-srcset]');
+        if (image) {
+            image.srcset = image.dataset.srcset;
+            image.src = image.dataset.src;
+            image.removeAttribute('data-srcset');
+        }
+    };
+
+    const marquer = (i) => {
+        actuelle = i;
+        diapos.forEach((diapo, j) => {
+            diapo.toggleAttribute('inert', j !== i);
+            if (j === i) {
+                diapo.removeAttribute('aria-hidden');
+            } else {
+                diapo.setAttribute('aria-hidden', 'true');
+            }
+        });
+        points.forEach((point, j) => point.setAttribute('aria-current', j === i ? 'true' : 'false'));
+        charger(i);
+        charger(i + 1);
+    };
+
+    const afficher = (i, fondu = true) => {
+        i = (i + diapos.length) % diapos.length;
+        if (i === actuelle) {
+            return;
+        }
+        charger(i);
+        piste.scrollTo({ left: i * piste.clientWidth, behavior: 'instant' });
+        if (fondu && !reduit) {
+            diapos[i].classList.remove('est-entrante');
+            void diapos[i].offsetWidth;
+            diapos[i].classList.add('est-entrante');
+        }
+        marquer(i);
+        relancer();
+    };
+
+    const actif = () => enLecture && !survol && !focus && !document.hidden;
+
+    function relancer() {
+        clearInterval(minuterie);
+        minuterie = actif() ? setInterval(() => afficher(actuelle + 1), 6000) : null;
+        // Défilement automatique : pas d'annonce ; à l'arrêt, chaque changement est annoncé.
+        piste.setAttribute('aria-live', actif() ? 'off' : 'polite');
+    }
+
+    const majLecture = () => {
+        lecture.setAttribute('aria-label', enLecture ? lecture.dataset.libellePause : lecture.dataset.libelleLecture);
+        lecture.querySelector('[data-icone-pause]').toggleAttribute('hidden', !enLecture);
+        lecture.querySelector('[data-icone-lecture]').toggleAttribute('hidden', enLecture);
+        relancer();
+    };
+
+    lecture.addEventListener('click', () => {
+        enLecture = !enLecture;
+        majLecture();
+    });
+    carrousel.querySelector('[data-precedente]').addEventListener('click', () => afficher(actuelle - 1));
+    carrousel.querySelector('[data-suivante]').addEventListener('click', () => afficher(actuelle + 1));
+    points.forEach((point) => point.addEventListener('click', () => afficher(Number(point.dataset.point))));
+
+    carrousel.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            afficher(actuelle + (e.key === 'ArrowRight' ? 1 : -1));
+        }
+    });
+    carrousel.addEventListener('mouseenter', () => { survol = true; relancer(); });
+    carrousel.addEventListener('mouseleave', () => { survol = false; relancer(); });
+    carrousel.addEventListener('focusin', () => { focus = true; relancer(); });
+    carrousel.addEventListener('focusout', (e) => {
+        if (!carrousel.contains(e.relatedTarget)) {
+            focus = false;
+            relancer();
+        }
+    });
+    document.addEventListener('visibilitychange', relancer);
+
+    // Glissement au doigt : la diapositive atteinte devient la diapositive courante à la fin du défilement.
+    let attente = null;
+    piste.addEventListener('scroll', () => {
+        charger(Math.ceil(piste.scrollLeft / piste.clientWidth));
+        clearTimeout(attente);
+        attente = setTimeout(() => {
+            const i = Math.round(piste.scrollLeft / piste.clientWidth);
+            if (i !== actuelle) {
+                marquer(i);
+                relancer();
+            }
+        }, 120);
+    }, { passive: true });
+    window.addEventListener('resize', () => piste.scrollTo({ left: actuelle * piste.clientWidth, behavior: 'instant' }));
+
+    // Diapositive suivante préparée une fois la page chargée.
+    if (document.readyState === 'complete') {
+        charger(1);
+    } else {
+        window.addEventListener('load', () => charger(1), { once: true });
+    }
+    majLecture();
+});
+
 window.Alpine = Alpine;
 
 Alpine.start();

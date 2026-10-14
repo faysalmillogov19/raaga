@@ -12,8 +12,8 @@ use App\Http\Controllers\Compte\SouscriptionController;
 use App\Http\Controllers\Compte\VerificationController;
 use App\Http\Controllers\Publique\AccueilController;
 use App\Http\Controllers\Publique\ArmoiriesController;
-use App\Http\Controllers\Publique\BanniereController;
 use App\Http\Controllers\Publique\ContactController;
+use App\Http\Controllers\Publique\DiapositiveController;
 use App\Http\Controllers\Publique\GuichetController;
 use App\Http\Controllers\Publique\ImagePlateformeController;
 use App\Http\Controllers\Publique\PageController;
@@ -40,7 +40,7 @@ Route::get('/site.webmanifest', fn () => response()->json([
         ['src' => asset('images/logo/icone-512.png'), 'sizes' => '512x512', 'type' => 'image/png'],
     ],
 ], 200, ['Content-Type' => 'application/manifest+json'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))->name('manifeste');
-Route::get('/plateforme/banniere/{largeur}', BanniereController::class)->whereNumber('largeur')->name('banniere');
+Route::get('/plateforme/diapositives/{image}/{largeur}', DiapositiveController::class)->where('image', '[0-9a-f-]{36}')->whereNumber('largeur')->name('diapositive');
 Route::get('/plateforme/images/{champ}', ImagePlateformeController::class)->whereAlpha('champ')->name('plateforme.image');
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,10')->name('contact.store');

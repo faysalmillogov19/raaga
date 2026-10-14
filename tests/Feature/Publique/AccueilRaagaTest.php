@@ -53,14 +53,7 @@ class AccueilRaagaTest extends TestCase
         $page->assertSeeInOrder(['Votre boutique au marché Raaga', 'boutiques référencées', 'Comment ça marche', 'Ce que vous versez', 'Les sites',
             'Questions fréquentes', 'Besoin d’aide ?'], false)
             ->assertSee('Je candidate')->assertSee('href="#comment"', false)
-            ->assertSee('Raaga ne vous demandera jamais de payer à une personne. Payez uniquement par les canaux officiels.', false)
-            // Bannière en WebP (640, 1280, 1920 px), chargée en priorité ; les autres images en différé.
-            ->assertSee('rel="preload" as="image" type="image/webp"', false)->assertSee('fetchpriority="high"', false)
-            ->assertSee('640w', false)->assertSee('1280w', false)->assertSee('1920w', false);
-        foreach ([640, 1280, 1920] as $largeur) {
-            $this->get(route('banniere', ['largeur' => $largeur]))->assertOk()->assertHeader('Content-Type', 'image/webp');
-        }
-        $this->get(route('banniere', ['largeur' => 999]))->assertNotFound();
+            ->assertSee('Raaga ne vous demandera jamais de payer à une personne. Payez uniquement par les canaux officiels.', false);
     }
 
     public function test_chiffres_lus_depuis_la_base(): void

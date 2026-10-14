@@ -7,6 +7,7 @@ use App\Models\CampagneBoutiques;
 use App\Services\Boutiques\CandidatureBoutiques;
 use App\Services\Publique\AccueilBoutiques;
 use App\Services\Publique\CollectePublique;
+use App\Support\Diapositives;
 use App\Support\Phase;
 use Illuminate\View\View;
 
@@ -28,6 +29,7 @@ class AccueilController extends Controller
                 'chiffres' => $accueil->chiffres(),
                 'durees' => $accueil->durees(),
                 'sites' => $accueil->sites(),
+                'diapositives' => Diapositives::affichees(),
                 'questions' => array_values(array_filter(array_map(fn (int $i) => $questions[$i] ?? null, self::QUESTIONS_ACCUEIL))),
                 // Campagne ouverte : candidature (après connexion) ; sinon, la page des boutiques ou la création de compte.
                 'urlCandidater' => $campagne && CandidatureBoutiques::accepteCandidatures($campagne)

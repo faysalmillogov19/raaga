@@ -94,5 +94,8 @@
         @case('importer') <path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 20h16"/> @break
         @case('exporter') <path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/> @break
         @case('taches') <rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/> @break
+        @case('pause') <path d="M9 5v14M15 5v14"/> @break
+        @case('lecture') <path d="M7 4.5v15l12-7.5z"/> @break
+        @case('poignee') <path d="M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01" stroke-width="3"/> @break
     @endswitch
 </svg>

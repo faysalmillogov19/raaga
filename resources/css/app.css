@@ -1750,18 +1750,45 @@
 
 /* ==================================================================== Accueil public (phase 1 : boutiques) */
 @layer components {
-    /* Bannière plein écran : photo, voile dégradé pour la lisibilité, titre et deux boutons. */
-    .acc-banniere {
+    /* Carrousel plein écran : hauteur fixe (aucun décalage au chargement), défilement natif au doigt (scroll-snap). */
+    .acc-carrousel {
         position: relative;
-        display: flex;
-        align-items: flex-end;
-        min-height: 70vh;
+        height: 70vh;
+        min-height: 30rem;
         overflow: hidden;
         background: #12301f;
         color: #fff;
     }
 
-    .acc-banniere-image {
+    .acc-carrousel-piste {
+        display: flex;
+        height: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+
+    .acc-carrousel-piste::-webkit-scrollbar { display: none; }
+
+    .acc-diapo {
+        position: relative;
+        flex: 0 0 100%;
+        display: flex;
+        align-items: flex-end;
+        height: 100%;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
+
+    .acc-diapo-defaut { background: #005C2B; }
+
+    .acc-diapo.est-entrante { animation: acc-fondu .8s ease both; }
+
+    @keyframes acc-fondu { from { opacity: 0; } to { opacity: 1; } }
+
+    .acc-diapo-image {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -1769,16 +1796,86 @@
         object-fit: cover;
     }
 
+    /* Contenu au-dessus de la barre fixe (« Comment ça marche » et commandes). */
+    .acc-diapo-contenu {
+        position: relative;
+        width: 100%;
+        padding-top: 48px;
+        padding-bottom: 152px;
+    }
+
+    .acc-diapo-bouton { margin-top: 24px; }
+
+    .acc-carrousel-barre {
+        position: absolute;
+        inset: auto 0 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 24px;
+        pointer-events: none;
+    }
+
+    .acc-carrousel-barre > * { pointer-events: auto; }
+
+    .acc-carrousel-commandes { display: flex; align-items: center; gap: 8px; }
+
+    .acc-carrousel-bouton {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border: 2px solid rgba(255, 255, 255, .85);
+        border-radius: 999px;
+        background: rgba(0, 24, 11, .55);
+        color: #fff;
+        transition: background-color .15s;
+    }
+
+    .acc-carrousel-bouton:hover { background: rgba(0, 24, 11, .85); }
+
+    .acc-carrousel-points { display: flex; align-items: center; }
+
+    /* Cible de 24 × 44 px ; le point visible s'allonge quand il est actif. */
+    .acc-carrousel-point {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 44px;
+        transition: width .25s;
+    }
+
+    .acc-carrousel-point::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border-radius: 99px;
+        background: rgba(255, 255, 255, .6);
+        transition: width .25s, background-color .25s;
+    }
+
+    .acc-carrousel-point[aria-current="true"] { width: 40px; }
+    .acc-carrousel-point[aria-current="true"]::before { width: 28px; background: var(--jaune); }
+
+    .acc-carrousel :focus-visible {
+        outline: 3px solid var(--jaune);
+        outline-offset: 3px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .acc-diapo.est-entrante { animation: none; }
+        .acc-carrousel-point, .acc-carrousel-point::before { transition: none; }
+    }
+
+    /* Voile dégradé sur l'image : texte blanc lisible (contraste AA) là où il est posé, en bas. */
     .acc-banniere-voile {
         position: absolute;
         inset: 0;
-        background: linear-gradient(180deg, rgba(0, 30, 14, .25) 0%, rgba(0, 30, 14, .55) 45%, rgba(0, 24, 11, .9) 100%);
-    }
-
-    .acc-banniere-contenu {
-        position: relative;
-        padding-top: 56px;
-        padding-bottom: 56px;
+        background: linear-gradient(180deg, rgba(0, 30, 14, .35) 0%, rgba(0, 30, 14, .6) 40%, rgba(0, 24, 11, .92) 100%);
     }
 
     .site-public .acc-titre {
@@ -1794,13 +1891,6 @@
         margin-top: 16px;
         font-size: clamp(1.05rem, 2.2vw, 1.3rem);
         color: rgba(255, 255, 255, .92);
-    }
-
-    .acc-banniere-boutons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 28px;
     }
 
     /* Boutons de l'accueil : cibles tactiles de 48 px. */
@@ -2015,7 +2105,7 @@
     .acc-fraude svg { color: var(--rouge); }
 
     /* Focus jaune bien visible sur les fonds sombres. */
-    .acc-banniere :focus-visible, .acc-aide :focus-visible, .acc-chiffres :focus-visible {
+    .acc-aide :focus-visible, .acc-chiffres :focus-visible {
         outline: 3px solid var(--jaune);
         outline-offset: 3px;
     }
@@ -2042,8 +2132,9 @@
     }
 
     @media (min-width: 1024px) {
-        .acc-banniere { min-height: 85vh; }
-        .acc-banniere-contenu { padding-bottom: 96px; }
+        .acc-carrousel { height: 85vh; }
+        .acc-diapo-contenu { padding-bottom: 136px; }
+        .acc-carrousel-barre { padding-bottom: 40px; }
         .acc-section, .acc-aide { padding: 96px 0; }
         .acc-chiffres-grille { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr); }
         .acc-chiffre-campagne { grid-column: auto; }

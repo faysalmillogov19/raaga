@@ -48,6 +48,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
         $this->call(ParametresPlateformeSeeder::class);
         $this->call(ReferentielsSitesSeeder::class);
+        $this->call(CarrouselAccueilSeeder::class);
 
         foreach (self::BACKOFFICE as [$nom, $email, $role]) {
             $this->compte($nom, $email, $role);

@@ -58,6 +58,11 @@
             @endif
             @break
 
+        @case('site_public')
+            {{-- Diapositives actives, dates d'affichage ignorées : l'aperçu montre aussi celles programmées. --}}
+            <x-public.carrousel :diapositives="\App\Support\Diapositives::affichees(plateforme('site_public.carrousel'), periode: false)" :url-candidater="route('inscription')" />
+            @break
+
         @default
             <div class="conteneur py-10">
                 <p class="texte-carte text-center">{{ __('admin.plateforme.sections.'.$section) }} : en-tête et pied de page ci-dessus et ci-dessous.</p>

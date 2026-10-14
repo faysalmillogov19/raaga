@@ -719,7 +719,16 @@ return [
         'sous_titre' => 'Candidatez en ligne ou dans un guichet, payez votre caution, et participez au tirage au sort.',
         'candidater' => 'Je candidate',
         'comment' => 'Comment ça marche',
-        'image_alt' => 'Allées du marché Raaga',
+        'carrousel' => [
+            'role' => 'carrousel',
+            'diapositive' => 'diapositive',
+            'nom' => 'À la une',
+            'pause' => 'Mettre le défilement en pause',
+            'lecture' => 'Reprendre le défilement',
+            'precedente' => 'Diapositive précédente',
+            'suivante' => 'Diapositive suivante',
+            'aller' => 'Afficher la diapositive :n',
+        ],
         'chiffres_titre' => 'Le marché en chiffres',
         'chiffres' => [
             'boutiques' => 'boutiques référencées',

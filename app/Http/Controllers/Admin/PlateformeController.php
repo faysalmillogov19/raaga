@@ -6,7 +6,7 @@ use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Plateforme\ParametresPlateforme;
-use App\Support\BanniereAccueil;
+use App\Support\Diapositives;
 use App\Support\Plateforme\Catalogue;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -72,10 +72,6 @@ class PlateformeController extends Controller
             if ($type === 'image' && $request->hasFile($champ)) {
                 $valeurs[$champ] = $this->deposerImage($request->file($champ), $champ);
             }
-            // Photo (bannière d'accueil) : déclinée en WebP à 640, 1280 et 1920 px.
-            if ($type === 'photo' && $request->hasFile($champ)) {
-                $valeurs[$champ] = BanniereAccueil::deposer($request->file($champ));
-            }
         }
 
         $titre = __('admin.plateforme.sections.'.$section);
@@ -138,7 +134,11 @@ class PlateformeController extends Controller
                 'tel_intl' => ["{$champ}.regex" => $e('tel_intl')],
                 'expediteur' => ["{$champ}.regex" => $e('expediteur')],
                 'image' => ["{$champ}.*" => $e('armoiries')],
-                'photo' => ["{$champ}.*" => $e('photo')],
+                'carrousel' => [
+                    "{$champ}.*.fichier.*" => $e('photo'), "{$champ}.*.image.required_without" => $e('diapositive_image'),
+                    "{$champ}.*.boutonLien.regex" => $e('lien_bouton'), "{$champ}.*.fin.after_or_equal" => $e('fin_apres_debut'),
+                    "{$champ}.max" => $e('diapositives_max'),
+                ],
                 'reseaux', 'liens' => ["{$champ}.*.url.url" => $e('https'), "{$champ}.*.url.regex" => $e('https')],
                 'bandeau' => ["{$champ}.lien.url" => $e('https'), "{$champ}.lien.regex" => $e('https'), "{$champ}.fin.after" => $e('fin_apres_debut')],
                 'horaires' => ["{$champ}.fin.after" => $e('fin_apres_debut')],
@@ -148,6 +148,16 @@ class PlateformeController extends Controller
         }
 
         $validateur = Validator::make($request->all(), Catalogue::regles($section), $messages, $this->attributs($section));
+
+        // Carrousel d'accueil : 5 diapositives actives au plus.
+        if ($section === 'site_public') {
+            $validateur->after(function ($v) use ($request) {
+                $actives = collect((array) $request->input('carrousel', []))->filter(fn ($d) => filter_var($d['active'] ?? false, FILTER_VALIDATE_BOOL))->count();
+                if ($actives > Diapositives::MAX_ACTIVES) {
+                    $v->errors()->add('carrousel', __('admin.plateforme.erreurs.actives_max', ['max' => Diapositives::MAX_ACTIVES]));
+                }
+            });
+        }
 
         // Chiffres du projet : le total de la répartition doit égaler le coût total.
         if ($section === 'projet') {
@@ -212,10 +222,11 @@ class PlateformeController extends Controller
             'date' => Carbon::parse($v->created_at),
             'auteur' => $auteurs[$v->auteur_id] ?? null,
             'restauree_depuis' => $v->restauree_depuis,
-            'differentiel' => ParametresPlateforme::differentiel(
+            // Champs retirés du catalogue depuis la version : non affichés.
+            'differentiel' => array_intersect_key(ParametresPlateforme::differentiel(
                 json_decode((string) $v->ancienne_valeur, true) ?? Catalogue::vide($section),
                 json_decode($v->nouvelle_valeur, true),
-            ),
+            ), Catalogue::champs()[$section]),
         ]);
     }
 }

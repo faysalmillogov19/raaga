@@ -39,7 +39,9 @@ class ParametresPlateforme
 
         $valeurs = [];
         foreach (array_keys(Catalogue::SECTIONS) as $section) {
-            $valeurs[$section] = array_replace(Catalogue::vide($section), $enregistrees[$section] ?? []);
+            // Champs retirés du catalogue (ancienne bannière d'accueil…) ignorés.
+            $vide = Catalogue::vide($section);
+            $valeurs[$section] = array_replace($vide, array_intersect_key($enregistrees[$section] ?? [], $vide));
         }
 
         return array_replace($valeurs, $this->apercu);
@@ -70,7 +72,8 @@ class ParametresPlateforme
     public function enregistrer(string $section, array $valeurs, ?User $auteur, ?int $restaureeDepuis = null): bool
     {
         $ancienne = $this->section($section);
-        $nouvelle = array_replace(Catalogue::vide($section), $valeurs);
+        $vide = Catalogue::vide($section);
+        $nouvelle = array_replace($vide, array_intersect_key($valeurs, $vide));
 
         if ($nouvelle == $ancienne) {
             return false;
