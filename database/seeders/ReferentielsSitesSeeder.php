@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\StatutTypeBoutique;
 use App\Models\ZoneSite;
 use Illuminate\Database\Seeder;
 
@@ -20,7 +21,7 @@ class ReferentielsSitesSeeder extends Seeder
     public function run(): void
     {
         foreach (self::ZONES as [$code, $libelle]) {
-            ZoneSite::query()->firstOrCreate(['code' => $code], ['libelle' => $libelle]);
+            ZoneSite::query()->firstOrCreate(['code' => $code], ['libelle' => $libelle, 'par_defaut' => true, 'actif' => true, 'statut' => StatutTypeBoutique::Valide]);
         }
 
         $this->call(TypesBoutiqueSeeder::class);

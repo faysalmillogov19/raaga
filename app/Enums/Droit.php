@@ -59,6 +59,11 @@ enum Droit: string
     case SitesGerer = 'sites.gerer';
     case SitesConfirmer = 'sites.confirmer';
 
+    // Référencement : grille tarifaire en lecture (la saisie et la confirmation suivent les droits des campagnes),
+    // journal des imports (sites et boutiques).
+    case GrilleVoir = 'grille.voir';
+    case ImportsVoir = 'imports.voir';
+
     // Attribution des boutiques (indépendante des actions) : campagnes, cautions, tirage au sort.
     case BoutiquesVoir = 'boutiques.voir';
     case BoutiquesSaisir = 'boutiques.saisir';
@@ -171,7 +176,6 @@ enum Droit: string
             self::TextesLegauxRediger,
             self::PlateformeVoir, self::PlateformeModifier,
             self::InstitutionsGerer,
-            self::SitesVoir,
         ];
     }
 
@@ -215,6 +219,7 @@ enum Droit: string
                 self::SecuriteGerer, self::ConnexionsVoir,
                 self::AuditVoir,
                 self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
+                self::SitesVoir, self::GrilleVoir, self::ImportsVoir,
             ],
             // Support et assistance uniquement.
             Role::Admin => self::support(),
@@ -224,7 +229,7 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
                 self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
-                self::SitesVoir, self::SitesConfirmer,
+                self::SitesVoir, self::SitesConfirmer, self::GrilleVoir, self::ImportsVoir,
                 self::DividendesVoir, self::DividendesConfirmer, self::DividendesPayer,
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
                 self::KycVoir, self::KycVoirPieces, self::KycTraiter,
@@ -243,14 +248,14 @@ enum Droit: string
             // Référentiel des sites et des boutiques uniquement : saisie et soumission, jamais de confirmation.
             Role::GestionnaireSites => [
                 self::TableauDeBordVoir,
-                self::SitesVoir, self::SitesGerer,
+                self::SitesVoir, self::SitesGerer, self::GrilleVoir, self::ImportsVoir,
             ],
             Role::Regulateur => [
                 self::TableauDeBordVoir,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
                 self::BoutiquesVoir, self::BoutiquesSaisir,
-                self::SitesVoir,
+                self::SitesVoir, self::GrilleVoir,
                 self::DividendesVoir, self::DividendesSaisir,
                 self::SimulationsVoir, self::SimulationsLancer,
                 self::KycVoir,

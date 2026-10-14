@@ -94,8 +94,9 @@ class ImportBoutiquesTest extends TestCase
         // Journal : auteur, fichier, empreinte, nombre de boutiques ; fichier conservé hors du dossier public.
         $journal = AuditLog::query()->where('action', 'boutiques.importees')->sole();
         $this->assertSame($this->gestionnaire->id, $journal->acteur_id);
-        $this->assertSame(['fichier' => 'locaux.xlsx', 'empreinte' => hash_file('sha256', $fichier->getPathname()), 'creees' => 3, 'mises_a_jour' => 0], $journal->nouvelle_valeur);
-        $this->assertCount(1, Storage::disk('local')->allFiles('imports/boutiques/'.$this->site->id));
+        $this->assertSame(['fichier' => 'locaux.xlsx', 'empreinte' => hash_file('sha256', $fichier->getPathname()), 'creees' => 3, 'mises_a_jour' => 0, 'inchangees' => 0],
+            collect($journal->nouvelle_valeur)->except('chemin')->all());
+        $this->assertSame(Storage::disk('local')->allFiles('imports/boutiques/'.$this->site->id), [$journal->nouvelle_valeur['chemin']]);
 
         // Export dans le même format.
         $export = tempnam(sys_get_temp_dir(), 'export');

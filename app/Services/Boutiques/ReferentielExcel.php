@@ -57,6 +57,18 @@ class ReferentielExcel
         }, $nom, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
     }
 
+    /** Export de boutiques de plusieurs sites (liste filtrée du référencement), au même format. @param Collection<int, Boutique> $boutiques */
+    public function telechargerBoutiques(Collection $boutiques): StreamedResponse
+    {
+        $classeur = $this->classeur($boutiques);
+
+        return response()->streamDownload(function () use ($classeur) {
+            (new EcrivainXlsx($classeur))->save('php://output');
+            $classeur->disconnectWorksheets();
+        }, __('admin.sites.excel.nom_export', ['site' => __('admin.sites.excel.tous_sites'), 'date' => now()->format('Ymd')]),
+            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
     /** @param Collection<int, Boutique> $boutiques */
     private function classeur(Collection $boutiques): Spreadsheet
     {
@@ -339,13 +351,13 @@ class ReferentielExcel
      *
      * @throws RegleGestionException
      */
-    public function importer(AnalyseImport $analyse, User $auteur, string $nomFichier, string $empreinte): array
+    public function importer(AnalyseImport $analyse, User $auteur, string $nomFichier, string $empreinte, ?string $chemin = null): array
     {
         if (! $analyse->estValide()) {
             throw new RegleGestionException(__('admin.sites.excel.erreurs.non_valide'));
         }
 
-        return DB::transaction(function () use ($analyse, $auteur, $nomFichier, $empreinte) {
+        return DB::transaction(function () use ($analyse, $auteur, $nomFichier, $empreinte, $chemin) {
             $sites = Site::query()->whereIn('id', array_unique(array_column($analyse->lignes(), 'site_id')))->lockForUpdate()->get()->keyBy('id');
             foreach ($sites as $site) {
                 if (! $site->estModifiable()) {
@@ -355,7 +367,7 @@ class ReferentielExcel
 
             $comptes = [];
             foreach ($analyse->lignes() as $l) {
-                $comptes[$l['site_id']] ??= ['creees' => 0, 'mises_a_jour' => 0];
+                $comptes[$l['site_id']] ??= ['creees' => 0, 'mises_a_jour' => 0, 'inchangees' => 0];
                 if ($l['boutique_id'] === null) {
                     $sites[$l['site_id']]->boutiques()->create([...$l['donnees'], 'statut' => StatutBoutique::Disponible]);
                     $comptes[$l['site_id']]['creees']++;
@@ -367,12 +379,18 @@ class ReferentielExcel
                     throw new RegleGestionException(__('admin.sites.excel.erreurs.engagee', ['code' => $l['code'], 'statut' => mb_strtolower($boutique->statut->label())]));
                 }
                 // Le code ne change pas : seuls le type, la surface, la planche et les observations sont mis à jour.
-                $boutique->fill(collect($l['donnees'])->except(['niveau', 'bloc', 'numero'])->all())->save();
+                $boutique->fill(collect($l['donnees'])->except(['niveau', 'bloc', 'numero'])->all());
+                if (! $boutique->isDirty()) {
+                    $comptes[$l['site_id']]['inchangees']++;
+
+                    continue;
+                }
+                $boutique->save();
                 $comptes[$l['site_id']]['mises_a_jour']++;
             }
 
             foreach ($comptes as $siteId => $compte) {
-                $this->journal->ecrire($auteur, 'boutiques.importees', 'Site', $siteId, null, ['fichier' => $nomFichier, 'empreinte' => $empreinte, ...$compte]);
+                $this->journal->ecrire($auteur, 'boutiques.importees', 'Site', $siteId, null, ['fichier' => $nomFichier, 'empreinte' => $empreinte, 'chemin' => $chemin, ...$compte]);
             }
 
             return ['creees' => array_sum(array_column($comptes, 'creees')), 'mises_a_jour' => array_sum(array_column($comptes, 'mises_a_jour'))];

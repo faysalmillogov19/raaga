@@ -4,19 +4,23 @@ use App\Enums\Droit;
 use App\Http\Controllers\Admin\AppelsFondsController;
 use App\Http\Controllers\Admin\AssistanceController;
 use App\Http\Controllers\Admin\CampagnesBoutiquesController;
+use App\Http\Controllers\Admin\CapacitesController;
 use App\Http\Controllers\Admin\ConnexionController;
 use App\Http\Controllers\Admin\ConnexionsController;
 use App\Http\Controllers\Admin\ConventionsController;
 use App\Http\Controllers\Admin\DividendesController;
 use App\Http\Controllers\Admin\GrillesTarifairesController;
 use App\Http\Controllers\Admin\ImportBoutiquesController;
+use App\Http\Controllers\Admin\ImportsController;
 use App\Http\Controllers\Admin\ImportSitesController;
 use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
+use App\Http\Controllers\Admin\NiveauxZonesController;
 use App\Http\Controllers\Admin\PiecesKycController;
 use App\Http\Controllers\Admin\PlateformeController;
 use App\Http\Controllers\Admin\ProfilController;
+use App\Http\Controllers\Admin\ReferentielBoutiquesController;
 use App\Http\Controllers\Admin\RegistreAController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SitesController;
@@ -50,6 +54,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/invitation/{jeton}', [InvitationController::class, 'show'])->name('invitation');
     Route::post('/invitation/{jeton}', [InvitationController::class, 'store'])->middleware('throttle:10,1');
 
+    // Anciennes adresses du référentiel (avant le groupe « Référencement ») : redirection permanente.
+    Route::get('/sites/{chemin?}', function (?string $chemin = null) {
+        $chemin = (string) $chemin;
+        $nouveau = match (true) {
+            $chemin === '' => 'referencement/sites',
+            str_starts_with($chemin, 'types') => 'referencement/'.$chemin,
+            str_starts_with($chemin, 'excel/boutiques') => 'referencement/imports/boutiques'.substr($chemin, strlen('excel/boutiques')),
+            str_starts_with($chemin, 'excel') => 'referencement/imports/sites'.substr($chemin, strlen('excel')),
+            default => 'referencement/sites/'.$chemin,
+        };
+
+        return redirect(url('admin/'.$nouveau).(request()->getQueryString() ? '?'.request()->getQueryString() : ''), 301);
+    })->where('chemin', '.*');
+    Route::get('/boutiques/grilles/{chemin?}', fn (?string $chemin = null) => redirect(url('admin/referencement/grille'.($chemin ? '/'.$chemin : '')), 301))
+        ->where('chemin', '.*');
+
     Route::middleware('backoffice')->group(function () {
         Route::post('/deconnexion', [ConnexionController::class, 'destroy'])->name('deconnexion');
 
@@ -61,8 +81,31 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::post('/profil/mot-de-passe', [ProfilController::class, 'motDePasse'])->middleware('throttle:10,1')->name('profil.mot-de-passe');
 
+        // Référencement : niveaux et zones, boutiques de tous les sites, capacités prévues, imports.
+        Route::prefix('referencement')->name('referencement.')->group(function () {
+            Route::controller(NiveauxZonesController::class)->prefix('niveaux-zones')->name('zones')->group(function () {
+                Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
+                Route::post('/', 'store')->middleware('can:'.Droit::SitesGerer->value)->name('.store');
+                Route::put('/{zone}', 'update')->whereNumber('zone')->middleware('can:'.Droit::SitesGerer->value)->name('.update');
+                Route::post('/{zone}/activer', 'activer')->whereNumber('zone')->middleware('can:'.Droit::SitesGerer->value)->name('.activer');
+                Route::post('/{zone}/desactiver', 'desactiver')->whereNumber('zone')->middleware('can:'.Droit::SitesGerer->value)->name('.desactiver');
+                Route::delete('/{zone}', 'destroy')->whereNumber('zone')->middleware('can:'.Droit::SitesGerer->value)->name('.destroy');
+                Route::post('/{zone}/confirmer', 'confirmer')->whereNumber('zone')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
+                Route::post('/{zone}/rejeter', 'rejeter')->whereNumber('zone')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
+            });
+            Route::controller(ReferentielBoutiquesController::class)->prefix('boutiques')->name('boutiques')->middleware('can:'.Droit::SitesVoir->value)->group(function () {
+                Route::get('/', 'index');
+                Route::get('/export', 'exporter')->name('.export');
+                Route::get('/{boutique}', 'show')->whereNumber('boutique')->name('.show');
+            });
+            Route::get('/capacites', [CapacitesController::class, 'index'])->middleware('can:'.Droit::SitesVoir->value)->name('capacites');
+            Route::get('/imports', [ImportsController::class, 'index'])->middleware('can:'.Droit::ImportsVoir->value)->name('imports');
+            Route::get('/imports/{journal}/fichier', [ImportsController::class, 'fichier'])->whereNumber('journal')->middleware('can:'.Droit::ImportsVoir->value)->name('imports.fichier');
+            Route::post('/imports/boutiques-site', [ImportBoutiquesController::class, 'deposerPourSite'])->middleware(['can:'.Droit::SitesGerer->value, 'throttle:20,1'])->name('imports.boutiques-site');
+        });
+
         // Types de boutiques : GESTIONNAIRE DES SITES ET BOUTIQUES gère, VALIDATEUR valide, autres profils en lecture.
-        Route::controller(TypesBoutiqueController::class)->prefix('sites/types')->name('sites.types')->group(function () {
+        Route::controller(TypesBoutiqueController::class)->prefix('referencement/types')->name('sites.types')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
             Route::post('/', 'store')->middleware('can:'.Droit::SitesGerer->value)->name('.store');
             Route::get('/{type}', 'show')->whereNumber('type')->middleware('can:'.Droit::SitesVoir->value)->name('.show');
@@ -77,7 +120,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Sites et boutiques (référentiel, en amont des campagnes) : GESTIONNAIRE DES SITES ET BOUTIQUES saisit, VALIDATEUR confirme.
-        Route::controller(SitesController::class)->prefix('sites')->name('sites')->group(function () {
+        Route::controller(SitesController::class)->prefix('referencement/sites')->name('sites')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
             Route::get('/creer', 'create')->middleware('can:'.Droit::SitesGerer->value)->name('.create');
             Route::post('/', 'store')->middleware('can:'.Droit::SitesGerer->value)->name('.store');
@@ -96,7 +139,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Sites et capacités prévues en Excel : modèle, export, import avec aperçu puis confirmation (GESTIONNAIRE).
-        Route::controller(ImportSitesController::class)->prefix('sites/excel')->middleware('can:'.Droit::SitesGerer->value)->name('sites.excel.')->group(function () {
+        Route::controller(ImportSitesController::class)->prefix('referencement/imports/sites')->middleware('can:'.Droit::SitesGerer->value)->name('sites.excel.')->group(function () {
             Route::get('/modele', 'modele')->name('modele');
             Route::get('/export', 'exporter')->name('export');
             Route::post('/import', 'deposer')->middleware('throttle:20,1')->name('deposer');
@@ -106,7 +149,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Boutiques de plusieurs sites existants en un fichier (import combiné ; ne crée jamais de site).
-        Route::controller(ImportBoutiquesController::class)->prefix('sites/excel/boutiques')->middleware('can:'.Droit::SitesGerer->value)->name('sites.boutiques-excel.')->group(function () {
+        Route::controller(ImportBoutiquesController::class)->prefix('referencement/imports/boutiques')->middleware('can:'.Droit::SitesGerer->value)->name('sites.boutiques-excel.')->group(function () {
             Route::get('/modele', 'modeleCombine')->name('modele');
             Route::post('/import', 'deposerCombine')->middleware('throttle:20,1')->name('deposer');
             Route::get('/import', 'apercuCombine')->name('apercu');
@@ -115,7 +158,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Référentiel des boutiques d'un site en Excel : modèle, export, import avec aperçu puis confirmation (GESTIONNAIRE).
-        Route::controller(ImportBoutiquesController::class)->prefix('sites/{site}')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('sites.')->group(function () {
+        Route::controller(ImportBoutiquesController::class)->prefix('referencement/sites/{site}')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('sites.')->group(function () {
             Route::get('/excel/modele', 'modele')->name('modele');
             Route::get('/excel/export', 'exporter')->name('export');
             Route::post('/excel/import', 'deposer')->middleware('throttle:20,1')->name('import.deposer');
@@ -125,9 +168,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Grilles tarifaires des boutiques (une par site) : RÉGULATEUR saisit et soumet, VALIDATEUR confirme.
-        Route::controller(GrillesTarifairesController::class)->prefix('boutiques/grilles')->name('boutiques.grilles')->group(function () {
-            Route::get('/', 'index')->middleware('can:'.Droit::BoutiquesVoir->value);
-            Route::get('/{site}', 'show')->whereNumber('site')->middleware('can:'.Droit::BoutiquesVoir->value)->name('.show');
+        Route::controller(GrillesTarifairesController::class)->prefix('referencement/grille')->name('boutiques.grilles')->group(function () {
+            Route::get('/', 'index')->middleware('can:'.Droit::GrilleVoir->value);
+            Route::get('/{site}', 'show')->whereNumber('site')->middleware('can:'.Droit::GrilleVoir->value)->name('.show');
             Route::get('/{site}/modifier', 'edit')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.edit');
             Route::put('/{site}', 'update')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.update');
             Route::post('/{site}/soumettre', 'soumettre')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.soumettre');

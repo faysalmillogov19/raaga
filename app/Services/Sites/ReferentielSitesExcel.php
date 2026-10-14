@@ -127,7 +127,7 @@ class ReferentielSitesExcel
         $this->liste($s, $colS('phase'), $finS, '"'.implode(',', array_map(fn (PhaseSite $p) => $p->label(), PhaseSite::cases())).'"');
         $this->liste($c, $cA, $finC, "{$onglet}!\${$A}\$2:\${$A}\${$finS}");
         $this->liste($c, $cB, $finC, '"'.implode(',', array_map(fn (NiveauBoutique $n) => $n->value, NiveauBoutique::cases())).'"');
-        $this->liste($c, $cC, $finC, '"'.ZoneSite::query()->orderBy('id')->pluck('code')->implode(',').'"');
+        $this->liste($c, $cC, $finC, '"'.ZoneSite::query()->utilisables()->orderBy('id')->pluck('code')->implode(',').'"');
         $this->liste($c, $cD, $finC, '"'.TypeBoutique::query()->utilisables()->whereNotNull('code')->orderBy('ordre')->pluck('code')->implode(',').'"');
         $classeur->setActiveSheetIndex(0);
 
@@ -296,7 +296,8 @@ class ReferentielSitesExcel
         $e = __('admin.sites.import.erreurs');
         $onglet = self::ONGLET_CAPACITES;
         $types = TypeBoutique::query()->get();
-        $zones = ZoneSite::query()->pluck('code')->all();
+        $zones = ZoneSite::query()->get()->keyBy('code');
+        $zonesUtilisables = $zones->filter->estUtilisable()->keys()->all();
         $codesFichier = array_keys($analyse->sites());
         $enBase = Site::query()->whereIn('code', collect($lignes)->pluck('site')->filter()->map(fn ($c) => mb_strtoupper((string) $c)))->get()->keyBy('code');
         $vus = [];
@@ -321,8 +322,10 @@ class ReferentielSitesExcel
                 $err('niveau', $e['valeur'], ['valeurs' => implode(', ', array_map(fn ($n) => $n->value, NiveauBoutique::cases()))]);
             }
             $zone = $v['zone'] === null ? null : mb_strtoupper((string) $v['zone']);
-            if ($zone !== null && ! in_array($zone, $zones, true)) {
-                $err('zone', $e['valeur'], ['valeurs' => implode(', ', $zones)]);
+            if ($zone !== null && ! isset($zones[$zone])) {
+                $err('zone', $e['valeur'], ['valeurs' => implode(', ', $zonesUtilisables)]);
+            } elseif ($zone !== null && ! $zones[$zone]->estUtilisable()) {
+                $err('zone', __('admin.zones.regles.inutilisable', ['code' => $zone]));
             }
             $type = $v['type'] === null ? null : $types->first(fn (TypeBoutique $t) => ($t->code !== null && mb_strtoupper((string) $v['type']) === $t->code)
                 || mb_strtolower((string) $v['type']) === mb_strtolower($t->libelle));
@@ -376,14 +379,14 @@ class ReferentielSitesExcel
      *
      * @throws RegleGestionException
      */
-    public function importer(AnalyseImportSites $analyse, User $auteur, string $nomFichier, string $empreinte): array
+    public function importer(AnalyseImportSites $analyse, User $auteur, string $nomFichier, string $empreinte, ?string $chemin = null): array
     {
         if (! $analyse->estValide()) {
             throw new RegleGestionException(__('admin.sites.import.erreurs.non_valide'));
         }
 
-        return DB::transaction(function () use ($analyse, $auteur, $nomFichier, $empreinte) {
-            $compte = ['sites_crees' => 0, 'sites_mis_a_jour' => 0, 'capacites' => 0];
+        return DB::transaction(function () use ($analyse, $auteur, $nomFichier, $empreinte, $chemin) {
+            $compte = ['sites_crees' => 0, 'sites_mis_a_jour' => 0, 'sites_inchanges' => 0, 'capacites' => 0];
             $sites = [];
             foreach ($analyse->sites() as $code => $s) {
                 if ($s['site_id'] === null) {
@@ -394,8 +397,14 @@ class ReferentielSitesExcel
                 }
                 $site = Site::query()->lockForUpdate()->findOrFail($s['site_id']);
                 $this->exigerModifiable($site);
-                $site->fill(collect($s['donnees'])->except('code')->all())->save(); // Le code d'un site existant ne change jamais.
+                $site->fill(collect($s['donnees'])->except('code')->all()); // Le code d'un site existant ne change jamais.
                 $sites[$code] = $site;
+                if (! $site->isDirty()) {
+                    $compte['sites_inchanges']++;
+
+                    continue;
+                }
+                $site->save();
                 $compte['sites_mis_a_jour']++;
             }
 
@@ -409,7 +418,7 @@ class ReferentielSitesExcel
                 }
             }
 
-            $this->journal->ecrire($auteur, 'sites.importes', 'Site', null, null, ['fichier' => $nomFichier, 'empreinte' => $empreinte, ...$compte]);
+            $this->journal->ecrire($auteur, 'sites.importes', 'Site', null, null, ['fichier' => $nomFichier, 'empreinte' => $empreinte, 'chemin' => $chemin, ...$compte]);
 
             return $compte;
         });

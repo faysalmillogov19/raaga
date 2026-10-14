@@ -107,7 +107,10 @@ class SitesTest extends TestCase
     {
         $site = $this->siteAvecBoutiques();
 
-        foreach ([$this->regulateur, User::factory()->role(Role::SuperAdmin)->create(), User::factory()->role(Role::Admin)->create()] as $profil) {
+        // L'ADMIN (support) n'a pas accès au référencement.
+        $this->en(User::factory()->role(Role::Admin)->create())->get(route('admin.sites'))->assertForbidden();
+
+        foreach ([$this->regulateur, User::factory()->role(Role::SuperAdmin)->create()] as $profil) {
             $this->en($profil)->get(route('admin.sites'))->assertOk();
             $this->en($profil)->get(route('admin.sites.show', $site))->assertOk()->assertSee('RAA-R1-A-001');
             $this->en($profil)->get(route('admin.sites.create'))->assertForbidden();

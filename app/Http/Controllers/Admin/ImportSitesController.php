@@ -85,7 +85,7 @@ class ImportSitesController extends Controller
 
         // Nouvelle analyse : un site a pu être soumis ou confirmé depuis l'aperçu.
         try {
-            $compte = $this->excel->importer($this->excel->analyser($this->chemin($depot)), $request->user(), $depot['nom'], $depot['empreinte']);
+            $compte = $this->excel->importer($this->excel->analyser($this->chemin($depot)), $request->user(), $depot['nom'], $depot['empreinte'], $depot['chemin']);
         } catch (RegleGestionException $e) {
             return redirect()->route('admin.sites.excel.apercu')->with('erreur', $e->getMessage());
         }

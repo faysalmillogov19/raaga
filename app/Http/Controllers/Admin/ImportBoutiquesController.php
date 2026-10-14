@@ -49,6 +49,15 @@ class ImportBoutiquesController extends Controller
         return $this->exigerModifiable($site) ?? $this->depot($request, $site);
     }
 
+    /** Depuis l'onglet « Imports » : le site est choisi dans la liste, puis l'import suit le circuit de sa fiche. */
+    public function deposerPourSite(Request $request): RedirectResponse
+    {
+        Gate::authorize(Droit::SitesGerer->value);
+        $site = Site::query()->findOrFail($request->validate(['site_id' => ['required', 'integer']], [], ['site_id' => __('admin.imports.site')])['site_id']);
+
+        return $this->deposer($request, $site);
+    }
+
     public function apercu(Request $request, Site $site): View|RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
@@ -160,7 +169,7 @@ class ImportBoutiquesController extends Controller
 
         // Le fichier est analysé de nouveau : l'état des sites et des boutiques a pu changer depuis l'aperçu.
         try {
-            $compte = $this->excel->importer($this->excel->analyser($site, $this->chemin($depot)), $request->user(), $depot['nom'], $depot['empreinte']);
+            $compte = $this->excel->importer($this->excel->analyser($site, $this->chemin($depot)), $request->user(), $depot['nom'], $depot['empreinte'], $depot['chemin']);
         } catch (RegleGestionException $e) {
             return ($site ? redirect()->route('admin.sites.import', $site) : redirect()->route('admin.sites.boutiques-excel.apercu'))->with('erreur', $e->getMessage());
         }

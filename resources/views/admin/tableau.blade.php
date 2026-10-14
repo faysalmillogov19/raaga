@@ -5,6 +5,10 @@
         <p class="texte-carte mt-3">{{ __('admin.tableau.a_venir') }}</p>
     </div>
 
+    @can(\App\Enums\Droit::SitesGerer->value)
+        @include('admin._tableau-referencement')
+    @endcan
+
     @canany([\App\Enums\Droit::ConventionsVoir->value, \App\Enums\Droit::RegistreAVoir->value])
         @php
             $objectifA = \App\Services\Institutionnels\RegistreA::objectifEngagements();

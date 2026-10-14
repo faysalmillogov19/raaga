@@ -4,6 +4,7 @@
     $user = Auth::user();
     $role = $user->codeRole();
     $menu = \App\Support\MenuBackoffice::pour($user);
+    $badges = \App\Support\MenuBackoffice::badges($user);
 @endphp
 
 <!DOCTYPE html>
@@ -35,12 +36,15 @@
                     <p class="bo-groupe">{{ __('admin.groupes.'.$groupe) }}</p>
                     <ul>
                         @foreach ($entrees as $entree)
-                            @php($actif = request()->routeIs($entree['route'], $entree['route'].'.*'))
+                            @php($actif = \App\Support\MenuBackoffice::estActive($entree))
                             <li>
                                 <a href="{{ route($entree['route']) }}" @class(['bo-lien', 'bo-lien-actif' => $actif])
                                    @if ($actif) aria-current="page" @endif title="{{ __('admin.menu.'.$entree['cle']) }}">
                                     <x-admin.icone :nom="$entree['icone']" />
                                     <span class="bo-lien-texte">{{ __('admin.menu.'.$entree['cle']) }}</span>
+                                    @if ($badges[$entree['cle']] ?? 0)
+                                        <span class="bo-badge ml-auto" title="{{ trans_choice('admin.a_traiter', $badges[$entree['cle']], ['n' => $badges[$entree['cle']]]) }}">{{ $badges[$entree['cle']] }}<span class="sr-only"> {{ trans_choice('admin.a_traiter', $badges[$entree['cle']], ['n' => $badges[$entree['cle']]]) }}</span></span>
+                                    @endif
                                 </a>
                             </li>
                         @endforeach

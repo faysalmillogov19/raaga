@@ -3,7 +3,17 @@
 namespace App\Support;
 
 use App\Enums\Droit;
+use App\Enums\StatutBoutique;
+use App\Enums\StatutGrilleTarifaire;
+use App\Enums\StatutSite;
+use App\Enums\StatutTypeBoutique;
+use App\Models\Boutique;
+use App\Models\CapaciteSite;
+use App\Models\GrilleTarifaire;
+use App\Models\Site;
+use App\Models\TypeBoutique;
 use App\Models\User;
+use App\Models\ZoneSite;
 
 /**
  * Menu de la barre latérale du back-office. Chaque entrée est protégée par un droit :
@@ -26,10 +36,21 @@ final class MenuBackoffice
             'pilotage' => [
                 ['cle' => 'tableau', 'route' => 'admin.tableau', 'droit' => Droit::TableauDeBordVoir, 'icone' => 'tableau', 'etape' => 1],
                 ['cle' => 'tranches', 'route' => 'admin.tranches', 'droit' => Droit::TranchesVoir, 'icone' => 'tranches', 'etape' => 3, 'masque_si' => $parametres],
-                ['cle' => 'sites', 'route' => 'admin.sites', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
                 ['cle' => 'simulations', 'route' => 'admin.simulations', 'droit' => Droit::SimulationsVoir, 'icone' => 'simulations', 'etape' => 4, 'masque_si' => $parametres],
+            ],
+            // Référencement des sites et des boutiques (GESTIONNAIRE DES SITES ET BOUTIQUES, RÉGULATEUR pour la grille).
+            'referencement' => [
+                ['cle' => 'sites', 'route' => 'admin.sites', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
+                    'exclure' => ['admin.sites.types', 'admin.sites.types.*', 'admin.sites.excel.*', 'admin.sites.boutiques-excel.*']],
+                ['cle' => 'types', 'route' => 'admin.sites.types', 'droit' => Droit::SitesVoir, 'icone' => 'referentiels', 'etape' => 0],
+                ['cle' => 'niveaux_zones', 'route' => 'admin.referencement.zones', 'droit' => Droit::SitesVoir, 'icone' => 'tranches', 'etape' => 0],
+                ['cle' => 'boutiques_referentiel', 'route' => 'admin.referencement.boutiques', 'droit' => Droit::SitesVoir, 'icone' => 'boutiques', 'etape' => 0],
+                ['cle' => 'capacites', 'route' => 'admin.referencement.capacites', 'droit' => Droit::SitesVoir, 'icone' => 'simulations', 'etape' => 0],
+                ['cle' => 'grille', 'route' => 'admin.boutiques.grilles', 'droit' => Droit::GrilleVoir, 'icone' => 'dividendes', 'etape' => 0],
+                ['cle' => 'imports', 'route' => 'admin.referencement.imports', 'droit' => Droit::ImportsVoir, 'icone' => 'registre', 'etape' => 0,
+                    'inclure' => ['admin.sites.excel.*', 'admin.sites.boutiques-excel.*']],
             ],
             'support' => [
                 ['cle' => 'assistance', 'route' => 'admin.assistance', 'droit' => Droit::AssistanceVoir, 'icone' => 'assistance', 'etape' => 1, 'module' => 'admin'],
@@ -79,6 +100,52 @@ final class MenuBackoffice
                 && ! (isset($e['masque_si']) && $user->can($e['masque_si']->value)))),
             self::definition(),
         ));
+    }
+
+    /** L'entrée est-elle celle de la page affichée ? (route et sous-routes, moins les exclusions, plus les inclusions) */
+    public static function estActive(array $entree): bool
+    {
+        return (request()->routeIs($entree['route'], $entree['route'].'.*') && ! request()->routeIs(...($entree['exclure'] ?? ['-'])))
+            || request()->routeIs(...($entree['inclure'] ?? ['-']));
+    }
+
+    /**
+     * Nombre d'éléments à traiter par le profil connecté, par entrée du menu (badge) ; absent : pas de badge.
+     *
+     * @return array<string, int>
+     */
+    public static function badges(User $user): array
+    {
+        $valide = $user->can(Droit::SitesConfirmer->value);
+        $gere = $user->can(Droit::SitesGerer->value);
+
+        return array_filter([
+            // VALIDATEUR : sites soumis ; GESTIONNAIRE : sites rejetés à reprendre.
+            'sites' => match (true) {
+                $valide => Site::query()->where('statut', StatutSite::Soumis)->count(),
+                $gere => Site::query()->where('statut', StatutSite::Brouillon)->whereNotNull('motif_rejet')->count(),
+                default => 0,
+            },
+            'types' => match (true) {
+                $valide => TypeBoutique::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('attribuable_demande'))->count(),
+                $gere => TypeBoutique::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
+                default => 0,
+            },
+            'niveaux_zones' => match (true) {
+                $valide => ZoneSite::query()->where('statut', StatutTypeBoutique::AValider)->count(),
+                $gere => ZoneSite::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
+                default => 0,
+            },
+            // GESTIONNAIRE : boutiques sans niveau (à compléter avant soumission) et capacités incomplètes.
+            'boutiques_referentiel' => $gere ? Boutique::query()->whereNull('niveau')->where('statut', '!=', StatutBoutique::Retiree)->count() : 0,
+            'capacites' => $gere ? CapaciteSite::query()->whereNull('nombre_prevu')->whereNull('surface_totale')->count() : 0,
+            // RÉGULATEUR : grilles en brouillon ; VALIDATEUR : grilles soumises.
+            'grille' => match (true) {
+                $user->can(Droit::BoutiquesConfirmer->value) => GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Soumis)->count(),
+                $user->can(Droit::BoutiquesSaisir->value) => GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Brouillon)->count(),
+                default => 0,
+            },
+        ]);
     }
 
     /**

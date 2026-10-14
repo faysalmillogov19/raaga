@@ -34,7 +34,7 @@ class GrillesTarifairesController extends Controller
 
     public function index(): View
     {
-        Gate::authorize(Droit::BoutiquesVoir->value);
+        Gate::authorize(Droit::GrilleVoir->value);
 
         return view('admin.grilles.index', [
             'sites' => Site::query()->confirmes()->with('grilleTarifaire')->orderBy('nom')->get(),
@@ -43,7 +43,7 @@ class GrillesTarifairesController extends Controller
 
     public function show(Site $site): View
     {
-        Gate::authorize(Droit::BoutiquesVoir->value);
+        Gate::authorize(Droit::GrilleVoir->value);
         $grille = $site->grilleTarifaire;
         $versions = $grille?->versions()->with('auteur')->get() ?? collect();
         $soumise = $versions->last();
