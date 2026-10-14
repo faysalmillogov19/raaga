@@ -36,6 +36,7 @@ class ParametresPlateformeTest extends TestCase
                 'messageHorsHoraires' => 'Laissez un message.'],
             'siege' => ['adresseSiege' => "Avenue Kwame N'Krumah\nOuagadougou", 'boitePostale' => '01 BP 1000',
                 'coordonneesGps' => ['latitude' => '12.37', 'longitude' => '-1.52'], 'lienCarte' => 'https://maps.example.org/raaga'],
+            'site_public' => [],
             'contacts_specialises' => ['contactFraude' => ['libelle' => 'Signaler une fraude', 'nom' => 'Cellule fraude', 'telephone' => '+22625300001', 'email' => 'fraude@raaga.example.bf', 'afficher' => '1']],
             'mentions' => ['denominationSociale' => 'Raaga SA', 'formeJuridique' => 'Société anonyme', 'capitalSocial' => '10000000000', 'rccm' => 'BF-OUA-2026-B-0001',
                 'ifu' => '00012345X', 'directeurPublication' => ['nom' => 'A. SAWADOGO', 'fonction' => 'Directrice générale']],

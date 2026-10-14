@@ -25,6 +25,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="{{ asset('images/og-raaga.png') }}">
 
+    {{ $head ?? '' }}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased">

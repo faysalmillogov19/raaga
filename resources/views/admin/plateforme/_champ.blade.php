@@ -63,6 +63,14 @@
             </div>
             @break
 
+        @case('photo')
+            <label for="{{ $id }}">{{ $libelle }}</label>
+            <div class="flex flex-wrap items-center gap-3">
+                <img src="{{ \App\Support\BanniereAccueil::url(640) }}" alt="" class="h-20 w-auto rounded border border-ligne" loading="lazy">
+                <input id="{{ $id }}" name="{{ $champ }}" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" @class(['champ', 'est-invalide' => $invalide])>
+            </div>
+            @break
+
         @case('horaires')
             <fieldset>
                 <legend class="font-bold text-encre">{{ $libelle }}</legend>

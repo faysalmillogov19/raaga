@@ -6,6 +6,7 @@ use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Plateforme\ParametresPlateforme;
+use App\Support\BanniereAccueil;
 use App\Support\Plateforme\Catalogue;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -71,6 +72,10 @@ class PlateformeController extends Controller
             if ($type === 'image' && $request->hasFile($champ)) {
                 $valeurs[$champ] = $this->deposerImage($request->file($champ), $champ);
             }
+            // Photo (bannière d'accueil) : déclinée en WebP à 640, 1280 et 1920 px.
+            if ($type === 'photo' && $request->hasFile($champ)) {
+                $valeurs[$champ] = BanniereAccueil::deposer($request->file($champ));
+            }
         }
 
         $titre = __('admin.plateforme.sections.'.$section);
@@ -133,6 +138,7 @@ class PlateformeController extends Controller
                 'tel_intl' => ["{$champ}.regex" => $e('tel_intl')],
                 'expediteur' => ["{$champ}.regex" => $e('expediteur')],
                 'image' => ["{$champ}.*" => $e('armoiries')],
+                'photo' => ["{$champ}.*" => $e('photo')],
                 'reseaux', 'liens' => ["{$champ}.*.url.url" => $e('https'), "{$champ}.*.url.regex" => $e('https')],
                 'bandeau' => ["{$champ}.lien.url" => $e('https'), "{$champ}.lien.regex" => $e('https'), "{$champ}.fin.after" => $e('fin_apres_debut')],
                 'horaires' => ["{$champ}.fin.after" => $e('fin_apres_debut')],

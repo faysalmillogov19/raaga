@@ -23,6 +23,7 @@ final class Catalogue
         'reseaux' => true,
         'projet' => false,
         'messages' => true,
+        'site_public' => true,
     ];
 
     /** Champs dont la modification demande une confirmation (affichés partout : site, SMS, PDF). */
@@ -35,6 +36,9 @@ final class Catalogue
     public const COULEURS = ['vert', 'jaune', 'gris'];
 
     public const TYPES_BANDEAU = ['information', 'alerte', 'maintenance'];
+
+    /** Taille maximale d'une photo déposée (Ko) : bannière d'accueil. */
+    public const PHOTO_MAX_KO = 5120;
 
     /** Taille maximale des armoiries (Ko). */
     public const ARMOIRIES_MAX_KO = 500;
@@ -108,6 +112,9 @@ final class Catalogue
                 'modeMaintenance' => ['maintenance'],
                 'messageAntiFraude' => ['texte_long', 250],
             ],
+            'site_public' => [
+                'banniereAccueil' => ['photo'],
+            ],
         ];
     }
 
@@ -176,6 +183,7 @@ final class Catalogue
                 'tel_intl' => [$champ => ['nullable', 'regex:/^\+\s*[1-9](\s*\d){7,14}$/']],
                 'expediteur' => [$champ => ['nullable', 'regex:/^[A-Za-z0-9]{1,11}$/']],
                 'image' => [$champ => ['nullable', 'file', 'mimes:svg,png', 'max:'.self::ARMOIRIES_MAX_KO]],
+                'photo' => [$champ => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:'.self::PHOTO_MAX_KO, 'dimensions:min_width=640']],
                 'entier' => [$champ => ['nullable', 'integer', 'min:0', 'max:9000000000000000']],
                 'horaires' => [
                     "{$champ}.jours" => ['nullable', 'array'],
@@ -272,7 +280,7 @@ final class Catalogue
                 'expediteur' => $texte($v),
                 'tel_bf' => ($c = Telephone::chiffresLocaux((string) $v)) === '' ? null : '+226'.$c,
                 'tel_intl' => $intl($v),
-                'image' => $actuelles[$champ] ?? null,
+                'image', 'photo' => $actuelles[$champ] ?? null,
                 'entier' => $entier($v),
                 'horaires' => [
                     'jours' => array_values(array_intersect(self::JOURS, (array) ($v['jours'] ?? []))),

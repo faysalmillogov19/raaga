@@ -28,9 +28,8 @@ class Phase1BoutiquesTest extends TestCase
     public function test_l_accueil_est_centre_sur_les_boutiques(): void
     {
         $page = $this->get('/')->assertOk()
-            ->assertSee('Obtenez une boutique dans le futur marché Raaga')
-            ->assertSee('Attribution 2027')
-            ->assertSee('boutiques à attribuer')->assertSee('Petite boutique')->assertSee("150\u{00A0}000\u{00A0}FCFA")
+            ->assertSee('Votre boutique au marché Raaga')->assertSee('Candidatures ouvertes jusqu’au', false)
+            ->assertSee('Je candidate')->assertSee('boutiques référencées')
             ->assertSee('L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique.')
             ->assertDontSee('J’investis');
 

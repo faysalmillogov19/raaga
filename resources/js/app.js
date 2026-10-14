@@ -609,6 +609,58 @@ document.addEventListener('click', async (evenement) => {
     }
 });
 
+/*
+ * Accueil public : apparition douce des sections au défilement et comptage animé des chiffres clés
+ * (IntersectionObserver, sans bibliothèque). Rien n'est animé si l'utilisateur réduit les animations.
+ */
+(() => {
+    const sections = document.querySelectorAll('[data-apparition]');
+    const compteurs = document.querySelectorAll('[data-compteur]');
+    if ((!sections.length && !compteurs.length) || !('IntersectionObserver' in window)) {
+        return;
+    }
+    const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.documentElement.classList.add('js');
+
+    const apparition = new IntersectionObserver((entrees) => {
+        entrees.forEach((entree) => {
+            if (entree.isIntersecting) {
+                entree.target.classList.add('est-visible');
+                apparition.unobserve(entree.target);
+            }
+        });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    sections.forEach((section) => apparition.observe(section));
+
+    if (reduit) {
+        return;
+    }
+    const format = new Intl.NumberFormat('fr-FR');
+    const compter = (element) => {
+        const cible = Number(element.dataset.compteur);
+        const debut = performance.now();
+        const duree = 1200;
+        const pas = (instant) => {
+            const t = Math.min(1, (instant - debut) / duree);
+            const valeur = Math.round(cible * (1 - (1 - t) ** 3));
+            element.textContent = format.format(valeur).replace(/ /g, ' ');
+            if (t < 1) {
+                requestAnimationFrame(pas);
+            }
+        };
+        requestAnimationFrame(pas);
+    };
+    const comptage = new IntersectionObserver((entrees) => {
+        entrees.forEach((entree) => {
+            if (entree.isIntersecting) {
+                compter(entree.target);
+                comptage.unobserve(entree.target);
+            }
+        });
+    });
+    compteurs.forEach((compteur) => comptage.observe(compteur));
+})();
+
 window.Alpine = Alpine;
 
 Alpine.start();

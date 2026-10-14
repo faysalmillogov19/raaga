@@ -2,27 +2,37 @@
 
 namespace App\Http\Controllers\Publique;
 
-use App\Enums\StatutCampagneBoutiques;
 use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
 use App\Services\Boutiques\CandidatureBoutiques;
+use App\Services\Publique\AccueilBoutiques;
 use App\Services\Publique\CollectePublique;
 use App\Support\Phase;
 use Illuminate\View\View;
 
 class AccueilController extends Controller
 {
-    public function __invoke(CollectePublique $collecte): View
+    /** Questions de la FAQ « Boutiques et cautions » mises en avant sur l'accueil (les plus utiles). */
+    private const QUESTIONS_ACCUEIL = [0, 1, 2, 4, 5];
+
+    public function __invoke(CollectePublique $collecte, AccueilBoutiques $accueil): View
     {
-        // Phase 1 : accueil centré sur la campagne d'attribution des boutiques.
+        // Phase 1 : accueil centré sur les boutiques (chiffres, étapes, versements, sites, questions, aide).
         if (! Phase::actionsPubliques()) {
-            $campagne = CampagneBoutiques::ouverte()
-                ?? CampagneBoutiques::query()->whereIn('statut', [StatutCampagneBoutiques::Cloturee, StatutCampagneBoutiques::Tiree, StatutCampagneBoutiques::Attribuee])->latest('cloturee_le')->first();
+            $campagne = CampagneBoutiques::ouverte();
+            $questions = __('public.faq.groupes.boutiques.questions');
 
             return view('public.accueil-boutiques', [
-                'campagne' => $campagne?->load('categories.site'),
+                'campagne' => $campagne,
                 'ouverte' => $campagne && CandidatureBoutiques::accepteCandidatures($campagne),
-                'questions' => array_slice(__('public.faq.groupes.boutiques.questions'), 0, 4),
+                'chiffres' => $accueil->chiffres(),
+                'durees' => $accueil->durees(),
+                'sites' => $accueil->sites(),
+                'questions' => array_values(array_filter(array_map(fn (int $i) => $questions[$i] ?? null, self::QUESTIONS_ACCUEIL))),
+                // Campagne ouverte : candidature (après connexion) ; sinon, la page des boutiques ou la création de compte.
+                'urlCandidater' => $campagne && CandidatureBoutiques::accepteCandidatures($campagne)
+                    ? (auth()->check() ? route('boutiques.candidater') : route('inscription'))
+                    : (auth()->check() ? route('boutiques') : route('inscription')),
             ]);
         }
 

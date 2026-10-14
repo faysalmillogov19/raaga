@@ -387,6 +387,7 @@ return [
             'reseaux' => 'Réseaux sociaux et liens officiels',
             'projet' => 'Chiffres de présentation du projet',
             'messages' => 'Messages de service',
+            'site_public' => 'Site public',
         ],
         'onglets' => ['parametres' => 'Paramètres', 'historique' => 'Historique'],
         'lecture_seule' => 'Modifiable par un SUPER_ADMIN',
@@ -470,6 +471,7 @@ return [
             'bandeauAnnonce' => 'Bandeau d’annonce',
             'modeMaintenance' => 'Mode maintenance',
             'messageAntiFraude' => 'Message anti-fraude',
+            'banniereAccueil' => 'Image de la bannière d’accueil',
         ],
         'sous_champs' => [
             'jours' => 'Jours',
@@ -530,6 +532,7 @@ return [
             'bandeauAnnonce' => '200 caractères au plus. Sans dates, le bandeau s’affiche dès l’enregistrement et jusqu’à ce que le texte soit vidé.',
             'modeMaintenance' => 'Le site public affiche la page de maintenance ; le back-office reste accessible.',
             'messageAntiFraude' => 'Pied de page, FAQ, page de connexion. 250 caractères au plus.',
+            'banniereAccueil' => 'Photo du marché, en largeur (JPEG, PNG ou WebP, 1920 px de large conseillés, 5 Mo au plus). Déclinée automatiquement en WebP pour les téléphones.',
         ],
         'erreurs' => [
             'https' => 'L’adresse doit commencer par https://.',
@@ -537,6 +540,7 @@ return [
             'tel_intl' => 'Saisissez un numéro au format international, par exemple +226 25 30 00 00.',
             'expediteur' => '11 lettres ou chiffres au plus, sans espace ni accent.',
             'armoiries' => 'Fichier SVG ou PNG de 500 Ko au plus.',
+            'photo' => 'Photo JPEG, PNG ou WebP de 5 Mo au plus, d’au moins 640 px de large.',
             'non_enregistre' => 'Rien n’a été enregistré : corrigez les champs signalés en rouge ci-dessous.',
             'armoiries_refusees' => 'Les armoiries n’ont pas été remplacées. Choisissez de nouveau le fichier (SVG ou PNG, 500 Ko au plus) avant d’enregistrer.',
             'financement_total' => 'Le total de la répartition (:total) doit être égal au coût total du projet (:cout).',
