@@ -124,6 +124,29 @@ class BoutiquesHorsFicheSiteTest extends TestCase
         $this->assertSame(1, $this->confirme->boutiques()->count());
     }
 
+    public function test_boutons_icones_voir_modifier_supprimer_dans_les_listes(): void
+    {
+        $libre = $this->brouillon->boutiques()->create(['niveau' => 'R1', 'bloc' => 'A', 'numero' => '007', 'surface' => 9,
+            'type_boutique_id' => $this->type->id, 'statut' => StatutBoutique::Disponible]);
+        $page = $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques'))->assertOk();
+        $page->assertSee(route('admin.referencement.boutiques.show', $libre))->assertSee(route('admin.referencement.boutiques.edit', $libre))
+            ->assertSee(route('admin.referencement.boutiques.destroy', $libre))->assertSee('aria-label="Supprimer RAA-R1-A-007"', false);
+        // Boutique d'un site confirmé : consultable, modification et suppression inactives avec leur motif.
+        $figee = $this->confirme->boutiques()->sole();
+        $page->assertSee(route('admin.referencement.boutiques.show', $figee))->assertDontSee(route('admin.referencement.boutiques.edit', $figee))
+            ->assertSee('Impossible : site soumis ou confirmé (remettez-le en révision)');
+
+        $this->en($this->gestionnaire)->delete(route('admin.referencement.boutiques.destroy', $libre))->assertSessionHas('succes');
+        $this->assertSoftDeleted($libre);
+        $this->en($this->gestionnaire)->delete(route('admin.referencement.boutiques.destroy', $figee))->assertSessionHas('erreur');
+
+        // Sites : voir pour tous, modifier pour le GESTIONNAIRE sur un site en brouillon.
+        $this->en($this->gestionnaire)->get(route('admin.sites'))->assertOk()
+            ->assertSee(route('admin.sites.show', $this->confirme))->assertSee(route('admin.sites.edit', $this->brouillon))->assertDontSee(route('admin.sites.edit', $this->confirme));
+        $this->en($this->validateur)->get(route('admin.referencement.boutiques'))->assertOk()
+            ->assertSee('Voir la fiche')->assertDontSee('aria-label="Supprimer', false);
+    }
+
     public function test_les_anciennes_adresses_des_boutiques_redirigent_vers_l_onglet_filtre(): void
     {
         $id = $this->brouillon->id;

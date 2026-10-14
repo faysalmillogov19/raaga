@@ -1,6 +1,7 @@
 @php
     $gerer = auth()->user()->can(\App\Enums\Droit::SitesGerer->value);
     $c = __('admin.sites.colonnes');
+    $l = __('admin.sites.liste');
 @endphp
 
 <x-admin.layout :titre="__('admin.sites.titre')" :fil="[['libelle' => __('admin.sites.titre')]]">
@@ -34,6 +35,18 @@
                                 <td class="montant">{{ format_nombre($site->boutiques_count) }}
                                     @if ($site->boutiques_sans_niveau_count > 0)<br><span class="text-sm font-semibold text-rouge">{{ trans_choice('admin.sites.boutiques.sans_niveau_alerte', $site->boutiques_sans_niveau_count, ['n' => $site->boutiques_sans_niveau_count]) }}</span>@endif</td>
                                 <td>{{ $site->version ?: '—' }}</td>
+                                <td>
+                                    <div class="flex gap-2">
+                                        <x-admin.bouton-icone :href="route('admin.sites.show', $site)" icone="voir" :intitule="$l['voir'].' '.$site->nom" :infobulle="$l['voir']" />
+                                        @if ($gerer)
+                                            @if ($site->estModifiable())
+                                                <x-admin.bouton-icone :href="route('admin.sites.edit', $site)" icone="modifier" :intitule="$l['modifier'].' '.$site->nom" :infobulle="$l['modifier']" />
+                                            @else
+                                                <x-admin.bouton-icone icone="modifier" :intitule="$l['modifier'].' '.$site->nom" :infobulle="$l['non_modifiable']" disabled />
+                                            @endif
+                                        @endif
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

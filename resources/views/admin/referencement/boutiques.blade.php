@@ -81,6 +81,26 @@
                                 <td class="montant">{{ $boutique->surface !== null ? format_nombre((float) $boutique->surface, 2) : '—' }}</td>
                                 <td>{{ $boutique->etat_physique?->label() ?? $b['non_renseigne'] }}</td>
                                 <td>{{ $boutique->statut->label() }}</td>
+                                <td>
+                                    @php
+                                        $motif = ! $boutique->site->estModifiable() ? $b['site_fige'] : ($boutique->statut->verrouillee() ? $b['verrouillee'] : null);
+                                    @endphp
+                                    <div class="flex gap-2">
+                                        <x-admin.bouton-icone :href="route('admin.referencement.boutiques.show', $boutique)" icone="voir" :intitule="$b['voir'].' '.$boutique->reference()" :infobulle="$b['voir']" />
+                                        @if ($gerer)
+                                            @if ($motif)
+                                                <x-admin.bouton-icone icone="modifier" :intitule="$b['modifier_court'].' '.$boutique->reference()" :infobulle="$motif" disabled />
+                                            @else
+                                                <x-admin.bouton-icone :href="route('admin.referencement.boutiques.edit', $boutique)" icone="modifier" :intitule="$b['modifier_court'].' '.$boutique->reference()" :infobulle="$b['modifier_court']" />
+                                            @endif
+                                            <form method="POST" action="{{ route('admin.referencement.boutiques.destroy', $boutique) }}">
+                                                @csrf @method('DELETE')
+                                                <x-admin.bouton-icone type="submit" icone="supprimer" variante="danger" :intitule="$b['supprimer'].' '.$boutique->reference()" :disabled="$motif !== null"
+                                                                      :infobulle="$motif ?? $b['supprimer']" />
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
