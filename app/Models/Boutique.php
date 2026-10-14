@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Enums\EtatPhysiqueBoutique;
-use App\Enums\NiveauBoutique;
 use App\Enums\PositionBoutique;
 use App\Enums\StatutBoutique;
+use App\Models\Concerns\AvecNiveau;
 use App\Services\Backoffice\RegleGestionException;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class Boutique extends Model
 {
-    use SoftDeletes;
+    use AvecNiveau, SoftDeletes;
 
     /** Bloc : lettres majuscules ou chiffres (A, B2, C10). */
     public const FORMAT_BLOC = '/^[A-Z0-9]{1,3}$/';
@@ -39,7 +39,6 @@ class Boutique extends Model
         return [
             'surface' => 'decimal:2',
             'statut' => StatutBoutique::class,
-            'niveau' => NiveauBoutique::class,
             'position' => PositionBoutique::class,
             'etat_physique' => EtatPhysiqueBoutique::class,
         ];
@@ -55,7 +54,7 @@ class Boutique extends Model
                 throw new RegleGestionException(__('admin.sites.boutiques.code_fige', ['code' => $boutique->getOriginal('code')]));
             }
             if ($boutique->code === null) {
-                $boutique->code = self::composerCode($boutique->site?->code, $boutique->niveau?->value, $boutique->bloc, $boutique->numero);
+                $boutique->code = self::composerCode($boutique->site?->code, $boutique->niveau, $boutique->bloc, $boutique->numero);
             }
             // Un code déjà attribué (même à une boutique supprimée) ou abandonné lors d'un recodage n'est jamais réutilisé.
             if ($boutique->code !== null && $boutique->isDirty('code')
@@ -70,7 +69,7 @@ class Boutique extends Model
     public function recoder(string $codeSite, ?User $auteur): void
     {
         $ancien = $this->code;
-        $nouveau = self::composerCode($codeSite, $this->niveau?->value, $this->bloc, $this->numero);
+        $nouveau = self::composerCode($codeSite, $this->niveau, $this->bloc, $this->numero);
         if ($ancien === null || $nouveau === null || $ancien === $nouveau) {
             return;
         }
@@ -92,7 +91,7 @@ class Boutique extends Model
     public static function composerCode(?string $site, ?string $niveau, ?string $bloc, ?string $numero): ?string
     {
         $bloc = $bloc === null ? null : mb_strtoupper(trim($bloc));
-        if ($site === null || NiveauBoutique::tryFrom((string) $niveau) === null || $bloc === null || ! preg_match(self::FORMAT_BLOC, $bloc)
+        if ($site === null || ! preg_match(Niveau::FORMAT_CODE, (string) $niveau) || $bloc === null || ! preg_match(self::FORMAT_BLOC, $bloc)
             || ! preg_match('/(?<!\d)(\d{1,'.self::CHIFFRES_NUMERO.'})$/', (string) $numero, $m) || (int) $m[1] === 0) {
             return null;
         }

@@ -130,7 +130,7 @@
                         <tr>
                             <td class="whitespace-nowrap font-mono font-semibold">{{ $boutique->reference() }}
                                 @if ($boutique->code === null)<br><span class="text-sm font-normal text-gris">{{ __('admin.sites.boutiques.ancien_numero', ['numero' => $boutique->numero]) }}</span>@endif</td>
-                            <td>@if ($boutique->niveau){{ $boutique->niveau->label() }}@else<span class="font-semibold text-rouge">{{ $b['sans_niveau'] }}</span>@endif</td>
+                            <td>@if ($boutique->niveau){{ $boutique->libelleNiveau() }}@else<span class="font-semibold text-rouge">{{ $b['sans_niveau'] }}</span>@endif</td>
                             <td>{{ $boutique->bloc ?: '—' }}</td>
                             <td>{{ $boutique->type->libelle }}</td>
                             <td class="montant">{{ $boutique->surface !== null ? format_nombre((float) $boutique->surface, 2) : '—' }}</td>

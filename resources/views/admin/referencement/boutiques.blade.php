@@ -1,13 +1,13 @@
 @php
     use App\Enums\EtatPhysiqueBoutique;
-    use App\Enums\NiveauBoutique;
+    use App\Models\Niveau;
     use App\Enums\StatutBoutique;
 
     $b = __('admin.referencement.boutiques');
     $select = fn (string $nom, string $libelle, iterable $options) => compact('nom', 'libelle', 'options');
     $listes = [
         $select('site', $b['site'], $sites->mapWithKeys(fn ($s) => [$s->id => ($s->code ? $s->code.' · ' : '').$s->nom])),
-        $select('niveau', $b['niveau'], collect(NiveauBoutique::cases())->mapWithKeys(fn ($n) => [$n->value => $n->label()])),
+        $select('niveau', $b['niveau'], Niveau::query()->orderBy('rang')->get()->mapWithKeys(fn ($n) => [$n->code => $n->code.' · '.$n->libelle])),
         $select('zone', $b['zone'], $zones->mapWithKeys(fn ($z) => [$z->code => $z->code.' · '.$z->libelle])),
         $select('type', $b['type'], $types->mapWithKeys(fn ($t) => [$t->id => ($t->code ? $t->code.' · ' : '').$t->libelle])),
         $select('etat', $b['etat'], collect(EtatPhysiqueBoutique::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()])),
@@ -66,7 +66,7 @@
                             <tr>
                                 <td class="whitespace-nowrap font-mono font-semibold"><a href="{{ route('admin.referencement.boutiques.show', $boutique) }}" class="text-vert-fonce underline underline-offset-2">{{ $boutique->reference() }}</a></td>
                                 <td>{{ $boutique->site->code ?? $boutique->site->nom }}</td>
-                                <td>{{ $boutique->niveau?->label() ?? '—' }}</td>
+                                <td>{{ $boutique->libelleNiveau() ?? '—' }}</td>
                                 <td>{{ $boutique->bloc ?: '—' }}</td>
                                 <td>{{ $boutique->type->code ?? $boutique->type->libelle }}</td>
                                 <td class="montant">{{ $boutique->surface !== null ? format_nombre((float) $boutique->surface, 2) : '—' }}</td>

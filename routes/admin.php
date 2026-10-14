@@ -85,13 +85,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::prefix('referencement')->name('referencement.')->group(function () {
             Route::controller(NiveauxZonesController::class)->prefix('niveaux-zones')->name('zones')->group(function () {
                 Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
-                Route::post('/', 'store')->middleware('can:'.Droit::SitesGerer->value)->name('.store');
-                Route::put('/{zone}', 'update')->whereNumber('zone')->middleware('can:'.Droit::SitesGerer->value)->name('.update');
-                Route::post('/{zone}/activer', 'activer')->whereNumber('zone')->middleware('can:'.Droit::SitesGerer->value)->name('.activer');
-                Route::post('/{zone}/desactiver', 'desactiver')->whereNumber('zone')->middleware('can:'.Droit::SitesGerer->value)->name('.desactiver');
-                Route::delete('/{zone}', 'destroy')->whereNumber('zone')->middleware('can:'.Droit::SitesGerer->value)->name('.destroy');
-                Route::post('/{zone}/confirmer', 'confirmer')->whereNumber('zone')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
-                Route::post('/{zone}/rejeter', 'rejeter')->whereNumber('zone')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
+                Route::post('/{liste}', 'store')->whereIn('liste', ['niveaux', 'zones'])->middleware('can:'.Droit::SitesGerer->value)->name('.store');
+                Route::put('/{liste}/{id}', 'update')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('.update');
+                Route::post('/{liste}/{id}/activer', 'activer')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('.activer');
+                Route::post('/{liste}/{id}/desactiver', 'desactiver')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('.desactiver');
+                Route::delete('/{liste}/{id}', 'destroy')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('.destroy');
+                Route::post('/{liste}/{id}/confirmer', 'confirmer')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
+                Route::post('/{liste}/{id}/rejeter', 'rejeter')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
             });
             Route::controller(ReferentielBoutiquesController::class)->prefix('boutiques')->name('boutiques')->middleware('can:'.Droit::SitesVoir->value)->group(function () {
                 Route::get('/', 'index');

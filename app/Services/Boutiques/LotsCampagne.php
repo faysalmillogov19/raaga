@@ -2,13 +2,13 @@
 
 namespace App\Services\Boutiques;
 
-use App\Enums\NiveauBoutique;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
 use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
 use App\Models\CategorieBoutique;
 use App\Models\GrilleTarifaire;
+use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Services\Backoffice\RegleGestionException;
@@ -61,14 +61,14 @@ class LotsCampagne
                     throw new RegleGestionException(__('admin.boutiques.regles.lot_indisponible'));
                 }
                 $groupes = Boutique::query()->where('site_id', $site->id)->where('type_boutique_id', $typeId)->where('statut', StatutBoutique::Disponible)
-                    ->get()->groupBy(fn (Boutique $b) => $b->niveau?->value.'|'.$b->surface)
-                    ->sortBy(fn ($groupe) => [array_search($groupe->first()->niveau, NiveauBoutique::cases(), true), (float) $groupe->first()->surface]);
+                    ->with('niveauRef')->get()->groupBy(fn (Boutique $b) => $b->niveau.'|'.$b->surface)
+                    ->sortBy(fn ($groupe) => [$groupe->first()->niveauRef?->rang ?? 99, (float) $groupe->first()->surface]);
                 foreach ($groupes as $groupe) {
                     $b = $groupe->first();
                     $lots[] = [
                         'site_id' => $site->id, 'type_boutique_id' => (int) $typeId, 'niveau' => $b->niveau, 'surface' => $b->surface,
                         'libelle' => __('admin.boutiques.categorie.libelle_lot', [
-                            'type' => $types[$typeId]->libelle, 'niveau' => $b->niveau?->label() ?? '—',
+                            'type' => $types[$typeId]->libelle, 'niveau' => $b->libelleNiveau() ?? '—',
                             'surface' => $b->surface !== null ? format_nombre((float) $b->surface, fmod((float) $b->surface, 1.0) == 0.0 ? 0 : 2) : '—',
                         ]),
                         'description' => $types[$typeId]->description, 'nombre_boutiques' => $groupe->count(),
@@ -97,7 +97,7 @@ class LotsCampagne
             return null;
         }
         $grille = GrilleTarifaire::query()->where('site_id', $lot->site_id)->first()?->confirmee();
-        $ligne = $grille['lignes'][GrilleTarifaire::cle($lot->niveau->value, $lot->type_boutique_id)] ?? null;
+        $ligne = $grille['lignes'][GrilleTarifaire::cle($lot->niveau, $lot->type_boutique_id)] ?? null;
         if ($ligne === null) {
             return null;
         }

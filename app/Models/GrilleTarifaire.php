@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Contracts\Parametrable;
 use App\Enums\DecisionParametrage;
-use App\Enums\NiveauBoutique;
 use App\Enums\StatutGrilleTarifaire;
 use App\Enums\UniteLoyer;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -48,13 +47,13 @@ class GrilleTarifaire extends Model implements Parametrable
     }
 
     /** Valeurs proposées au RÉGULATEUR pour une nouvelle ligne (configuration). @return array{mois_caution: int, mois_avance: ?int} */
-    public static function valeursProposees(NiveauBoutique $niveau, ?TypeBoutique $type): array
+    public static function valeursProposees(string $niveau, ?TypeBoutique $type): array
     {
         $config = config('raaga.grille_tarifaire');
 
         return [
             'mois_caution' => (int) $config['mois_caution'],
-            'mois_avance' => $config['mois_avance_par_type'][$type?->code] ?? $config['mois_avance_par_niveau'][$niveau->value] ?? null,
+            'mois_avance' => $config['mois_avance_par_type'][$type?->code] ?? $config['mois_avance_par_niveau'][$niveau] ?? null,
         ];
     }
 
@@ -140,10 +139,10 @@ class GrilleTarifaire extends Model implements Parametrable
 
         return [
             'grille' => $lignes->map(fn (GrilleTarifaireLigne $l) => __('admin.grilles.resume_ligne', [
-                'niveau' => $l->niveau->label(), 'type' => $l->type->libelle, 'loyer' => format_fcfa($l->loyer_m2),
+                'niveau' => $l->libelleNiveau(), 'type' => $l->type->libelle, 'loyer' => format_fcfa($l->loyer_m2),
                 'caution' => $l->mois_caution, 'avance' => $l->mois_avance,
             ]))->implode(' ; '),
-            'lignes' => $lignes->mapWithKeys(fn (GrilleTarifaireLigne $l) => [self::cle($l->niveau->value, $l->type_boutique_id) => [
+            'lignes' => $lignes->mapWithKeys(fn (GrilleTarifaireLigne $l) => [self::cle($l->niveau, $l->type_boutique_id) => [
                 'loyer_m2' => $l->loyer_m2, 'mois_caution' => $l->mois_caution, 'mois_avance' => $l->mois_avance,
             ]])->all(),
         ];

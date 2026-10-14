@@ -28,11 +28,11 @@
                 <tbody>
                     @forelse ($combinaisons as $c)
                         @php
-                            $ligne = $lignes[GrilleTarifaire::cle($c['niveau']->value, $c['type']->id)] ?? null;
-                            $propose = GrilleTarifaire::valeursProposees($c['niveau'], $c['type']);
-                            $cle = 'lignes.'.$c['niveau']->value.'.'.$c['type']->id;
-                            $nom = 'lignes['.$c['niveau']->value.']['.$c['type']->id.']';
-                            $id = 'ligne-'.$c['niveau']->value.'-'.$c['type']->id;
+                            $ligne = $lignes[GrilleTarifaire::cle($c['niveau']->code, $c['type']->id)] ?? null;
+                            $propose = GrilleTarifaire::valeursProposees($c['niveau']->code, $c['type']);
+                            $cle = 'lignes.'.$c['niveau']->code.'.'.$c['type']->id;
+                            $nom = 'lignes['.$c['niveau']->code.']['.$c['type']->id.']';
+                            $id = 'ligne-'.$c['niveau']->code.'-'.$c['type']->id;
                         @endphp
                         <tr>
                             <th scope="row" class="font-semibold">{{ $c['niveau']->label() }}</th>

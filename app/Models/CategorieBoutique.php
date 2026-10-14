@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\NiveauBoutique;
+use App\Models\Concerns\AvecNiveau;
 use App\Support\MontantsBoutique;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -22,10 +22,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class CategorieBoutique extends Model
 {
+    use AvecNiveau;
+
     protected function casts(): array
     {
         return [
-            'niveau' => NiveauBoutique::class,
             'surface' => 'decimal:2',
             'ordre' => 'integer',
             'nombre_boutiques' => 'integer',

@@ -69,7 +69,7 @@
                 </tr></thead>
                 <tbody>
                     @forelse ($combinaisons as $c)
-                        @php($ligne = $lignes[GrilleTarifaire::cle($c['niveau']->value, $c['type']->id)] ?? null)
+                        @php($ligne = $lignes[GrilleTarifaire::cle($c['niveau']->code, $c['type']->id)] ?? null)
                         <tr>
                             <td>{{ $c['niveau']->label() }}</td>
                             <td>{{ $c['type']->code ? $c['type']->code.' · ' : '' }}{{ $c['type']->libelle }}<br><span class="texte-carte">{{ $c['type']->unite_loyer->label() }}</span></td>

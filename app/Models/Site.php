@@ -187,7 +187,7 @@ class Site extends Model implements Parametrable
             default => $v,
         }, $this->only(self::PARAMETRES));
         $snapshot['capacites'] = $this->capacites()->with('type')->get()
-            ->map(fn (CapaciteSite $c) => implode(' · ', array_filter([$c->niveau?->value, $c->zone, $c->type->code ?? $c->type->libelle]))
+            ->map(fn (CapaciteSite $c) => implode(' · ', array_filter([$c->niveau, $c->zone, $c->type->code ?? $c->type->libelle]))
                 .' : '.($c->nombre_prevu ?? '—').' / '.($c->surfaceRetenue() !== null ? format_nombre($c->surfaceRetenue(), 2).' m²' : '—'))
             ->implode(' ; ');
 
@@ -196,14 +196,14 @@ class Site extends Model implements Parametrable
             ->map(fn ($groupe, $type) => $type.' : '.$groupe->count().' ('.$groupe->map->reference()->sort(SORT_NATURAL)->first().' à '.$groupe->map->reference()->sort(SORT_NATURAL)->last().')')
             ->sort()->implode(' ; ');
         $s = __('admin.sites');
-        $snapshot['niveaux'] = $boutiques->groupBy(fn (Boutique $b) => $b->niveau?->label() ?? $s['boutiques']['sans_niveau'])
+        $snapshot['niveaux'] = $boutiques->groupBy(fn (Boutique $b) => $b->libelleNiveau() ?? $s['boutiques']['sans_niveau'])
             ->map(fn ($groupe, $niveau) => $niveau.' : '.$groupe->count())->sort()->implode(' ; ');
         $snapshot['etats_physiques'] = $boutiques->groupBy(fn (Boutique $b) => $b->etat_physique?->label() ?? $s['boutiques']['non_renseigne'])
             ->map(fn ($groupe, $etat) => $etat.' : '.$groupe->count())->sort()->implode(' ; ');
         // Fiche complète de chaque boutique, conservée dans l'historique ; le différentiel liste les boutiques modifiées.
         $snapshot['fiches'] = $boutiques->sortBy('id')->mapWithKeys(fn (Boutique $b) => [$b->reference() => implode(' · ', array_map(
             fn ($v) => $v ?? '—',
-            [$b->niveau?->value, $b->bloc, $b->surface, $b->type->libelle, $b->position?->label(), $b->coffret, $b->planche, $b->etat_physique?->label(), $b->observations],
+            [$b->niveau, $b->bloc, $b->surface, $b->type->libelle, $b->position?->label(), $b->coffret, $b->planche, $b->etat_physique?->label(), $b->observations],
         ))])->all();
 
         return $snapshot;

@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Enums\NiveauBoutique;
 use App\Enums\Role;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
@@ -78,11 +77,11 @@ class CodeBoutiquesTest extends TestCase
         ])->assertSessionHas('succes');
         $boutique->refresh();
         $this->assertSame('RAA-R1-A-045', $boutique->code);
-        $this->assertSame(NiveauBoutique::R1, $boutique->niveau);
+        $this->assertSame('R1', $boutique->niveau);
         $this->assertSame('C-12', $boutique->coffret);
 
         // Au niveau du modèle aussi.
-        foreach ([['code' => 'RAA-R1-A-046'], ['niveau' => NiveauBoutique::R2], ['bloc' => 'B'], ['numero' => '046']] as $changement) {
+        foreach ([['code' => 'RAA-R1-A-046'], ['niveau' => 'R2'], ['bloc' => 'B'], ['numero' => '046']] as $changement) {
             try {
                 $boutique->fresh()->forceFill($changement)->save();
                 $this->fail('Le code ou un de ses éléments a pu être modifié.');

@@ -11,7 +11,7 @@
         @if ($boutique->code)
             <p class="texte-carte">{{ __('admin.sites.boutiques.elements_figes', ['code' => $boutique->code]) }}</p>
             <dl class="grid gap-3 sm:grid-cols-3">
-                <div><dt class="texte-carte">{{ $b['niveau'] }}</dt><dd class="font-semibold">{{ $boutique->niveau->label() }}</dd></div>
+                <div><dt class="texte-carte">{{ $b['niveau'] }}</dt><dd class="font-semibold">{{ $boutique->libelleNiveau() }}</dd></div>
                 <div><dt class="texte-carte">{{ $b['bloc'] }}</dt><dd class="font-mono font-semibold">{{ $boutique->bloc }}</dd></div>
                 <div><dt class="texte-carte">{{ $b['numero'] }}</dt><dd class="font-mono font-semibold">{{ $boutique->numero }}</dd></div>
             </dl>

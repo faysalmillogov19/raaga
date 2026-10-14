@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\EtatPhysiqueBoutique;
-use App\Enums\NiveauBoutique;
 use App\Enums\PositionBoutique;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
+use App\Models\Niveau;
 use App\Models\ParametrageDecision;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -295,7 +295,15 @@ class SitesController extends Controller
     private function reglesCode(): array
     {
         return [
-            'niveau' => ['required', Rule::enum(NiveauBoutique::class)],
+            'niveau' => ['required', 'string', function (string $attribut, mixed $valeur, Closure $echec) {
+                // Niveau inconnu, désactivé ou pas encore validé : refusé.
+                $niveau = Niveau::query()->where('code', $valeur)->first();
+                if ($niveau === null) {
+                    $echec(__('admin.zones.regles.niveau_inconnu', ['code' => $valeur]));
+                } elseif (! $niveau->estUtilisable()) {
+                    $echec($niveau->motifInutilisable());
+                }
+            }],
             'bloc' => ['required', 'string', 'regex:'.Boutique::FORMAT_BLOC],
         ];
     }

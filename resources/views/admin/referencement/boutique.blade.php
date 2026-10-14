@@ -6,7 +6,7 @@
     $modifiable = auth()->user()->can(Droit::SitesGerer->value) && $boutique->site->estModifiable() && ! $boutique->statut->verrouillee();
     $lignes = [
         $f['code'] => $boutique->reference(), $b['site'] => ($boutique->site->code ? $boutique->site->code.' · ' : '').$boutique->site->nom,
-        $f['niveau'] => $boutique->niveau?->label(), $f['bloc'] => $boutique->bloc, $f['numero'] => $boutique->numero,
+        $f['niveau'] => $boutique->libelleNiveau(), $f['bloc'] => $boutique->bloc, $f['numero'] => $boutique->numero,
         $f['type'] => $boutique->type->libelle, $f['surface'] => $boutique->surface !== null ? format_nombre((float) $boutique->surface, 2) : null,
         $f['position'] => $boutique->position?->label(), $f['coffret'] => $boutique->coffret, $f['planche'] => $boutique->planche,
         $f['etat_physique'] => $boutique->etat_physique?->label(), $f['statut'] => $boutique->statut->label(), $f['observations'] => $boutique->observations,

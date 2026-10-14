@@ -2,28 +2,19 @@
 
 namespace Database\Seeders;
 
-use App\Enums\StatutTypeBoutique;
-use App\Models\ZoneSite;
 use Illuminate\Database\Seeder;
 
 /**
- * Zones des sites du fichier de référence « Raaga_import_sites.xlsx » (onglet « Listes »), puis types de boutiques
- * par défaut (TypesBoutiqueSeeder). Sans effet de bord : une zone ou un type existant n'est jamais modifié.
+ * Référentiels du référencement par défaut : niveaux, zones et types de boutiques. Sans effet de bord : un élément
+ * existant n'est jamais modifié. Appelé par DatabaseSeeder ; chaque seeder se lance aussi seul, y compris en production.
  */
 class ReferentielsSitesSeeder extends Seeder
 {
-    /** [code, libellé]. */
-    public const ZONES = [
-        ['A', 'Bloc A'], ['B', 'Bloc B'], ['MAG', 'Bloc ou bâtiment magasins'], ['ETAL', 'Zone des étals'],
-        ['BP', 'Pôle boucherie-poissonnerie'], ['CF', 'Chambres froides'], ['REST', 'Restaurant'],
-    ];
+    /** Zones par défaut (conservé pour les migrations qui s'y réfèrent). */
+    public const ZONES = ZonesSeeder::ZONES;
 
     public function run(): void
     {
-        foreach (self::ZONES as [$code, $libelle]) {
-            ZoneSite::query()->firstOrCreate(['code' => $code], ['libelle' => $libelle, 'par_defaut' => true, 'actif' => true, 'statut' => StatutTypeBoutique::Valide]);
-        }
-
-        $this->call(TypesBoutiqueSeeder::class);
+        $this->call([NiveauxSeeder::class, ZonesSeeder::class, TypesBoutiqueSeeder::class]);
     }
 }

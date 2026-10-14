@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\NiveauBoutique;
+use App\Models\Concerns\AvecNiveau;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -17,10 +17,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['site_id', 'niveau', 'zone', 'type_boutique_id', 'nombre_prevu', 'surface_unitaire', 'surface_totale', 'source', 'observations'])]
 class CapaciteSite extends Model
 {
+    use AvecNiveau;
+
     protected function casts(): array
     {
         return [
-            'niveau' => NiveauBoutique::class,
             'nombre_prevu' => 'integer',
             'surface_unitaire' => 'decimal:2',
             'surface_totale' => 'decimal:2',

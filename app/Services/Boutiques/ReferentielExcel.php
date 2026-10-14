@@ -2,11 +2,11 @@
 
 namespace App\Services\Boutiques;
 
-use App\Enums\NiveauBoutique;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
 use App\Models\Boutique;
 use App\Models\HistoriqueCode;
+use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\User;
@@ -87,7 +87,7 @@ class ReferentielExcel
         foreach ($boutiques->values() as $i => $b) {
             $ligne = $i + 2;
             $valeurs = [
-                'site' => $b->site?->code, 'niveau' => $b->niveau?->value, 'bloc' => $b->bloc, 'numero' => $b->code ? (int) $b->numero : $b->numero,
+                'site' => $b->site?->code, 'niveau' => $b->niveau, 'bloc' => $b->bloc, 'numero' => $b->code ? (int) $b->numero : $b->numero,
                 'type' => $b->type->code ?? $b->type->libelle, 'surface' => $b->surface !== null ? (float) $b->surface : null,
                 'planche' => $b->planche, 'observations' => $b->observations,
             ];
@@ -108,7 +108,7 @@ class ReferentielExcel
         }
 
         // Listes déroulantes : niveaux et codes des types.
-        $this->liste($feuille, $n."2:{$n}{$derniere}", array_map(fn (NiveauBoutique $x) => $x->value, NiveauBoutique::cases()));
+        $this->liste($feuille, $n."2:{$n}{$derniere}", Niveau::listeUtilisable()->pluck('code')->all());
         $codesTypes = TypeBoutique::query()->utilisables()->whereNotNull('code')->orderBy('ordre')->pluck('code')->all();
         if ($codesTypes !== []) {
             $this->liste($feuille, $col('type')."2:{$col('type')}{$derniere}", $codesTypes);
@@ -189,6 +189,7 @@ class ReferentielExcel
         }
 
         $types = TypeBoutique::query()->get();
+        $niveaux = Niveau::query()->get()->keyBy('code');
         $sites = Site::query()->whereNotNull('code')->get()->keyBy('code');
         $sitesRefuses = [];
         $siteVide = 0;
@@ -241,9 +242,11 @@ class ReferentielExcel
                 $err('site', $suggestion ? $e['site_inconnu_suggestion'] : $e['site_inconnu'], ['ligne' => $ligne, 'code' => $codeSite, 'suggestion' => $suggestion]);
             }
 
-            $niveau = NiveauBoutique::tryFrom(mb_strtoupper((string) $v['niveau']));
+            $niveau = $v['niveau'] === null || $v['niveau'] === '' ? null : $niveaux->get(mb_strtoupper((string) $v['niveau']));
             if ($v['niveau'] !== null && $v['niveau'] !== '' && $niveau === null) {
-                $err('niveau', $e['valeur'], ['valeurs' => implode(', ', array_map(fn ($x) => $x->value, NiveauBoutique::cases()))]);
+                $err('niveau', __('admin.zones.regles.niveau_inconnu', ['code' => mb_strtoupper((string) $v['niveau'])]));
+            } elseif ($niveau !== null && ! $niveau->estUtilisable()) {
+                $err('niveau', $niveau->motifInutilisable()); // Niveau désactivé, ou pas encore validé.
             }
             $bloc = mb_strtoupper((string) $v['bloc']);
             if ($bloc !== '' && ! preg_match(Boutique::FORMAT_BLOC, $bloc)) {
@@ -275,7 +278,7 @@ class ReferentielExcel
                 continue;
             }
 
-            $code = Boutique::composerCode($siteLigne->code, $niveau->value, $bloc, (string) $numero);
+            $code = Boutique::composerCode($siteLigne->code, $niveau->code, $bloc, (string) $numero);
             $codeFichier = isset($v['code']) && $v['code'] !== '' ? mb_strtoupper(preg_replace('/\s+/u', '', (string) $v['code'])) : null;
             if ($codeFichier !== null && $codeFichier !== $code) {
                 $analyse->avertir($a['code_recalcule'], ['ligne' => $ligne, 'lu' => $codeFichier, 'code' => $code]);
@@ -300,11 +303,11 @@ class ReferentielExcel
             }
 
             $analyse->ajouter($ligne, $code, $siteLigne->id, $existante?->id, [
-                'niveau' => $niveau, 'bloc' => $bloc, 'numero' => str_pad((string) $numero, Boutique::CHIFFRES_NUMERO, '0', STR_PAD_LEFT),
+                'niveau' => $niveau->code, 'bloc' => $bloc, 'numero' => str_pad((string) $numero, Boutique::CHIFFRES_NUMERO, '0', STR_PAD_LEFT),
                 'type_boutique_id' => $type->id, 'surface' => $surface,
                 'planche' => ($v['planche'] ?? '') === '' ? null : (string) $v['planche'],
                 'observations' => ($v['observations'] ?? '') === '' ? null : (string) $v['observations'],
-            ], $niveau->label(), $type->libelle);
+            ], $niveau->libelle, $type->libelle);
         }
         $classeur->disconnectWorksheets();
 

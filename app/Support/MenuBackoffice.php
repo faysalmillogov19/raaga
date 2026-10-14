@@ -10,6 +10,7 @@ use App\Enums\StatutTypeBoutique;
 use App\Models\Boutique;
 use App\Models\CapaciteSite;
 use App\Models\GrilleTarifaire;
+use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\User;
@@ -132,8 +133,8 @@ final class MenuBackoffice
                 default => 0,
             },
             'niveaux_zones' => match (true) {
-                $valide => ZoneSite::query()->where('statut', StatutTypeBoutique::AValider)->count(),
-                $gere => ZoneSite::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
+                $valide => ZoneSite::query()->where('statut', StatutTypeBoutique::AValider)->count() + Niveau::query()->where('statut', StatutTypeBoutique::AValider)->count(),
+                $gere => ZoneSite::query()->where('statut', StatutTypeBoutique::Rejete)->count() + Niveau::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
             // GESTIONNAIRE : boutiques sans niveau (à compléter avant soumission) et capacités incomplètes.

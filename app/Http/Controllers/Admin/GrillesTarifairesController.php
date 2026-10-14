@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
-use App\Enums\NiveauBoutique;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutGrilleTarifaire;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
 use App\Models\GrilleTarifaire;
+use App\Models\Niveau;
 use App\Models\ParametrageDecision;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -55,7 +55,7 @@ class GrillesTarifairesController extends Controller
             'site' => $site,
             'grille' => $grille,
             'combinaisons' => $this->combinaisons($site),
-            'lignes' => $grille?->lignes()->get()->keyBy(fn ($l) => GrilleTarifaire::cle($l->niveau->value, $l->type_boutique_id)) ?? collect(),
+            'lignes' => $grille?->lignes()->get()->keyBy(fn ($l) => GrilleTarifaire::cle($l->niveau, $l->type_boutique_id)) ?? collect(),
             'confirmee' => $grille?->confirmee(),
             'versions' => $versions->reverse()->values(),
             'decisions' => $grille ? ParametrageDecision::query()->where('objet_type', $grille->typeParametrage())->where('objet_id', $grille->id)
@@ -76,7 +76,7 @@ class GrillesTarifairesController extends Controller
         return view('admin.grilles.formulaire', [
             'site' => $site,
             'combinaisons' => $this->combinaisons($site),
-            'lignes' => $grille?->lignes()->get()->keyBy(fn ($l) => GrilleTarifaire::cle($l->niveau->value, $l->type_boutique_id)) ?? collect(),
+            'lignes' => $grille?->lignes()->get()->keyBy(fn ($l) => GrilleTarifaire::cle($l->niveau, $l->type_boutique_id)) ?? collect(),
         ]);
     }
 
@@ -86,7 +86,7 @@ class GrillesTarifairesController extends Controller
         $combinaisons = $this->combinaisons($site);
         $regles = [];
         foreach ($combinaisons as $c) {
-            $p = 'lignes.'.$c['niveau']->value.'.'.$c['type']->id;
+            $p = 'lignes.'.$c['niveau']->code.'.'.$c['type']->id;
             $regles[$p.'.loyer_m2'] = ['nullable', 'integer', 'min:1', 'max:100000000'];
             $regles[$p.'.mois_caution'] = ['required_with:'.$p.'.loyer_m2', 'nullable', 'integer', 'min:0', 'max:240'];
             $regles[$p.'.mois_avance'] = ['required_with:'.$p.'.loyer_m2', 'nullable', 'integer', 'min:0', 'max:240'];
@@ -103,12 +103,12 @@ class GrillesTarifairesController extends Controller
                 }
                 $grille->lignes()->delete();
                 foreach ($combinaisons as $c) {
-                    $saisie = $donnees['lignes'][$c['niveau']->value][$c['type']->id] ?? [];
+                    $saisie = $donnees['lignes'][$c['niveau']->code][$c['type']->id] ?? [];
                     if (($saisie['loyer_m2'] ?? null) === null) {
                         continue; // Pas de loyer : pas de ligne (les boutiques concernées ne pourront pas entrer en campagne).
                     }
                     $grille->lignes()->create([
-                        'niveau' => $c['niveau'], 'type_boutique_id' => $c['type']->id, 'loyer_m2' => (int) $saisie['loyer_m2'],
+                        'niveau' => $c['niveau']->code, 'type_boutique_id' => $c['type']->id, 'loyer_m2' => (int) $saisie['loyer_m2'],
                         'mois_caution' => (int) $saisie['mois_caution'], 'mois_avance' => (int) $saisie['mois_avance'],
                     ]);
                 }
@@ -165,19 +165,20 @@ class GrillesTarifairesController extends Controller
     /**
      * Niveaux × types présents dans le référentiel du site, avec les surfaces (lots possibles) de chacun.
      *
-     * @return Collection<int, array{niveau: NiveauBoutique, type: TypeBoutique, surfaces: Collection<string, int>, nombre: int}>
+     * @return Collection<int, array{niveau: Niveau, type: TypeBoutique, surfaces: Collection<string, int>, nombre: int}>
      */
     private function combinaisons(Site $site): Collection
     {
         $types = TypeBoutique::query()->get()->keyBy('id');
+        $niveaux = Niveau::query()->get()->keyBy('code');
 
         return Boutique::query()->where('site_id', $site->id)->whereNotNull('niveau')->where('statut', '!=', StatutBoutique::Retiree)->get()
-            ->groupBy(fn (Boutique $b) => GrilleTarifaire::cle($b->niveau->value, $b->type_boutique_id))
+            ->groupBy(fn (Boutique $b) => GrilleTarifaire::cle($b->niveau, $b->type_boutique_id))
             ->map(fn ($groupe) => [
-                'niveau' => $groupe->first()->niveau, 'type' => $types[$groupe->first()->type_boutique_id], 'nombre' => $groupe->count(),
+                'niveau' => $niveaux[$groupe->first()->niveau], 'type' => $types[$groupe->first()->type_boutique_id], 'nombre' => $groupe->count(),
                 'surfaces' => $groupe->groupBy(fn (Boutique $b) => $b->surface === null ? '' : (string) $b->surface)->map->count()->sortKeys(SORT_NATURAL),
             ])
-            ->sortBy(fn ($c) => [array_search($c['niveau'], NiveauBoutique::cases(), true), $c['type']->ordre, $c['type']->libelle])->values();
+            ->sortBy(fn ($c) => [$c['niveau']->rang, $c['type']->ordre, $c['type']->libelle])->values();
     }
 
     private function executer(Site $site, Closure $action, string $message): RedirectResponse

@@ -130,7 +130,7 @@ return [
     */
     'grille_tarifaire' => [
         'mois_caution' => 12,
-        // Mois d'avance par niveau (code NiveauBoutique).
+        // Mois d'avance par niveau (code du niveau, table « niveaux »).
         'mois_avance_par_niveau' => ['RC' => 60, 'R1' => 36, 'R2' => 24, 'R3' => 12, 'SS' => 12],
         // Mois d'avance par type (code TypeBoutique), prioritaire sur le niveau : les magasins, quel que soit le niveau.
         'mois_avance_par_type' => ['MAG' => 12],

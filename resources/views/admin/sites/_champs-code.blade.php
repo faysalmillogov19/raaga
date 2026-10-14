@@ -4,8 +4,9 @@
     <label for="{{ $prefixe }}-niveau">{{ $b['niveau'] }}</label>
     <select id="{{ $prefixe }}-niveau" name="niveau" class="champ @error('niveau') est-invalide @enderror" required>
         <option value="">{{ __('admin.sites.formulaire.choisir') }}</option>
-        @foreach (\App\Enums\NiveauBoutique::cases() as $niveau)
-            <option value="{{ $niveau->value }}" @selected(old('niveau', $boutique?->niveau?->value) === $niveau->value)>{{ $niveau->label() }}</option>
+        {{-- Niveaux validés et actifs, plus le niveau actuel de la boutique s'il a été désactivé. --}}
+        @foreach (\App\Models\Niveau::query()->where(fn ($q) => $q->utilisables()->orWhere('code', $boutique?->niveau ?? ''))->orderBy('rang')->get() as $niveau)
+            <option value="{{ $niveau->code }}" @selected(old('niveau', $boutique?->niveau) === $niveau->code)>{{ $niveau->libelle }}</option>
         @endforeach
     </select>
     @error('niveau') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror

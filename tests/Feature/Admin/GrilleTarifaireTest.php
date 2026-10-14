@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Enums\NiveauBoutique;
 use App\Enums\Role;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutCampagneBoutiques;
@@ -64,13 +63,13 @@ class GrilleTarifaireTest extends TestCase
     {
         // Valeurs proposées au RÉGULATEUR : caution 12 mois ; avance RC 60, R1 36, R2 24, R3 12, SS 12 ; magasins 12 quel que soit le niveau.
         $attendu = ['RC' => 60, 'R1' => 36, 'R2' => 24, 'R3' => 12, 'SS' => 12];
-        foreach (NiveauBoutique::cases() as $niveau) {
-            $this->assertSame(['mois_caution' => 12, 'mois_avance' => $attendu[$niveau->value]], GrilleTarifaire::valeursProposees($niveau, $this->boutique));
+        foreach (array_keys($attendu) as $niveau) {
+            $this->assertSame(['mois_caution' => 12, 'mois_avance' => $attendu[$niveau]], GrilleTarifaire::valeursProposees($niveau, $this->boutique));
             $this->assertSame(12, GrilleTarifaire::valeursProposees($niveau, $this->magasin)['mois_avance']);
 
             // Loyer = surface × loyer au m² ; caution = loyer × 12 ; avance = loyer × mois d'avance du niveau.
-            $m = GrilleTarifaire::montants(9.0, 2000, 12, $attendu[$niveau->value]);
-            $this->assertSame(['loyer_mensuel' => 18000, 'caution' => 216000, 'avance' => 18000 * $attendu[$niveau->value]], $m);
+            $m = GrilleTarifaire::montants(9.0, 2000, 12, $attendu[$niveau]);
+            $this->assertSame(['loyer_mensuel' => 18000, 'caution' => 216000, 'avance' => 18000 * $attendu[$niveau]], $m);
         }
         $this->assertSame(['loyer_mensuel' => 31250, 'caution' => 375000, 'avance' => 1125000], GrilleTarifaire::montants(12.5, 2500, 12, 36));
         $this->assertSame("1\u{00A0}080\u{00A0}000\u{00A0}FCFA", format_fcfa(GrilleTarifaire::montants(9.0, 2000, 12, 60)['avance']));

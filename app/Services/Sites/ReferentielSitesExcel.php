@@ -2,9 +2,9 @@
 
 namespace App\Services\Sites;
 
-use App\Enums\NiveauBoutique;
 use App\Enums\PhaseSite;
 use App\Enums\StatutSite;
+use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\User;
@@ -90,7 +90,7 @@ class ReferentielSitesExcel
                 $s->setCellValue($colS($cle).($i + 2), $valeur);
             }
             foreach ($site->capacites as $cap) {
-                foreach (['site' => $site->code, 'niveau' => $cap->niveau?->value, 'zone' => $cap->zone, 'type' => $cap->type->code ?? $cap->type->libelle,
+                foreach (['site' => $site->code, 'niveau' => $cap->niveau, 'zone' => $cap->zone, 'type' => $cap->type->code ?? $cap->type->libelle,
                     'nombre_prevu' => $cap->nombre_prevu, 'surface_unitaire' => $cap->surface_unitaire !== null ? (float) $cap->surface_unitaire : null,
                     'surface_totale' => $cap->surface_totale !== null ? (float) $cap->surface_totale : null, 'source' => $cap->source,
                     'observations' => $cap->observations] as $cle => $valeur) {
@@ -126,7 +126,7 @@ class ReferentielSitesExcel
         $s->getStyle("{$colS('livraison_prevue')}2:{$colS('livraison_prevue')}{$finS}")->getNumberFormat()->setFormatCode('mm/yyyy');
         $this->liste($s, $colS('phase'), $finS, '"'.implode(',', array_map(fn (PhaseSite $p) => $p->label(), PhaseSite::cases())).'"');
         $this->liste($c, $cA, $finC, "{$onglet}!\${$A}\$2:\${$A}\${$finS}");
-        $this->liste($c, $cB, $finC, '"'.implode(',', array_map(fn (NiveauBoutique $n) => $n->value, NiveauBoutique::cases())).'"');
+        $this->liste($c, $cB, $finC, '"'.Niveau::listeUtilisable()->pluck('code')->implode(',').'"');
         $this->liste($c, $cC, $finC, '"'.ZoneSite::query()->utilisables()->orderBy('id')->pluck('code')->implode(',').'"');
         $this->liste($c, $cD, $finC, '"'.TypeBoutique::query()->utilisables()->whereNotNull('code')->orderBy('ordre')->pluck('code')->implode(',').'"');
         $classeur->setActiveSheetIndex(0);
@@ -296,6 +296,7 @@ class ReferentielSitesExcel
         $e = __('admin.sites.import.erreurs');
         $onglet = self::ONGLET_CAPACITES;
         $types = TypeBoutique::query()->get();
+        $niveaux = Niveau::query()->get()->keyBy('code');
         $zones = ZoneSite::query()->get()->keyBy('code');
         $zonesUtilisables = $zones->filter->estUtilisable()->keys()->all();
         $codesFichier = array_keys($analyse->sites());
@@ -317,15 +318,17 @@ class ReferentielSitesExcel
                 $err('site', $e['site_verrouille'], ['code' => $code, 'statut' => mb_strtolower($enBase[$code]->statut->label())]);
             }
 
-            $niveau = $v['niveau'] === null ? null : NiveauBoutique::tryFrom(mb_strtoupper((string) $v['niveau']));
+            $niveau = $v['niveau'] === null ? null : $niveaux->get(mb_strtoupper((string) $v['niveau']));
             if ($v['niveau'] !== null && $niveau === null) {
-                $err('niveau', $e['valeur'], ['valeurs' => implode(', ', array_map(fn ($n) => $n->value, NiveauBoutique::cases()))]);
+                $err('niveau', __('admin.zones.regles.niveau_inconnu', ['code' => mb_strtoupper((string) $v['niveau'])]));
+            } elseif ($niveau !== null && ! $niveau->estUtilisable()) {
+                $err('niveau', $niveau->motifInutilisable());
             }
             $zone = $v['zone'] === null ? null : mb_strtoupper((string) $v['zone']);
             if ($zone !== null && ! isset($zones[$zone])) {
                 $err('zone', $e['valeur'], ['valeurs' => implode(', ', $zonesUtilisables)]);
             } elseif ($zone !== null && ! $zones[$zone]->estUtilisable()) {
-                $err('zone', __('admin.zones.regles.inutilisable', ['code' => $zone]));
+                $err('zone', $zones[$zone]->motifInutilisable()); // « zone désactivée », ou pas encore validée.
             }
             $type = $v['type'] === null ? null : $types->first(fn (TypeBoutique $t) => ($t->code !== null && mb_strtoupper((string) $v['type']) === $t->code)
                 || mb_strtolower((string) $v['type']) === mb_strtolower($t->libelle));
@@ -356,7 +359,7 @@ class ReferentielSitesExcel
                 continue;
             }
 
-            $cle = implode('|', [$code, $niveau?->value, $zone, $type->id]);
+            $cle = implode('|', [$code, $niveau?->code, $zone, $type->id]);
             if (isset($vus[$cle])) {
                 $err('type', $e['doublon_capacite'], ['ligne' => $vus[$cle]]);
 
@@ -364,7 +367,7 @@ class ReferentielSitesExcel
             }
             $vus[$cle] = $r;
             $analyse->ajouterCapacite($code, $r, [
-                'niveau' => $niveau, 'zone' => $zone, 'type_boutique_id' => $type->id, 'nombre_prevu' => $nombre,
+                'niveau' => $niveau?->code, 'zone' => $zone, 'type_boutique_id' => $type->id, 'nombre_prevu' => $nombre,
                 'surface_unitaire' => $surfaces['surface_unitaire'], 'surface_totale' => $surfaces['surface_totale'],
                 'source' => isset($v['source']) ? (string) $v['source'] : null, 'observations' => isset($v['observations']) ? (string) $v['observations'] : null,
             ]);

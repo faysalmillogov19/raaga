@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\EtatPhysiqueBoutique;
-use App\Enums\NiveauBoutique;
 use App\Enums\StatutBoutique;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
@@ -76,7 +75,7 @@ class ReferentielBoutiquesController extends Controller
         return $request->validate([
             'q' => ['nullable', 'string', 'max:30'],
             'site' => ['nullable', 'integer'],
-            'niveau' => ['nullable', Rule::enum(NiveauBoutique::class)],
+            'niveau' => ['nullable', 'string', 'max:3'],
             'zone' => ['nullable', 'string', 'max:5'],
             'type' => ['nullable', 'integer'],
             'etat' => ['nullable', Rule::enum(EtatPhysiqueBoutique::class)],
