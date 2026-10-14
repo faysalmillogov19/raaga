@@ -145,7 +145,7 @@ class DividendesWorkflowTest extends TestCase
 
         $this->en($this->validateur)->get(route('admin.dividendes.show', $d))->assertOk()->assertSee('Modifications soumises');
         $this->en($this->validateur)->get(route('admin.dividendes.pv', $d))->assertOk();
-        $this->en($this->validateur)->get(route('admin.tableau'))->assertSee('Dividendes de l’exercice 2025 soumis', false);
+        $this->en($this->validateur)->get(route('admin.tableau'))->assertSee('<td class="font-semibold">Dividendes</td>', false)->assertSee('Exercice 2025 · v1');
 
         $this->en($this->validateur)->post(route('admin.dividendes.rejeter', $d), ['motif' => 'Montant non conforme au PV'])->assertSessionHas('succes');
         $this->assertSame(StatutDistribution::Brouillon, $d->refresh()->statut);

@@ -6,6 +6,7 @@ use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Site;
+use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
 use App\Support\Tableau\ResultatTableau;
@@ -30,43 +31,52 @@ class ImportsController extends Controller
     public function index(Request $request): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::ImportsVoir->value);
+
+        return self::journal()->repondre($request, fn (ResultatTableau $t) => view('admin.referencement.imports', [
+            'tableau' => $t,
+            'sitesModifiables' => Site::query()->whereNotNull('code')->orderBy('code')->get()->filter->estModifiable(),
+        ]));
+    }
+
+    /**
+     * Journal des imports confirmés en tableau de données : complet (onglet Imports) ou réduit (« Derniers imports » du
+     * tableau de bord). Créées, mises à jour, erreurs (toujours 0 : un fichier en erreur n'est jamais confirmé), statut.
+     */
+    public static function journal(bool $complet = true, string $id = 'imports'): Tableau
+    {
         $i = __('admin.imports');
         $c = $i['colonnes'];
         $codes = null; // Codes des sites, lus une seule fois.
-        $site = function (AuditLog $e) use (&$codes, $i) {
+        $site = function (AuditLog $e) use (&$codes) {
             $codes ??= Site::query()->pluck('code', 'id');
 
-            return $e->action === 'boutiques.importees' ? ($codes[$e->entite_id] ?? '—') : $i['tous_sites'];
+            return $e->action === 'boutiques.importees' ? ($codes[$e->entite_id] ?? '—') : trans_choice('admin.imports.n_sites', $e->nouvelle_valeur['sites_crees'] ?? 0
+                + ($e->nouvelle_valeur['sites_mis_a_jour'] ?? 0) + ($e->nouvelle_valeur['sites_inchanges'] ?? 0));
         };
-        $resultat = fn (AuditLog $e) => $e->action === 'sites.importes'
-            ? __('admin.imports.resultat_sites', ['crees' => $e->nouvelle_valeur['sites_crees'] ?? 0, 'maj' => $e->nouvelle_valeur['sites_mis_a_jour'] ?? 0,
-                'inchanges' => $e->nouvelle_valeur['sites_inchanges'] ?? 0, 'capacites' => $e->nouvelle_valeur['capacites'] ?? 0])
-            : __('admin.imports.resultat_boutiques', ['crees' => $e->nouvelle_valeur['creees'] ?? 0, 'maj' => $e->nouvelle_valeur['mises_a_jour'] ?? 0,
-                'inchanges' => $e->nouvelle_valeur['inchangees'] ?? 0]);
+        $nombre = fn (string ...$cles) => fn (AuditLog $e) => (int) collect($cles)->sum(fn ($k) => $e->nouvelle_valeur[$k] ?? 0);
 
-        return Tableau::pour(AuditLog::query()->whereIn('action', array_keys(self::ACTIONS))->with('acteur'), 'imports')
+        return Tableau::pour(AuditLog::query()->whereIn('action', array_keys(self::ACTIONS))->with('acteur'), $id)
             ->colonnes([
                 Colonne::make('date', $c['date'])->triable('created_at')->classe('whitespace-nowrap')->valeur(fn (AuditLog $e) => $e->created_at->format('d/m/Y H:i')),
-                Colonne::make('auteur', $c['auteur'])->recherchable(fn ($q, $terme) => $q->whereHas('acteur', fn ($a) => $a->where('name', 'like', '%'.$terme.'%')))
-                    ->valeur(fn (AuditLog $e) => $e->acteur?->name ?? '—'),
-                Colonne::make('type', $c['type'])->triable('action')->valeur(fn (AuditLog $e) => $i['types'][$e->action] ?? $e->action),
-                Colonne::make('site', $c['site'])->valeur($site),
-                Colonne::make('fichier', $c['fichier'])->recherchable('nouvelle_valeur')
-                    ->valeur(fn (AuditLog $e) => new HtmlString(e($e->nouvelle_valeur['fichier'] ?? '—').'<br>'.(! empty($e->nouvelle_valeur['chemin'])
-                        ? '<a href="'.e(route('admin.referencement.imports.fichier', $e)).'" class="font-semibold text-vert-fonce underline underline-offset-2">'.e($i['telecharger']).'</a>'
-                        : '<span class="texte-carte">'.e($i['indisponible']).'</span>')))
+                Colonne::make('fichier', $c['fichier'])->triable('nouvelle_valeur')->recherchable('nouvelle_valeur')->classe('font-semibold')
+                    ->valeur(fn (AuditLog $e) => $complet && ! empty($e->nouvelle_valeur['chemin'])
+                        ? new HtmlString('<a href="'.e(route('admin.referencement.imports.fichier', $e)).'" class="underline underline-offset-2" title="'.e($i['telecharger']).'">'.e($e->nouvelle_valeur['fichier'] ?? '—').'</a>')
+                        : ($e->nouvelle_valeur['fichier'] ?? '—'))
                     ->texte(fn (AuditLog $e) => $e->nouvelle_valeur['fichier'] ?? null),
-                Colonne::make('resultat', $c['resultat'])->classe('text-sm')->valeur($resultat),
+                Colonne::make('site', $c['site'])->triable('entite_id')->valeur($site),
+                $complet ? Colonne::make('type', $c['type'])->triable('action')->valeur(fn (AuditLog $e) => $i['types'][$e->action] ?? $e->action) : null,
+                $complet ? Colonne::make('auteur', $c['auteur'])->recherchable(fn ($q, $terme) => $q->whereHas('acteur', fn ($a) => $a->where('name', 'like', '%'.$terme.'%')))
+                    ->valeur(fn (AuditLog $e) => $e->acteur?->name ?? '—') : null,
+                Colonne::make('creees', $c['creees'])->numerique()->valeur($nombre('creees', 'sites_crees')),
+                Colonne::make('mises_a_jour', $c['mises_a_jour'])->numerique()->valeur($nombre('mises_a_jour', 'sites_mis_a_jour')),
+                Colonne::make('erreurs', $c['erreurs'])->numerique()->valeur(fn () => 0),
+                Colonne::make('statut', $c['statut'])->valeur(fn () => BadgeStatut::html($i['confirme']))->texte(fn () => $i['confirme']),
             ])
-            ->filtres([
-                Filtre::make('type', $c['type'], $i['types'], 'action'),
-            ])
+            ->filtres($complet ? [Filtre::make('type', $c['type'], $i['types'], 'action')] : [])
             ->triParDefaut('date', 'desc')
-            ->export('Raaga_journal-imports')
-            ->repondre($request, fn (ResultatTableau $t) => view('admin.referencement.imports', [
-                'tableau' => $t,
-                'sitesModifiables' => Site::query()->whereNotNull('code')->orderBy('code')->get()->filter->estModifiable(),
-            ]));
+            ->unite($i['unite'])
+            ->lignesParDefaut($complet ? Tableau::LIGNES_DEFAUT : 10)
+            ->when($complet, fn (Tableau $t) => $t->export('Raaga_journal-imports'));
     }
 
     /** Fichier d'origine d'un import, conservé hors du dossier public. */

@@ -498,6 +498,7 @@ body.adm {
 /* ------------------------------------------------------------------ Composants existants rattachés au thème */
 
 .adm .bo-carte {
+    overflow: hidden;
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 12px;
@@ -973,4 +974,147 @@ body.adm {
     accent-color: var(--primary);
     border-color: var(--muted);
     background-color: var(--field);
+}
+
+/* ------------------------------------------------------------------ Tableau de données (<x-tableau>) */
+
+.adm .bo-donnees-outils { gap: 14px; margin-bottom: 14px; }
+
+.adm .bo-donnees-filtres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.adm .bo-donnees-filtres > .formulaire-champ { flex: 1 1 160px; min-width: 0; }
+.adm .bo-donnees-reinitialiser { display: flex; flex: 0 0 auto; align-items: flex-end; }
+.adm .bo-donnees-reinitialiser .adm-btn { min-height: 36px; border-radius: 8px; font-size: 13px; }
+
+.adm .adm-libelle-petit {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.adm .champ.adm-champ-petit {
+    min-height: 36px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.adm .bo-donnees-lignes,
+.adm .bo-donnees-recherche { font-size: 13px; color: var(--muted); }
+.adm .bo-donnees-recherche input { width: min(240px, 60vw); }
+
+.adm .bo-donnees-cadre {
+    overflow-x: auto;
+    margin: 0 -22px;
+    border-top: 1px solid var(--line);
+}
+
+.adm .bo-tableau-donnees { min-width: 640px; }
+
+.adm .bo-tableau-donnees th {
+    padding: 12px 10px;
+    background: var(--card);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.adm .bo-tableau-donnees td {
+    padding: 10px;
+    vertical-align: middle;
+}
+
+.adm .bo-tableau-donnees th:first-child,
+.adm .bo-tableau-donnees td:first-child { padding-left: 22px; }
+.adm .bo-tableau-donnees th:last-child,
+.adm .bo-tableau-donnees td:last-child { padding-right: 22px; }
+
+.adm .bo-tri { color: var(--muted); }
+.adm .bo-tri:hover,
+.adm th[aria-sort="ascending"] .bo-tri,
+.adm th[aria-sort="descending"] .bo-tri { color: var(--text); }
+.adm .bo-tri { gap: 4px; }
+.adm .bo-tri-fleche { font-size: 10px; }
+
+.adm .bo-actions { text-align: right; white-space: nowrap; }
+.adm .bo-actions > div,
+.adm .bo-actions .flex { justify-content: flex-end; }
+
+.adm .bo-donnees-pied {
+    margin: 0 -22px -22px;
+    padding: 12px 22px;
+    border-top: 1px solid var(--line);
+}
+
+.adm .bo-pagination a,
+.adm .bo-pagination span { min-height: 36px; min-width: 36px; border-radius: 8px; font-size: 13px; }
+
+@media (max-width: 767px) {
+    .adm .bo-carte { padding: 16px; }
+    .adm .bo-donnees-filtres > .formulaire-champ { flex-basis: 100%; }
+    .adm .bo-donnees-cadre { margin: 0 -16px; }
+    .adm .bo-donnees-pied { margin: 0 -16px -16px; padding: 12px 16px; }
+}
+
+/* ------------------------------------------------------------------ Tableau de bord */
+
+.adm-cartes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.adm-indicateur {
+    display: grid;
+    gap: 6px;
+    justify-items: start;
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.adm-indicateur:hover { background: var(--hover); }
+.adm-indicateur-libelle { font-size: 13px; font-weight: 600; color: var(--muted); }
+.adm-indicateur-valeur { font-size: 30px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+.adm .adm-carte-titre { margin: 0; font-size: 16px; font-weight: 700; }
+
+.adm .adm-carte-tableau { padding: 0; }
+
+.adm-carte-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 18px 22px;
+}
+
+.adm-barre {
+    height: 8px;
+    margin: 8px 0 6px;
+    border-radius: 99px;
+    background: var(--track);
+    overflow: hidden;
+}
+
+.adm-barre > span {
+    display: block;
+    height: 100%;
+    border-radius: 99px;
+    background: var(--bar);
 }

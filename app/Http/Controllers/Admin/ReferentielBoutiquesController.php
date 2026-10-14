@@ -12,8 +12,8 @@ use App\Models\HistoriqueCode;
 use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
-use App\Models\ZoneSite;
 use App\Services\Boutiques\ReferentielExcel;
+use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
 use App\Support\Tableau\ResultatTableau;
@@ -22,7 +22,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -48,30 +47,32 @@ class ReferentielBoutiquesController extends Controller
         return Tableau::pour(Boutique::query()->with(['site', 'type']), 'boutiques')
             ->colonnes([
                 Colonne::make('code', $c['code'])->triable(fn ($q, $sens) => $q->orderByRaw('code IS NULL')->orderBy('code', $sens))->recherchable(['code', 'numero'])
-                    ->classe('whitespace-nowrap font-mono font-semibold')
-                    ->valeur(fn (Boutique $x) => new HtmlString('<a href="'.e(route('admin.referencement.boutiques.show', $x)).'" class="text-vert-fonce underline underline-offset-2">'.e($x->reference()).'</a>'))
-                    ->texte(fn (Boutique $x) => $x->reference()),
-                Colonne::make('site', $c['site'])->triable('site_id')->valeur(fn (Boutique $x) => $x->site->code ?? $x->site->nom),
-                Colonne::make('niveau', $c['niveau'])->triable()->valeur(fn (Boutique $x) => $x->libelleNiveau()),
-                Colonne::make('bloc', $c['bloc'])->triable()->recherchable()->valeur(fn (Boutique $x) => $x->bloc ?: '—'),
+                    ->classe('whitespace-nowrap font-bold')->valeur(fn (Boutique $x) => $x->reference()),
+                Colonne::make('site', $c['site'])->triable('site_id')->recherchable(fn ($q, $terme) => $q->whereHas('site', fn ($s) => $s->where('code', 'like', '%'.$terme.'%')->orWhere('nom', 'like', '%'.$terme.'%')))
+                    ->valeur(fn (Boutique $x) => $x->site->code ?? $x->site->nom),
+                Colonne::make('niveau', $c['niveau'])->triable()->valeur(fn (Boutique $x) => $x->niveau ?? '—'),
+                Colonne::make('zone', $c['zone'])->triable('bloc')->recherchable('bloc')->valeur(fn (Boutique $x) => $x->bloc ?: '—'),
                 Colonne::make('type', $c['type'])->triable('type_boutique_id')->valeur(fn (Boutique $x) => $x->type->code ?? $x->type->libelle),
                 Colonne::make('surface', $c['surface'])->numerique()->triable()
-                    ->valeur(fn (Boutique $x) => $x->surface !== null ? format_nombre((float) $x->surface, 2) : '—')->texte(fn (Boutique $x) => $x->surface),
-                Colonne::make('etat', $c['etat'])->triable('etat_physique')->valeur(fn (Boutique $x) => $x->etat_physique?->label() ?? $b['non_renseigne']),
-                Colonne::make('statut', $c['statut'])->triable()->badge(fn (Boutique $x) => [$x->statut->label(), match ($x->statut) {
-                    StatutBoutique::Disponible => 'succes', StatutBoutique::Retiree => 'echec', default => 'attention',
-                }]),
+                    ->valeur(fn (Boutique $x) => $x->surface !== null ? rtrim(rtrim(format_nombre((float) $x->surface, 2), '0'), ',') : '—')->texte(fn (Boutique $x) => $x->surface),
+                Colonne::make('etat', $c['etat'])->triable('etat_physique')
+                    ->valeur(fn (Boutique $x) => BadgeStatut::html($x->etat_physique?->label() ?? $b['non_renseigne']))->texte(fn (Boutique $x) => $x->etat_physique?->label()),
+                Colonne::make('statut', $c['statut'])->triable()->valeur(fn (Boutique $x) => BadgeStatut::html($x->statut))->texte(fn (Boutique $x) => $x->statut->label()),
                 Colonne::make('actions', $c['actions'])->vue('admin.referencement._boutique-actions', 'boutique')->exportable(false),
             ])
             ->filtres([
                 Filtre::make('site', $b['site'], $sites->mapWithKeys(fn ($s) => [$s->id => ($s->code ? $s->code.' · ' : '').$s->nom])->all(), 'site_id'),
                 Filtre::make('niveau', $b['niveau'], Niveau::query()->orderBy('rang')->get()->mapWithKeys(fn ($n) => [$n->code => $n->code.' · '.$n->libelle])->all(), 'niveau'),
-                Filtre::make('zone', $b['zone'], ZoneSite::query()->orderBy('ordre')->get()->mapWithKeys(fn ($z) => [$z->code => $z->code.' · '.$z->libelle])->all(), 'bloc'),
                 Filtre::make('type', $b['type'], TypeBoutique::query()->orderBy('ordre')->orderBy('libelle')->get()->mapWithKeys(fn ($t) => [$t->id => ($t->code ? $t->code.' · ' : '').$t->libelle])->all(), 'type_boutique_id'),
-                Filtre::make('etat', $b['etat'], collect(EtatPhysiqueBoutique::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()])->all(), 'etat_physique'),
                 Filtre::make('statut', $b['statut'], collect(StatutBoutique::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()])->all(), 'statut'),
+                // Liens venus d'autres écrans (capacités prévues) : zone et état physique, sans liste affichée.
+                Filtre::make('zone', $b['zone'], Boutique::query()->whereNotNull('bloc')->distinct()->pluck('bloc', 'bloc')->all(), 'bloc')->masque(),
+                Filtre::make('etat', $b['etat'], collect(EtatPhysiqueBoutique::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()])->all(), 'etat_physique')->masque(),
             ])
             ->triParDefaut('code')
+            ->lignesParDefaut(10)
+            ->unite($b['unite'])
+            ->exportEnTete()
             ->export('Raaga_boutiques')
             ->repondre($request, fn (ResultatTableau $t) => view('admin.referencement.boutiques', [
                 'tableau' => $t,

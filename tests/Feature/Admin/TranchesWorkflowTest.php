@@ -123,7 +123,7 @@ class TranchesWorkflowTest extends TestCase
         $this->assertSame(1, ParametrageDecision::query()->where('decision', 'REJETE')->count());
 
         $this->en($this->regulateur)->get(route('admin.tranches.show', $tranche))->assertSee('Objectif trop élevé');
-        $this->en($this->regulateur)->get(route('admin.tableau'))->assertSee('à reprendre');
+        $this->en($this->regulateur)->get(route('admin.tableau'))->assertSee('Objectif trop élevé')->assertSee('Rejetée');
 
         // Le régulateur corrige et soumet de nouveau : une deuxième version est figée.
         $this->en($this->regulateur)->put(route('admin.tranches.update', $tranche), $this->formulaire(['objectif_montant' => 2_000_000_000]))->assertSessionHasNoErrors();
@@ -137,7 +137,7 @@ class TranchesWorkflowTest extends TestCase
         $tranche = $this->trancheSoumise();
 
         $this->en($this->validateur)->get(route('admin.tableau'))->assertOk()
-            ->assertSee('À traiter')->assertSee($tranche->nom)->assertSee('à confirmer ou rejeter');
+            ->assertSee('À traiter')->assertSee($tranche->nom)->assertSee('Examiner')->assertSee('Soumise');
         $this->en($this->regulateur)->get(route('admin.tableau'))->assertOk()->assertSee('Rien à traiter');
     }
 

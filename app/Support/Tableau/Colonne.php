@@ -166,7 +166,7 @@ final class Colonne
 
     public function classes(): string
     {
-        return trim(($this->numerique ? 'montant ' : '').$this->classe);
+        return trim(($this->numerique ? 'montant ' : '').($this->cle === 'actions' ? 'bo-actions ' : '').$this->classe);
     }
 
     public function preparer(Builder $requete): void

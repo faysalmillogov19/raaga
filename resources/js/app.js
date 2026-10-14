@@ -282,12 +282,21 @@ Alpine.data('tableau', () => ({
     },
     soumettre() {
         const url = new URL(this.$refs.formulaire.action, window.location.origin);
+        const lignesDefaut = this.$el.dataset.lignesDefaut ?? '25';
         new FormData(this.$refs.formulaire).forEach((valeur, cle) => {
-            if (String(valeur) !== '' && !(cle === 'lignes' && valeur === '25')) {
+            if (String(valeur) !== '' && !(cle === 'lignes' && valeur === lignesDefaut)) {
                 url.searchParams.set(cle, valeur);
             }
         });
         this.charger(url.toString());
+    },
+    // « Réinitialiser » : filtres, recherche et tri effacés, première page.
+    reinitialiser(evenement) {
+        const formulaire = this.$refs.formulaire;
+        formulaire.querySelectorAll('select:not([name="lignes"])').forEach((liste) => { liste.value = ''; });
+        formulaire.querySelectorAll('input[name="q"], input[name="tri"]').forEach((champ) => { champ.value = ''; });
+        formulaire.querySelectorAll('input[type="hidden"]:not([name="tri"])').forEach((champ) => champ.remove());
+        this.charger(evenement.currentTarget.href);
     },
     suivre(evenement) {
         const lien = evenement.target.closest('a[data-tableau-lien]');
@@ -311,6 +320,11 @@ Alpine.data('tableau', () => ({
             }
             this.$refs.resultats.innerHTML = await reponse.text();
             window.history.pushState({}, '', url);
+            // Bouton « Exporter » de l'en-tête de page : il suit le résultat affiché.
+            const exporter = this.$refs.resultats.querySelector('[data-tableau-resultats]')?.dataset.export;
+            if (exporter) {
+                document.querySelectorAll(`[data-export-tableau="${this.$el.dataset.tableau}"]`).forEach((lien) => { lien.href = exporter; });
+            }
             // Le tri choisi par un en-tête est conservé pour les recherches suivantes.
             this.$refs.formulaire.elements.tri.value = new URL(url, window.location.origin).searchParams.get('tri') ?? '';
         } catch (erreur) {

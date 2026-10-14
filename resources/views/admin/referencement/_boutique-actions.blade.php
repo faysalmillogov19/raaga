@@ -1,21 +1,11 @@
-{{-- Boutons d'action d'une ligne de la liste des boutiques. --}}
+{{-- Actions d'une ligne de la liste des boutiques : « Voir » ; « Modifier » seulement si la boutique est libre (site en brouillon, boutique non engagée). --}}
 @php
     $b = __('admin.referencement.boutiques');
-    $gerer = auth()->user()->can(\App\Enums\Droit::SitesGerer->value);
-    $motif = ! $boutique->site->estModifiable() ? $b['site_fige'] : ($boutique->statut->verrouillee() ? $b['verrouillee'] : null);
+    $libre = auth()->user()->can(\App\Enums\Droit::SitesGerer->value) && $boutique->site->estModifiable() && ! $boutique->statut->verrouillee();
 @endphp
-<div class="flex gap-2">
-    <x-admin.bouton-icone :href="route('admin.referencement.boutiques.show', $boutique)" icone="voir" :intitule="$b['voir'].' '.$boutique->reference()" :infobulle="$b['voir']" />
-    @if ($gerer)
-        @if ($motif)
-            <x-admin.bouton-icone icone="modifier" :intitule="$b['modifier_court'].' '.$boutique->reference()" :infobulle="$motif" disabled />
-        @else
-            <x-admin.bouton-icone :href="route('admin.referencement.boutiques.edit', $boutique)" icone="modifier" :intitule="$b['modifier_court'].' '.$boutique->reference()" :infobulle="$b['modifier_court']" />
-        @endif
-        <form method="POST" action="{{ route('admin.referencement.boutiques.destroy', $boutique) }}">
-            @csrf @method('DELETE')
-            <x-admin.bouton-icone type="submit" icone="supprimer" variante="danger" :intitule="$b['supprimer'].' '.$boutique->reference()" :disabled="$motif !== null"
-                                  :infobulle="$motif ?? $b['supprimer']" />
-        </form>
+<div class="flex justify-end gap-2">
+    <x-admin.bouton variante="contour" taille="petit" :href="route('admin.referencement.boutiques.show', $boutique)" aria-label="{{ $b['voir_court'] }} {{ $boutique->reference() }}">{{ $b['voir_court'] }}</x-admin.bouton>
+    @if ($libre)
+        <x-admin.bouton variante="secondaire" taille="petit" :href="route('admin.referencement.boutiques.edit', $boutique)" aria-label="{{ $b['modifier_court'] }} {{ $boutique->reference() }}">{{ $b['modifier_court'] }}</x-admin.bouton>
     @endif
 </div>

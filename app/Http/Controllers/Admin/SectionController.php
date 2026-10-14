@@ -6,8 +6,12 @@ use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Support\ATraiter;
 use App\Support\MenuBackoffice;
+use App\Support\Tableau\ResultatTableau;
+use App\Support\TableauDeBord;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Tableau de bord et sections du back-office pas encore livrées. L'accès est déjà protégé
@@ -37,12 +41,24 @@ class SectionController extends Controller
         'referentiels' => ['referentiels'],
     ];
 
-    public function tableau(Request $request): View
+    /**
+     * Tableau de bord du profil : cartes chiffrées, « À traiter », avancement des sites, derniers imports.
+     * Chaque bloc n'est calculé que si le profil y a droit.
+     */
+    public function tableau(Request $request): Response|StreamedResponse|View
     {
-        return view('admin.tableau', [
-            'menu' => MenuBackoffice::pour($request->user()),
-            'aTraiter' => ATraiter::pour($request->user()),
+        $user = $request->user();
+        $aTraiter = ATraiter::pour($user);
+        $vue = fn (?ResultatTableau $imports) => view('admin.tableau', [
+            'aTraiter' => $aTraiter,
+            'cartes' => TableauDeBord::cartes($user, $aTraiter),
+            'avancement' => TableauDeBord::avancement($user),
+            'imports' => $imports,
         ]);
+
+        return $user->can(Droit::ImportsVoir->value)
+            ? ImportsController::journal(false, 'derniers-imports')->repondre($request, $vue)
+            : $vue(null);
     }
 
     /**

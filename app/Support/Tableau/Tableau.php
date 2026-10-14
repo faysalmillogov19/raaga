@@ -45,6 +45,14 @@ final class Tableau
 
     private ?Closure $departage = null;
 
+    private int $lignesDefaut = self::LIGNES_DEFAUT;
+
+    /** Nom des lignes dans « Affichage de 1 à 10 sur N … » (lignes, boutiques, imports…). */
+    private ?string $unite = null;
+
+    /** Bouton « Exporter » placé dans l'en-tête de la page (et non au-dessus du tableau). */
+    private bool $exportEnTete = false;
+
     private function __construct(private readonly Builder $requete, public readonly string $id) {}
 
     public static function pour(Builder $requete, string $id = 'tableau'): self
@@ -76,12 +84,39 @@ final class Tableau
         return $this;
     }
 
+    public function lignesParDefaut(int $lignes): self
+    {
+        $this->lignesDefaut = in_array($lignes, self::LIGNES, true) ? $lignes : self::LIGNES_DEFAUT;
+
+        return $this;
+    }
+
+    public function unite(string $unite): self
+    {
+        $this->unite = $unite;
+
+        return $this;
+    }
+
+    public function exportEnTete(bool $enTete = true): self
+    {
+        $this->exportEnTete = $enTete;
+
+        return $this;
+    }
+
     /** Ordre secondaire stable (identifiant par défaut), pour une pagination sans doublon. */
     public function departage(Closure $departage): self
     {
         $this->departage = $departage;
 
         return $this;
+    }
+
+    /** Applique une configuration seulement si la condition est vraie. */
+    public function when(bool $condition, Closure $configuration): self
+    {
+        return $condition ? $configuration($this) : $this;
     }
 
     /** Active le bouton « Exporter » ; nom du fichier sans extension (la date est ajoutée). */
@@ -117,7 +152,8 @@ final class Tableau
         $page = max(1, min($etat['page'], (int) ceil(max($filtrees, 1) / $etat['lignes'])));
         $lignes = $requete->forPage($page, $etat['lignes'])->get();
 
-        return new ResultatTableau($this->id, $colonnes, $this->filtres, $etat, $lignes, $page, $total, $filtrees, $this->nomExport !== null, $request);
+        return new ResultatTableau($this->id, $colonnes, $this->filtres, $etat, $lignes, $page, $total, $filtrees, $this->nomExport !== null, $request,
+            $this->lignesDefaut, $this->unite, $this->exportEnTete);
     }
 
     /** Excel du résultat filtré et trié, avec les seules colonnes autorisées et exportables. */
@@ -174,14 +210,14 @@ final class Tableau
         if (! in_array($cle, $triables, true)) {
             [$cle, $sens] = in_array($this->triDefaut, $triables, true) ? [$this->triDefaut, $this->sensDefaut] : [null, 'asc'];
         }
-        $lignes = (int) $request->query('lignes', self::LIGNES_DEFAUT);
+        $lignes = (int) $request->query('lignes', $this->lignesDefaut);
 
         return [
             'q' => mb_substr(trim((string) (is_scalar($request->query('q')) ? $request->query('q') : '')), 0, 100),
             'tri' => $cle,
             'sens' => $sens,
             'page' => max(1, (int) $request->query('page', 1)),
-            'lignes' => in_array($lignes, self::LIGNES, true) ? $lignes : self::LIGNES_DEFAUT,
+            'lignes' => in_array($lignes, self::LIGNES, true) ? $lignes : $this->lignesDefaut,
             'filtres' => array_filter(array_combine(
                 array_map(fn (Filtre $f) => $f->cle, $this->filtres),
                 array_map(fn (Filtre $f) => $f->valeurDe($request->query($f->cle)), $this->filtres),

@@ -51,7 +51,7 @@ class NavigationTest extends TestCase
         $attendus = collect(self::MENUS[$role->value])->sort()->values()->all();
         $this->assertSame($attendus, $visibles);
 
-        $page = $this->get('/admin')->assertOk()->assertSee($role->badge());
+        $page = $this->get('/admin')->assertOk()->assertSee('<span class="adm-profil-role">'.e($role->label()).'</span>', false);
 
         foreach (MenuBackoffice::definition() as $entrees) {
             foreach ($entrees as $entree) {

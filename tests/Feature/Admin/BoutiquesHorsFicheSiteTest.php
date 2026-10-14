@@ -129,12 +129,12 @@ class BoutiquesHorsFicheSiteTest extends TestCase
         $libre = $this->brouillon->boutiques()->create(['niveau' => 'R1', 'bloc' => 'A', 'numero' => '007', 'surface' => 9,
             'type_boutique_id' => $this->type->id, 'statut' => StatutBoutique::Disponible]);
         $page = $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques'))->assertOk();
+        // Liste comme la maquette : « Voir » ; « Modifier » seulement si la boutique est libre ; suppression depuis la fiche.
         $page->assertSee(route('admin.referencement.boutiques.show', $libre))->assertSee(route('admin.referencement.boutiques.edit', $libre))
-            ->assertSee(route('admin.referencement.boutiques.destroy', $libre))->assertSee('aria-label="Supprimer RAA-R1-A-007"', false);
-        // Boutique d'un site confirmé : consultable, modification et suppression inactives avec leur motif.
+            ->assertSee('aria-label="Voir RAA-R1-A-007"', false)->assertSee('aria-label="Modifier RAA-R1-A-007"', false);
         $figee = $this->confirme->boutiques()->sole();
-        $page->assertSee(route('admin.referencement.boutiques.show', $figee))->assertDontSee(route('admin.referencement.boutiques.edit', $figee))
-            ->assertSee('Impossible : site soumis ou validé (demandez au VALIDATEUR d’autoriser la modification)');
+        $page->assertSee(route('admin.referencement.boutiques.show', $figee))->assertDontSee(route('admin.referencement.boutiques.edit', $figee));
+        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.show', $libre))->assertSee(route('admin.referencement.boutiques.destroy', $libre));
 
         $this->en($this->gestionnaire)->delete(route('admin.referencement.boutiques.destroy', $libre))->assertSessionHas('succes');
         $this->assertSoftDeleted($libre);
@@ -145,7 +145,7 @@ class BoutiquesHorsFicheSiteTest extends TestCase
             ->assertSee(route('admin.sites.show', $this->confirme))->assertSee(route('admin.referencement.capacites', ['site' => $this->confirme->id]))
             ->assertSee('aria-label="Capacités prévues Marché de Sarfalao"', false)->assertSee(route('admin.sites.edit', $this->brouillon))->assertDontSee(route('admin.sites.edit', $this->confirme));
         $this->en($this->validateur)->get(route('admin.referencement.boutiques'))->assertOk()
-            ->assertSee('Voir la fiche')->assertDontSee('aria-label="Supprimer', false);
+            ->assertSee('aria-label="Voir SAR-R1-A-001"', false)->assertDontSee('aria-label="Modifier', false);
     }
 
     public function test_les_anciennes_adresses_des_boutiques_redirigent_vers_l_onglet_filtre(): void

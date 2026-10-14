@@ -954,88 +954,11 @@
         color: var(--vert-fonce);
     }
 
-    /* Sous 768 px : chaque ligne devient une carte « libellé : valeur », sans défilement horizontal. */
+    /* Sous 768 px : le tableau défile horizontalement dans sa carte ; la page, jamais. */
     @media (max-width: 767px) {
-        .bo-donnees-cadre {
-            overflow-x: visible;
-        }
-
-        .bo-tableau-donnees thead {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-            clip: rect(0 0 0 0);
-            white-space: nowrap;
-        }
-
-        .bo-tableau-donnees,
-        .bo-tableau-donnees tbody,
-        .bo-tableau-donnees tr,
-        .bo-tableau-donnees td {
-            display: block;
-            width: 100%;
-        }
-
-        .bo-tableau-donnees tr {
-            margin-bottom: 12px;
-            border: 1px solid var(--ligne);
-            border-radius: 8px;
-            padding: 4px 0;
-        }
-
-        .bo-tableau-donnees td {
-            display: grid;
-            grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
-            justify-items: start;
-            gap: 12px;
-            border-bottom: 1px solid var(--ligne);
-            text-align: left;
-            white-space: normal;
-            overflow-wrap: anywhere;
-        }
-
-        .bo-tableau-donnees td:last-child {
-            border-bottom: 0;
-        }
-
-        .bo-tableau-donnees td::before {
-            content: attr(data-libelle);
-            font-size: .78rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            color: var(--gris);
-        }
-
-        .bo-tableau-donnees td.montant {
-            text-align: left;
-            white-space: normal;
-        }
-
-        .bo-tableau-donnees td::before {
-            overflow-wrap: anywhere;
-            font-size: .72rem;
-            letter-spacing: 0;
-        }
-
-        .bo-donnees-recherche {
-            width: 100%;
-        }
-
-        /* Très petits écrans : libellé au-dessus de la valeur. */
-        @media (max-width: 479px) {
-            .bo-tableau-donnees td {
-                grid-template-columns: minmax(0, 1fr);
-                gap: 2px;
-                padding: 8px 12px;
-            }
-        }
-
+        .bo-donnees-recherche,
         .bo-donnees-recherche input {
-            flex: 1;
-            width: auto;
-            min-width: 0;
+            width: 100%;
         }
 
         .bo-donnees-pied {

@@ -7,21 +7,23 @@
     $siteFiltre = (int) ($tableau->etat['filtres']['site'] ?? 0);
 @endphp
 
-<x-admin.layout :titre="$b['titre']" :fil="[['libelle' => $b['titre']]]">
-    <div class="bo-carte !mt-0">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-            <p class="texte-carte max-w-3xl">{{ $b['intro'] }}</p>
-            @if ($gerer)
-                <x-admin.bouton variante="principal" href="{{ route('admin.referencement.boutiques.ajouter', $sitesModifiables->contains('id', $siteFiltre) ? ['site' => $siteFiltre] : []) }}">{{ $b['ajouter'] }}</x-admin.bouton>
-            @endif
-        </div>
+<x-admin.layout :titre="$b['titre']" :sous-titre="$b['sous_titre']" :fil="[['libelle' => $b['titre']]]">
+    <x-slot:actions>
+        <x-admin.bouton variante="contour" icone="exporter" :href="$tableau->urlExport()" data-export-tableau="boutiques">{{ $b['exporter_court'] }}</x-admin.bouton>
+        @if ($gerer)
+            <x-admin.bouton variante="secondaire" icone="importer" href="#fichier-excel">{{ $b['importer'] }}</x-admin.bouton>
+            <x-admin.bouton icone="plus" :href="route('admin.referencement.boutiques.ajouter', $sitesModifiables->contains('id', $siteFiltre) ? ['site' => $siteFiltre] : [])">{{ $b['ajouter'] }}</x-admin.bouton>
+        @endif
+    </x-slot:actions>
 
-        <x-tableau :t="$tableau" :libelle="$b['titre']" class="mt-4" />
+    <div class="bo-carte !mt-0">
+        <x-tableau :t="$tableau" :libelle="$b['titre']" />
     </div>
+    <p class="texte-carte mt-3 text-[12px]">{{ $b['sans_montant'] }}</p>
 
     {{-- Fichier Excel : site choisi d'abord ; modèle et import pour un site en brouillon ou en révision, export pour tout site. --}}
     @if ($gerer)
-        <section class="bo-carte" aria-labelledby="excel-titre">
+        <section class="bo-carte" id="fichier-excel" aria-labelledby="excel-titre">
             <h2 id="excel-titre" class="!text-[1.15rem]">{{ $x['titre'] }}</h2>
             <p class="texte-carte mt-1 max-w-3xl">{{ __('admin.sites.excel.aide', ['taille' => format_nombre(config('raaga.referentiel_boutiques.taille_max_ko') / 1024)]) }}</p>
             <div class="mt-3 grid gap-[18px] xl:grid-cols-2">

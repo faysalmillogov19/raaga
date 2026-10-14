@@ -24,7 +24,16 @@ final class ResultatTableau
         public readonly int $filtrees,
         public readonly bool $exportable,
         private readonly Request $request,
+        public readonly int $lignesDefaut = Tableau::LIGNES_DEFAUT,
+        public readonly ?string $unite = null,
+        public readonly bool $exportEnTete = false,
     ) {}
+
+    /** Adresse sans recherche, filtres ni tri (« Réinitialiser »). */
+    public function urlInitiale(): string
+    {
+        return $this->request->url();
+    }
 
     public function derniere(): int
     {
@@ -75,7 +84,7 @@ final class ResultatTableau
         $p = [
             'q' => $this->etat['q'],
             'tri' => $this->etat['tri'] === null ? '' : ($this->etat['sens'] === 'desc' ? '-' : '').$this->etat['tri'],
-            'lignes' => $this->etat['lignes'] === Tableau::LIGNES_DEFAUT ? '' : $this->etat['lignes'],
+            'lignes' => $this->etat['lignes'] === $this->lignesDefaut ? '' : $this->etat['lignes'],
             'page' => $this->page > 1 ? $this->page : '',
             ...$this->etat['filtres'],
         ];

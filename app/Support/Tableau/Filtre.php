@@ -8,8 +8,18 @@ use Illuminate\Database\Eloquent\Builder;
 /** Filtre en liste déroulante au-dessus d'un tableau : seules les valeurs proposées sont acceptées. */
 final class Filtre
 {
+    /** Filtre appliqué depuis l'adresse (lien d'un autre écran) mais absent des listes affichées. */
+    public bool $masque = false;
+
     /** @param array<string|int, string> $options valeur => libellé */
     private function __construct(public readonly string $cle, public readonly string $libelle, public readonly array $options, private readonly Closure $appliquer) {}
+
+    public function masque(): self
+    {
+        $this->masque = true;
+
+        return $this;
+    }
 
     /**
      * @param  array<string|int, string>  $options
