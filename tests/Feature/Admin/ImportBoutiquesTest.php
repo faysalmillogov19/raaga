@@ -83,7 +83,7 @@ class ImportBoutiquesTest extends TestCase
 
         // Aperçu : rien n'est encore enregistré.
         $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.import', $this->site))->assertOk()
-            ->assertSee('3 lignes valides')->assertSee('R+1')->assertSee('Rez-de-chaussée')->assertDontSee('erreur');
+            ->assertSee('3 lignes valides')->assertSee('R+1')->assertSee('Rez-de-chaussée')->assertDontSee('id="erreurs-titre"', false);
         $this->assertSame(0, Boutique::query()->count());
 
         $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $this->site))->assertSessionHas('succes');

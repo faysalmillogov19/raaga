@@ -69,11 +69,15 @@ class BoutiquesHorsFicheSiteTest extends TestCase
 
     public function test_ajout_depuis_l_onglet_boutiques_apres_choix_du_site(): void
     {
-        // Seuls les sites en brouillon ou en révision sont proposés.
-        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.ajouter'))->assertOk()
-            ->assertSee('RAA · Marché Raaga')->assertDontSee('SAR · Marché de Sarfalao')->assertDontSee('Ajouter une boutique');
-        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.ajouter', ['site' => $this->brouillon->id]))->assertOk()
-            ->assertSee(route('admin.referencement.boutiques.store', $this->brouillon))->assertSee(route('admin.referencement.boutiques.serie', $this->brouillon));
+        // Fenêtre « Ajouter des boutiques » : seuls les sites en brouillon ou en révision sont proposés.
+        $page = $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques'))->assertOk()->getContent();
+        preg_match('#<select id="ajout-site".*?</select>#s', $page, $choix);
+        $this->assertStringContainsString('RAA · Marché Raaga', $choix[0]);
+        $this->assertStringNotContainsString('Sarfalao', $choix[0]);
+        $this->assertStringContainsString('<dialog id="ajouter-boutiques"', $page);
+        // L'ancien écran d'ajout ouvre la fenêtre sur la liste.
+        $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.ajouter.ecran', ['site' => $this->brouillon->id]))
+            ->assertRedirect(route('admin.referencement.boutiques', ['ajouter' => 1, 'site' => $this->brouillon->id]));
 
         $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.store', $this->brouillon), [
             'niveau' => 'R1', 'bloc' => 'A', 'numero' => 45, 'type_boutique_id' => $this->type->id, 'etat_physique' => 'LIVREE',
@@ -95,10 +99,9 @@ class BoutiquesHorsFicheSiteTest extends TestCase
         // Le choix du site pour l'import ne propose pas le site confirmé ; l'export, si.
         $page = $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques'))->assertOk()->getContent();
         preg_match('#<select id="import-site".*?</select>#s', $page, $import);
-        preg_match('#<select id="export-site".*?</select>#s', $page, $export);
         $this->assertStringContainsString('RAA · Marché Raaga', $import[0]);
         $this->assertStringNotContainsString('Sarfalao', $import[0]);
-        $this->assertStringContainsString('SAR · Marché de Sarfalao', $export[0]);
+        $this->assertStringContainsString('formaction="'.route('admin.referencement.boutiques.excel.export').'"', $page);
 
         // Colonne Site vide : code du site choisi ; code d'un autre site : erreur.
         $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.deposer'), [

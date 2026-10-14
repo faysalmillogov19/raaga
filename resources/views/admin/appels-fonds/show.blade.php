@@ -42,15 +42,14 @@
 
                 @if ($d->statut === StatutDeclarationVirement::Declaree)
                     @can(Droit::AppelsFondsRapprocher->value)
-                        <p class="texte-carte mt-3">{{ $a['rapprocher_intro'] }}</p>
-                        <form method="POST" action="{{ route('admin.appels-fonds.rapprocher', $d) }}" class="mt-2 grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-                            @csrf
-                            <x-admin.champ nom="montant_recu" :libelle="$a['montant_recu']" type="number" min="1" :valeur="$d->montant" required />
-                            <x-admin.champ nom="recu_le" :libelle="$a['recu_le']" type="date" :valeur="$d->date_virement->toDateString()" required />
-                            <x-admin.champ nom="reference_releve" :libelle="$a['reference_releve']" required />
-                            <x-admin.bouton variante="principal" type="submit">{{ $a['rapprocher'] }}</x-admin.bouton>
-                        </form>
-                        <div class="mt-3">
+                        <div class="mt-3 flex flex-wrap gap-3">
+                            <x-admin.fenetre :id="'rapprocher-'.$d->id" :titre="$a['rapprocher']" :action="route('admin.appels-fonds.rapprocher', $d)" :bouton="$a['rapprocher']">
+                                <x-slot:declencheur>{{ $a['rapprocher'] }}</x-slot:declencheur>
+                                <p class="texte-carte mb-4">{{ $a['rapprocher_intro'] }}</p>
+                                <x-admin.champ nom="montant_recu" :id="'montant-'.$d->id" :libelle="$a['montant_recu']" type="number" min="1" :valeur="$d->montant" required />
+                                <x-admin.champ nom="recu_le" :id="'recu-'.$d->id" :libelle="$a['recu_le']" type="date" :valeur="$d->date_virement->toDateString()" required class="mt-4" />
+                                <x-admin.champ nom="reference_releve" :id="'releve-'.$d->id" :libelle="$a['reference_releve']" required class="mt-4" />
+                            </x-admin.fenetre>
                             <x-admin.confirmation :id="'rejeter-'.$d->id" :titre="$a['rejeter']" :message="$a['rejeter_message']" :action="route('admin.appels-fonds.rejeter', $d)" :bouton="$a['rejeter']" motif danger>
                                 <x-slot:declencheur>{{ $a['rejeter'] }}</x-slot:declencheur>
                             </x-admin.confirmation>

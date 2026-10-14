@@ -6,6 +6,6 @@
 <div class="flex justify-end gap-2">
     <x-admin.bouton variante="contour" taille="petit" :href="route('admin.referencement.boutiques.show', $boutique)" aria-label="{{ $b['voir_court'] }} {{ $boutique->reference() }}">{{ $b['voir_court'] }}</x-admin.bouton>
     @if ($libre)
-        <x-admin.bouton variante="secondaire" taille="petit" :href="route('admin.referencement.boutiques.edit', $boutique)" aria-label="{{ $b['modifier_court'] }} {{ $boutique->reference() }}">{{ $b['modifier_court'] }}</x-admin.bouton>
+        <x-admin.bouton variante="secondaire" taille="petit" :href="route('admin.referencement.boutiques.edit', $boutique)" :data-fenetre-url="route('admin.referencement.boutiques.edit', $boutique)" aria-haspopup="dialog" id="modifier-boutique-{{ $boutique->id }}-ouvrir" aria-label="{{ $b['modifier_court'] }} {{ $boutique->reference() }}">{{ $b['modifier_court'] }}</x-admin.bouton>
     @endif
 </div>

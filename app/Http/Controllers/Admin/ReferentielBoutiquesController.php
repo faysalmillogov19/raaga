@@ -78,22 +78,9 @@ class ReferentielBoutiquesController extends Controller
                 'tableau' => $t,
                 'sites' => $sites,
                 'sitesModifiables' => $this->sitesModifiables(),
+                'types' => SitesController::typesPour(),
                 'imports' => ($id = $t->etat['filtres']['site'] ?? null) && ($site = Site::query()->find($id)) ? ImportBoutiquesController::journal($site) : collect(),
             ]));
-    }
-
-    /** Ajout de boutiques : on choisit d'abord le site (brouillon ou révision, avec un code), puis une boutique ou une série. */
-    public function ajouter(Request $request): View
-    {
-        Gate::authorize(Droit::SitesGerer->value);
-        $sites = $this->sitesModifiables();
-        $choisi = $request->integer('site') ?: null;
-
-        return view('admin.referencement.ajouter', [
-            'sites' => $sites,
-            'site' => $choisi ? $sites->firstWhere('id', $choisi) : null,
-            'types' => TypeBoutique::query()->utilisables()->orderBy('ordre')->orderBy('libelle')->get(),
-        ]);
     }
 
     /** Export Excel des boutiques filtrées, au format du modèle « Locaux ». */
@@ -112,6 +99,7 @@ class ReferentielBoutiquesController extends Controller
             'boutique' => $boutique->load(['site', 'type']),
             'journal' => AuditLog::query()->where('entite_type', 'Boutique')->where('entite_id', (string) $boutique->id)->with('acteur')->latest('id')->get(),
             'anciensCodes' => HistoriqueCode::query()->boutiques()->where('objet_id', $boutique->id)->orderBy('id')->get(),
+            'types' => SitesController::typesPour($boutique),
         ]);
     }
 

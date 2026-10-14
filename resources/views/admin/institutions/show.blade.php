@@ -39,21 +39,21 @@
 
         <section class="bo-carte !mt-0" aria-labelledby="interlocuteur-titre">
             <h2 id="interlocuteur-titre" class="!text-[1.15rem]">{{ $i['interlocuteur'] }}</h2>
+            <dl class="bo-definitions mt-3">
+                @foreach (['interlocuteur_nom', 'interlocuteur_email', 'interlocuteur_telephone'] as $champ)
+                    <dt>{{ $i['champs'][$champ] }}</dt><dd>{{ $institution->{$champ} ?? '—' }}</dd>
+                @endforeach
+            </dl>
             @can(Droit::InstitutionsInterlocuteur->value)
-                <form method="POST" action="{{ route('admin.institutions.interlocuteur', $institution) }}" class="mt-3 space-y-4">
-                    @csrf
-                    @method('PUT')
-                    @foreach (['interlocuteur_nom' => 'text', 'interlocuteur_email' => 'email', 'interlocuteur_telephone' => 'tel'] as $champ => $type)
-                        <x-admin.champ :nom="$champ" :libelle="$i['champs'][$champ]" :type="$type" :valeur="$institution->{$champ}" />
-                    @endforeach
-                    <x-admin.bouton variante="contour" type="submit">{{ $o['enregistrer'] }}</x-admin.bouton>
-                </form>
-            @else
-                <dl class="bo-definitions mt-3">
-                    @foreach (['interlocuteur_nom', 'interlocuteur_email', 'interlocuteur_telephone'] as $champ)
-                        <dt>{{ $i['champs'][$champ] }}</dt><dd>{{ $institution->{$champ} ?? '—' }}</dd>
-                    @endforeach
-                </dl>
+                <div class="mt-4">
+                    <x-admin.fenetre id="modifier-interlocuteur" :titre="$i['interlocuteur']" :action="route('admin.institutions.interlocuteur', $institution)" methode="PUT"
+                                     :bouton="$o['enregistrer']" declencheur-variante="secondaire">
+                        <x-slot:declencheur>{{ __('admin.parametrage.actions.modifier') }}</x-slot:declencheur>
+                        @foreach (['interlocuteur_nom' => 'text', 'interlocuteur_email' => 'email', 'interlocuteur_telephone' => 'tel'] as $champ => $type)
+                            <x-admin.champ :nom="$champ" :libelle="$i['champs'][$champ]" :type="$type" :valeur="$institution->{$champ}" :class="$loop->first ? '' : 'mt-4'" />
+                        @endforeach
+                    </x-admin.fenetre>
+                </div>
             @endcan
         </section>
     </div>
@@ -82,13 +82,15 @@
                 </tbody>
             </table>
         </div>
-        <form method="POST" action="{{ route('admin.institutions.inviter', $institution) }}" class="mt-5 grid gap-4 border-t border-ligne pt-4 lg:grid-cols-[1fr_1fr_200px_auto] lg:items-end">
-            @csrf
-            <x-admin.champ nom="nom" :libelle="$o['nom']" required />
-            <x-admin.champ nom="email" :libelle="$o['email']" type="email" required />
-            <x-admin.liste nom="role" :libelle="$o['role']" :options="collect(RoleEnum::institutionnels())->mapWithKeys(fn ($r) => [$r->value => __('institutionnel.statuts_role.'.$r->value)])->all()" :valeur="RoleEnum::InstitutionSignataire->value" />
-            <x-admin.bouton variante="principal" type="submit">{{ $i['inviter'] }}</x-admin.bouton>
-        </form>
+        <div class="mt-4">
+            <x-admin.fenetre id="inviter-membre" :titre="$i['inviter']" :action="route('admin.institutions.inviter', $institution)" :bouton="$i['inviter']" declencheur-icone="plus">
+                <x-slot:declencheur>{{ $i['inviter'] }}</x-slot:declencheur>
+                <x-admin.champ nom="nom" :libelle="$o['nom']" required />
+                <x-admin.champ nom="email" :libelle="$o['email']" type="email" required class="mt-4" />
+                <x-admin.champ nom="role" :libelle="$o['role']" type="liste" class="mt-4"
+                               :options="collect(RoleEnum::institutionnels())->mapWithKeys(fn ($r) => [$r->value => __('institutionnel.statuts_role.'.$r->value)])->all()" :valeur="RoleEnum::InstitutionSignataire->value" />
+            </x-admin.fenetre>
+        </div>
     </section>
 
     @if ($conventions->isNotEmpty())

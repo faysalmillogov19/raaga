@@ -413,6 +413,202 @@ Alpine.data('rechercheGlobale', () => ({
     },
 }));
 
+/*
+ * Fenêtres modales du back-office (<x-admin.fenetre>) : <dialog> natif ouvert par showModal(). La page derrière ne
+ * défile plus ; focus sur le premier champ, rendu au bouton d'origine ; fermeture par ×, Annuler, Échap ou clic sur
+ * le fond. Envoi sans rechargement : erreurs de validation (422) sous chaque champ, fenêtre laissée ouverte ; en cas
+ * de succès, le contenu de la page est remplacé par celui renvoyé (ligne du tableau, message en haut de la liste).
+ * Les liens [data-fenetre-url] ouvrent une fenêtre chargée depuis le serveur (formulaire de modification d'une ligne).
+ */
+const CHAMPS = 'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])';
+
+const verrouillerPage = (verrou) => document.documentElement.classList.toggle('adm-fenetre-ouverte', verrou);
+
+// « lignes.RC.3.loyer » → « lignes[RC][3][loyer] » (nom du champ dans le formulaire).
+const nomChamp = (cle) => cle.split('.').map((morceau, i) => (i === 0 ? morceau : `[${morceau}]`)).join('');
+
+// Contenu de la page remplacé par la page renvoyée par le serveur (après redirection) ; focus rendu si possible.
+const remplacerContenu = (html, url, focusId) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const nouveau = doc.querySelector('#contenu');
+    const actuel = document.querySelector('#contenu');
+    if (!nouveau || !actuel) {
+        window.location.href = url;
+        return;
+    }
+    actuel.innerHTML = nouveau.innerHTML;
+    document.title = doc.title;
+    if (url && url !== window.location.href) {
+        window.history.pushState({}, '', url);
+    }
+    window.setTimeout(() => {
+        const cible = (focusId && document.getElementById(focusId)) || actuel.querySelector('[role="status"], [role="alert"]') || actuel.querySelector('h1');
+        cible?.setAttribute('tabindex', cible.getAttribute('tabindex') ?? '-1');
+        cible?.focus({ preventScroll: true });
+        actuel.scrollIntoView({ block: 'start' });
+    }, 0);
+};
+
+Alpine.data('fenetre', () => ({
+    envoi: false,
+    erreur: '',
+    origine: null,
+    init() {
+        if (this.$el.hasAttribute('data-ouvrir')) {
+            this.$nextTick(() => this.ouvrir());
+        }
+    },
+    ouvrir(evenement = null) {
+        this.origine = evenement?.currentTarget ?? window.raagaFenetreOrigine ?? document.activeElement;
+        window.raagaFenetreOrigine = null;
+        const dialogue = this.$refs.dialogue;
+        if (!dialogue.open) {
+            dialogue.showModal();
+        }
+        verrouillerPage(true);
+        const premier = dialogue.querySelector('.adm-fenetre-corps ' + CHAMPS) ?? dialogue.querySelector('.adm-fenetre-pied button[type="submit"]');
+        premier?.focus();
+    },
+    fermer() {
+        this.$refs.dialogue.close();
+    },
+    fermee() {
+        verrouillerPage(false);
+        this.erreur = '';
+        this.origine?.isConnected && this.origine.focus();
+        this.$dispatch('fenetre-fermee');
+    },
+    // Clic sur le fond assombri (en dehors du cadre de la fenêtre).
+    clicFond(evenement) {
+        if (evenement.target === this.$refs.dialogue) {
+            this.fermer();
+        }
+    },
+    effacerErreurs(formulaire) {
+        this.erreur = '';
+        formulaire.querySelectorAll('[data-erreur-js]').forEach((p) => p.remove());
+        formulaire.querySelectorAll('[aria-invalid="true"]').forEach((champ) => {
+            champ.removeAttribute('aria-invalid');
+            champ.classList.remove('est-invalide');
+        });
+    },
+    afficherErreurs(formulaire, erreurs) {
+        let premier = null;
+        Object.entries(erreurs).forEach(([cle, messages]) => {
+            const champ = formulaire.querySelector(`[name="${nomChamp(cle)}"], [name="${nomChamp(cle)}[]"]`);
+            const message = document.createElement('p');
+            message.className = 'message-erreur';
+            message.setAttribute('role', 'alert');
+            message.dataset.erreurJs = '';
+            message.textContent = messages[0];
+            if (!champ) {
+                this.erreur = [this.erreur, messages[0]].filter(Boolean).join(' ');
+                return;
+            }
+            champ.setAttribute('aria-invalid', 'true');
+            champ.classList.add('est-invalide');
+            const conteneur = champ.closest('.formulaire-champ, fieldset') ?? champ.parentElement;
+            message.id = `${champ.id || cle}-erreur-js`;
+            champ.setAttribute('aria-describedby', [champ.getAttribute('aria-describedby'), message.id].filter(Boolean).join(' '));
+            conteneur.appendChild(message);
+            premier ??= champ;
+        });
+        premier?.focus();
+    },
+    async envoyer(evenement) {
+        const formulaire = evenement.target;
+        const bouton = evenement.submitter;
+        if (bouton?.getAttribute('formmethod')?.toLowerCase() === 'get') {
+            const adresse = new URL(bouton.formAction, window.location.origin);
+            new FormData(formulaire).forEach((valeur, cle) => {
+                if (typeof valeur === 'string' && valeur !== '' && !cle.startsWith('_')) {
+                    adresse.searchParams.set(cle, valeur);
+                }
+            });
+            window.location.href = adresse.toString();
+            return;
+        }
+        if (this.envoi) {
+            return;
+        }
+        this.effacerErreurs(formulaire);
+        this.envoi = true;
+        try {
+            const reponse = await fetch(formulaire.action, {
+                method: 'POST',
+                body: new FormData(formulaire),
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            if (reponse.status === 422) {
+                const donnees = await reponse.json();
+                this.erreur = this.$el.dataset.messageCorriger;
+                this.afficherErreurs(formulaire, donnees.errors ?? {});
+                return;
+            }
+            if (reponse.status === 403) {
+                this.erreur = this.$el.dataset.messageInterdit;
+                return;
+            }
+            if (!reponse.ok) {
+                this.erreur = this.$el.dataset.messageErreur;
+                return;
+            }
+            const type = reponse.headers.get('Content-Type') ?? '';
+            let html;
+            let url = reponse.url;
+            if (type.includes('text/html')) {
+                html = await reponse.text();
+            } else if (type.includes('application/json')) {
+                // Réponse JSON (préférence enregistrée…) : la page courante est relue.
+                if (formulaire.querySelector('[name="theme"]')) {
+                    window.location.reload();
+                    return;
+                }
+                url = window.location.href;
+                html = await (await fetch(url, { credentials: 'same-origin' })).text();
+            } else {
+                // Téléchargement ou réponse inattendue : envoi classique.
+                formulaire.submit();
+                return;
+            }
+            const focusId = this.origine?.id;
+            this.fermer();
+            remplacerContenu(html, url, focusId);
+        } catch {
+            this.erreur = this.$el.dataset.messageErreur;
+        } finally {
+            this.envoi = false;
+        }
+    },
+}));
+
+// Fenêtre chargée depuis le serveur : lien [data-fenetre-url] (« Modifier » sur une ligne de tableau).
+document.addEventListener('click', async (evenement) => {
+    const lien = evenement.target.closest('[data-fenetre-url]');
+    if (!lien || evenement.ctrlKey || evenement.metaKey || evenement.shiftKey) {
+        return;
+    }
+    evenement.preventDefault();
+    try {
+        const reponse = await fetch(lien.dataset.fenetreUrl, { headers: { 'X-Fenetre': '1', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+        if (!reponse.ok) {
+            throw new Error(String(reponse.status));
+        }
+        let hote = document.getElementById('fenetres-distantes');
+        if (!hote) {
+            hote = document.createElement('div');
+            hote.id = 'fenetres-distantes';
+            document.body.appendChild(hote);
+        }
+        window.raagaFenetreOrigine = lien;
+        hote.innerHTML = await reponse.text();
+        hote.addEventListener('fenetre-fermee', () => { hote.innerHTML = ''; }, { once: true });
+    } catch {
+        window.location.href = lien.href;
+    }
+});
+
 window.Alpine = Alpine;
 
 Alpine.start();

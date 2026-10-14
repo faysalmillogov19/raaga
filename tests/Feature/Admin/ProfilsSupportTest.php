@@ -118,7 +118,8 @@ class ProfilsSupportTest extends TestCase
         Notification::fake();
         $this->connecterBackoffice(Role::SuperAdmin);
 
-        $this->get('/admin/utilisateurs/inviter')->assertOk()->assertSee('ADMIN');
+        $this->get('/admin/utilisateurs/inviter')->assertRedirect(route('admin.utilisateurs', ['inviter' => 1]));
+        $this->get(route('admin.utilisateurs', ['inviter' => 1]))->assertOk()->assertSee('<dialog id="inviter-utilisateur"', false)->assertSee('ADMIN');
         $this->post('/admin/utilisateurs', ['nom' => 'Rasmata OUÉDRAOGO', 'email' => 'rasmata@raaga.test', 'role' => 'admin'])
             ->assertSessionHas('succes');
 

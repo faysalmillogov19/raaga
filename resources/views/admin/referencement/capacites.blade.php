@@ -29,37 +29,26 @@
                 <p class="texte-carte mt-1 max-w-3xl">{{ $k['liste_aide'] }}</p>
             </div>
             @if ($gerer)
-                <x-admin.bouton variante="contour" href="{{ route('admin.referencement.imports') }}">{{ $k['importer'] }}</x-admin.bouton>
+                <div class="flex flex-wrap gap-3">
+                    <x-admin.bouton variante="contour" href="{{ route('admin.referencement.imports') }}">{{ $k['importer'] }}</x-admin.bouton>
+                    {{-- Ajout d'une capacité en fenêtre modale (site en brouillon ou en révision). --}}
+                    <x-admin.fenetre id="ajouter-capacite" :titre="$k['ajouter']" :action="route('admin.referencement.capacites.store')" :bouton="$k['ajouter']" declencheur-icone="plus">
+                        <x-slot:declencheur>{{ $k['ajouter'] }}</x-slot:declencheur>
+                        @if ($sitesModifiables->isEmpty())
+                            <x-admin.message type="avertissement">{{ $k['aucun_site_modifiable'] }}</x-admin.message>
+                        @else
+                            <p class="texte-carte mb-4">{{ $k['ajouter_aide'] }}</p>
+                            <div class="adm-fenetre-grille">
+                                <x-admin.champ nom="site_id" id="cap-site" :libelle="ucfirst($k['champs']['site_id'])" type="liste" required class="adm-plein"
+                                               :options="$sitesModifiables->mapWithKeys(fn ($s) => [$s->id => $libelleSite($s)])->all()" :valeur="$filtreSite?->id" :vide="$k['choisir_option']" />
+                                @include('admin.referencement._capacite-champs', ['capacite' => null])
+                            </div>
+                        @endif
+                    </x-admin.fenetre>
+                </div>
             @endif
         </div>
 
-        @if ($gerer)
-            <details class="mt-4" @if ($errors->any()) open @endif>
-                <summary class="bo-bouton-icone bo-bouton-icone-principal" aria-label="{{ $k['ajouter'] }}" data-infobulle="{{ $k['ajouter'] }}">
-                    <x-icon name="plus" class="h-[18px] w-[18px]" />
-                </summary>
-                @if ($sitesModifiables->isEmpty())
-                    <x-admin.message type="erreur" class="mt-3 !mb-0">{{ $k['aucun_site_modifiable'] }}</x-admin.message>
-                @else
-                    <form method="POST" action="{{ route('admin.referencement.capacites.store') }}" class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" novalidate>
-                        @csrf
-                        <p class="texte-carte sm:col-span-2 xl:col-span-4">{{ $k['ajouter_aide'] }}</p>
-                        <div class="formulaire-champ !mt-0">
-                            <label for="cap-site">{{ ucfirst($k['champs']['site_id']) }}</label>
-                            <select id="cap-site" name="site_id" class="champ @error('site_id') est-invalide @enderror" required>
-                                <option value="">{{ $k['choisir_option'] }}</option>
-                                @foreach ($sitesModifiables as $s)
-                                    <option value="{{ $s->id }}" @selected((int) old('site_id', $filtreSite?->id) === $s->id)>{{ $libelleSite($s) }}</option>
-                                @endforeach
-                            </select>
-                            @error('site_id') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-                        </div>
-                        @include('admin.referencement._capacite-champs', ['capacite' => null])
-                        <div class="flex items-end pb-1"><x-admin.bouton-icone type="submit" icone="check" variante="principal" :intitule="$k['ajouter']" /></div>
-                    </form>
-                @endif
-            </details>
-        @endif
 
         {{-- Tableau : un champ de recherche par colonne (filtrage dans la page). --}}
         <div class="mt-4 overflow-x-auto"
@@ -122,15 +111,17 @@
                                                           icone="voir" :intitule="$k['voir'].' : '.$nom" :infobulle="$k['voir']" />
                                     @if ($gerer)
                                         @if ($modifiable)
-                                            <x-admin.bouton-icone :href="route('admin.referencement.capacites.edit', $cap)" icone="modifier" :intitule="$k['modifier'].' : '.$nom" :infobulle="$k['modifier']" />
+                                            <x-admin.bouton-icone :href="route('admin.referencement.capacites.edit', $cap)" :data-fenetre-url="route('admin.referencement.capacites.edit', $cap)" aria-haspopup="dialog" id="modifier-capacite-{{ $cap->id }}-ouvrir" icone="modifier" :intitule="$k['modifier'].' : '.$nom" :infobulle="$k['modifier']" />
                                         @else
                                             <x-admin.bouton-icone icone="modifier" :intitule="$k['modifier'].' : '.$nom" :infobulle="$k['site_fige']" disabled />
                                         @endif
-                                        <form method="POST" action="{{ route('admin.referencement.capacites.destroy', $cap) }}">
-                                            @csrf @method('DELETE')
-                                            <x-admin.bouton-icone type="submit" icone="supprimer" variante="danger" :intitule="$k['supprimer'].' : '.$nom" :disabled="! $modifiable"
-                                                                  :infobulle="$modifiable ? $k['supprimer'] : $k['site_fige']" />
-                                        </form>
+                                        @if ($modifiable)
+                                            <x-admin.confirmation :id="'supprimer-capacite-'.$cap->id" taille="petit" danger :titre="$k['supprimer'].' : '.$nom" :message="$k['confirmer_suppression']"
+                                                                  :action="route('admin.referencement.capacites.destroy', $cap)" methode="DELETE" :bouton="$k['supprimer']"
+                                                                  icone="supprimer" :libelle="$k['supprimer'].' : '.$nom" />
+                                        @else
+                                            <x-admin.bouton-icone icone="supprimer" variante="danger" :intitule="$k['supprimer'].' : '.$nom" :infobulle="$k['site_fige']" disabled />
+                                        @endif
                                     @endif
                                 </div>
                             </td>
@@ -141,6 +132,10 @@
             </table>
         </div>
     </div>
+
+    @if ($capaciteModifiee)
+        @include('admin.referencement._fenetre-capacite', ['capacite' => $capaciteModifiee, 'listes' => $listesModifiee, 'ouvrir' => true])
+    @endif
 
     {{-- Comparaison avec le référentiel, pour le site choisi. --}}
     @if ($sites->isNotEmpty())

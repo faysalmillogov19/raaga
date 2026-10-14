@@ -24,7 +24,7 @@
         <div class="mt-4 flex flex-wrap gap-3">
             <x-admin.bouton variante="contour" href="{{ route('admin.sites.show', $boutique->site) }}">{{ $b['voir_site'] }}</x-admin.bouton>
             @if ($modifiable)
-                <x-admin.bouton variante="principal" href="{{ route('admin.referencement.boutiques.edit', $boutique) }}">{{ $b['modifier'] }}</x-admin.bouton>
+                @include('admin.referencement._fenetre-boutique', ['boutique' => $boutique, 'types' => $types, 'declencheur' => true, 'ouvrir' => request()->boolean('modifier')])
                 <x-admin.confirmation id="supprimer-boutique" :titre="$b['supprimer']" :message="$b['confirmer_suppression']"
                                       :action="route('admin.referencement.boutiques.destroy', $boutique)" :bouton="$b['supprimer']" danger>
                     <x-slot:declencheur>{{ $b['supprimer'] }}</x-slot:declencheur>

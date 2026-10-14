@@ -5,32 +5,24 @@
     $gerer = auth()->user()->can(Droit::SitesGerer->value);
 @endphp
 
-<x-admin.layout :titre="$t['titre']" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $t['titre']]]">
+<x-admin.layout :titre="$t['titre']" :sous-titre="$t['intro']" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $t['titre']]]">
+    @if ($gerer)
+        <x-slot:actions>
+            <x-admin.fenetre id="ajouter-type" :titre="$t['ajouter_titre']" :action="route('admin.sites.types.store')" :bouton="$t['ajouter']" declencheur-icone="plus">
+                <x-slot:declencheur>{{ $t['ajouter_titre'] }}</x-slot:declencheur>
+                <p class="texte-carte mb-4">{{ $t['ajouter_aide'] }}</p>
+                <div class="adm-fenetre-grille">
+                    <x-admin.champ nom="code" :libelle="$t['champs']['code']" maxlength="5" required autocomplete="off" :aide="$t['code_aide']" />
+                    <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" maxlength="80" required />
+                    <x-admin.champ nom="description" :libelle="$t['champs']['description']" maxlength="300" class="adm-plein" />
+                    <x-admin.champ nom="ordre" :libelle="$t['champs']['ordre']" type="number" min="0" max="9999" />
+                    <x-admin.champ nom="attribuable" :libelle="$t['champs']['attribuable']" type="liste" :options="['1' => $t['oui'], '0' => $t['non']]" valeur="1" required />
+                </div>
+            </x-admin.fenetre>
+        </x-slot:actions>
+    @endif
+
     <div class="bo-carte !mt-0">
-        <p class="texte-carte mb-4 max-w-3xl">{{ $t['intro'] }}</p>
         <x-tableau :t="$tableau" :libelle="$t['titre']" />
     </div>
-
-    @if ($gerer)
-        <section class="bo-carte" aria-labelledby="ajout-titre">
-            <h2 id="ajout-titre" class="!text-[1.15rem]">{{ $t['ajouter_titre'] }}</h2>
-            <p class="texte-carte mt-1">{{ $t['ajouter_aide'] }}</p>
-            <form method="POST" action="{{ route('admin.sites.types.store') }}" class="mt-3 grid gap-4 lg:grid-cols-3" novalidate>
-                @csrf
-                <x-admin.champ nom="code" :libelle="$t['champs']['code']" maxlength="5" required autocomplete="off" :aide="$t['code_aide']" />
-                <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" maxlength="80" required />
-                <x-admin.champ nom="ordre" :libelle="$t['champs']['ordre']" type="number" min="0" max="9999" />
-                <x-admin.champ nom="description" :libelle="$t['champs']['description']" maxlength="300" class="lg:col-span-3" />
-                <div class="formulaire-champ !mt-0">
-                    <label for="attribuable">{{ $t['champs']['attribuable'] }}</label>
-                    <select id="attribuable" name="attribuable" class="champ @error('attribuable') est-invalide @enderror" required>
-                        <option value="1" @selected(old('attribuable', '1') === '1')>{{ $t['oui'] }}</option>
-                        <option value="0" @selected(old('attribuable') === '0')>{{ $t['non'] }}</option>
-                    </select>
-                    @error('attribuable') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-                </div>
-                <div class="flex items-end"><x-admin.bouton variante="principal" type="submit">{{ $t['ajouter'] }}</x-admin.bouton></div>
-            </form>
-        </section>
-    @endif
 </x-admin.layout>

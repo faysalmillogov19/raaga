@@ -113,7 +113,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             });
             // Boutiques : ajout (site choisi d'abord), fiche, Excel ; seulement sur un site en brouillon ou en révision (sauf export).
             Route::prefix('boutiques')->name('boutiques.')->middleware('can:'.Droit::SitesGerer->value)->group(function () {
-                Route::get('/ajouter', [ReferentielBoutiquesController::class, 'ajouter'])->name('ajouter');
+                Route::get('/ajouter', fn () => redirect()->route('admin.referencement.boutiques', ['ajouter' => 1, 'site' => request('site')]))->name('ajouter.ecran');
+                Route::post('/ajouter', [SitesController::class, 'ajouterDepuisListe'])->name('ajouter');
                 Route::controller(SitesController::class)->group(function () {
                     Route::post('/sites/{site}', 'ajouterBoutique')->whereNumber('site')->name('store');
                     Route::post('/sites/{site}/serie', 'genererBoutiques')->whereNumber('site')->name('serie');

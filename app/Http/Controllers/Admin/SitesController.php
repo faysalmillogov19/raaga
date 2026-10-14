@@ -26,6 +26,7 @@ use App\Support\Tableau\Tableau;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\HtmlString;
@@ -205,7 +206,7 @@ class SitesController extends Controller
     }
 
     /** Fiche d'une boutique : niveau, bloc et numéro ne se saisissent que tant que le code manque (boutiques saisies avant les codes). */
-    public function editBoutique(Boutique $boutique): View|RedirectResponse
+    public function editBoutique(Request $request, Boutique $boutique): View|RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
         $site = $boutique->site;
@@ -217,12 +218,30 @@ class SitesController extends Controller
             return redirect()->route('admin.referencement.boutiques.show', $boutique)->with('erreur', __('admin.sites.boutiques.verrouillee'));
         }
 
-        return view('admin.sites.boutique', [
-            'site' => $site,
-            'boutique' => $boutique,
-            // Types utilisables, plus le type actuel de la boutique s'il a été désactivé.
-            'types' => TypeBoutique::query()->where(fn ($q) => $q->utilisables()->orWhere('id', $boutique->type_boutique_id))->orderBy('ordre')->orderBy('libelle')->get(),
-        ]);
+        // Fenêtre modale chargée depuis la liste ; sans JavaScript, fiche de la boutique avec la fenêtre ouverte.
+        return $request->hasHeader('X-Fenetre')
+            ? view('admin.referencement._fenetre-boutique', ['boutique' => $boutique, 'types' => self::typesPour($boutique), 'ouvrir' => true])
+            : redirect()->route('admin.referencement.boutiques.show', [$boutique, 'modifier' => 1]);
+    }
+
+    /** Types utilisables, plus le type actuel de la boutique s'il a été désactivé. */
+    public static function typesPour(?Boutique $boutique = null): Collection
+    {
+        return TypeBoutique::query()->where(fn ($q) => $q->utilisables()->orWhere('id', $boutique?->type_boutique_id ?? 0))->orderBy('ordre')->orderBy('libelle')->get();
+    }
+
+    /** Ajout depuis la liste des boutiques (fenêtre) : site choisi, une boutique ou une série numérotée. */
+    public function ajouterDepuisListe(Request $request): RedirectResponse
+    {
+        Gate::authorize(Droit::SitesGerer->value);
+        $donnees = $request->validate([
+            'site_id' => ['required', 'integer', fn (string $a, mixed $v, Closure $echec) => ($s = Site::query()->find($v)) && $s->estModifiable() && $s->code !== null
+                ? null : $echec(__('admin.referencement.boutiques.site_fige'))],
+            'mode' => ['required', 'in:une,serie'],
+        ], [], ['site_id' => __('admin.imports.site'), 'mode' => mb_strtolower(__('admin.referencement.boutiques.mode'))]);
+        $site = Site::query()->findOrFail($donnees['site_id']);
+
+        return $donnees['mode'] === 'serie' ? $this->genererBoutiques($request, $site) : $this->ajouterBoutique($request, $site);
     }
 
     public function updateBoutique(Request $request, Boutique $boutique): RedirectResponse

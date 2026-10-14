@@ -38,47 +38,43 @@
                 @endif
             @endcan
             @if ($gerer)
+                <x-admin.fenetre id="modifier-type" :titre="$t['modifier_titre']" :action="route('admin.sites.types.update', $type)" methode="PUT"
+                                 :bouton="__('admin.composants.circuit.brouillon')" declencheur-variante="secondaire">
+                    <x-slot:declencheur>{{ $t['modifier_titre'] }}</x-slot:declencheur>
+                    <div class="adm-fenetre-grille">
+                        <x-admin.champ nom="code_affiche" :libelle="$t['champs']['code']" type="verrouille" :valeur="$type->code ?? '—'" :aide="$t['code_fige']" />
+                        <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" :valeur="$type->libelle" maxlength="80" required />
+                        <x-admin.champ nom="description" :libelle="$t['champs']['description']" :valeur="$type->description" maxlength="300" class="adm-plein" />
+                        <x-admin.champ nom="ordre" :libelle="$t['champs']['ordre']" :valeur="$type->ordre" type="number" min="0" max="9999" required />
+                    </div>
+                </x-admin.fenetre>
                 @if ($type->statut === StatutTypeBoutique::Rejete)
-                    <form method="POST" action="{{ route('admin.sites.types.soumettre', $type) }}">@csrf
-                        <x-admin.bouton variante="principal" type="submit">{{ $t['actions']['soumettre'] }}</x-admin.bouton></form>
+                    <x-admin.confirmation etape="soumettre" id="soumettre-type" :titre="$t['actions']['soumettre']" :message="$t['confirmations']['soumettre']"
+                                          :action="route('admin.sites.types.soumettre', $type)" />
                 @endif
-                <form method="POST" action="{{ route('admin.sites.types.'.($type->actif ? 'desactiver' : 'activer'), $type) }}">@csrf
-                    <x-admin.bouton variante="contour" type="submit">{{ $type->actif ? $t['actions']['desactiver'] : $t['actions']['activer'] }}</x-admin.bouton></form>
+                @if ($type->attribuable_demande === null)
+                    <x-admin.confirmation id="attribuable-type" :titre="$type->attribuable ? $t['actions']['rendre_non_attribuable'] : $t['actions']['rendre_attribuable']"
+                                          :message="$t['attribuable_aide'].' '.$t['confirmations']['attribuable']" :action="route('admin.sites.types.attribuable', $type)"
+                                          :bouton="$type->attribuable ? $t['actions']['rendre_non_attribuable'] : $t['actions']['rendre_attribuable']">
+                        <x-slot:declencheur>{{ $type->attribuable ? $t['actions']['rendre_non_attribuable'] : $t['actions']['rendre_attribuable'] }}</x-slot:declencheur>
+                        <input type="hidden" name="attribuable" value="{{ $type->attribuable ? 0 : 1 }}">
+                    </x-admin.confirmation>
+                @endif
+                <x-admin.confirmation id="activation-type" :titre="$type->actif ? $t['actions']['desactiver'] : $t['actions']['activer']"
+                                      :message="$t['confirmations'][$type->actif ? 'desactiver' : 'activer']"
+                                      :action="route('admin.sites.types.'.($type->actif ? 'desactiver' : 'activer'), $type)" :bouton="$type->actif ? $t['actions']['desactiver'] : $t['actions']['activer']">
+                    <x-slot:declencheur>{{ $type->actif ? $t['actions']['desactiver'] : $t['actions']['activer'] }}</x-slot:declencheur>
+                </x-admin.confirmation>
                 @if (! $type->par_defaut && ! $utilise)
-                    <form method="POST" action="{{ route('admin.sites.types.destroy', $type) }}">@csrf @method('DELETE')
-                        <x-admin.bouton variante="danger" type="submit">{{ $t['actions']['supprimer'] }}</x-admin.bouton></form>
+                    <x-admin.confirmation id="supprimer-type" :titre="$t['actions']['supprimer']" :message="$t['confirmations']['supprimer']"
+                                          :action="route('admin.sites.types.destroy', $type)" methode="DELETE" :bouton="$t['actions']['supprimer']" danger>
+                        <x-slot:declencheur>{{ $t['actions']['supprimer'] }}</x-slot:declencheur>
+                    </x-admin.confirmation>
                 @endif
             @endif
         </div>
         @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
     </section>
-
-    @if ($gerer)
-        {{-- Libellé, description, ordre (libres) --}}
-        <section class="bo-carte" aria-labelledby="modif-titre">
-            <h2 id="modif-titre" class="!text-[1.15rem]">{{ $t['modifier_titre'] }}</h2>
-            <form method="POST" action="{{ route('admin.sites.types.update', $type) }}" class="mt-3 grid gap-4 lg:grid-cols-3" novalidate>
-                @csrf @method('PUT')
-                <div class="formulaire-champ !mt-0"><span class="block font-semibold">{{ $t['champs']['code'] }}</span>
-                    <p class="font-mono text-lg font-bold">{{ $type->code ?? '—' }}</p><p class="aide-champ">{{ $t['code_fige'] }}</p></div>
-                <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" :valeur="$type->libelle" maxlength="80" required />
-                <x-admin.champ nom="ordre" :libelle="$t['champs']['ordre']" :valeur="$type->ordre" type="number" min="0" max="9999" required />
-                <x-admin.champ nom="description" :libelle="$t['champs']['description']" :valeur="$type->description" maxlength="300" class="lg:col-span-2" />
-                <div><x-admin.circuit /></div>
-            </form>
-        </section>
-
-        {{-- « Attribuable par tirage » : changement soumis au VALIDATEUR --}}
-        <section class="bo-carte" aria-labelledby="attribuable-titre">
-            <h2 id="attribuable-titre" class="!text-[1.15rem]">{{ $t['champs']['attribuable'] }}</h2>
-            <p class="texte-carte mt-1">{{ $t['attribuable_aide'] }}</p>
-            <form method="POST" action="{{ route('admin.sites.types.attribuable', $type) }}" class="mt-3 flex flex-wrap items-end gap-3" novalidate>
-                @csrf
-                <input type="hidden" name="attribuable" value="{{ $type->attribuable ? 0 : 1 }}">
-                <x-admin.bouton type="submit" variante="contour" :disabled="$type->attribuable_demande !== null">{{ $type->attribuable ? $t['actions']['rendre_non_attribuable'] : $t['actions']['rendre_attribuable'] }}</x-admin.bouton>
-            </form>
-        </section>
-    @endif
 
     {{-- Historique des versions --}}
     <section class="bo-carte" aria-labelledby="historique-titre">

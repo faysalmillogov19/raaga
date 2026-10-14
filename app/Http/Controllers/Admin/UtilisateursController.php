@@ -76,7 +76,7 @@ class UtilisateursController extends Controller
             ])
             ->triParDefaut('nom')
             ->export('Raaga_utilisateurs-backoffice')
-            ->repondre($request, fn (ResultatTableau $t) => view('admin.utilisateurs.index', ['tableau' => $t]));
+            ->repondre($request, fn (ResultatTableau $t) => view('admin.utilisateurs.index', ['tableau' => $t, 'roles' => $roles]));
     }
 
     public function show(User $utilisateur): View
@@ -101,11 +101,12 @@ class UtilisateursController extends Controller
         ]);
     }
 
-    public function create(): View
+    /** Ancienne adresse de l'écran d'invitation : la liste, avec la fenêtre d'invitation ouverte. */
+    public function create(): RedirectResponse
     {
         Gate::authorize(Droit::UtilisateursGerer->value);
 
-        return view('admin.utilisateurs.inviter', ['roles' => RoleEnum::backoffice()]);
+        return redirect()->route('admin.utilisateurs', ['inviter' => 1]);
     }
 
     public function store(Request $request): RedirectResponse

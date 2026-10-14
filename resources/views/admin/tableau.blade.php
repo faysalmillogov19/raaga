@@ -14,7 +14,7 @@
         @can(Droit::KycTraiter->value)
             <x-admin.bouton :href="route('admin.kyc')">{{ $t['traiter_kyc'] }}</x-admin.bouton>
         @elsecan(Droit::SitesGerer->value)
-            <x-admin.bouton icone="plus" :href="route('admin.referencement.boutiques.ajouter')">{{ __('admin.referencement.boutiques.ajouter') }}</x-admin.bouton>
+            <x-admin.bouton icone="plus" :href="route('admin.referencement.boutiques', ['ajouter' => 1])">{{ __('admin.referencement.boutiques.ajouter') }}</x-admin.bouton>
         @endcan
     </x-slot:actions>
 

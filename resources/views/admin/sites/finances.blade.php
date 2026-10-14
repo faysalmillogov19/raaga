@@ -28,6 +28,15 @@
         @endif
 
         <div class="mt-4 flex flex-wrap gap-3">
+            @if ($modifiable)
+                <x-admin.fenetre id="modifier-finances" :titre="$f['titre'].' — '.$site->nom" :action="route('admin.sites.finances.update', $site)" methode="PUT"
+                                 :bouton="__('admin.composants.circuit.brouillon')" declencheur-variante="secondaire">
+                    <x-slot:declencheur>{{ __('admin.parametrage.actions.modifier') }}</x-slot:declencheur>
+                    <x-admin.champ nom="cout_total" :libelle="ucfirst($libelles['cout_total'])" type="number" min="0" :valeur="$finances?->cout_total" />
+                    <x-admin.champ nom="part_occupants" :libelle="ucfirst($libelles['part_occupants'])" type="number" min="0" :valeur="$finances?->part_occupants" class="mt-4" />
+                    <x-admin.champ nom="source_complement" :libelle="ucfirst($libelles['source_complement'])" maxlength="200" :valeur="$finances?->source_complement" class="mt-4" />
+                </x-admin.fenetre>
+            @endif
             @if ($modifiable && $finances)
                 <x-admin.confirmation etape="soumettre" id="soumettre" :titre="__('admin.parametrage.actions.soumettre')" :message="__('admin.parametrage.confirmations.soumettre')"
                                       :action="route('admin.sites.finances.soumettre', $site)" :bouton="__('admin.parametrage.actions.soumettre')">
@@ -63,19 +72,6 @@
         </section>
     @endif
 
-    @if ($modifiable)
-        <section class="bo-carte" aria-labelledby="saisie-titre">
-            <h2 id="saisie-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.actions.modifier') }}</h2>
-            <form method="POST" action="{{ route('admin.sites.finances.update', $site) }}" class="mt-3 grid gap-4 lg:grid-cols-3" novalidate>
-                @csrf
-                @method('PUT')
-                <x-admin.champ nom="cout_total" :libelle="ucfirst($libelles['cout_total'])" type="number" min="0" :valeur="$finances?->cout_total" />
-                <x-admin.champ nom="part_occupants" :libelle="ucfirst($libelles['part_occupants'])" type="number" min="0" :valeur="$finances?->part_occupants" />
-                <x-admin.champ nom="source_complement" :libelle="ucfirst($libelles['source_complement'])" maxlength="200" :valeur="$finances?->source_complement" />
-                <div><x-admin.bouton variante="principal" type="submit">{{ $f['enregistrer'] }}</x-admin.bouton></div>
-            </form>
-        </section>
-    @endif
 
     @if ($finances)
         @include('admin.parametrage._historique', ['versions' => $versions, 'decisions' => $decisions])

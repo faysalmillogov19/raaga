@@ -45,6 +45,9 @@ class CapacitesController extends Controller
             'comparaison' => $site ? $comparaison->pour($site) : collect(),
             'sitesModifiables' => $this->sitesModifiables(),
             'listes' => $this->listes(),
+            'capaciteModifiee' => $modifiee = $request->integer('modifier') && Gate::allows(Droit::SitesGerer->value)
+                ? CapaciteSite::query()->with('site')->find($request->integer('modifier')) : null,
+            'listesModifiee' => $modifiee ? $this->listes($modifiee) : null,
         ]);
     }
 
@@ -58,13 +61,17 @@ class CapacitesController extends Controller
         return redirect()->route('admin.referencement.capacites', ['site' => $capacite->site_id])->with('succes', __('admin.referencement.capacites.messages.ajoutee'));
     }
 
-    public function edit(CapaciteSite $capacite): View|RedirectResponse
+    /** Fenêtre de modification (en-tête X-Fenetre) ; sans JavaScript, la liste avec cette fenêtre ouverte. */
+    public function edit(Request $request, CapaciteSite $capacite): View|RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
+        if (! $capacite->site->estModifiable()) {
+            return $this->retour($capacite->site)->with('erreur', __('admin.referencement.capacites.site_fige'));
+        }
 
-        return $capacite->site->estModifiable()
-            ? view('admin.referencement.capacite', ['capacite' => $capacite->load(['site', 'type']), 'listes' => $this->listes($capacite)])
-            : $this->retour($capacite->site)->with('erreur', __('admin.referencement.capacites.site_fige'));
+        return $request->hasHeader('X-Fenetre')
+            ? view('admin.referencement._fenetre-capacite', ['capacite' => $capacite->load(['site', 'type']), 'listes' => $this->listes($capacite), 'ouvrir' => true])
+            : redirect()->route('admin.referencement.capacites', ['site' => $capacite->site_id, 'modifier' => $capacite->id]);
     }
 
     public function update(Request $request, CapaciteSite $capacite): RedirectResponse

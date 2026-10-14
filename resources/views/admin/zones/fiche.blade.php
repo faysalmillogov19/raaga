@@ -33,10 +33,32 @@
                 @endif
             @endcan
             @if ($gerer)
-                <form method="POST" action="{{ route('admin.referencement.zones.'.($element->actif ? 'desactiver' : 'activer'), [$liste, $element->id]) }}">@csrf
-                    <x-admin.bouton variante="contour" type="submit">{{ $element->actif ? $z['desactiver'] : $z['activer'] }}</x-admin.bouton></form>
-                <form method="POST" action="{{ route('admin.referencement.zones.destroy', [$liste, $element->id]) }}">@csrf @method('DELETE')
-                    <x-admin.bouton type="submit" variante="danger" :disabled="! $supprimable">{{ $z['supprimer'] }}</x-admin.bouton></form>
+                <x-admin.fenetre id="modifier-element" :titre="$z['modifier_titre']" :action="route('admin.referencement.zones.update', [$liste, $element->id])" methode="PUT"
+                                 :bouton="$z['enregistrer']" declencheur-variante="secondaire">
+                    <x-slot:declencheur>{{ $z['modifier_titre'] }}</x-slot:declencheur>
+                    <div class="adm-fenetre-grille">
+                        <x-admin.champ nom="code_affiche" :libelle="$z['colonnes']['code']" type="verrouille" :valeur="$element->code" :aide="$z['code_fige']" />
+                        <x-admin.champ nom="libelle" :libelle="$z['colonnes']['libelle']" :valeur="$element->libelle" maxlength="100" required />
+                        @if ($niveaux)
+                            <x-admin.champ nom="rang" :libelle="$z['colonnes']['rang']" :valeur="$element->rang" type="number" min="-9" max="99" required :aide="$z['rang_aide']" />
+                        @else
+                            <x-admin.champ nom="ordre" :libelle="$z['colonnes']['ordre']" :valeur="$element->ordre" type="number" min="0" max="9999" />
+                            <x-admin.champ nom="description" :libelle="$z['colonnes']['description']" :valeur="$element->description" maxlength="300" class="adm-plein" />
+                        @endif
+                    </div>
+                </x-admin.fenetre>
+                <x-admin.confirmation id="activation-element" :titre="$element->actif ? $z['desactiver'] : $z['activer']"
+                                      :message="$element->actif ? $z['desactiver_message'] : $z['activer_message']"
+                                      :action="route('admin.referencement.zones.'.($element->actif ? 'desactiver' : 'activer'), [$liste, $element->id])"
+                                      :bouton="$element->actif ? $z['desactiver'] : $z['activer']">
+                    <x-slot:declencheur>{{ $element->actif ? $z['desactiver'] : $z['activer'] }}</x-slot:declencheur>
+                </x-admin.confirmation>
+                @if ($supprimable)
+                    <x-admin.confirmation id="supprimer-element" :titre="$z['supprimer'].' '.$element->code" :message="$z['confirmer_suppression']"
+                                          :action="route('admin.referencement.zones.destroy', [$liste, $element->id])" methode="DELETE" :bouton="$z['supprimer']" danger>
+                        <x-slot:declencheur>{{ $z['supprimer'] }}</x-slot:declencheur>
+                    </x-admin.confirmation>
+                @endif
             @endif
         </div>
         @if ($gerer && ! $supprimable)<p class="texte-carte mt-2">{{ $element->par_defaut ? $z['regles']['defaut'] : $z['regles']['utilisee'] }}</p>@endif
@@ -44,29 +66,13 @@
     </section>
 
     <section class="bo-carte" aria-labelledby="modif-titre">
-        <h2 id="modif-titre" class="!text-[1.15rem]">{{ $gerer ? $z['modifier_titre'] : $z['detail_titre'] }}</h2>
-        @if ($gerer)
-            <form method="POST" action="{{ route('admin.referencement.zones.update', [$liste, $element->id]) }}" class="mt-3 grid gap-4 lg:grid-cols-3" novalidate>
-                @csrf @method('PUT')
-                <div class="formulaire-champ !mt-0"><span class="block font-semibold">{{ $z['colonnes']['code'] }}</span>
-                    <p class="font-mono text-lg font-bold">{{ $element->code }}</p><p class="aide-champ">{{ $z['code_fige'] }}</p></div>
-                <x-admin.champ nom="libelle" :libelle="$z['colonnes']['libelle']" :valeur="$element->libelle" maxlength="100" required />
-                @if ($niveaux)
-                    <x-admin.champ nom="rang" :libelle="$z['colonnes']['rang']" :valeur="$element->rang" type="number" min="-9" max="99" required :aide="$z['rang_aide']" />
-                @else
-                    <x-admin.champ nom="ordre" :libelle="$z['colonnes']['ordre']" :valeur="$element->ordre" type="number" min="0" max="9999" />
-                    <x-admin.champ nom="description" :libelle="$z['colonnes']['description']" :valeur="$element->description" maxlength="300" class="lg:col-span-3" />
-                @endif
-                <div><x-admin.bouton variante="principal" type="submit">{{ $z['enregistrer'] }}</x-admin.bouton></div>
-            </form>
-        @else
-            <dl class="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-4">
-                <div><dt class="texte-carte">{{ $z['colonnes']['code'] }}</dt><dd class="font-mono font-semibold">{{ $element->code }}</dd></div>
-                <div><dt class="texte-carte">{{ $z['colonnes']['libelle'] }}</dt><dd class="font-semibold">{{ $element->libelle }}</dd></div>
-                <div><dt class="texte-carte">{{ $z['colonnes'][$niveaux ? 'rang' : 'ordre'] }}</dt><dd class="font-semibold">{{ $niveaux ? $element->rang : $element->ordre }}</dd></div>
-                @unless ($niveaux)<div><dt class="texte-carte">{{ $z['colonnes']['description'] }}</dt><dd class="font-semibold">{{ $element->description ?? '—' }}</dd></div>@endunless
-            </dl>
-        @endif
+        <h2 id="modif-titre" class="!text-[1.15rem]">{{ $z['detail_titre'] }}</h2>
+        <dl class="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-4">
+            <div><dt class="texte-carte">{{ $z['colonnes']['code'] }}</dt><dd class="font-mono font-semibold">{{ $element->code }}</dd></div>
+            <div><dt class="texte-carte">{{ $z['colonnes']['libelle'] }}</dt><dd class="font-semibold">{{ $element->libelle }}</dd></div>
+            <div><dt class="texte-carte">{{ $z['colonnes'][$niveaux ? 'rang' : 'ordre'] }}</dt><dd class="font-semibold">{{ $niveaux ? $element->rang : $element->ordre }}</dd></div>
+            @unless ($niveaux)<div><dt class="texte-carte">{{ $z['colonnes']['description'] }}</dt><dd class="font-semibold">{{ $element->description ?? '—' }}</dd></div>@endunless
+        </dl>
     </section>
 
     <section class="bo-carte" aria-labelledby="historique-titre">

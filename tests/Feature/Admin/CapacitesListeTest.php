@@ -53,7 +53,7 @@ class CapacitesListeTest extends TestCase
             ->assertSee('data-site="SAR · Marché de Sarfalao"', false)->assertSee('JSON.parse(\'{\u0022site\u0022:\u0022SAR', false)
             ->assertSee(route('admin.referencement.boutiques', ['site' => $this->valide->id, 'niveau' => 'R1', 'zone' => 'A', 'type' => $this->type->id]))
             ->assertDontSee(route('admin.referencement.capacites.edit', $figee))->assertSee('Impossible : site soumis ou validé', false)
-            ->assertSee('aria-label="Ajouter une capacité"', false);
+            ->assertSee('<dialog id="ajouter-capacite"', false);
 
         // Les autres profils consultent : bouton voir seulement.
         $this->en($this->validateur)->get(route('admin.referencement.capacites'))->assertOk()
@@ -76,7 +76,8 @@ class CapacitesListeTest extends TestCase
         // Site validé : ajout refusé.
         $this->en($this->gestionnaire)->post(route('admin.referencement.capacites.store'), $this->saisie(['site_id' => $this->valide->id]))->assertSessionHasErrors('site_id');
 
-        $this->en($this->gestionnaire)->get(route('admin.referencement.capacites.edit', $capacite))->assertOk()->assertSee('Modifier la capacité');
+        $this->en($this->gestionnaire)->withHeader('X-Fenetre', '1')->get(route('admin.referencement.capacites.edit', $capacite))->assertOk()
+            ->assertSee('<dialog id="modifier-capacite-'.$capacite->id.'"', false)->assertSee('Modifier la capacité')->assertDontSee('<html', false);
         $this->en($this->gestionnaire)->put(route('admin.referencement.capacites.update', $capacite), ['niveau' => 'RC', 'zone' => 'A', 'type_boutique_id' => $this->type->id,
             'surface_totale' => 300])->assertSessionHas('succes');
         $this->assertSame([null, 300.0], [$capacite->fresh()->nombre_prevu, $capacite->fresh()->surfaceRetenue()]);
