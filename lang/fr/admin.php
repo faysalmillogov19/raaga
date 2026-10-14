@@ -958,6 +958,7 @@ return [
         ],
         'liste' => [
             'voir' => 'Voir la fiche',
+            'capacites' => 'Capacités prévues',
             'modifier' => 'Modifier',
             'non_modifiable' => 'Modification impossible : site soumis ou validé (demandez au VALIDATEUR d’autoriser la modification)',
         ],

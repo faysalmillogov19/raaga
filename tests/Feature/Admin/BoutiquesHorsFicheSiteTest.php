@@ -142,7 +142,8 @@ class BoutiquesHorsFicheSiteTest extends TestCase
 
         // Sites : voir pour tous, modifier pour le GESTIONNAIRE sur un site en brouillon.
         $this->en($this->gestionnaire)->get(route('admin.sites'))->assertOk()
-            ->assertSee(route('admin.sites.show', $this->confirme))->assertSee(route('admin.sites.edit', $this->brouillon))->assertDontSee(route('admin.sites.edit', $this->confirme));
+            ->assertSee(route('admin.sites.show', $this->confirme))->assertSee(route('admin.referencement.capacites', ['site' => $this->confirme->id]))
+            ->assertSee('aria-label="Capacités prévues Marché de Sarfalao"', false)->assertSee(route('admin.sites.edit', $this->brouillon))->assertDontSee(route('admin.sites.edit', $this->confirme));
         $this->en($this->validateur)->get(route('admin.referencement.boutiques'))->assertOk()
             ->assertSee('Voir la fiche')->assertDontSee('aria-label="Supprimer', false);
     }
