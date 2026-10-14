@@ -73,6 +73,7 @@
                     'alt' => $d['alt'] ?? '', 'titre' => $d['titre'] ?? '', 'sousTitre' => $d['sousTitre'] ?? '',
                     'boutonLibelle' => $d['boutonLibelle'] ?? '', 'boutonLien' => $d['boutonLien'] ?? '',
                     'active' => filter_var($d['active'] ?? false, FILTER_VALIDATE_BOOL), 'debut' => $d['debut'] ?? '', 'fin' => $d['fin'] ?? '',
+                    'cadrageX' => (int) ($d['cadrageX'] ?? 50), 'cadrageY' => (int) ($d['cadrageY'] ?? 50), 'texte' => $d['texte'] ?? 'gauche',
                 ], array_values((array) old($champ, $valeur ?? [])));
                 // Erreurs par diapositive (« carrousel.2.alt ») : affichées sous le champ concerné.
                 $erreursDiapos = collect($errors->getMessages())->filter(fn ($m, $cle) => str_starts_with($cle, $champ.'.'))->map(fn ($m) => $m[0]);
@@ -93,7 +94,8 @@
                               this.diapos.splice(vers, 0, d);
                               this.erreurs = {};
                           },
-                          ajouter() { this.diapos.push({ cle: Math.random().toString(36).slice(2), image: '', apercu: null, alt: '', titre: '', sousTitre: '', boutonLibelle: '', boutonLien: '', active: true, debut: '', fin: '' }) },
+                          ajouter() { this.diapos.push({ cle: Math.random().toString(36).slice(2), image: '', apercu: null, alt: '', titre: '', sousTitre: '', boutonLibelle: '', boutonLien: '', active: true, debut: '', fin: '', cadrageX: 50, cadrageY: 50, texte: 'gauche' }) },
+                          cadrer(d, e) { const r = e.currentTarget.getBoundingClientRect(); d.cadrageX = Math.round((e.clientX - r.left) * 100 / r.width); d.cadrageY = Math.round((e.clientY - r.top) * 100 / r.height) },
                           choisir(d, e) { const f = e.target.files[0]; if (f) d.apercu = URL.createObjectURL(f) },
                           erreur(i, c) { return this.erreurs[`{{ $champ }}.${i}.${c}`] ?? null },
                       }">
@@ -122,9 +124,22 @@
                             </div>
                             <input type="hidden" :name="`{{ $champ }}[${i}][ordre]`" :value="i + 1">
                             <input type="hidden" :name="`{{ $champ }}[${i}][image]`" :value="d.image">
+                            <input type="hidden" :name="`{{ $champ }}[${i}][cadrageX]`" :value="d.cadrageX">
+                            <input type="hidden" :name="`{{ $champ }}[${i}][cadrageY]`" :value="d.cadrageY">
                             <div class="mt-3 grid gap-3 lg:grid-cols-[200px_1fr]">
                                 <div>
-                                    <img x-show="d.apercu" :src="d.apercu" alt="" class="aspect-video w-full rounded border border-ligne object-cover">
+                                    <div x-show="d.apercu" class="relative cursor-crosshair" @click="cadrer(d, $event)" title="{{ $c('cadrage_aide') }}">
+                                        <img :src="d.apercu" alt="" class="block w-full rounded border border-ligne">
+                                        <span class="pointer-events-none absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-jaune shadow"
+                                              :style="`left: ${d.cadrageX}%; top: ${d.cadrageY}%`" aria-hidden="true"></span>
+                                    </div>
+                                    <p x-show="d.apercu" class="aide-champ">{{ $c('cadrage_aide') }}</p>
+                                    <div x-show="d.apercu" class="mt-1 flex gap-2">
+                                        <label class="font-normal text-sm">{{ $c('cadrage_x') }}
+                                            <input type="number" min="0" max="100" class="champ mt-1 w-20" x-model.number="d.cadrageX"></label>
+                                        <label class="font-normal text-sm">{{ $c('cadrage_y') }}
+                                            <input type="number" min="0" max="100" class="champ mt-1 w-20" x-model.number="d.cadrageY"></label>
+                                    </div>
                                     <div x-show="! d.apercu" class="flex aspect-video w-full items-center justify-center rounded bg-[#005C2B] text-sm text-white">{{ $c('diapositive', ['n' => '']) }}</div>
                                 </div>
                                 <div class="grid gap-3 lg:grid-cols-2">
@@ -157,6 +172,10 @@
                                         <input type="date" class="champ mt-1" :class="erreur(i, 'fin') && 'est-invalide'" :name="`{{ $champ }}[${i}][fin]`" x-model="d.fin" :min="d.debut">
                                         <span class="message-erreur block" x-show="erreur(i, 'fin')" x-text="erreur(i, 'fin')"></span>
                                     </label>
+                                    <label class="font-normal">{{ $c('texte') }}
+                                        <select class="champ mt-1" :name="`{{ $champ }}[${i}][texte]`" x-model="d.texte">
+                                            @foreach (Catalogue::POSITIONS_TEXTE as $position)<option value="{{ $position }}">{{ $c('textes.'.$position) }}</option>@endforeach
+                                        </select></label>
                                     <label class="inline-flex items-center gap-2 font-normal">
                                         <input type="hidden" :name="`{{ $champ }}[${i}][active]`" value="0">
                                         <input type="checkbox" value="1" :name="`{{ $champ }}[${i}][active]`" x-model="d.active">

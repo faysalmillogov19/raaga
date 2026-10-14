@@ -143,6 +143,24 @@ class CarrouselAccueilTest extends TestCase
         $this->get('/')->assertSee('Programmée')->assertDontSee('En cours');
     }
 
+    public function test_cadrage_et_position_du_texte(): void
+    {
+        $this->connecterBackoffice(Role::Admin);
+
+        $this->enregistrer([$this->diapositive(['cadrageX' => '36', 'cadrageY' => '0', 'texte' => 'droite']), $this->diapositive()])->assertSessionHasNoErrors();
+        $diapos = plateforme('site_public.carrousel');
+        $this->assertSame([36, 0, 'droite'], [$diapos[0]['cadrageX'], $diapos[0]['cadrageY'], $diapos[0]['texte']]);
+        $this->assertSame([50, 50, 'gauche'], [$diapos[1]['cadrageX'], $diapos[1]['cadrageY'], $diapos[1]['texte']]);
+
+        $this->get('/')->assertSee('acc-diapo acc-diapo-droite', false)->assertSee('style="--cadrage: 36% 0%"', false)
+            ->assertSee('style="--cadrage: 50% 50%"', false);
+
+        $this->enregistrer([$this->diapositive(['texte' => 'panneau'])])->assertSessionHasNoErrors();
+        $this->get('/')->assertSee('acc-diapo acc-diapo-panneau', false);
+
+        $this->enregistrer([$this->diapositive(['cadrageX' => '101', 'texte' => 'haut'])])->assertSessionHasErrors(['carrousel.0.cadrageX', 'carrousel.0.texte']);
+    }
+
     public function test_apercu_sans_enregistrement_et_historique(): void
     {
         $this->connecterBackoffice(Role::Admin);

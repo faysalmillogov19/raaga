@@ -39,6 +39,9 @@ final class Catalogue
 
     public const TYPES_BANDEAU = ['information', 'alerte', 'maintenance'];
 
+    /** Position du texte d'une diapositive du carrousel (sur ordinateur ; à gauche sur mobile). */
+    public const POSITIONS_TEXTE = ['gauche', 'droite', 'panneau'];
+
     /** Taille maximale d'une image du carrousel d'accueil (Ko). */
     public const PHOTO_MAX_KO = 5120;
 
@@ -196,6 +199,9 @@ final class Catalogue
                     "{$champ}.*.boutonLien" => ['nullable', 'string', 'max:255', 'regex:#^(https://|/(?!/))#i', "required_with:{$champ}.*.boutonLibelle"],
                     "{$champ}.*.ordre" => ['nullable', 'integer', 'min:0', 'max:999'],
                     "{$champ}.*.active" => ['boolean'],
+                    "{$champ}.*.cadrageX" => ['nullable', 'integer', 'between:0,100'],
+                    "{$champ}.*.cadrageY" => ['nullable', 'integer', 'between:0,100'],
+                    "{$champ}.*.texte" => ['nullable', Rule::in(self::POSITIONS_TEXTE)],
                     "{$champ}.*.debut" => ['nullable', 'date_format:Y-m-d'],
                     "{$champ}.*.fin" => ['nullable', 'date_format:Y-m-d', "after_or_equal:{$champ}.*.debut"],
                 ],
@@ -306,6 +312,10 @@ final class Catalogue
                     'boutonLibelle' => $texte($d['boutonLibelle'] ?? null),
                     'boutonLien' => $texte($d['boutonLien'] ?? null),
                     'active' => (bool) ($d['active'] ?? false),
+                    // Point de l'image gardé visible au recadrage (en %), position du texte.
+                    'cadrageX' => ($d['cadrageX'] ?? '') === '' ? 50 : (int) $d['cadrageX'],
+                    'cadrageY' => ($d['cadrageY'] ?? '') === '' ? 50 : (int) $d['cadrageY'],
+                    'texte' => $d['texte'] ?? 'gauche',
                     'debut' => $texte($d['debut'] ?? null),
                     'fin' => $texte($d['fin'] ?? null),
                     'ordre' => (int) ($d['ordre'] ?? 999),

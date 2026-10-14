@@ -1794,6 +1794,7 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: var(--cadrage, 50% 50%);
     }
 
     /* Contenu au-dessus de la barre fixe (« Comment ça marche » et commandes). */
@@ -2133,6 +2134,17 @@
 
     @media (min-width: 1024px) {
         .acc-carrousel { height: 85vh; }
+
+        /* Texte à droite : laisse voir le sujet de la photo placé à gauche. */
+        .acc-diapo-droite .acc-diapo-contenu { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+
+        /* Texte à côté de l'image : panneau vert à gauche, photo presque entière sur les 60 % de droite. */
+        .acc-diapo-panneau { background: #005C2B; }
+        .acc-diapo-panneau .acc-diapo-image, .acc-diapo-panneau .acc-banniere-voile { left: 40%; width: 60%; }
+        .acc-diapo-panneau .acc-diapo-image { object-position: 50% 0; }
+        .acc-diapo-panneau .acc-banniere-voile { background: linear-gradient(90deg, #005C2B 0%, rgba(0, 92, 43, 0) 12%), linear-gradient(180deg, rgba(0, 24, 11, 0) 70%, rgba(0, 24, 11, .7) 100%); }
+        .acc-diapo-panneau .acc-diapo-contenu > * { max-width: calc(40vw - 96px); }
+        .site-public .acc-diapo-panneau .acc-titre { font-size: clamp(2.2rem, 3.6vw, 3.4rem); }
         .acc-diapo-contenu { padding-bottom: 136px; }
         .acc-carrousel-barre { padding-bottom: 40px; }
         .acc-section, .acc-aide { padding: 96px 0; }

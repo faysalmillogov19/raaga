@@ -23,15 +23,16 @@
     <h1 class="sr-only">{{ $a['titre_page'] }}</h1>
     <div class="acc-carrousel-piste" data-piste @if ($n > 1) aria-live="off" @endif>
         @foreach ($diapos as $i => $d)
-            <div @class(['acc-diapo', 'acc-diapo-defaut' => ! $d['image']]) role="group" aria-roledescription="{{ $a['carrousel']['diapositive'] }}"
+            @php($cadrage = '--cadrage: '.($d['cadrageX'] ?? 50).'% '.($d['cadrageY'] ?? 50).'%')
+            <div @class(['acc-diapo', 'acc-diapo-defaut' => ! $d['image'], 'acc-diapo-droite' => ($d['texte'] ?? 'gauche') === 'droite', 'acc-diapo-panneau' => ($d['texte'] ?? 'gauche') === 'panneau']) role="group" aria-roledescription="{{ $a['carrousel']['diapositive'] }}"
                  aria-label="{{ $i + 1 }} sur {{ $n }}" data-diapo @if ($i > 0) aria-hidden="true" inert @endif>
                 @if ($d['image'])
                     @if ($i === 0)
                         <img src="{{ Diapositives::url($d['image'], 1280) }}" srcset="{{ Diapositives::srcset($d['image']) }}" sizes="100vw"
-                             alt="{{ $d['alt'] }}" class="acc-diapo-image" fetchpriority="high" decoding="async" width="1920" height="1080">
+                             alt="{{ $d['alt'] }}" class="acc-diapo-image" style="{{ $cadrage }}" fetchpriority="high" decoding="async" width="1920" height="1080">
                     @else
                         <img data-src="{{ Diapositives::url($d['image'], 1280) }}" data-srcset="{{ Diapositives::srcset($d['image']) }}" sizes="100vw"
-                             alt="{{ $d['alt'] }}" class="acc-diapo-image" decoding="async" width="1920" height="1080">
+                             alt="{{ $d['alt'] }}" class="acc-diapo-image" style="{{ $cadrage }}" decoding="async" width="1920" height="1080">
                     @endif
                     <div class="acc-banniere-voile" aria-hidden="true"></div>
                 @endif
