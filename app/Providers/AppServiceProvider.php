@@ -14,6 +14,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
 
@@ -46,6 +47,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Derrière un proxy qui termine le HTTPS (APP_URL en https), la requête arrive en HTTP côté
+        // Laravel : sans ça, asset()/url() génèrent des liens http:// bloqués en contenu mixte.
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
+
         // Données de démonstration et paiement simulé interdits en production : démarrage refusé.
         VerrouEnvironnement::verifier((string) $this->app->environment(), (bool) config('raaga.demo'), config('raaga.paiement.fournisseur'));
 
