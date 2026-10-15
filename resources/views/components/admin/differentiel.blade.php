@@ -13,7 +13,7 @@
             <thead><tr><th scope="col">{{ __('admin.parametrage.champ') }}</th><th scope="col">{{ __('admin.parametrage.avant') }}</th><th scope="col">{{ __('admin.parametrage.apres') }}</th></tr></thead>
             <tbody>
                 @foreach ($differentiel as $champ => [$avant, $apres])
-                    <tr>
+                    <tr class="adm-diff-ligne" data-champ-modifie="{{ $champ }}">
                         <td class="font-semibold">{{ ucfirst($libelles[$champ] ?? $champ) }}</td>
                         <td class="text-gris line-through">{{ \App\Support\AffichageParametres::valeur($champ, $avant) }}</td>
                         <td class="font-bold text-vert-fonce">{{ \App\Support\AffichageParametres::valeur($champ, $apres) }}</td>

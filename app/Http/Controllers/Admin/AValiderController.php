@@ -5,8 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
+use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
+use App\Models\Unite;
+use App\Models\User;
+use App\Models\ZoneSite;
+use App\Notifications\DecisionRendue;
 use App\Support\AValider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,18 +21,25 @@ use Illuminate\View\View;
 use Throwable;
 
 /**
- * « À valider » (VALIDATEUR) : file regroupée par type d'élément, décision sur une ligne ou sur une sélection.
- * Chaque décision passe par l'action existante de l'élément (mêmes droits, mêmes règles, même journal d'audit) ;
- * un rejet groupé applique un motif commun, enregistré pour chaque élément.
+ * « À valider » (VALIDATEUR) : file regroupée par type d'élément, panneau de détail, décision sur une ligne ou sur une
+ * sélection. Règles : jamais de décision sur un élément que l'on a soumis soi-même ; campagnes, démarches du site public
+ * et données financières jamais en lot (422) ; traitement élément par élément, résultat partiel sans tout annuler ;
+ * un élément déjà traité par quelqu'un d'autre est signalé. Chaque décision passe par l'action existante de l'élément
+ * (mêmes droits, mêmes règles, même journal d'audit) et est notifiée à l'auteur.
  */
 class AValiderController extends Controller
 {
     public function index(Request $request): View
     {
         Gate::authorize(Droit::AValiderVoir->value);
+        $user = $request->user();
+        $groupes = array_intersect_key(AValider::pour($user), array_flip(AValider::groupesVisibles($user)));
+        $element = is_string($request->query('detail')) ? AValider::trouver($user, $request->query('detail')) : null;
 
         return view('admin.a-valider', [
-            'groupes' => array_intersect_key(AValider::pour($request->user()), array_flip(AValider::groupesVisibles($request->user()))),
+            'groupes' => $groupes,
+            'detail' => $element ? AValider::detail($user, $element) : null,
+            'suivant' => $element ? $this->suivant($groupes, $element['cle']) : null,
         ]);
     }
 
@@ -39,21 +51,91 @@ class AValiderController extends Controller
             'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|campagne|phase|autorisation):\d+$/'],
             'decision' => ['required', 'in:confirmer,rejeter'],
             'motif' => ['nullable', 'required_if:decision,rejeter', 'string', 'min:5', 'max:1000'],
+            'mode' => ['nullable', 'in:ligne,lot'],
+            'suivant' => ['nullable', 'string', 'max:40'],
         ], ['elements.required' => __('admin.a_valider.erreurs.selection'), 'motif.*' => __('admin.utilisateurs.erreurs.motif')]);
+        $elements = array_values(array_unique($donnees['elements']));
 
+        // Éléments sensibles : jamais de décision groupée, même par une requête fabriquée.
+        $lot = ($donnees['mode'] ?? 'lot') === 'lot' || count($elements) > 1;
+        $sensibles = array_filter($elements, fn (string $cle) => in_array(strtok($cle, ':'), AValider::NON_GROUPABLES, true));
+        abort_if($lot && $sensibles !== [], 422, __('admin.a_valider.erreurs.non_groupable'));
+
+        $user = $request->user();
         $reussis = 0;
-        $echecs = [];
-        foreach (array_unique($donnees['elements']) as $cle) {
-            $erreur = $this->appliquer($request, $cle, $donnees['decision'], $donnees['motif'] ?? null);
-            $erreur === null ? $reussis++ : $echecs[] = $erreur;
+        $refus = [];
+        foreach ($elements as $cle) {
+            $element = AValider::trouver($user, $cle);
+            $erreur = match (true) {
+                $element === null => __('admin.a_valider.erreurs.deja_traite'),
+                $element['moi'] => __('admin.a_valider.erreurs.auto_validation'),
+                default => $this->appliquer($request, $cle, $donnees['decision'], $donnees['motif'] ?? null),
+            };
+            if ($erreur !== null) {
+                $refus[] = ($element['libelle'] ?? $this->libelle($cle)).' ('.$erreur.')';
+
+                continue;
+            }
+            $reussis++;
+            $this->notifier($element, $donnees['decision'], $donnees['motif'] ?? null);
         }
 
-        $retour = redirect()->route('admin.a-valider');
-        if ($reussis > 0) {
-            $retour->with('succes', trans_choice('admin.a_valider.messages.'.$donnees['decision'], $reussis, ['n' => $reussis]));
+        $message = $this->resultat($donnees['decision'], $reussis, $refus);
+        $suivant = isset($donnees['suivant']) && ($s = AValider::trouver($user, $donnees['suivant'])) && ! $s['moi'] ? $s['cle'] : null;
+        $retour = redirect()->route('admin.a-valider', $suivant ? ['detail' => $suivant] : []);
+
+        return $refus ? $retour->with('erreur', $message) : $retour->with('succes', $message);
+    }
+
+    /** Nom d'un élément qui n'est plus dans la file (déjà traité) : lu dans la base, à défaut sa clé. */
+    private function libelle(string $cle): string
+    {
+        [$type, $id] = explode(':', $cle);
+        $modele = match ($type) {
+            'site', 'grille', 'finances', 'autorisation' => Site::query()->find($id),
+            'type' => TypeBoutique::query()->find($id),
+            'niveaux' => Niveau::query()->find($id),
+            'zones' => ZoneSite::query()->find($id),
+            'unites' => Unite::query()->find($id),
+            'campagne' => CampagneBoutiques::query()->find($id),
+            default => null,
+        };
+
+        return match (true) {
+            $modele === null => $cle,
+            $modele instanceof CampagneBoutiques => $modele->nom,
+            $modele instanceof Site => ($modele->code ? $modele->code.' · ' : '').$modele->nom,
+            default => $modele->code.' · '.$modele->libelle,
+        };
+    }
+
+    /** « 8 validés, 1 refusé : SAR · Marché de Sarfalao (déjà traité). » */
+    private function resultat(string $decision, int $reussis, array $refus): string
+    {
+        $parties = [];
+        if ($reussis > 0 || $refus === []) {
+            $parties[] = trans_choice('admin.a_valider.resultat.'.$decision, $reussis, ['n' => $reussis]);
+        }
+        if ($refus !== []) {
+            $parties[] = trans_choice('admin.a_valider.resultat.refuses', count($refus), ['n' => count($refus)]).' : '.implode(' ; ', $refus);
         }
 
-        return $echecs ? $retour->with('erreur', implode(' ', $echecs)) : $retour;
+        return implode(', ', $parties).'.';
+    }
+
+    /** Élément suivant de la file (ordre d'affichage) sur lequel l'utilisateur peut décider. */
+    private function suivant(array $groupes, string $cle): ?string
+    {
+        $cles = collect($groupes)->flatten(1)->where('moi', false)->pluck('cle')->values();
+        $i = $cles->search($cle);
+
+        return $i === false ? null : $cles->get($i + 1);
+    }
+
+    private function notifier(array $element, string $decision, ?string $motif): void
+    {
+        $auteur = $element['auteur_id'] ? User::query()->find($element['auteur_id']) : null;
+        $auteur?->notify(new DecisionRendue(__('admin.a_valider.elements.'.$element['element']), $element['libelle'], $decision, $motif, $element['url']));
     }
 
     /** Applique la décision par l'action existante de l'élément ; rend le message d'erreur, ou null en cas de succès. */
@@ -77,7 +159,7 @@ class AValiderController extends Controller
                 'niveaux', 'zones', 'unites' => app(NiveauxZonesController::class)->{$decision}($sousRequete, $type, $id),
                 'campagne' => app(CampagnesBoutiquesController::class)->{$decision}($sousRequete, CampagneBoutiques::query()->findOrFail($id)),
                 'phase' => app(PhaseController::class)->{$decision}($sousRequete, $id),
-                // Demande d'autorisation de modifier un site validé : acceptée (motif de la demande) ou refusée (motif commun).
+                // Demande d'autorisation de modifier un site validé : acceptée (motif de la demande) ou refusée (motif saisi).
                 'autorisation' => $decision === 'confirmer'
                     ? app(SitesController::class)->reviser($this->avecMotif($sousRequete, (string) Site::query()->findOrFail($id)->revision_demande_motif), Site::query()->findOrFail($id))
                     : app(SitesController::class)->refuserRevision($sousRequete, Site::query()->findOrFail($id)),

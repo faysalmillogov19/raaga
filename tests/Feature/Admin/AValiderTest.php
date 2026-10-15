@@ -6,11 +6,14 @@ use App\Enums\Role;
 use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
 use App\Models\AuditLog;
+use App\Models\DecisionPhase;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
 use App\Models\User;
+use App\Notifications\DecisionRendue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\Support\ActeursParametrage;
 use Tests\TestCase;
 
@@ -74,14 +77,14 @@ class AValiderTest extends TestCase
         $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['site:'.$a04->id, 'unites:'.$unite->id], 'decision' => 'rejeter'])
             ->assertSessionHasErrors('motif');
         $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['site:'.$a04->id, 'unites:'.$unite->id], 'decision' => 'rejeter', 'motif' => 'Plans à compléter'])
-            ->assertRedirect(route('admin.a-valider'))->assertSessionHas('succes', '2 éléments rejetés.');
+            ->assertRedirect(route('admin.a-valider'))->assertSessionHas('succes', '2 rejetés.');
         $this->assertSame('Plans à compléter', $a04->fresh()->motif_rejet);
         $this->assertSame(StatutTypeBoutique::Rejete, $unite->fresh()->statut);
         $this->assertSame('Plans à compléter', $unite->fresh()->motif_rejet);
 
         // Validation groupée (ici une seule ligne restante).
         $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['site:'.$sar->id], 'decision' => 'confirmer'])
-            ->assertSessionHas('succes', '1 élément validé.');
+            ->assertSessionHas('succes', '1 validé.');
         $this->assertSame(StatutSite::Confirme, $sar->fresh()->statut);
         $this->assertTrue(AuditLog::query()->where('entite_type', 'Site')->where('entite_id', $sar->id)->exists());
 
@@ -112,5 +115,88 @@ class AValiderTest extends TestCase
         $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['autorisation:'.$site->id], 'decision' => 'confirmer'])->assertSessionHas('succes');
         $this->assertSame(StatutSite::Brouillon, $site->fresh()->statut);
         $this->assertTrue(AuditLog::query()->where('action', 'site.modification_autorisee')->exists());
+    }
+
+    public function test_groupage_refuse_pour_les_elements_sensibles(): void
+    {
+        $sar = $this->siteSoumis('SAR');
+        $this->en($this->superAdmin)->post(route('admin.phase.proposer'), ['presentation_actions' => 1, 'souscription_actions' => 0, 'motif' => 'Ouverture prochaine'])->assertSessionHas('succes');
+        $phase = DecisionPhase::query()->sole();
+
+        // Pas de case à cocher dans les groupes sensibles ; la ligne garde ses boutons.
+        $page = $this->en($this->validateur)->get(route('admin.a-valider'))->assertOk();
+        $page->assertDontSee('value="phase:'.$phase->id.'"', false)->assertSee('data-non-groupable', false)->assertSee('name="elements[]" value="site:'.$sar->id.'"', false);
+
+        // Refus côté serveur (422) pour toute requête groupée qui en contient, quel que soit le type sensible.
+        foreach ([['phase:'.$phase->id, 'site:'.$sar->id], ['campagne:1', 'site:'.$sar->id], ['finances:'.$sar->id, 'site:'.$sar->id]] as $elements) {
+            $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => $elements, 'decision' => 'confirmer', 'mode' => 'lot'])->assertStatus(422);
+        }
+        $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['phase:'.$phase->id], 'decision' => 'confirmer', 'mode' => 'lot'])->assertStatus(422);
+        $this->assertSame(StatutSite::Soumis, $sar->fresh()->statut);
+        $this->assertSame(DecisionPhase::SOUMISE, $phase->fresh()->statut);
+
+        // Une par une : accepté.
+        $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['phase:'.$phase->id], 'decision' => 'confirmer', 'mode' => 'ligne'])->assertSessionHas('succes', '1 validé.');
+        $this->assertSame(DecisionPhase::CONFIRMEE, $phase->fresh()->statut);
+    }
+
+    public function test_auto_validation_refusee_ligne_seule_et_groupee(): void
+    {
+        $sar = $this->siteSoumis('SAR');
+        $a04 = $this->siteSoumis('A04');
+        $sar->forceFill(['soumis_par' => $this->validateur->id])->save(); // Élément soumis par le VALIDATEUR lui-même.
+
+        $page = $this->en($this->validateur)->get(route('admin.a-valider'))->assertOk();
+        $page->assertSee('data-moi', false)->assertSee('Vous avez soumis cet élément : un autre VALIDATEUR doit décider.', false)
+            ->assertDontSee('name="elements[]" value="site:'.$sar->id.'"', false);
+
+        $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['site:'.$sar->id], 'decision' => 'confirmer', 'mode' => 'ligne'])
+            ->assertSessionHas('erreur', '1 refusé : SAR · Marché SAR (Vous avez soumis cet élément : un autre VALIDATEUR doit décider.).');
+        $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['site:'.$sar->id, 'site:'.$a04->id], 'decision' => 'rejeter', 'motif' => 'Plans à revoir'])
+            ->assertSessionHas('erreur', '1 rejeté, 1 refusé : SAR · Marché SAR (Vous avez soumis cet élément : un autre VALIDATEUR doit décider.).');
+        $this->assertSame(StatutSite::Soumis, $sar->fresh()->statut);
+        $this->assertSame(StatutSite::Brouillon, $a04->fresh()->statut);
+    }
+
+    public function test_detail_avec_differences_historique_et_element_suivant(): void
+    {
+        $sar = $this->siteSoumis('SAR');
+        $this->en($this->validateur)->post(route('admin.sites.confirmer', $sar))->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.sites.reviser', $sar), ['motif' => 'Ajout du bloc B'])->assertSessionHas('succes');
+        $this->en($this->gestionnaire)->put(route('admin.sites.update', $sar), ['code' => 'SAR', 'nom' => 'Marché moderne de Sarfalao', 'region' => 'Centre', 'ville' => 'Ouagadougou'])
+            ->assertSessionHasNoErrors();
+        $this->en($this->gestionnaire)->post(route('admin.sites.soumettre', $sar))->assertSessionHas('succes');
+        $a04 = $this->siteSoumis('A04');
+
+        $detail = $this->en($this->validateur)->get(route('admin.a-valider', ['detail' => 'site:'.$sar->id]))->assertOk();
+        $detail->assertSee('data-detail="site:'.$sar->id.'"', false)
+            ->assertSeeInOrder(['Informations', 'Différences avec la version confirmée', 'Marché SAR', 'Marché moderne de Sarfalao', 'Pièces jointes', 'Historique'], false)
+            ->assertSee('data-champ-modifie="nom"', false)->assertSee('Ouvrir la fiche complète')
+            ->assertSee('name="suivant" value="site:'.$a04->id.'"', false);
+
+        // Décision depuis le détail : l'élément suivant s'ouvre.
+        $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['site:'.$sar->id], 'decision' => 'confirmer', 'mode' => 'ligne', 'suivant' => 'site:'.$a04->id])
+            ->assertRedirect(route('admin.a-valider', ['detail' => 'site:'.$a04->id]));
+        $this->assertSame(StatutSite::Confirme, $sar->fresh()->statut);
+    }
+
+    public function test_resultat_partiel_deja_traite_et_notification(): void
+    {
+        Notification::fake();
+        $sar = $this->siteSoumis('SAR');
+        $a04 = $this->siteSoumis('A04');
+        $autre = User::factory()->role(Role::Validateur)->create();
+
+        // Un autre VALIDATEUR traite SAR entre-temps.
+        $this->en($autre)->post(route('admin.a-valider.decider'), ['elements' => ['site:'.$sar->id], 'decision' => 'confirmer', 'mode' => 'ligne'])->assertSessionHas('succes');
+
+        $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['site:'.$sar->id, 'site:'.$a04->id], 'decision' => 'confirmer'])
+            ->assertSessionHas('erreur', '1 validé, 1 refusé : SAR · Marché SAR (déjà traité).');
+        $this->assertSame(StatutSite::Confirme, $a04->fresh()->statut);
+
+        // Chaque décision est notifiée à l'auteur (back-office et e-mail).
+        Notification::assertSentTo($this->gestionnaire, DecisionRendue::class, 2);
+        Notification::assertSentTo($this->gestionnaire, DecisionRendue::class, fn (DecisionRendue $n, array $canaux) => $canaux === ['database', 'mail']
+            && str_contains($n->toArray($this->gestionnaire)['message'], 'validé'));
     }
 }
