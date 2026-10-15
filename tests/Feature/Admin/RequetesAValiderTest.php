@@ -33,7 +33,7 @@ class RequetesAValiderTest extends TestCase
             $this->en($auteur)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'region' => 'Centre', 'ville' => 'Ouagadougou']);
             $site = Site::query()->where('code', $code)->sole();
             $this->en($auteur)->post(route('admin.referencement.boutiques.store', $site), [
-                'niveau' => 'R1', 'bloc' => 'A', 'numero' => 1, 'surface' => 9, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE',
+                'niveau' => 'R1', 'bloc' => 'A', 'numero' => 1, 'surface' => 9, 'type_boutique_id' => TypeBoutique::query()->where('code', 'BOUT')->value('id'), 'etat_physique' => 'LIVREE',
             ]);
             $this->en($auteur)->post(route('admin.sites.soumettre', $site))->assertSessionHas('succes');
         }
@@ -74,7 +74,7 @@ class RequetesAValiderTest extends TestCase
             $this->en($auteur)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'region' => 'Centre', 'ville' => 'Ouagadougou']);
             $site = Site::query()->where('code', $code)->sole();
             $this->en($auteur)->post(route('admin.referencement.boutiques.store', $site), [
-                'niveau' => 'R1', 'bloc' => 'A', 'numero' => 1, 'surface' => 9, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE',
+                'niveau' => 'R1', 'bloc' => 'A', 'numero' => 1, 'surface' => 9, 'type_boutique_id' => TypeBoutique::query()->where('code', 'BOUT')->value('id'), 'etat_physique' => 'LIVREE',
             ]);
             $this->en($auteur)->post(route('admin.sites.soumettre', $site))->assertSessionHas('succes');
         }

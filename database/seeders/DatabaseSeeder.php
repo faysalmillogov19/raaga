@@ -24,9 +24,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleSeeder::class);
-        $this->call(ParametresPlateformeSeeder::class);
-        $this->call(ReferentielsSitesSeeder::class);
-        $this->call(MoyensPaiementSeeder::class);
+        // Référentiels (idempotents, aussi lancés seuls par deploy.sh) : paramètres, niveaux, zones, types, unités, moyens de paiement.
+        $this->call(ReferentielsSeeder::class);
         $this->call(CarrouselAccueilSeeder::class);
 
         // Comptes de démonstration : jamais en production.

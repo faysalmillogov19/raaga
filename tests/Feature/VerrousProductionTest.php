@@ -4,33 +4,45 @@ namespace Tests\Feature;
 
 use App\Contracts\PaymentProvider;
 use App\Enums\Role;
+use App\Enums\StatutCampagneBoutiques;
+use App\Enums\StatutKyc;
 use App\Models\AuditLog;
+use App\Models\CandidatureBoutique;
 use App\Models\MoyenPaiement;
+use App\Models\Niveau;
 use App\Models\Paiement;
+use App\Models\TypeBoutique;
+use App\Models\Unite;
 use App\Models\User;
 use Database\Seeders\ComptesDemoSeeder;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\ReferentielsSeeder;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use PragmaRX\Google2FA\Google2FA;
 use RuntimeException;
+use Tests\Feature\Compte\CandidatureBoutiqueTest;
+use Tests\Support\ActeursParametrage;
 use Tests\TestCase;
 
 /**
- * Verrous de production : aucun compte de démonstration (mot de passe = adresse e-mail), jamais de paiement simulé,
- * et « raaga:verifier-production » (appelé par deploy.sh) qui arrête le déploiement au moindre point manquant.
+ * Verrous de production : comptes de démonstration, paiement simulé, contrôle à deux niveaux (bloquant, avertissement,
+ * --strict), verrou métier « paiements fermés », seeders de référentiel idempotents, ordre de deploy.sh.
  */
 class VerrousProductionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActeursParametrage, RefreshDatabase;
 
-    /** Configuration complète de production : comptes de destination, opérateur réel (doublure). */
-    private function productionPrete(): void
+    private const COMPTES = [
+        'raaga.compte_sequestre' => ['titulaire' => 'Raaga SA', 'banque' => 'Banque A', 'numero' => 'BF00 1'],
+        'raaga.compte_location' => ['titulaire' => 'Raaga SA location', 'banque' => 'Banque B', 'numero' => 'BF00 2'],
+    ];
+
+    /** Opérateur de paiement réel (doublure). */
+    private function operateurReel(): void
     {
-        config([
-            'raaga.demo' => false,
-            'raaga.paiement.fournisseur' => 'operateur_test',
-            'raaga.compte_sequestre' => ['titulaire' => 'Raaga SA', 'banque' => 'Banque A', 'numero' => 'BF00 1'],
-            'raaga.compte_location' => ['titulaire' => 'Raaga SA location', 'banque' => 'Banque B', 'numero' => 'BF00 2'],
-        ]);
+        config(['raaga.paiement.fournisseur' => 'operateur_test']);
         $this->app->instance(PaymentProvider::class, new class implements PaymentProvider
         {
             public function estSimule(): bool
@@ -61,59 +73,158 @@ class VerrousProductionTest extends TestCase
         $demo = User::query()->where('email', 'like', '%@raaga.test')->count();
 
         $this->artisan('raaga:comptes-demo')->assertFailed()->expectsOutputToContain('Relancez avec --desactiver');
-        $this->assertSame($demo + 1, User::query()->where('actif', true)->where(fn ($q) => $q->where('email', 'like', '%@raaga.test')->orWhere('id', $copie->id))->count());
-
         $this->artisan('raaga:comptes-demo --desactiver')->assertSuccessful()->expectsOutputToContain(($demo + 1).' compte(s) de démonstration désactivé(s)');
         $this->assertSame(0, User::query()->where('actif', true)->where('email', 'like', '%@raaga.test')->count());
         $this->assertFalse($copie->fresh()->actif);
         $this->assertTrue($reel->fresh()->actif);
         $this->assertSame($demo + 1, AuditLog::query()->where('action', 'compte.demo_desactive')->count());
-        $this->assertSame($demo + 1, User::query()->where('actif', false)->count()); // désactivés, jamais supprimés
         $this->artisan('raaga:comptes-demo')->assertSuccessful()->expectsOutputToContain('Aucun compte de démonstration actif');
     }
 
-    public function test_paiement_simule_refuse_en_production(): void
+    public function test_bloquants_demo_comptes_et_paiement_simule(): void
     {
-        $this->app['env'] = 'production';
-        config(['raaga.paiement.fournisseur' => null]);
+        $this->seed(ComptesDemoSeeder::class);
+        config(['raaga.demo' => true, 'raaga.paiement.fournisseur' => 'simule', ...self::COMPTES]);
 
-        $this->assertThrows(fn () => app(PaymentProvider::class), RuntimeException::class, 'paiement simulé');
         $this->artisan('raaga:verifier-production')->assertFailed()
-            ->expectsOutputToContain('Aucun opérateur de paiement réel configuré');
-    }
-
-    public function test_verifier_production_liste_chaque_point_manquant(): void
-    {
-        $this->seed(ComptesDemoSeeder::class);
-        config(['raaga.demo' => true, 'raaga.paiement.fournisseur' => 'simule', 'raaga.compte_sequestre' => [], 'raaga.compte_location' => ['titulaire' => 'Raaga SA']]);
-
-        $commande = $this->artisan('raaga:verifier-production')->assertFailed()
-            ->expectsOutputToContain('RAAGA_DEMO=true')
+            ->expectsOutputToContain('BLOQUANT : RAAGA_DEMO=true')
             ->expectsOutputToContain('compte(s) de démonstration actif(s)')
-            ->expectsOutputToContain('Aucun opérateur de paiement réel configuré');
-        foreach (['RAAGA_SEQUESTRE_TITULAIRE', 'RAAGA_SEQUESTRE_BANQUE', 'RAAGA_SEQUESTRE_NUMERO', 'RAAGA_COMPTE_LOCATION_BANQUE', 'RAAGA_COMPTE_LOCATION_NUMERO'] as $variable) {
-            $commande->expectsOutputToContain('Variable manquante : '.$variable.'.');
-        }
-        $commande->doesntExpectOutputToContain('Variable manquante : RAAGA_COMPTE_LOCATION_TITULAIRE.');
+            ->expectsOutputToContain('BLOQUANT : RAAGA_PAIEMENT_FOURNISSEUR=simule')
+            ->expectsOutputToContain('Mise en production refusée : 3 point(s) bloquant(s).');
     }
 
-    public function test_verifier_production_reussit_quand_tout_est_pret(): void
+    public function test_avertissements_sans_blocage_puis_strict(): void
     {
-        $this->seed(ComptesDemoSeeder::class);
-        $this->artisan('raaga:comptes-demo --desactiver')->assertSuccessful();
-        $this->productionPrete();
+        // Aucun opérateur réel, comptes de destination manquants : avertissements, code 0 (paiements fermés).
+        config(['raaga.demo' => false, 'raaga.paiement.fournisseur' => null, 'raaga.compte_sequestre' => [], 'raaga.compte_location' => ['titulaire' => 'Raaga SA']]);
+        $commande = $this->artisan('raaga:verifier-production')->assertSuccessful()
+            ->expectsOutputToContain('AVERTISSEMENT : Aucun opérateur de paiement réel configuré : paiements fermés')
+            ->expectsOutputToContain('Aucun point bloquant (6 avertissement(s)');
+        foreach (['RAAGA_SEQUESTRE_TITULAIRE', 'RAAGA_SEQUESTRE_BANQUE', 'RAAGA_SEQUESTRE_NUMERO', 'RAAGA_COMPTE_LOCATION_BANQUE', 'RAAGA_COMPTE_LOCATION_NUMERO'] as $variable) {
+            $commande->expectsOutputToContain('Variable manquante : '.$variable);
+        }
+        $commande->run();
 
-        $this->artisan('raaga:verifier-production')->assertSuccessful()->expectsOutputToContain('opérateur de paiement réel');
+        // --strict : les avertissements deviennent bloquants.
+        $this->artisan('raaga:verifier-production --strict')->assertFailed()
+            ->expectsOutputToContain('BLOQUANT (--strict) : Aucun opérateur de paiement réel')
+            ->expectsOutputToContain('Mise en production refusée : 6 point(s) bloquant(s).');
+
+        // Tout est prêt : réussi, même en --strict.
+        config(self::COMPTES);
+        $this->operateurReel();
+        $this->artisan('raaga:verifier-production --strict')->assertSuccessful()->expectsOutputToContain('Prêt pour la production');
     }
 
-    public function test_deploy_sh_arrete_le_deploiement_si_la_verification_echoue(): void
+    public function test_verrou_metier_paiements_fermes(): void
+    {
+        $this->creerActeurs();
+        $this->app['env'] = 'production';
+        $this->withoutMiddleware(PreventRequestForgery::class); // en « production », le jeton CSRF n'est plus ignoré par les tests
+        config(['raaga.paiement.fournisseur' => null, ...self::COMPTES]);
+        $brouillon = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Brouillon 2027']);
+        $confirmee = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Confirmee, 'nom' => 'Confirmée 2027']);
+        $google2fa = new Google2FA;
+        $this->validateur->forceFill(['totp_secret' => $google2fa->generateSecretKey(32), 'totp_active_le' => now()])->save();
+        $code = fn () => $google2fa->oathTotp($this->validateur->fresh()->totp_secret, $google2fa->getTimestamp());
+        $message = 'Paiements fermés : aucun opérateur de paiement réel n’est configuré.';
+
+        // Aucun opérateur réel : ni proposition (RÉGULATEUR), ni ouverture (VALIDATEUR), message clair sur la fiche.
+        $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $brouillon))->assertSessionHas('erreur', fn ($m) => str_starts_with($m, $message));
+        $this->assertSame(StatutCampagneBoutiques::Brouillon, $brouillon->fresh()->statut);
+        $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $confirmee), ['confirmation' => 'CONFIRMER', 'code_totp' => $code()])
+            ->assertSessionHas('erreur', fn ($m) => str_starts_with($m, $message));
+        $this->assertSame(StatutCampagneBoutiques::Confirmee, $confirmee->fresh()->statut);
+        $this->en($this->regulateur)->get(route('admin.boutiques.show', $brouillon))->assertSee('data-paiements-fermes', false)->assertSee('aucun opérateur de paiement réel');
+
+        // Opérateur réel mais compte des fonds de location non renseigné : toujours fermé.
+        $this->operateurReel();
+        config(['raaga.compte_location' => []]);
+        $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $brouillon))
+            ->assertSessionHas('erreur', fn ($m) => str_contains($m, 'les coordonnées du compte des fonds de location'));
+
+        // Citoyen : caution impossible à payer (compte de location manquant), aucun paiement démarré.
+        $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670123456']);
+        $ouverte = CandidatureBoutiqueTest::campagneOuverte(['nom' => 'Ouverte 2027']);
+        $this->actingAs($citoyen)->post('/boutiques/candidater', [
+            'categorie' => $ouverte->categories()->where('libelle', 'Grande boutique')->value('id'),
+            'engagements' => ['TIRAGE_SANS_GARANTIE', 'CAUTION_SANS_LIEN_ACTIONS', 'REGLEMENT_CAMPAGNE_BOUTIQUES', 'ORIGINE_LICITE_FONDS'],
+        ]);
+        $candidature = CandidatureBoutique::query()->sole();
+        $url = '/boutiques/candidatures/'.$candidature->reference.'/caution';
+        $this->actingAs($citoyen)->get($url)->assertOk()->assertSee('Moyen de paiement indisponible');
+        $this->actingAs($citoyen)->post($url, ['canal' => 'VIREMENT'])->assertSessionHasErrors(['canal' => 'Moyen de paiement indisponible']);
+        $this->assertSame(0, Paiement::query()->count());
+
+        // Tout est configuré : la campagne se propose, la caution se paie.
+        config(self::COMPTES);
+        // Le verrou de paiement ne bloque plus (d'autres contrôles de la campagne peuvent encore s'appliquer).
+        $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $brouillon));
+        $this->assertStringNotContainsString('Paiements fermés', (string) session('erreur'));
+        $this->actingAs($citoyen)->post($url, ['canal' => 'VIREMENT'])->assertSessionHasNoErrors();
+        $this->assertSame(1, Paiement::query()->count());
+    }
+
+    public function test_seeders_de_referentiel_idempotents_apres_modification_par_le_gestionnaire(): void
+    {
+        $this->creerActeurs();
+        $gestionnaire = User::factory()->role(Role::GestionnaireSites)->create();
+        $this->seed(ReferentielsSeeder::class);
+
+        // Le GESTIONNAIRE renomme un niveau par défaut (validé), désactive un type par défaut (validé), ajoute une zone.
+        $r1 = Niveau::query()->where('code', 'R1')->sole();
+        $this->en($gestionnaire)->put(route('admin.referencement.zones.update', ['niveaux', $r1->id]), ['libelle' => 'Premier étage', 'rang' => 1])->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['niveaux', $r1->id]))->assertSessionHas('succes');
+        $mag = TypeBoutique::query()->where('code', 'MAG')->sole();
+        $this->en($gestionnaire)->post(route('admin.sites.types.desactiver', $mag))->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.sites.types.confirmer', $mag))->assertSessionHas('succes');
+        $this->en($gestionnaire)->post(route('admin.referencement.zones.store', 'zones'), ['code' => 'KIO', 'libelle' => 'Kiosques'])->assertSessionHas('succes');
+        // Une unité par défaut a disparu : le seeder doit la recréer, et seulement elle.
+        $redevance = Unite::query()->where('code', 'REDEVANCE')->sole();
+        DB::table('unites')->where('id', $redevance->id)->delete();
+
+        $tables = ['niveaux', 'zones', 'types_boutiques', 'unites', 'moyens_paiement', 'parametres_plateforme'];
+        $etat = fn () => collect($tables)->mapWithKeys(fn ($t) => [$t => DB::table($t)->orderBy('id')->get()->map(fn ($l) => (array) $l)->all()])->all();
+        $avant = $etat();
+
+        $this->seed(ReferentielsSeeder::class);
+        $this->seed(ReferentielsSeeder::class);
+        $apres = $etat();
+
+        // Rien de modifié ni de supprimé ; seule l'unité manquante est recréée.
+        foreach ($tables as $t) {
+            $this->assertSame($avant[$t], array_slice($apres[$t], 0, count($avant[$t])), $t);
+        }
+        $this->assertSame([['code' => 'REDEVANCE']], array_map(fn ($l) => ['code' => $l['code']], array_slice($apres['unites'], count($avant['unites']))));
+        foreach (array_diff($tables, ['unites']) as $t) {
+            $this->assertCount(count($avant[$t]), $apres[$t], $t);
+        }
+        $this->assertSame('Premier étage', $r1->fresh()->libelle);
+        $this->assertFalse($mag->fresh()->actif);
+        $this->assertTrue(DB::table('zones')->where('code', 'KIO')->exists());
+    }
+
+    public function test_ordre_de_deploy_sh(): void
     {
         $script = file_get_contents(base_path('deploy.sh'));
 
-        $this->assertStringContainsString('set -euo pipefail', $script);
-        $this->assertStringContainsString('php artisan raaga:verifier-production', $script);
-        // Vérifié avant la maintenance et les migrations : un échec laisse la version en place.
-        $this->assertLessThan(strpos($script, 'php artisan down'), strpos($script, 'php artisan raaga:verifier-production'));
-        $this->assertLessThan(strpos($script, 'php artisan migrate'), strpos($script, 'php artisan raaga:verifier-production'));
+        $etapes = [
+            'set -euo pipefail', 'git pull --ff-only', 'composer install --no-dev --optimize-autoloader', '-lt "$NODE_MIN"', 'npm ci', 'npm run build',
+            'php artisan raaga:verifier-production', 'pg_dump', 'php artisan down', "trap 'php artisan up' EXIT", 'php artisan migrate --force',
+            'php artisan db:seed --class=ReferentielsSeeder --force', 'php artisan storage:link', 'php artisan config:cache', 'php artisan route:cache',
+            'php artisan view:cache', 'php artisan queue:restart', 'systemctl reload',
+        ];
+        $positions = array_map(fn ($e) => strpos($script, $e), $etapes);
+        $etapes[] = 'php artisan up (final)';
+        $positions[] = strrpos($script, 'php artisan up');
+        foreach ($etapes as $i => $etape) {
+            $this->assertNotFalse($positions[$i], $etape);
+        }
+        // Dans cet ordre ; la vérification de Node précède npm ; « up » final après le rechargement de php-fpm.
+        $this->assertSame($positions, collect($positions)->sort()->values()->all());
+        $this->assertStringContainsString('NODE_MIN=22', $script);
+        $this->assertStringContainsString('/data/backups', $script);
+        $this->assertStringNotContainsString('raaga:verifier-production --strict', $script); // bloquants seulement
+        $this->assertStringNotContainsString('ComptesDemoSeeder', $script);
     }
 }

@@ -554,6 +554,10 @@ return [
         'reference_virement' => 'Référence de virement',
         'comptes' => ['INVESTISSEMENT' => 'Compte des fonds d’investissement (actions)', 'LOCATION' => 'Compte des fonds de location (caution, avance, loyers)'],
         'compte_credite' => 'Compte crédité',
+        'fermes' => [
+            'operateur' => 'aucun opérateur de paiement réel n’est configuré',
+            'compte' => 'les coordonnées du :compte ne sont pas renseignées',
+        ],
         'erreurs_compte' => 'Le compte de destination ne correspond pas au paiement : un paiement d’actions va au compte d’investissement, une caution au compte de location.',
         'payer' => 'Payer :montant',
         'reessayer' => 'Réessayer le paiement',

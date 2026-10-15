@@ -6,6 +6,7 @@ use App\Contracts\Payable;
 use App\Contracts\PaymentProvider;
 use App\Enums\StatutPaiement;
 use App\Models\MoyenPaiement;
+use App\Services\Paiement\OuverturePaiements;
 use App\Services\Paiement\ServicePaiement;
 use App\Support\CompteSequestre;
 use App\Support\Telephone;
@@ -30,7 +31,7 @@ trait GerePaiements
      */
     protected function ecranPaiement(Payable&Model $objet, array $contexte): View
     {
-        $fournisseur = $this->fournisseur();
+        $fournisseur = $this->fournisseur($objet);
         $enAttente = ServicePaiement::enAttente($objet);
         $dernier = $objet->paiements()->latest('id')->first();
 
@@ -66,7 +67,7 @@ trait GerePaiements
         ], [], __('public.paiement.attributs'));
 
         // Aucun opérateur réel (production sans opérateur : le simulateur refuse de fonctionner) : aucun paiement démarré.
-        $fournisseur = $this->fournisseur();
+        $fournisseur = $this->fournisseur($objet);
         if ($fournisseur === null) {
             throw ValidationException::withMessages(['canal' => __('public.paiement.indisponible_titre')]);
         }
@@ -105,8 +106,11 @@ trait GerePaiements
     }
 
     /** Fournisseur configuré, ou null s'il refuse de fonctionner (simulateur en production). */
-    protected function fournisseur(): ?PaymentProvider
+    protected function fournisseur(?Payable $objet = null): ?PaymentProvider
     {
+        if ($objet !== null && ! OuverturePaiements::ouverts($objet->compteDestination())) {
+            return null;
+        }
         try {
             return app(PaymentProvider::class);
         } catch (Throwable) {

@@ -2019,6 +2019,7 @@ return [
             'affectee' => 'Second tirage effectué : chaque retenu a reçu sa boutique et a été prévenu.',
         ],
         'regles' => [
+            'paiements_fermes' => 'Paiements fermés : :raison. Aucune campagne ne peut être proposée ni ouverte tant que l’administrateur technique ne l’a pas configuré.',
             'ouverture_confirmee' => 'Seule une campagne confirmée peut être ouverte.',
             'une_seule_ouverte' => 'Une autre campagne est déjà ouverte : clôturez-la d’abord.',
             'cloture_ouverte' => 'Seule une campagne ouverte peut être clôturée.',
