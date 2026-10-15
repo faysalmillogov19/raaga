@@ -41,6 +41,13 @@
         @endif
     @endcan
 
+    {{-- RAAGA Invest (RÉGULATEUR, ADMIN) : manifestations d'intérêt, total des intentions, montant réellement collecté. --}}
+    @can(Droit::InteretsVoir->value)
+        <section aria-label="{{ __('admin.interets.titre') }}" class="mb-4">
+            @include('admin.interets._indicateurs', ['indicateurs' => \App\Services\Invest\RaagaInvest::indicateurs()])
+        </section>
+    @endcan
+
     {{-- À traiter --}}
     <section class="bo-carte adm-carte-tableau" id="a-traiter" aria-labelledby="a-traiter-titre">
         <div class="adm-carte-entete">

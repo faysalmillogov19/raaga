@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Publique;
 use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
 use App\Services\Boutiques\CandidatureBoutiques;
+use App\Services\Invest\RaagaInvest;
 use App\Services\Publique\AccueilBoutiques;
 use App\Support\Diapositives;
 use App\Support\Phase;
@@ -51,9 +52,14 @@ class AccueilController extends Controller
     private function investir(): array
     {
         $tranche = Phase::trancheAffichee();
+        // Valeur par action et objectif : paramètres d'investissement confirmés (rien n'est écrit en dur).
+        $parametres = RaagaInvest::parametres();
 
         return [
-            'prix' => $tranche?->valeur_unitaire,
+            // Valeur indicative confirmée ; à défaut, prix de la tranche affichée.
+            'prix' => $parametres['valeur_action'] ?? $tranche?->valeur_unitaire,
+            'indicative' => $parametres !== null,
+            'jauge' => RaagaInvest::jauge(),
             'minimum' => $tranche ? max(1, (int) $tranche->min_actions_par_souscription) : null,
             'ouverte' => Phase::souscriptionOuverte(),
             'lien' => Phase::lienSouscription(),

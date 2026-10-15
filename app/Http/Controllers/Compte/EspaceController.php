@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Acceptation;
 use App\Models\CandidatureBoutique;
 use App\Models\LigneRegistre;
+use App\Models\ManifestationInteret;
 use App\Models\Souscription;
 use App\Services\Documents\GenerateurPdf;
 use App\Services\Paiement\ServicePaiement;
@@ -26,7 +27,7 @@ use Illuminate\View\View;
  */
 class EspaceController extends Controller
 {
-    public const ONGLETS = ['actions', 'boutiques', 'profil'];
+    public const ONGLETS = ['actions', 'interets', 'boutiques', 'profil'];
 
     /** Anciennes adresses des rubriques des actions : regroupées dans l'onglet « Mes actions ». */
     private const RUBRIQUES_ACTIONS = ['souscriptions', 'documents', 'dividendes'];
@@ -79,6 +80,8 @@ class EspaceController extends Controller
                 ->unique(fn (Acceptation $a) => $a->souscription->tranche_id.'-'.$a->version_document),
             'attestations' => $user->lignesRegistre()->with('tranche')->orderByDesc('date_inscription')->get(),
             'candidatures' => $candidatures,
+            // RAAGA Invest : manifestations d'intérêt du citoyen (simulations non engageantes, aucun paiement).
+            'interets' => $actions ? ManifestationInteret::query()->where('user_id', $user->id)->latest('id')->get() : collect(),
         ]);
     }
 

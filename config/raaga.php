@@ -60,6 +60,16 @@ return [
     | visible » et « souscription d'actions ouverte » sont décidés dans le back-office (SUPER_ADMIN, confirmation du
     | VALIDATEUR) ; ces valeurs ne servent que tant qu'aucune décision n'est confirmée (fermé par défaut).
     */
+    /*
+    | RAAGA Invest : nom de la seule partie investissement (menu « Investir », pages, titre du portail) ; le reste de la
+    | plateforme garde son nom (paramètres de la plateforme). Routes du portail : voir le gabarit public.
+    */
+    'invest' => [
+        'nom' => 'RAAGA Invest',
+        // Pages d'information sur les actions, souscription et son paiement (les cautions ont leurs propres routes).
+        'routes' => ['offre', 'transparence', 'actualites.*', 'souscrire', 'souscrire.*', 'souscription.*', 'paiement.*', 'invest.*'],
+    ],
+
     'phase' => [
         'presentation_actions' => (bool) env('RAAGA_PRESENTATION_ACTIONS', false),
         'souscription_actions' => (bool) env('RAAGA_SOUSCRIPTION_ACTIONS', false),

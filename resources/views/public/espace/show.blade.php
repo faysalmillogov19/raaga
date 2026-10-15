@@ -63,6 +63,31 @@
             @endif
 
             @switch($onglet)
+                @case('interets')
+                    {{-- RAAGA Invest : manifestations d'intérêt (simulations non engageantes, aucun paiement). --}}
+                    <x-public.mentions-invest class="mb-4" />
+                    @if ($interets->isEmpty())
+                        <p>{{ __('public.invest.interet.aucune') }} <a href="{{ route('invest.simulateur') }}" class="lien-fort">{{ __('public.invest.interet.lien') }}</a></p>
+                    @else
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left" data-interets>
+                                <thead><tr>@foreach (__('public.invest.colonnes') as $libelle)<th scope="col" class="py-2 pr-4">{{ $libelle }}</th>@endforeach</tr></thead>
+                                <tbody>
+                                    @foreach ($interets as $m)
+                                        <tr class="border-t border-ligne">
+                                            <td class="py-2 pr-4 font-mono font-semibold">{{ $m->reference }}</td>
+                                            <td class="py-2 pr-4">{{ $m->created_at->format('d/m/Y') }}</td>
+                                            <td class="py-2 pr-4">{{ $m->profil->label() }}</td>
+                                            <td class="py-2 pr-4">{{ format_nombre($m->nombre_actions) }}</td>
+                                            <td class="py-2 pr-4">{{ format_fcfa($m->montant) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="texte-carte mt-3">{{ __('public.invest.interet.aucun_paiement') }}</p>
+                    @endif
+                    @break
                 @case('actions')
                     <h3 class="!text-[1.15rem]">{{ __('public.espace.rubriques.actions') }}</h3>
                     <div class="mt-3">

@@ -20,7 +20,9 @@ use App\Http\Controllers\Admin\ImportsValidationController;
 use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
+use App\Http\Controllers\Admin\ManifestationsInteretController;
 use App\Http\Controllers\Admin\NiveauxZonesController;
+use App\Http\Controllers\Admin\ParametresInvestissementController;
 use App\Http\Controllers\Admin\PhaseController;
 use App\Http\Controllers\Admin\PiecesKycController;
 use App\Http\Controllers\Admin\PlateformeController;
@@ -97,6 +99,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/a-valider', [AValiderController::class, 'index'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider');
         Route::post('/a-valider', [AValiderController::class, 'decider'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.decider');
         Route::get('/a-valider/{rubrique}', [AValiderController::class, 'index'])->where('rubrique', '[a-z-]+')->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.rubrique');
+
+        // RAAGA Invest : paramètres d'investissement (RÉGULATEUR saisit, VALIDATEUR confirme), manifestations d'intérêt (lecture, export).
+        Route::controller(ParametresInvestissementController::class)->prefix('investissement')->name('investissement')->group(function () {
+            Route::get('/', 'show')->middleware('can:'.Droit::TranchesVoir->value);
+            Route::put('/', 'update')->middleware('can:'.Droit::TranchesSaisir->value)->name('.update');
+            Route::post('/soumettre', 'soumettre')->middleware('can:'.Droit::TranchesSaisir->value)->name('.soumettre');
+            Route::post('/reviser', 'reviser')->middleware('can:'.Droit::TranchesSaisir->value)->name('.reviser');
+            Route::post('/confirmer', 'confirmer')->middleware('can:'.Droit::TranchesConfirmer->value)->name('.confirmer');
+            Route::post('/rejeter', 'rejeter')->middleware('can:'.Droit::TranchesConfirmer->value)->name('.rejeter');
+        });
+        Route::get('/manifestations-interet', [ManifestationsInteretController::class, 'index'])->middleware('can:'.Droit::InteretsVoir->value)->name('interets');
 
         // Import confirmé : détail, fichier d'origine, décision du VALIDATEUR sur l'import entier (« À valider › Imports »).
         Route::controller(ImportsValidationController::class)->prefix('imports-validation')->name('imports-validation.')->group(function () {

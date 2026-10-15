@@ -37,13 +37,26 @@
                         <h3 class="acc-h2">{{ $d['investir']['titre'] }}</h3>
                         @if ($investir['prix'])
                             <ul class="acc-demarche-points">
-                                <li>{{ __('public.demarches.investir.prix', ['prix' => format_fcfa($investir['prix'])]) }}</li>
+                                <li>{{ __($investir['indicative'] ? 'public.demarches.investir.valeur_indicative' : 'public.demarches.investir.prix', ['prix' => format_fcfa($investir['prix'])]) }}</li>
                                 <li>{{ $investir['minimum'] > 1
                                     ? __('public.demarches.investir.minimum', ['n' => format_nombre($investir['minimum']), 'montant' => format_fcfa($investir['minimum'] * $investir['prix'])])
                                     : $d['investir']['minimum_un'] }}</li>
                             </ul>
                         @else
                             <p>{{ $d['investir']['prix_a_venir'] }}</p>
+                        @endif
+                        @if ($jauge = $investir['jauge'])
+                            {{-- Jauge de collecte : peut dépasser 100 % de l'objectif (la barre s'arrête au bout). --}}
+                            <div class="acc-jauge" data-jauge-invest>
+                                <p class="font-semibold">{{ __('public.demarches.investir.objectif', ['objectif' => format_fcfa($jauge['objectif'])]) }}</p>
+                                <div class="acc-jauge-barre" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ (int) $jauge['largeur'] }}"
+                                     aria-valuetext="{{ __('public.demarches.investir.pourcentage', ['pourcentage' => $jauge['libelle']]) }}">
+                                    <span style="width: {{ round($jauge['largeur'], 1) }}%"></span>
+                                </div>
+                                <p>{{ __('public.demarches.investir.collecte', ['collecte' => format_fcfa($jauge['collecte'])]) }} ·
+                                    <strong data-pourcentage-objectif>{{ __('public.demarches.investir.pourcentage', ['pourcentage' => $jauge['libelle']]) }}</strong></p>
+                            </div>
+                            <a href="{{ route('invest.simulateur') }}" class="lien-fort">{{ $d['investir']['simuler'] }}</a>
                         @endif
                         <p class="acc-demarche-tirage"><x-icon name="check" class="h-5 w-5 shrink-0" /> <span>{{ $d['investir']['dividendes'] }}</span></p>
                         <p class="acc-demarche-risque"><x-icon name="danger" class="h-5 w-5 shrink-0" /> <span>{{ $d['investir']['risque'] }}</span></p>

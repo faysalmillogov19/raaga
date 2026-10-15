@@ -1,4 +1,10 @@
-@props(['titre' => null, 'description' => null])
+@props(['titre' => null, 'description' => null, 'portail' => null])
+
+@php
+    // RAAGA Invest : nom du portail sur les seules pages d'investissement ; ailleurs, le nom de la plateforme.
+    $portail ??= request()->routeIs(...config('raaga.invest.routes')) ? config('raaga.invest.nom') : null;
+    $nom = $portail ?? plateforme('identite.nomPlateforme');
+@endphp
 
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -8,7 +14,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{{ $description ?? plateforme('identite.sousTitre') }}">
 
-    <title>{{ collect([$titre, plateforme('identite.nomPlateforme')])->filter()->implode(' · ') }}</title>
+    <title>{{ collect([$titre, $nom])->filter()->implode(' · ') }}</title>
 
     <x-meta-icones />
     <link rel="preload" href="{{ asset('fonts/public-sans-400.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -16,7 +22,7 @@
 
     {{-- Partage sur les réseaux sociaux. --}}
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ collect([$titre, plateforme('identite.nomPlateforme')])->filter()->implode(' · ') }}">
+    <meta property="og:title" content="{{ collect([$titre, $nom])->filter()->implode(' · ') }}">
     <meta property="og:description" content="{{ $description ?? plateforme('identite.sousTitre') }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:image" content="{{ asset('images/og-raaga.png') }}">
@@ -38,6 +44,11 @@
     <x-public.bandeau />
 
     <x-public.entete />
+    @if ($portail)
+        <div class="portail-invest" data-portail>
+            <p class="conteneur py-2 font-extrabold tracking-wide">{{ $portail }}</p>
+        </div>
+    @endif
 
     <main id="contenu" class="flex-1" tabindex="-1">
         <x-public.encadre-demarche />

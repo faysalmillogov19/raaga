@@ -117,7 +117,7 @@ return [
         ],
         'elements' => [
             'site' => 'Site', 'grille' => 'Grille', 'finances' => 'Finances', 'type' => 'Type', 'niveaux' => 'Niveau', 'zones' => 'Zone',
-            'unites' => 'Unité', 'moyens' => 'Moyen de paiement', 'campagne' => 'Campagne', 'phase' => 'Démarches', 'autorisation' => 'Demande', 'import' => 'Import',
+            'unites' => 'Unité', 'moyens' => 'Moyen de paiement', 'investissement' => 'Paramètres d’investissement', 'campagne' => 'Campagne', 'phase' => 'Démarches', 'autorisation' => 'Demande', 'import' => 'Import',
         ],
         'colonnes' => ['selection' => 'Sélection', 'element' => 'Élément', 'par' => 'Soumis par', 'date' => 'Date', 'attente' => 'En attente depuis', 'actions' => 'Actions'],
         'tout_cocher' => 'Tout cocher : :groupe',
@@ -227,6 +227,8 @@ return [
         'boutiques' => 'Campagnes boutiques',
         'dividendes' => 'Dividendes',
         'simulations' => 'Simulations',
+        'investissement' => 'Paramètres d’investissement',
+        'interets' => 'Manifestations d’intérêt',
         'kyc' => 'Dossiers KYC',
         'conformite' => 'Alertes conformité',
         'souscriptions' => 'Souscriptions & paiements',
@@ -321,6 +323,7 @@ return [
         'conformite.observer' => 'Formuler une observation sur une alerte',
         'souscriptions.voir' => 'Consulter les souscriptions et paiements',
         'souscriptions.rapprocher' => 'Rapprocher paiements et souscriptions',
+        'interets.voir' => 'Consulter et exporter les manifestations d’intérêt RAAGA Invest',
         'remboursements.voir' => 'Consulter les remboursements',
         'remboursements.approuver' => 'Approuver les remboursements',
         'registre.voir' => 'Consulter le registre des actions B',
@@ -592,6 +595,27 @@ return [
         'auto' => 'Vous avez fait cet import : un autre VALIDATEUR décide.',
         'tous_niveaux' => 'Tous niveaux',
         'motif' => 'Motif du rejet : :motif',
+    ],
+
+    'investissement' => [
+        'titre' => 'Paramètres d’investissement',
+        'intro' => 'RAAGA Invest : objectif de collecte (il peut être dépassé), valeur indicative par action et plafond global facultatif. Le RÉGULATEUR les saisit et les soumet ; le VALIDATEUR les confirme dans « À valider › Données financières ». Le site public affiche la dernière version confirmée.',
+        'aucun' => 'Aucun paramètre saisi',
+        'aucune_confirmee' => 'Aucune version confirmée : le simulateur et la jauge de l’accueil restent masqués.',
+        'en_vigueur' => 'Version confirmée en vigueur : objectif :objectif, valeur indicative :valeur par action.',
+        'vides' => 'Saisissez d’abord les paramètres d’investissement.',
+        'sans_plafond' => 'Sans plafond',
+        'champs' => ['objectif_collecte' => 'objectif de collecte (FCFA)', 'valeur_action' => 'valeur indicative par action (FCFA)', 'plafond_global' => 'plafond global (FCFA)'],
+        'aides' => ['objectif_collecte' => 'Montant visé ; la collecte peut le dépasser.', 'plafond_global' => 'Facultatif : vide = sans plafond.'],
+        'messages' => ['enregistres' => 'Paramètres enregistrés.'],
+    ],
+
+    'interets' => [
+        'titre' => 'Manifestations d’intérêt',
+        'intro' => 'Simulations non engageantes des citoyens sur RAAGA Invest : aucun paiement n’y est associé.',
+        'unite' => 'manifestations',
+        'colonnes' => ['reference' => 'Référence', 'date' => 'Date', 'citoyen' => 'Citoyen', 'profil' => 'Profil', 'pays' => 'Pays de résidence', 'nombre' => 'Actions envisagées', 'montant' => 'Montant indicatif'],
+        'indicateurs' => ['nombre' => 'Manifestations d’intérêt', 'intentions' => 'Total des intentions', 'collecte' => 'Montant réellement collecté'],
     ],
 
     'moyens_paiement' => [

@@ -19,16 +19,16 @@ class NavigationTest extends TestCase
 
     /** Écrans hors menu mais accessibles en lecture (le SUPER_ADMIN y arrive par « Paramètres (lecture) »). */
     private const LECTURE_HORS_MENU = [
-        'superadmin' => ['tranches', 'boutiques', 'dividendes', 'simulations', 'referentiels'],
+        'superadmin' => ['tranches', 'investissement', 'boutiques', 'dividendes', 'simulations', 'referentiels'],
     ];
 
     /** Menus attendus par profil (d'après le tableau des droits de la spécification). */
     private const MENUS = [
-        'superadmin' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'phase', 'plateforme', 'securite', 'audit', 'parametres', 'connexions', 'unites', 'moyens'],
-        'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme'],
+        'superadmin' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'phase', 'plateforme', 'securite', 'audit', 'parametres', 'connexions', 'unites', 'moyens', 'interets'],
+        'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme', 'interets'],
         'gestionnaire_sites' => ['tableau', 'brouillons', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'imports_sites', 'imports_boutiques', 'unites'],
-        'validateur' => ['tableau', 'a_valider', 'a_valider_sites', 'a_valider_finances', 'a_valider_grilles', 'a_valider_referentiels', 'a_valider_campagnes', 'a_valider_demarches', 'a_valider_autorisations', 'a_valider_imports', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels', 'phase', 'unites', 'moyens'],
-        'regulateur' => ['tableau', 'brouillons', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels', 'phase', 'unites', 'moyens'],
+        'validateur' => ['tableau', 'a_valider', 'a_valider_sites', 'a_valider_finances', 'a_valider_grilles', 'a_valider_referentiels', 'a_valider_campagnes', 'a_valider_demarches', 'a_valider_autorisations', 'a_valider_imports', 'tranches', 'investissement', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels', 'phase', 'unites', 'moyens'],
+        'regulateur' => ['tableau', 'brouillons', 'tranches', 'investissement', 'interets', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels', 'phase', 'unites', 'moyens'],
     ];
 
     public static function profils(): array

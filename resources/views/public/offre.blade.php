@@ -9,6 +9,9 @@
 
     <div class="conteneur grid grid-cols-[minmax(0,1fr)] gap-8 py-8 tab:py-12 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-12">
         <div class="space-y-10">
+            {{-- RAAGA Invest : mentions obligatoires, simulateur. --}}
+            <x-public.mentions-invest />
+            <p><a href="{{ route('invest.simulateur') }}" class="lien-fort">{{ __('public.invest.simulateur.titre') }}</a></p>
 
             {{-- Comment ça marche : 4 étapes --}}
             <section aria-labelledby="etapes-titre">

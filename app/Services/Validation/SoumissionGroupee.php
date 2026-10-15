@@ -8,12 +8,14 @@ use App\Enums\StatutTypeBoutique;
 use App\Http\Controllers\Admin\CampagnesBoutiquesController;
 use App\Http\Controllers\Admin\GrillesTarifairesController;
 use App\Http\Controllers\Admin\NiveauxZonesController;
+use App\Http\Controllers\Admin\ParametresInvestissementController;
 use App\Http\Controllers\Admin\SiteFinancesController;
 use App\Http\Controllers\Admin\SitesController;
 use App\Http\Controllers\Admin\TypesBoutiqueController;
 use App\Models\CampagneBoutiques;
 use App\Models\MoyenPaiement;
 use App\Models\Niveau;
+use App\Models\ParametresInvestissement;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
@@ -41,7 +43,7 @@ class SoumissionGroupee
     /** Entité => droit de l'auteur (GESTIONNAIRE ou RÉGULATEUR ; jamais le SUPER_ADMIN). */
     public const DROITS = [
         'site' => Droit::SitesGerer, 'type' => Droit::SitesGerer, 'niveaux' => Droit::SitesGerer, 'zones' => Droit::SitesGerer,
-        'unites' => Droit::UnitesGerer, 'moyens' => Droit::MoyensPaiementGerer, 'grille' => Droit::BoutiquesSaisir, 'finances' => Droit::BoutiquesSaisir, 'campagne' => Droit::BoutiquesSaisir,
+        'unites' => Droit::UnitesGerer, 'moyens' => Droit::MoyensPaiementGerer, 'grille' => Droit::BoutiquesSaisir, 'finances' => Droit::BoutiquesSaisir, 'campagne' => Droit::BoutiquesSaisir, 'investissement' => Droit::TranchesSaisir,
     ];
 
     private const REFERENTIELS = ['type' => TypeBoutique::class, 'niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class, 'moyens' => MoyenPaiement::class];
@@ -59,6 +61,7 @@ class SoumissionGroupee
         return match ($entite) {
             'site', 'grille', 'finances' => Site::query()->findOrFail($id),
             'campagne' => CampagneBoutiques::query()->findOrFail($id),
+            'investissement' => ParametresInvestissement::query()->findOrFail($id),
             default => self::REFERENTIELS[$entite]::query()->findOrFail($id),
         };
     }
@@ -103,6 +106,7 @@ class SoumissionGroupee
             'grille' => Site::query()->with('grilleTarifaire'),
             'finances' => Site::query()->with('finances'),
             'campagne' => CampagneBoutiques::query(),
+            'investissement' => ParametresInvestissement::query(),
             default => self::REFERENTIELS[$entite]::query(),
         };
     }
@@ -140,6 +144,7 @@ class SoumissionGroupee
             'grille' => route('admin.boutiques.grilles.show', $ligne),
             'finances' => route('admin.sites.finances', $ligne),
             'campagne' => route('admin.boutiques.show', $ligne),
+            'investissement' => route('admin.investissement'),
             'type' => route('admin.sites.types.show', $ligne),
             default => route('admin.referencement.zones.show', [$entite, $ligne->getKey()]),
         };
@@ -152,7 +157,7 @@ class SoumissionGroupee
             'site' => $requete->where('statut', 'BROUILLON'),
             'grille' => $requete->whereHas('grilleTarifaire', fn ($q) => $q->where('statut', 'BROUILLON')),
             'finances' => $requete->whereHas('finances', fn ($q) => $q->where('statut', 'BROUILLON')),
-            'campagne' => $requete->where('statut', 'BROUILLON'),
+            'campagne', 'investissement' => $requete->where('statut', 'BROUILLON'),
             default => $requete->whereIn('statut', [StatutTypeBoutique::Brouillon->value, StatutTypeBoutique::Rejete->value]),
         };
     }
@@ -162,6 +167,7 @@ class SoumissionGroupee
         return match ($entite) {
             'site', 'grille', 'finances' => $ligne->code ?: $ligne->nom,
             'campagne' => $ligne->nom,
+            'investissement' => __('admin.investissement.titre'),
             default => $ligne->code ?: $ligne->libelle,
         };
     }
@@ -268,6 +274,7 @@ class SoumissionGroupee
                 'grille' => app(GrillesTarifairesController::class)->soumettre($sousRequete, $ligne),
                 'finances' => app(SiteFinancesController::class)->soumettre($sousRequete, $ligne),
                 'campagne' => app(CampagnesBoutiquesController::class)->soumettre($sousRequete, $ligne),
+                'investissement' => app(ParametresInvestissementController::class)->soumettre($sousRequete),
                 'type' => app(TypesBoutiqueController::class)->soumettre($sousRequete, $ligne),
                 default => app(NiveauxZonesController::class)->soumettre($sousRequete, $entite, $ligne->getKey()),
             };

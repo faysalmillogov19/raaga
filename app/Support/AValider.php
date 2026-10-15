@@ -17,6 +17,7 @@ use App\Models\ImportValidation;
 use App\Models\MoyenPaiement;
 use App\Models\Niveau;
 use App\Models\ParametrageDecision;
+use App\Models\ParametresInvestissement;
 use App\Models\Site;
 use App\Models\SiteFinance;
 use App\Models\TypeBoutique;
@@ -59,13 +60,18 @@ final class AValider
                 'source' => fn (\Closure $e) => $lesSites()->where('statut', StatutSite::Soumis)->values()
                     ->map(fn (Site $s) => $e('site:'.$s->id, 'site', $nomSite($s), $s->soumis_par, $s->soumis_le, route('admin.sites.show', $s)))],
             // Données financières : données financières des sites, et moyens de paiement (ajout ou modification, une décision à la fois).
-            'finances' => ['slug' => 'finances-sites', 'droits' => [Droit::BoutiquesConfirmer, Droit::MoyensPaiementConfirmer], 'groupable' => false,
-                'elements' => ['finances', 'moyens'],
+            'finances' => ['slug' => 'finances-sites', 'droits' => [Droit::BoutiquesConfirmer, Droit::MoyensPaiementConfirmer, Droit::TranchesConfirmer], 'groupable' => false,
+                'elements' => ['finances', 'moyens', 'investissement'],
                 'source' => function (\Closure $e, User $user) use ($nomSite) {
                     $liste = collect();
                     if ($user->can(Droit::BoutiquesConfirmer->value)) {
                         $liste = SiteFinance::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get()
                             ->map(fn (SiteFinance $f) => $e('finances:'.$f->site_id, 'finances', $nomSite($f->site), $f->soumis_par, $f->soumis_le, route('admin.sites.finances', $f->site_id)));
+                    }
+                    if ($user->can(Droit::TranchesConfirmer->value)) {
+                        foreach (ParametresInvestissement::query()->where('statut', StatutGrilleTarifaire::Soumis)->get() as $p) {
+                            $liste->push($e('investissement:'.$p->id, 'investissement', __('admin.investissement.titre'), $p->soumis_par, $p->soumis_le, route('admin.investissement')));
+                        }
                     }
                     if ($user->can(Droit::MoyensPaiementConfirmer->value)) {
                         foreach (MoyenPaiement::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('modification_demandee'))->get() as $m) {
@@ -228,6 +234,11 @@ final class AValider
                 $finances = SiteFinance::query()->where('site_id', $id)->with('site')->firstOrFail();
 
                 return [...self::parametrable($finances, $champsSite, true), 'infos' => [__('admin.a_valider.detail.site') => $finances->site->nom, __('admin.parametrage.statut') => $finances->statut->label()]];
+            })(),
+            'investissement' => (function () use ($id) {
+                $p = ParametresInvestissement::query()->findOrFail($id);
+
+                return [...self::parametrable($p, __('admin.investissement.champs'), true), 'infos' => [__('admin.parametrage.statut') => $p->statut->label()]];
             })(),
             'campagne' => (function () use ($id) {
                 $c = CampagneBoutiques::query()->findOrFail($id);

@@ -57,6 +57,9 @@ final class MenuBackoffice
                 ['cle' => 'moyens', 'route' => 'admin.referencement.moyens', 'droit' => Droit::MoyensPaiementVoir, 'icone' => 'dividendes', 'etape' => 0],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
+                // RAAGA Invest : paramètres d'investissement, manifestations d'intérêt.
+                ['cle' => 'investissement', 'route' => 'admin.investissement', 'droit' => Droit::TranchesVoir, 'icone' => 'tranches', 'etape' => 0, 'masque_si' => $parametres],
+                ['cle' => 'interets', 'route' => 'admin.interets', 'droit' => Droit::InteretsVoir, 'icone' => 'tableau', 'etape' => 0],
                 ['cle' => 'simulations', 'route' => 'admin.simulations', 'droit' => Droit::SimulationsVoir, 'icone' => 'simulations', 'etape' => 4, 'masque_si' => $parametres],
             ],
             // Référencement des sites et des boutiques (GESTIONNAIRE DES SITES ET BOUTIQUES, RÉGULATEUR pour la grille), puis le

@@ -17,6 +17,7 @@ use App\Http\Controllers\Publique\ContactController;
 use App\Http\Controllers\Publique\DiapositiveController;
 use App\Http\Controllers\Publique\GuichetController;
 use App\Http\Controllers\Publique\ImagePlateformeController;
+use App\Http\Controllers\Publique\InvestController;
 use App\Http\Controllers\Publique\PageController;
 use App\Http\Controllers\Publique\SmsRecetteController;
 use Illuminate\Support\Facades\Route;
@@ -108,6 +109,12 @@ Route::middleware(['actions.presentation', 'auth', 'role:citoyen'])->controller(
     Route::post('/changer', 'changer')->name('changer');
     Route::get('/confirmation', 'confirmation')->name('confirmation');
     Route::get('/recu', 'recu')->name('recu');
+});
+
+// RAAGA Invest : simulateur (public) et manifestation d'intérêt (citoyen connecté) ; aucun paiement.
+Route::middleware('actions.presentation')->controller(InvestController::class)->prefix('invest')->name('invest.')->group(function () {
+    Route::get('/simulateur', 'simulateur')->name('simulateur');
+    Route::post('/interet', 'interet')->middleware(['auth', 'role:citoyen', 'throttle:10,1'])->name('interet');
 });
 
 // Mon espace : tableau de bord du citoyen (un autre profil voit un état vide).

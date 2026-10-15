@@ -10,7 +10,7 @@ namespace App\Support;
  */
 final class MotsInterdits
 {
-    public const MOTIF = '/(?<!non )(?<!non\x{00A0})\bgaranti(e|s|es)?\b|\bsans\s+risques?\b|\brendements?\s+de\b|\bgagnez\b'
+    public const MOTIF = '/(?<!non )(?<!non\x{00A0})(?<!pas )(?<!pas\x{00A0})\bgaranti(e|s|es)?\b|\bsans\s+risques?\b|\brendements?\s+de\b|\bgagnez\b'
         .'|\d+([,.]\d+)?\s*%[^.\n]{0,20}\b(par\s+an|l[’\x27]an)\b'
         .'|\b(gains?|bénéfices?|profits?|intérêts?|dividendes?|revenus?)\s+(assurés?|certains?|sûrs?)\b/iu';
 

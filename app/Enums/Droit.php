@@ -112,6 +112,9 @@ enum Droit: string
 
     case SouscriptionsVoir = 'souscriptions.voir';
     case SouscriptionsRapprocher = 'souscriptions.rapprocher';
+
+    // RAAGA Invest : manifestations d'intérêt (simulations non engageantes), en lecture et export (RÉGULATEUR, ADMIN).
+    case InteretsVoir = 'interets.voir';
     case RemboursementsVoir = 'remboursements.voir';
     case RemboursementsApprouver = 'remboursements.approuver';
 
@@ -199,6 +202,8 @@ enum Droit: string
             self::TextesLegauxRediger,
             self::PlateformeVoir, self::PlateformeModifier,
             self::InstitutionsGerer,
+            // RAAGA Invest : manifestations d'intérêt, en lecture et export.
+            self::InteretsVoir,
         ];
     }
 
@@ -277,7 +282,7 @@ enum Droit: string
                 self::SitesVoir, self::SitesGerer, self::ImportsVoir, self::UnitesVoir,
             ],
             Role::Regulateur => [
-                self::TableauDeBordVoir, self::BrouillonsVoir,
+                self::TableauDeBordVoir, self::BrouillonsVoir, self::InteretsVoir,
                 self::PhaseVoir, self::PhaseProposer,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,

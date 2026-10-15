@@ -639,6 +639,7 @@ return [
             'boutiques' => 'Mes boutiques',
             'documents' => 'Mes documents',
             'dividendes' => 'Mes dividendes',
+            'interets' => 'Mes intentions',
             'profil' => 'Mon profil',
         ],
         'colonnes' => [
@@ -752,6 +753,40 @@ return [
     ],
 
     // Accueil de la phase 1 (boutiques) : bannière, chiffres, étapes, versements, sites, questions, aide.
+    'invest' => [
+        'simulateur' => [
+            'titre' => 'Simuler mon investissement',
+            'intro' => 'Estimez le montant correspondant au nombre d’actions envisagé. Simulation indicative et non engageante.',
+            'indisponible' => 'Le simulateur sera disponible dès la publication des paramètres d’investissement.',
+            'calcul' => 'Votre simulation',
+            'nombre' => 'Nombre d’actions envisagé',
+            'calculer' => 'Calculer',
+            'valeur' => 'Valeur indicative par action',
+            'montant' => 'Montant',
+            'part_objectif' => 'Part de l’objectif de collecte (indicatif)',
+            'objectif' => 'Objectif de collecte : :objectif (il peut être dépassé).',
+            'plafond' => 'Plafond global : :plafond.',
+        ],
+        'interet' => [
+            'titre' => 'Manifester mon intérêt',
+            'intro' => 'Faites-nous connaître votre intérêt pour RAAGA Invest. Vous recevez une référence ; aucun paiement n’est demandé et rien ne vous engage.',
+            'case' => 'Je comprends qu’il s’agit d’une simulation non engageante',
+            'envoyer' => 'Enregistrer ma manifestation d’intérêt',
+            'aucun_paiement' => 'Aucun paiement : cette démarche ne réserve ni action ni boutique.',
+            'se_connecter' => 'Connectez-vous pour manifester votre intérêt',
+            'aucune' => 'Aucune manifestation d’intérêt pour le moment.',
+            'lien' => 'Faire une simulation',
+        ],
+        'profils' => ['RESIDENT' => 'Résident au Burkina Faso', 'DIASPORA' => 'Diaspora', 'ENTREPRISE' => 'Entreprise', 'INSTITUTION' => 'Institution'],
+        'attributs' => ['profil' => 'Profil', 'pays_residence' => 'pays de résidence', 'nombre_actions' => 'nombre d’actions envisagé', 'simulation_comprise' => 'simulation non engageante'],
+        'colonnes' => ['reference' => 'Référence', 'date' => 'Date', 'profil' => 'Profil', 'nombre' => 'Actions envisagées', 'montant' => 'Montant indicatif'],
+        'erreurs' => [
+            'simulation_comprise' => 'Cochez la case : il s’agit d’une simulation non engageante.',
+            'indisponible' => 'Les paramètres d’investissement ne sont pas encore publiés.',
+        ],
+        'messages' => ['enregistree' => 'Manifestation d’intérêt enregistrée : référence :reference. Aucun paiement n’est demandé.'],
+    ],
+
     'demarches' => [
         'titre' => 'Deux démarches distinctes',
         'promesse' => 'Raaga, le marché que nous bâtissons et possédons ensemble.',
@@ -773,7 +808,12 @@ return [
         'investir' => [
             'titre' => 'Devenez actionnaire de votre marché',
             'prix' => 'Prix de l’action : :prix',
+            'valeur_indicative' => 'Valeur indicative de l’action : :prix',
             'minimum' => 'Minimum : :n actions, soit :montant',
+            'objectif' => 'Objectif de collecte : :objectif',
+            'collecte' => ':collecte collectés',
+            'pourcentage' => ':pourcentage de l’objectif',
+            'simuler' => 'Simuler mon investissement',
             'minimum_un' => 'Minimum : 1 action',
             'prix_a_venir' => 'Le prix de l’action sera publié avec la prochaine tranche.',
             'dividendes' => 'Droit aux dividendes décidés par l’assemblée générale',
