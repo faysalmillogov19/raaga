@@ -36,7 +36,9 @@ class DatabaseSeeder extends Seeder
      *
      * - Rôles : table alignée sur l'enum (RoleSeeder) ; référentiels par défaut appelés par ReferentielsSitesSeeder :
      *   niveaux, zones, types de boutiques et unités de loyer M2, UNITE, REDEVANCE (NiveauxSeeder, ZonesSeeder,
-     *   TypesBoutiqueSeeder, UnitesSeeder ; chacun lançable seul, y compris en production, sans rien écraser).
+     *   TypesBoutiqueSeeder, UnitesSeeder ; chacun lançable seul, y compris en production, sans rien écraser) ;
+     *   moyens de paiement par défaut (MoyensPaiementSeeder : Orange Money, Moov Africa Money, Telecel Money,
+     *   Faso Arzeka, virement bancaire, espèces).
      * - Comptes de démonstration : créés s'ils manquent, avec un mot de passe identique à leur adresse e-mail
      *   (exemple : sites@raaga.test / sites@raaga.test) ; s'ils existent, seul leur rôle est remis à jour
      *   (jamais le mot de passe, le nom ni le TOTP). Back-office : sans TOTP enrôlé, la double authentification
@@ -49,6 +51,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
         $this->call(ParametresPlateformeSeeder::class);
         $this->call(ReferentielsSitesSeeder::class);
+        $this->call(MoyensPaiementSeeder::class);
         $this->call(CarrouselAccueilSeeder::class);
 
         foreach (self::BACKOFFICE as [$nom, $email, $role]) {

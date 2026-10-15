@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\SiteFinancesController;
 use App\Http\Controllers\Admin\SitesController;
 use App\Http\Controllers\Admin\TypesBoutiqueController;
 use App\Models\CampagneBoutiques;
+use App\Models\MoyenPaiement;
 use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -40,10 +41,10 @@ class SoumissionGroupee
     /** Entité => droit de l'auteur (GESTIONNAIRE ou RÉGULATEUR ; jamais le SUPER_ADMIN). */
     public const DROITS = [
         'site' => Droit::SitesGerer, 'type' => Droit::SitesGerer, 'niveaux' => Droit::SitesGerer, 'zones' => Droit::SitesGerer,
-        'unites' => Droit::UnitesGerer, 'grille' => Droit::BoutiquesSaisir, 'finances' => Droit::BoutiquesSaisir, 'campagne' => Droit::BoutiquesSaisir,
+        'unites' => Droit::UnitesGerer, 'moyens' => Droit::MoyensPaiementGerer, 'grille' => Droit::BoutiquesSaisir, 'finances' => Droit::BoutiquesSaisir, 'campagne' => Droit::BoutiquesSaisir,
     ];
 
-    private const REFERENTIELS = ['type' => TypeBoutique::class, 'niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class];
+    private const REFERENTIELS = ['type' => TypeBoutique::class, 'niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class, 'moyens' => MoyenPaiement::class];
 
     public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal) {}
 

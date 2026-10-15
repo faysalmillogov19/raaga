@@ -7,7 +7,6 @@ use App\Domain\Dividendes\LigneDistribution;
 use App\Domain\Dividendes\MoteurDistribution;
 use App\Domain\Dividendes\ParametresDistribution;
 use App\Domain\Dividendes\ResultatDistribution;
-use App\Enums\CanalPaiement;
 use App\Enums\ClasseActions;
 use App\Enums\ModeCalculDividende;
 use App\Enums\PayeurFrais;
@@ -15,6 +14,7 @@ use App\Models\BlocageActions;
 use App\Models\DistributionDividende;
 use App\Models\LigneRegistre;
 use App\Models\LigneRegistreA;
+use App\Models\MoyenPaiement;
 
 /**
  * Simulation d'une distribution à la date d'arrêté : registre des actions B (citoyens) ou registre des
@@ -48,7 +48,7 @@ class SimulationDistribution
             tauxRetenuePb: $d->taux_irvm_pb,
             fraisParActionnaire: $d->frais_supportes_par === PayeurFrais::Souscripteur,
             seuilMinimal: $d->seuil_minimal,
-            canalDefaut: $d->canal_defaut->value,
+            canalDefaut: $d->canal_defaut->code,
             canauxAutorises: $d->canaux_autorises,
             fraisCanaux: config('raaga.dividendes.frais_versement', []),
         );
@@ -80,7 +80,7 @@ class SimulationDistribution
                 ->selectRaw('institution_id, SUM(nb_actions) AS actions')
                 ->orderBy('institution_id')
                 ->get()
-                ->map(fn ($l) => new Detention((int) $l->institution_id, (int) $l->actions, canal: CanalPaiement::Virement->value))
+                ->map(fn ($l) => new Detention((int) $l->institution_id, (int) $l->actions, canal: MoyenPaiement::VIREMENT))
                 ->all();
         }
 

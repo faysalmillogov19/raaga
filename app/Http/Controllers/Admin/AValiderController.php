@@ -6,6 +6,7 @@ use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
 use App\Models\ImportValidation;
+use App\Models\MoyenPaiement;
 use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -58,7 +59,7 @@ class AValiderController extends Controller
         Gate::authorize(Droit::AValiderVoir->value);
         $donnees = $request->validate([
             'elements' => ['required', 'array', 'min:1', 'max:200'],
-            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|campagne|phase|autorisation|import):\d+$/'],
+            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|moyens|campagne|phase|autorisation|import):\d+$/'],
             'decision' => ['required', 'in:confirmer,rejeter'],
             'motif' => ['nullable', 'required_if:decision,rejeter', 'string', 'min:5', 'max:1000'],
             'mode' => ['nullable', 'in:ligne,lot'],
@@ -110,6 +111,7 @@ class AValiderController extends Controller
             'niveaux' => Niveau::query()->find($id),
             'zones' => ZoneSite::query()->find($id),
             'unites' => Unite::query()->find($id),
+            'moyens' => MoyenPaiement::query()->find($id),
             'campagne' => CampagneBoutiques::query()->find($id),
             default => null,
         };
@@ -173,7 +175,7 @@ class AValiderController extends Controller
                 'grille' => app(GrillesTarifairesController::class)->{$decision}($sousRequete, Site::query()->findOrFail($id)),
                 'finances' => app(SiteFinancesController::class)->{$decision}($sousRequete, Site::query()->findOrFail($id)),
                 'type' => app(TypesBoutiqueController::class)->{$decision}($sousRequete, TypeBoutique::query()->findOrFail($id)),
-                'niveaux', 'zones', 'unites' => app(NiveauxZonesController::class)->{$decision}($sousRequete, $type, $id),
+                'niveaux', 'zones', 'unites', 'moyens' => app(NiveauxZonesController::class)->{$decision}($sousRequete, $type, $id),
                 'campagne' => app(CampagnesBoutiquesController::class)->{$decision}($sousRequete, CampagneBoutiques::query()->findOrFail($id)),
                 'phase' => app(PhaseController::class)->{$decision}($sousRequete, $id),
                 'import' => app(ImportsValidationController::class)->{$decision}($sousRequete, ImportValidation::query()->findOrFail($id)),

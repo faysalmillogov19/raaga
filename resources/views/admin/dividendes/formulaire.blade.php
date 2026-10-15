@@ -7,7 +7,7 @@
     $c = __('admin.dividendes.champs');
     $a = __('admin.dividendes.aides');
     $options = fn (string $enum) => collect($enum::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()])->all();
-    $canaux = collect(DistributionParametresRequest::CANAUX)->mapWithKeys(fn ($e) => [$e->value => $e->label()])->all();
+    $canaux = DistributionParametresRequest::canaux()->pluck('libelle', 'code')->all();
     $date = fn ($v) => $v ? \Carbon\Carbon::parse($v)->format('Y-m-d') : null;
     $titre = __('admin.dividendes.formulaire.'.$mode);
     $action = match ($mode) {
@@ -78,7 +78,7 @@
                 <x-admin.champ nom="taux_irvm" :libelle="ucfirst($c['taux_irvm'])" type="number" min="0" max="100" step="0.01" :valeur="$d->taux_irvm_pb !== null ? $d->taux_irvm_pb / 100 : null" :aide="__('admin.dividendes.formulaire.taux_aide')" required />
                 <x-admin.liste nom="frais_supportes_par" :libelle="ucfirst($c['frais_supportes_par'])" :options="__('admin.dividendes.payeurs')" :valeur="$d->frais_supportes_par" />
                 <x-admin.champ nom="seuil_minimal" :libelle="ucfirst($c['seuil_minimal'])" type="number" min="0" :valeur="$d->seuil_minimal" :aide="$a['seuil']" required />
-                <x-admin.liste nom="canal_defaut" :libelle="ucfirst($c['canal_defaut'])" :options="$canaux" :valeur="$d->canal_defaut" />
+                <x-admin.liste nom="canal_defaut" :libelle="ucfirst($c['canal_defaut'])" :options="$canaux" :valeur="$d->canal_defaut?->code" />
                 <x-admin.cases nom="canaux_autorises" :libelle="ucfirst($c['canaux_autorises'])" :options="$canaux" :valeurs="$d->canaux_autorises ?? []" class="lg:col-span-2" />
                 <x-admin.champ nom="tentatives" :libelle="ucfirst($c['tentatives'])" type="number" min="0" max="10" :valeur="$d->tentatives" required />
                 <x-admin.champ nom="delai_tentatives_heures" :libelle="ucfirst($c['delai_tentatives_heures'])" type="number" min="1" max="720" :valeur="$d->delai_tentatives_heures" required />

@@ -2,7 +2,7 @@
 
 namespace App\Contracts;
 
-use App\Enums\CanalPaiement;
+use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -32,7 +32,7 @@ interface Payable
     /** Expiré faute de paiement dans le délai. */
     public function estExpire(): bool;
 
-    /** @return list<CanalPaiement> canaux actifs selon les paramètres confirmés */
+    /** @return list<MoyenPaiement> moyens de paiement actifs selon les paramètres confirmés (validés et actifs au référentiel) */
     public function canauxPaiement(): array;
 
     /**

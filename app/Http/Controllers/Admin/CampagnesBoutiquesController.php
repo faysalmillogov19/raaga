@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\CanalPaiement;
 use App\Enums\Droit;
 use App\Enums\StatutCampagneBoutiques;
 use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
@@ -10,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CampagneBoutiquesRequest;
 use App\Models\CampagneBoutiques;
 use App\Models\CandidatureBoutique;
+use App\Models\MoyenPaiement;
 use App\Models\ParametrageDecision;
 use App\Models\Site;
 use App\Models\TirageBoutiques;
@@ -81,7 +81,7 @@ class CampagnesBoutiquesController extends Controller
                 'date_ouverture' => now()->addMonth()->startOfDay()->setTime(8, 0),
                 'date_cloture' => now()->addMonths(2)->setTime(23, 59),
                 'delai_paiement_heures' => 72,
-                'canaux_actifs' => array_column(CanalPaiement::cases(), 'value'),
+                'canaux_actifs' => MoyenPaiement::proposables()->pluck('code')->all(),
             ]),
             ...$this->donneesFormulaire(null),
             'mode' => 'creation',

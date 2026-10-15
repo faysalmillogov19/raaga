@@ -5,6 +5,7 @@
     $z = __('admin.zones');
     $niveaux = $liste === 'niveaux';
     $unites = $liste === 'unites';
+    $moyens = $liste === 'moyens';
     $gerer = auth()->user()->can(NiveauxZonesController::droit($liste, 'gerer')->value);
     $titre = $element->code.' · '.$element->libelle;
     $supprimable = ! $element->par_defaut && $utilisations === 0;
@@ -44,6 +45,10 @@
                         @if ($niveaux)
                             <x-admin.champ nom="rang" :libelle="$z['colonnes']['rang']" :valeur="$element->rang" type="number" min="-9" max="99" required :aide="$z['rang_aide']" />
                         @else
+                            @if ($moyens)
+                                <x-admin.champ nom="type" :libelle="$z['colonnes']['type']" type="liste" :valeur="$element->type->value" obligatoire :aide="$z['type_aide']"
+                                               :options="collect(\App\Enums\TypeMoyenPaiement::cases())->mapWithKeys(fn ($t) => [$t->value => $t->label()])->all()" />
+                            @endif
                             @unless ($unites)
                                 <x-admin.champ nom="ordre" :libelle="$z['colonnes']['ordre']" :valeur="$element->ordre" type="number" min="0" max="9999" />
                             @endunless
@@ -75,6 +80,7 @@
             <div><dt class="texte-carte">{{ $z['colonnes']['code'] }}</dt><dd class="font-mono font-semibold">{{ $element->code }}</dd></div>
             <div><dt class="texte-carte">{{ $z['colonnes']['libelle'] }}</dt><dd class="font-semibold">{{ $element->libelle }}</dd></div>
             @unless ($unites)<div><dt class="texte-carte">{{ $z['colonnes'][$niveaux ? 'rang' : 'ordre'] }}</dt><dd class="font-semibold">{{ $niveaux ? $element->rang : $element->ordre }}</dd></div>@endunless
+            @if ($moyens)<div><dt class="texte-carte">{{ $z['colonnes']['type'] }}</dt><dd class="font-semibold">{{ $element->type->label() }}</dd></div>@endif
             @unless ($niveaux)<div><dt class="texte-carte">{{ $z['colonnes']['description'] }}</dt><dd class="font-semibold">{{ $element->description ?? '—' }}</dd></div>@endunless
         </dl>
     </section>

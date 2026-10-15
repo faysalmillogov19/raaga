@@ -19,7 +19,7 @@
             <tr><th>{{ $ligne['libelle'] }}</th><td><strong>{{ format_fcfa($ligne['montant']) }}</strong><br>{{ $ligne['mention'] }}</td></tr>
         @endforeach
         <tr><th>{{ __('public.boutiques.montants.total') }}</th><td><strong>{{ format_fcfa($paiement->montant) }}</strong></td></tr>
-        <tr><th>Moyen de paiement</th><td>{{ __('public.paiement.canaux.'.$paiement->canal->value) }}</td></tr>
+        <tr><th>Moyen de paiement</th><td>{{ $paiement->canal->label() }}</td></tr>
         <tr><th>Référence du paiement</th><td>{{ $paiement->reference }}</td></tr>
         <tr><th>Date du paiement</th><td>{{ $paiement->date_confirmation->format('d/m/Y à H\hi') }}</td></tr>
         <tr><th>Statut</th><td>{{ $c->statut->label() }}</td></tr>

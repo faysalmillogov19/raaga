@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Contracts\Parametrable;
-use App\Enums\CanalPaiement;
 use App\Enums\StatutCampagneBoutiques;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -50,10 +49,10 @@ class CampagneBoutiques extends Model implements Parametrable
         return self::query()->where('statut', StatutCampagneBoutiques::Ouverte)->latest('date_ouverture')->first();
     }
 
-    /** @return list<CanalPaiement> */
+    /** @return list<MoyenPaiement> */
     public function canaux(): array
     {
-        return array_values(array_filter(array_map(fn (string $c) => CanalPaiement::tryFrom($c), (array) $this->canaux_actifs)));
+        return MoyenPaiement::parmi((array) $this->canaux_actifs);
     }
 
     public function typeParametrage(): string

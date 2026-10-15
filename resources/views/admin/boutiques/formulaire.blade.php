@@ -1,5 +1,5 @@
 @php
-    use App\Enums\CanalPaiement;
+    use App\Models\MoyenPaiement;
 
     $c = __('admin.boutiques.champs');
     $k = __('admin.boutiques.categorie');
@@ -63,7 +63,7 @@
             <h2 id="s-paiement" class="!text-[1.15rem]">{{ __('admin.boutiques.sections.paiement') }}</h2>
             <div class="mt-3 grid gap-4 lg:grid-cols-2">
                 <x-admin.cases nom="canaux_actifs" :libelle="ucfirst($c['canaux_actifs'])"
-                               :options="collect(CanalPaiement::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()])->all()"
+                               :options="MoyenPaiement::proposables()->pluck('libelle', 'code')->all()"
                                :valeurs="$campagne->canaux_actifs ?? []" class="lg:col-span-2" />
                 <x-admin.champ nom="delai_paiement_heures" :libelle="ucfirst($c['delai_paiement_heures'])" type="number" min="1" max="720" :valeur="$campagne->delai_paiement_heures" required />
                 <x-admin.champ nom="max_boutiques_par_personne" :libelle="ucfirst($c['max_boutiques_par_personne'])" type="number" min="1"

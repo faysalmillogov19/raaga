@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Casts\AsMoyenPaiement;
 use App\Contracts\Parametrable;
-use App\Enums\CanalPaiement;
 use App\Enums\ClasseActions;
 use App\Enums\ModeCalculDividende;
 use App\Enums\PayeurFrais;
@@ -57,7 +57,7 @@ class DistributionDividende extends Model implements Parametrable
             'frais_supportes_par' => PayeurFrais::class,
             'seuil_minimal' => 'integer',
             'canaux_autorises' => 'array',
-            'canal_defaut' => CanalPaiement::class,
+            'canal_defaut' => AsMoyenPaiement::class,
             'tentatives' => 'integer',
             'delai_tentatives_heures' => 'integer',
             'conservation_non_reclames_mois' => 'integer',

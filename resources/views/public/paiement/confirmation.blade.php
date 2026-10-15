@@ -18,7 +18,7 @@
                 <div class="flex justify-between gap-3"><dt>{{ __('public.paiement.date') }}</dt><dd class="font-semibold">{{ $paiement->date_confirmation->format('d/m/Y') }}</dd></div>
                 <div class="flex justify-between gap-3"><dt>{{ __('public.souscription.recap_actions') }}</dt><dd class="font-semibold">{{ format_nombre($s->nb_actions_demandees) }}</dd></div>
                 <div class="flex justify-between gap-3"><dt>{{ __('public.paiement.montant_paye') }}</dt><dd class="font-semibold">{{ format_fcfa($paiement->montant + $paiement->frais) }}</dd></div>
-                <div class="flex justify-between gap-3"><dt>{{ __('public.paiement.canal') }}</dt><dd class="font-semibold">{{ __('public.paiement.canaux.'.$paiement->canal->value) }}</dd></div>
+                <div class="flex justify-between gap-3"><dt>{{ __('public.paiement.canal') }}</dt><dd class="font-semibold">{{ $paiement->canal->label() }}</dd></div>
                 <div class="flex justify-between gap-3"><dt>{{ __('public.paiement.reference_paiement') }}</dt><dd class="break-all text-right font-semibold">{{ $paiement->reference }}</dd></div>
                 <div class="flex justify-between gap-3"><dt>{{ __('public.paiement.reference') }}</dt><dd class="whitespace-nowrap font-semibold">{{ $s->reference }}</dd></div>
                 <div class="flex justify-between gap-3 border-t border-ligne pt-2"><dt>{{ __('public.paiement.statut') }}</dt>

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\CanalPaiement;
+use App\Casts\AsMoyenPaiement;
 use App\Enums\StatutPaiement;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +17,7 @@ class Paiement extends Model
     protected function casts(): array
     {
         return [
-            'canal' => CanalPaiement::class,
+            'canal' => AsMoyenPaiement::class,
             'montant' => 'integer',
             'frais' => 'integer',
             'statut' => StatutPaiement::class,

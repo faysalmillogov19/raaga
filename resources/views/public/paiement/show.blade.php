@@ -5,11 +5,9 @@
     $lignes (récapitulatif), $total, $routes (show, payer, statut, simuler, changer), $nouvelle, $objet.
 --}}
 @php
-    use App\Enums\CanalPaiement;
     use App\Support\Telephone;
 
     $s = $objet;
-    $mobiles = [CanalPaiement::OrangeMoney, CanalPaiement::MoovMoney];
 @endphp
 
 <x-public.layout :titre="$titre">
@@ -66,7 +64,7 @@
                             <span class="mt-1 inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-[3px] border-vert-pale border-t-vert-fonce motion-reduce:animate-none" aria-hidden="true"></span>
                             <div>
                                 <h2 id="attente-titre" class="!text-lg">{{ __('public.paiement.attente_titre') }}</h2>
-                                <p class="mt-1">{{ __('public.paiement.attente.'.$paiement->canal->value, ['telephone' => isset($paiement->metadonnees['telephone']) ? Telephone::formaterLocal($paiement->metadonnees['telephone']) : '']) }}</p>
+                                <p class="mt-1">{{ __('public.paiement.attente.'.$paiement->canal->type?->value, ['telephone' => isset($paiement->metadonnees['telephone']) ? Telephone::formaterLocal($paiement->metadonnees['telephone']) : '']) }}</p>
                             </div>
                         </div>
 
@@ -114,7 +112,7 @@
                                     <label class="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-charte border-2 p-3"
                                            :class="canal === @js($c->value) ? 'border-vert-fonce bg-vert-pale' : 'border-ligne'">
                                         <input type="radio" name="canal" value="{{ $c->value }}" x-model="canal" class="h-5 w-5 text-vert focus:ring-0">
-                                        <span class="font-semibold text-encre">{{ __('public.paiement.canaux.'.$c->value) }}</span>
+                                        <span class="font-semibold text-encre">{{ $c->label() }}</span>
                                     </label>
                                 @endforeach
                             </div>
@@ -124,7 +122,7 @@
                         @foreach ($canaux as $c)
                             <div x-show="canal === @js($c->value)" x-cloak>
                                 @include('public.paiement._instructions', ['canal' => $c])
-                                @if (in_array($c, $mobiles, true))
+                                @if ($c->estMobile())
                                     <x-public.champ nom="telephone" type="tel" class="mt-4" :id="'telephone-'.$c->value"
                                                     :libelle="__('public.paiement.numero', ['operateur' => $c->label()])" :aide="__('public.paiement.numero_aide')"
                                                     :valeur="$s->user->telephone ? Telephone::formaterLocal($s->user->telephone) : null"

@@ -2,7 +2,6 @@
 
 namespace App\Support;
 
-use App\Enums\CanalPaiement;
 use App\Enums\ClasseActions;
 use App\Enums\MethodeAllocation;
 use App\Enums\ModeCalculDividende;
@@ -14,6 +13,7 @@ use App\Enums\RegleArret;
 use App\Enums\RegleSiEchec;
 use App\Enums\TraitementNonReclames;
 use App\Enums\TypeFraisSouscription;
+use App\Models\MoyenPaiement;
 use Carbon\CarbonImmutable;
 
 /**
@@ -29,10 +29,7 @@ final class AffichageParametres
         'regle_si_echec' => RegleSiEchec::class,
         'frais_paiement_supportes_par' => PayeurFrais::class,
         'frais_souscription_type' => TypeFraisSouscription::class,
-        'canaux_actifs' => CanalPaiement::class,
         'mode_calcul' => ModeCalculDividende::class,
-        'canaux_autorises' => CanalPaiement::class,
-        'canal_defaut' => CanalPaiement::class,
         'traitement_non_reclames' => TraitementNonReclames::class,
         'mode_inscription' => ModeInscriptionA::class,
         'classe_actions' => ClasseActions::class,
@@ -71,6 +68,13 @@ final class AffichageParametres
 
         if ($champ === 'nb_actions') {
             return format_nombre((int) $valeur);
+        }
+
+        // Moyens de paiement : libellés du référentiel (un code retiré reste affiché tel quel).
+        if (in_array($champ, ['canaux_actifs', 'canaux_autorises', 'canal_defaut'], true)) {
+            $libelle = fn ($v) => MoyenPaiement::libelleDe($v instanceof MoyenPaiement ? $v->code : (string) $v);
+
+            return is_array($valeur) ? implode(', ', array_map($libelle, $valeur)) : $libelle($valeur);
         }
 
         if (isset(self::ENUMS[$champ])) {

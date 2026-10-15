@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Compte;
 
-use App\Enums\CanalPaiement;
 use App\Enums\CanalSouscription;
 use App\Enums\DocumentAccepte;
 use App\Enums\MethodeAllocation;
@@ -60,7 +59,7 @@ class SouscriptionTest extends TestCase
             'frais_paiement_supportes_par' => PayeurFrais::Raaga,
             'frais_souscription_type' => TypeFraisSouscription::Pourcentage,
             'frais_souscription_valeur' => 150, // 1,5 %
-            'canaux_actifs' => [CanalPaiement::OrangeMoney->value],
+            'canaux_actifs' => ['ORANGE_MONEY'],
             'delai_paiement_heures' => 48,
             'seuil_kyc_renforce' => 1_000_000,
             'version' => 3,

@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Compte\Concerns;
 
 use App\Contracts\Payable;
 use App\Contracts\PaymentProvider;
-use App\Enums\CanalPaiement;
 use App\Enums\StatutPaiement;
+use App\Models\MoyenPaiement;
 use App\Services\Paiement\ServicePaiement;
 use App\Support\CompteSequestre;
 use App\Support\Telephone;
@@ -52,11 +52,11 @@ trait GerePaiements
 
     protected function demanderPaiement(Request $request, Payable&Model $objet): void
     {
-        $canaux = array_map(fn (CanalPaiement $c) => $c->value, $objet->canauxPaiement());
+        $canaux = array_map(fn (MoyenPaiement $c) => $c->code, $objet->canauxPaiement());
 
         $donnees = $request->validate([
             'canal' => ['required', Rule::in($canaux)],
-            'telephone' => [Rule::requiredIf(in_array($request->input('canal'), [CanalPaiement::OrangeMoney->value, CanalPaiement::MoovMoney->value], true)),
+            'telephone' => [Rule::requiredIf(fn () => MoyenPaiement::parCode((string) $request->input('canal'))?->estMobile() ?? false),
                 'nullable', 'string', function (string $attribut, mixed $valeur, Closure $echec) {
                     if ($valeur !== null && ! Telephone::estValide($valeur)) {
                         $echec(__('public.paiement.erreurs.telephone'));
@@ -69,8 +69,8 @@ trait GerePaiements
         $this->service->expirerReservations();
         abort_unless($objet->fresh()->attendPaiement(), 409);
 
-        $canal = CanalPaiement::from($donnees['canal']);
-        $mobile = in_array($canal, [CanalPaiement::OrangeMoney, CanalPaiement::MoovMoney], true);
+        $canal = MoyenPaiement::parCode($donnees['canal']);
+        $mobile = $canal->estMobile();
         $this->service->initier($objet, $canal, $mobile ? Telephone::normaliser($donnees['telephone']) : null, $fournisseur, $request->user());
     }
 

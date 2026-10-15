@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Publique;
 
-use App\Enums\CanalPaiement;
 use App\Enums\CanalSouscription;
 use App\Enums\MethodeAllocation;
 use App\Enums\ModeSaisie;
@@ -131,7 +130,7 @@ class AccueilTest extends TestCase
             'delai_remboursement_jours' => 30,
             'frais_paiement_supportes_par' => PayeurFrais::Raaga,
             'frais_souscription_type' => TypeFraisSouscription::Aucun,
-            'canaux_actifs' => [CanalPaiement::OrangeMoney->value],
+            'canaux_actifs' => ['ORANGE_MONEY'],
             'cree_par' => User::factory()->create()->id,
             ...$parametres,
         ]);

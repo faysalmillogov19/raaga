@@ -534,16 +534,11 @@ return [
         'reference_paiement' => 'Référence du paiement',
         'avant' => 'À payer avant le :date. Passé ce délai, la réservation expire.',
         'choisir' => 'Choisissez votre moyen de paiement',
-        'canaux' => [
-            'ORANGE_MONEY' => 'Orange Money',
-            'MOOV_MONEY' => 'Moov Money',
-            'VIREMENT' => 'Virement bancaire',
-            'ESPECES' => 'Espèces au guichet',
-        ],
         'numero' => 'Numéro :operateur à débiter',
         'numero_aide' => '8 chiffres, par exemple 70 12 34 56.',
         'instructions' => [
             'mobile' => 'Vous allez recevoir une demande de paiement :operateur sur ce numéro. Validez-la sur votre téléphone.',
+            'passerelle' => 'Vous allez payer en ligne sur la plateforme :operateur (mobile money ou carte bancaire). Gardez cette page ouverte jusqu’à la confirmation.',
             'code_secret' => 'Saisissez votre code secret uniquement sur votre téléphone. Personne ne doit vous le demander.',
             'virement' => 'Faites le virement vers le compte séquestre ci-dessous.',
             'reference_obligatoire' => 'La référence de virement est obligatoire : sans elle, votre paiement ne pourra pas être rattaché à votre souscription.',
@@ -560,8 +555,8 @@ return [
         'reessayer' => 'Réessayer le paiement',
         'attente_titre' => 'En attente de confirmation',
         'attente' => [
-            'ORANGE_MONEY' => 'Validez la demande reçue sur le :telephone. Cet écran se met à jour automatiquement.',
-            'MOOV_MONEY' => 'Validez la demande reçue sur le :telephone. Cet écran se met à jour automatiquement.',
+            'MOBILE_MONEY' => 'Validez la demande reçue sur le :telephone. Cet écran se met à jour automatiquement.',
+            'PASSERELLE' => 'Terminez le paiement sur la plateforme de l’opérateur. Cet écran se met à jour automatiquement.',
             'VIREMENT' => 'Votre paiement sera confirmé dès la réception du virement.',
             'ESPECES' => 'Votre paiement sera confirmé par l’agent du guichet.',
         ],

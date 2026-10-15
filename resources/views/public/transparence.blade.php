@@ -37,8 +37,9 @@
                     <h2 id="canal-titre">{{ __('public.transparence.par_canal') }}</h2>
                     @php($totalCanaux = max(1, array_sum($statistiques->montantParCanal)))
                     <ul class="mt-5 space-y-4">
-                        @foreach (\App\Enums\CanalPaiement::cases() as $canal)
-                            @php($montant = $statistiques->montantParCanal[$canal->value] ?? 0)
+                        {{-- Moyens actifs, et tout moyen retiré qui a encore des montants encaissés. --}}
+                        @foreach (\App\Models\MoyenPaiement::query()->orderBy('ordre')->get()->filter(fn ($m) => $m->actif || ($statistiques->montantParCanal[$m->code] ?? 0) > 0) as $canal)
+                            @php($montant = $statistiques->montantParCanal[$canal->code] ?? 0)
                             <li>
                                 <div class="flex flex-wrap items-baseline justify-between gap-x-4">
                                     <span class="font-semibold text-encre">{{ $canal->label() }}</span>

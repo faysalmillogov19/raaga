@@ -3,7 +3,6 @@
 namespace Tests\Feature\Compte;
 
 use App\Contracts\PaymentProvider;
-use App\Enums\CanalPaiement;
 use App\Enums\CanalSouscription;
 use App\Enums\MethodeAllocation;
 use App\Enums\ModeSaisie;
@@ -49,7 +48,7 @@ class PaiementTest extends TestCase
             'souscriptions_multiples' => true, 'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata,
             'regle_si_echec' => RegleSiEchec::RemboursementIntegral, 'delai_remboursement_jours' => 30,
             'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Aucun,
-            'canaux_actifs' => [CanalPaiement::OrangeMoney->value, CanalPaiement::Virement->value, CanalPaiement::Especes->value],
+            'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT', 'ESPECES'],
             'delai_paiement_heures' => 48, 'version' => 1, 'cree_par' => User::factory()->create()->id,
         ]);
 

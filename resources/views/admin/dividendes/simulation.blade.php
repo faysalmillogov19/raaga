@@ -48,7 +48,7 @@
                 <tbody>
                     @forelse ($r->parCanal as $canal => $ligne)
                         <tr>
-                            <td>{{ \App\Enums\CanalPaiement::tryFrom($canal)?->label() ?? $canal }}</td>
+                            <td>{{ \App\Models\MoyenPaiement::libelleDe($canal) }}</td>
                             <td class="montant">{{ $s('versements', ['n' => format_nombre($ligne['nombre'])]) }}</td>
                             <td class="montant">{{ format_fcfa($ligne['montant']) }}</td>
                         </tr>

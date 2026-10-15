@@ -1,10 +1,12 @@
-{{-- Instructions propres au canal. Variables : $canal (CanalPaiement), $s (objet réglé : souscription ou candidature), $sequestre. --}}
-@php($c = $canal->value)
+{{-- Instructions selon le type du moyen de paiement. Variables : $canal (MoyenPaiement), $s (objet réglé : souscription ou candidature), $sequestre. --}}
+@php($c = $canal->type?->value)
 
 <div class="mt-4 rounded-charte bg-fond p-4 text-[0.95rem]">
-    @if (in_array($c, ['ORANGE_MONEY', 'MOOV_MONEY'], true))
+    @if ($c === 'MOBILE_MONEY')
         <p>{{ __('public.paiement.instructions.mobile', ['operateur' => $canal->label()]) }}</p>
         <p class="mt-2 font-semibold text-encre">{{ __('public.paiement.instructions.code_secret') }}</p>
+    @elseif ($c === 'PASSERELLE')
+        <p>{{ __('public.paiement.instructions.passerelle', ['operateur' => $canal->label()]) }}</p>
     @elseif ($c === 'VIREMENT')
         <p>{{ __('public.paiement.instructions.virement') }}</p>
         <dl class="mt-2 space-y-1">

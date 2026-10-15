@@ -14,6 +14,7 @@ use App\Models\CampagneBoutiques;
 use App\Models\DecisionPhase;
 use App\Models\GrilleTarifaire;
 use App\Models\ImportValidation;
+use App\Models\MoyenPaiement;
 use App\Models\Niveau;
 use App\Models\ParametrageDecision;
 use App\Models\Site;
@@ -63,8 +64,8 @@ final class AValider
             'grilles' => ['slug' => 'grilles', 'droits' => [Droit::BoutiquesConfirmer], 'groupable' => true, 'elements' => ['grille'],
                 'source' => fn (\Closure $e) => GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get()
                     ->map(fn (GrilleTarifaire $g) => $e('grille:'.$g->site_id, 'grille', $nomSite($g->site), $g->soumis_par, $g->soumis_le, route('admin.boutiques.grilles.show', $g->site_id)))],
-            'referentiels' => ['slug' => 'referentiels', 'droits' => [Droit::SitesConfirmer, Droit::UnitesConfirmer], 'groupable' => true,
-                'elements' => ['type', 'niveaux', 'zones', 'unites'],
+            'referentiels' => ['slug' => 'referentiels', 'droits' => [Droit::SitesConfirmer, Droit::UnitesConfirmer, Droit::MoyensPaiementConfirmer], 'groupable' => true,
+                'elements' => ['type', 'niveaux', 'zones', 'unites', 'moyens'],
                 'source' => function (\Closure $e, User $user) {
                     $liste = collect();
                     if ($user->can(Droit::SitesConfirmer->value)) {
@@ -75,6 +76,11 @@ final class AValider
                             foreach ($classe::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('modification_demandee'))->get() as $r) {
                                 $liste->push($e($type.':'.$r->id, $type, $r->code.' · '.$r->libelle, $r->demande_par, $r->updated_at, route('admin.referencement.zones.show', [$type, $r->id])));
                             }
+                        }
+                    }
+                    if ($user->can(Droit::MoyensPaiementConfirmer->value)) {
+                        foreach (MoyenPaiement::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('modification_demandee'))->get() as $m) {
+                            $liste->push($e('moyens:'.$m->id, 'moyens', $m->code.' · '.$m->libelle, $m->demande_par, $m->updated_at, route('admin.referencement.zones.show', ['moyens', $m->id])));
                         }
                     }
                     if ($user->can(Droit::UnitesConfirmer->value)) {
@@ -231,8 +237,8 @@ final class AValider
                     __('admin.a_valider.detail.description') => $t->description, __('admin.parametrage.statut') => $t->statut->label(),
                 ]];
             })(),
-            'niveaux', 'zones', 'unites' => (function () use ($id, $type) {
-                $r = ['niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class][$type]::query()->findOrFail($id);
+            'niveaux', 'zones', 'unites', 'moyens' => (function () use ($id, $type) {
+                $r = ['niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class, 'moyens' => MoyenPaiement::class][$type]::query()->findOrFail($id);
 
                 return [...self::referentiel($r->versions(), __('admin.zones.colonnes'), $r), 'infos' => [
                     __('admin.a_valider.detail.code') => $r->code, __('admin.a_valider.detail.libelle') => $r->libelle,

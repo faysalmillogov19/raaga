@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Enums\CanalPaiement;
+use App\Models\MoyenPaiement;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +26,7 @@ class CampagneBoutiquesRequest extends FormRequest
             'date_cloture' => ['required', 'date', 'after:date_ouverture'],
             'delai_paiement_heures' => ['required', 'integer', 'min:1', 'max:720'],
             'canaux_actifs' => ['required', 'array', 'min:1'],
-            'canaux_actifs.*' => [Rule::enum(CanalPaiement::class)],
+            'canaux_actifs.*' => [Rule::in(MoyenPaiement::proposables()->pluck('code')->all())],
             'max_boutiques_par_personne' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'lots' => ['required', 'array'],
             'lots.*' => ['array'],

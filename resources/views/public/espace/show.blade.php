@@ -77,7 +77,7 @@
                             <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.95rem] tab:grid-cols-4">
                                 <div><dt class="text-sm text-gris">{{ __('public.espace.colonnes.date') }}</dt><dd class="font-semibold">{{ $s->created_at->format('d/m/Y') }}</dd></div>
                                 <div><dt class="text-sm text-gris">{{ __('public.espace.colonnes.canal') }}</dt>
-                                    <dd class="font-semibold">{{ $paiementConfirme ? __('public.paiement.canaux.'.$paiementConfirme->canal->value) : __('public.espace.canal_souscription.'.$s->canal->value) }}</dd></div>
+                                    <dd class="font-semibold">{{ $paiementConfirme ? $paiementConfirme->canal->label() : __('public.espace.canal_souscription.'.$s->canal->value) }}</dd></div>
                                 <div><dt class="text-sm text-gris">{{ __('public.espace.colonnes.actions') }}</dt>
                                     <dd class="font-semibold">{{ format_nombre($s->statut === StatutSouscription::Allouee ? (int) $s->nb_actions_allouees : $s->nb_actions_demandees) }}</dd></div>
                                 <div><dt class="text-sm text-gris">{{ __('public.espace.colonnes.montant') }}</dt><dd class="font-semibold">{{ format_fcfa($s->montant + $s->frais_souscription) }}</dd></div>

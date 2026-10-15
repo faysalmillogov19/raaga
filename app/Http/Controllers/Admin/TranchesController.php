@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\CanalPaiement;
 use App\Enums\Droit;
 use App\Enums\MethodeAllocation;
 use App\Enums\ModeSaisie;
@@ -16,6 +15,7 @@ use App\Enums\TypeFraisSouscription;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TrancheParametresRequest;
 use App\Models\Avenant;
+use App\Models\MoyenPaiement;
 use App\Models\ParametrageDecision;
 use App\Models\Tranche;
 use App\Services\Audit\Journal;
@@ -270,7 +270,7 @@ class TranchesController extends Controller
             'frais_paiement_supportes_par' => PayeurFrais::Raaga,
             'frais_souscription_type' => TypeFraisSouscription::Aucun,
             'frais_souscription_valeur' => 0,
-            'canaux_actifs' => array_column(CanalPaiement::cases(), 'value'),
+            'canaux_actifs' => MoyenPaiement::proposables()->pluck('code')->all(),
             'delai_paiement_heures' => 48,
         ];
     }

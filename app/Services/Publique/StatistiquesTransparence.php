@@ -8,7 +8,7 @@ namespace App\Services\Publique;
 final readonly class StatistiquesTransparence
 {
     /**
-     * @param  array<string, int>  $montantParCanal  Code CanalPaiement => montant encaissé (FCFA).
+     * @param  array<string, int>  $montantParCanal  Code du moyen de paiement => montant encaissé (FCFA).
      * @param  array<string, int>  $souscripteursParTrancheMontant  Libellé de tranche de montant => nombre de souscripteurs.
      */
     public function __construct(

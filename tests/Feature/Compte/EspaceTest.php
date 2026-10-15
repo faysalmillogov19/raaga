@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Compte;
 
-use App\Enums\CanalPaiement;
 use App\Enums\CanalSouscription;
 use App\Enums\DocumentAccepte;
 use App\Enums\MethodeAllocation;
@@ -43,7 +42,7 @@ class EspaceTest extends TestCase
             'souscriptions_multiples' => true, 'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata,
             'regle_si_echec' => RegleSiEchec::RemboursementIntegral, 'delai_remboursement_jours' => 30,
             'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Aucun,
-            'canaux_actifs' => [CanalPaiement::OrangeMoney->value], 'delai_paiement_heures' => 48, 'version' => 2,
+            'canaux_actifs' => ['ORANGE_MONEY'], 'delai_paiement_heures' => 48, 'version' => 2,
             'cree_par' => User::factory()->create()->id,
         ]);
     }
@@ -65,7 +64,7 @@ class EspaceTest extends TestCase
         ]);
 
         if (in_array($statut, [StatutSouscription::Payee, StatutSouscription::Allouee], true)) {
-            $s->paiements()->create(['canal' => CanalPaiement::OrangeMoney, 'montant' => $s->montant, 'frais' => 0,
+            $s->paiements()->create(['canal' => 'ORANGE_MONEY', 'montant' => $s->montant, 'frais' => 0,
                 'reference' => 'PAY-'.$reference, 'statut' => StatutPaiement::Confirme, 'date_confirmation' => now()]);
             Acceptation::create(['user_id' => $user->id, 'souscription_id' => $s->id, 'document' => DocumentAccepte::ReglementTranche,
                 'version_document' => '2', 'accepte_le' => now(), 'ip' => '127.0.0.1', 'user_agent' => 'test']);

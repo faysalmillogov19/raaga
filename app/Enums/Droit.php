@@ -77,6 +77,11 @@ enum Droit: string
     case UnitesGerer = 'unites.gerer';
     case UnitesConfirmer = 'unites.confirmer';
 
+    // Moyens de paiement (souscriptions, cautions, dividendes) : RÉGULATEUR saisit, VALIDATEUR confirme.
+    case MoyensPaiementVoir = 'moyens_paiement.voir';
+    case MoyensPaiementGerer = 'moyens_paiement.gerer';
+    case MoyensPaiementConfirmer = 'moyens_paiement.confirmer';
+
     // Référencement : grille tarifaire en lecture (la saisie et la confirmation suivent les droits des campagnes),
     // journal des imports (sites et boutiques).
     case GrilleVoir = 'grille.voir';
@@ -149,7 +154,7 @@ enum Droit: string
             self::UtilisateursGerer, self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
             self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
-            self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer,
+            self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer, self::MoyensPaiementGerer, self::MoyensPaiementConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter,
@@ -165,7 +170,7 @@ enum Droit: string
      */
     public static function saisies(): array
     {
-        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir, self::BoutiquesSaisir, self::SitesGerer, self::UnitesGerer];
+        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir, self::BoutiquesSaisir, self::SitesGerer, self::UnitesGerer, self::MoyensPaiementGerer];
     }
 
     /**
@@ -176,7 +181,7 @@ enum Droit: string
     public static function confirmationsEtExecutions(): array
     {
         return [self::TranchesConfirmer, self::TranchesPiloter, self::DividendesConfirmer, self::DividendesPayer, self::AllocationExecuter,
-            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::SitesConfirmer, self::UnitesConfirmer];
+            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::SitesConfirmer, self::UnitesConfirmer, self::MoyensPaiementConfirmer];
     }
 
     /**
@@ -208,7 +213,7 @@ enum Droit: string
             self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
             self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
-            self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer,
+            self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer, self::MoyensPaiementGerer, self::MoyensPaiementConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter,
@@ -238,7 +243,7 @@ enum Droit: string
                 self::PhaseVoir,
                 self::AuditVoir,
                 self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
-                self::SitesVoir, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir,
+                self::SitesVoir, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir, self::MoyensPaiementVoir,
             ],
             // Support et assistance uniquement.
             Role::Admin => self::support(),
@@ -250,6 +255,7 @@ enum Droit: string
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
                 self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
                 self::SitesVoir, self::SitesConfirmer, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir, self::UnitesConfirmer,
+                self::MoyensPaiementVoir, self::MoyensPaiementConfirmer,
                 self::DividendesVoir, self::DividendesConfirmer, self::DividendesPayer,
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
                 self::KycVoir, self::KycVoirPieces, self::KycTraiter,
@@ -276,7 +282,7 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
                 self::BoutiquesVoir, self::BoutiquesSaisir,
-                self::SitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer,
+                self::SitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer, self::MoyensPaiementVoir, self::MoyensPaiementGerer,
                 self::DividendesVoir, self::DividendesSaisir,
                 self::SimulationsVoir, self::SimulationsLancer,
                 self::KycVoir,

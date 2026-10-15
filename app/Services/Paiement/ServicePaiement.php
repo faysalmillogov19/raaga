@@ -4,11 +4,11 @@ namespace App\Services\Paiement;
 
 use App\Contracts\Payable;
 use App\Contracts\PaymentProvider;
-use App\Enums\CanalPaiement;
 use App\Enums\StatutCandidatureBoutique;
 use App\Enums\StatutPaiement;
 use App\Enums\StatutSouscription;
 use App\Models\CandidatureBoutique;
+use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\Souscription;
 use App\Models\User;
@@ -35,7 +35,7 @@ class ServicePaiement
         return $objet->paiements()->where('statut', StatutPaiement::EnAttente)->latest('id')->first();
     }
 
-    public function initier(Payable&Model $objet, CanalPaiement $canal, ?string $telephone, PaymentProvider $fournisseur, User $acteur): Paiement
+    public function initier(Payable&Model $objet, MoyenPaiement $canal, ?string $telephone, PaymentProvider $fournisseur, User $acteur): Paiement
     {
         $paiement = DB::transaction(function () use ($objet, $canal, $telephone, $acteur) {
             /** @var Payable&Model $objet */
@@ -54,7 +54,7 @@ class ServicePaiement
             ]);
 
             $this->journal->ecrire($acteur, 'paiement.initie', 'Paiement', $paiement->id, null, [
-                'objet' => $objet->reference, 'canal' => $canal->value, 'reference' => $paiement->reference,
+                'objet' => $objet->reference, 'canal' => $canal->code, 'reference' => $paiement->reference,
             ]);
 
             return $paiement;

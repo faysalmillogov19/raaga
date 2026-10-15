@@ -2,12 +2,14 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Enums\CanalPaiement;
 use App\Enums\ClasseActions;
 use App\Enums\ModeCalculDividende;
 use App\Enums\PayeurFrais;
 use App\Enums\TraitementNonReclames;
+use App\Enums\TypeMoyenPaiement;
+use App\Models\MoyenPaiement;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 
 /**
@@ -16,7 +18,15 @@ use Illuminate\Validation\Rule;
 class DistributionParametresRequest extends FormRequest
 {
     /** Canaux de versement possibles pour les dividendes (pas d'espèces). */
-    public const CANAUX = [CanalPaiement::OrangeMoney, CanalPaiement::MoovMoney, CanalPaiement::Virement];
+    /**
+     * Moyens de versement des dividendes : mobile money et virement, validés et actifs au référentiel.
+     *
+     * @return Collection<int, MoyenPaiement>
+     */
+    public static function canaux()
+    {
+        return MoyenPaiement::proposables([TypeMoyenPaiement::MobileMoney, TypeMoyenPaiement::Virement]);
+    }
 
     public function authorize(): bool
     {
@@ -29,7 +39,7 @@ class DistributionParametresRequest extends FormRequest
     public function rules(): array
     {
         $enum = fn (string $classe) => Rule::in(array_column($classe::cases(), 'value'));
-        $canaux = array_map(fn (CanalPaiement $c) => $c->value, self::CANAUX);
+        $canaux = self::canaux()->pluck('code')->all();
         $distribution = $this->route('distribution');
 
         return [
@@ -51,7 +61,7 @@ class DistributionParametresRequest extends FormRequest
             'seuil_minimal' => ['required', 'integer', 'min:0'],
             'canaux_autorises' => ['required', 'array', 'min:1'],
             // Actions A : versement par virement sur le RIB vérifié de l'institution, uniquement.
-            'canaux_autorises.*' => [Rule::in($this->input('classe_actions') === ClasseActions::A->value ? [CanalPaiement::Virement->value] : $canaux)],
+            'canaux_autorises.*' => [Rule::in($this->input('classe_actions') === ClasseActions::A->value ? [MoyenPaiement::VIREMENT] : $canaux)],
             'canal_defaut' => ['required', Rule::in($this->input('canaux_autorises', []))],
             'tentatives' => ['required', 'integer', 'min:0', 'max:10'],
             'delai_tentatives_heures' => ['required', 'integer', 'min:1', 'max:720'],

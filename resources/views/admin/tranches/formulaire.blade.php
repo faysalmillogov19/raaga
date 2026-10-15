@@ -1,5 +1,5 @@
 @php
-    use App\Enums\CanalPaiement;
+    use App\Models\MoyenPaiement;
     use App\Enums\MethodeAllocation;
     use App\Enums\ModeSaisie;
     use App\Enums\PayeurFrais;
@@ -116,7 +116,7 @@
             <section class="bo-carte" aria-labelledby="s-paiement">
                 <h2 id="s-paiement" class="!text-[1.15rem]">{{ __('admin.tranches.sections.paiement') }}</h2>
                 <div class="mt-3 grid gap-4 lg:grid-cols-2">
-                    <x-admin.cases nom="canaux_actifs" :libelle="ucfirst($c['canaux_actifs'])" :options="$options(CanalPaiement::class)" :valeurs="$t->canaux_actifs ?? []" class="lg:col-span-2" />
+                    <x-admin.cases nom="canaux_actifs" :libelle="ucfirst($c['canaux_actifs'])" :options="MoyenPaiement::proposables()->pluck('libelle', 'code')->all()" :valeurs="$t->canaux_actifs ?? []" class="lg:col-span-2" />
                     <x-admin.champ nom="delai_paiement_heures" :libelle="ucfirst($c['delai_paiement_heures'])" type="number" min="1" max="720" :valeur="$t->delai_paiement_heures" required />
                     <x-admin.champ nom="seuil_kyc_renforce" :libelle="ucfirst($c['seuil_kyc_renforce'])" type="number" min="0" :valeur="$t->seuil_kyc_renforce" />
                     <x-admin.champ nom="seuil_revue_conformite" :libelle="ucfirst($c['seuil_revue_conformite'])" type="number" min="0" :valeur="$t->seuil_revue_conformite" />

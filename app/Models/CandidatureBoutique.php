@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Contracts\Payable;
-use App\Enums\CanalPaiement;
 use App\Enums\StatutCandidatureBoutique;
 use App\Support\MontantsBoutique;
 use App\Support\Recu;
@@ -108,7 +107,7 @@ class CandidatureBoutique extends Model implements Payable
         return $this->statut === StatutCandidatureBoutique::Expiree;
     }
 
-    /** @return list<CanalPaiement> */
+    /** @return list<MoyenPaiement> */
     public function canauxPaiement(): array
     {
         return $this->campagne->canaux();

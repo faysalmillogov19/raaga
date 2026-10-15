@@ -12,6 +12,7 @@ use App\Models\Boutique;
 use App\Models\CapaciteSite;
 use App\Models\GrilleTarifaire;
 use App\Models\ImportEnAttente;
+use App\Models\MoyenPaiement;
 use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -76,6 +77,8 @@ final class MenuBackoffice
                     'exclure' => ['admin.referencement.zones.*'], 'liste' => 'zones', 'sous_menu' => 'referentiels'],
                 ['cle' => 'unites', 'route' => 'admin.referencement.unites', 'droit' => Droit::UnitesVoir, 'icone' => 'tableau', 'etape' => 0,
                     'liste' => 'unites', 'sous_menu' => 'referentiels'],
+                ['cle' => 'moyens', 'route' => 'admin.referencement.moyens', 'droit' => Droit::MoyensPaiementVoir, 'icone' => 'tableau', 'etape' => 0,
+                    'liste' => 'moyens', 'sous_menu' => 'referentiels'],
             ],
             'support' => [
                 ['cle' => 'assistance', 'route' => 'admin.assistance', 'droit' => Droit::AssistanceVoir, 'icone' => 'assistance', 'etape' => 1, 'module' => 'admin'],
@@ -239,6 +242,12 @@ final class MenuBackoffice
             'unites' => match (true) {
                 $user->can(Droit::UnitesConfirmer->value) => $parElement['unites'] ?? 0,
                 $user->can(Droit::UnitesGerer->value) => Unite::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
+                default => 0,
+            },
+            // VALIDATEUR : moyens de paiement à valider ; RÉGULATEUR : moyens rejetés à corriger.
+            'moyens' => match (true) {
+                $user->can(Droit::MoyensPaiementConfirmer->value) => $parElement['moyens'] ?? 0,
+                $user->can(Droit::MoyensPaiementGerer->value) => MoyenPaiement::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
             // GESTIONNAIRE : imports de boutiques déposés mais pas encore confirmés (moins de 24 h).

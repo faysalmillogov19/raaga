@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Enums\CanalPaiement;
 use App\Enums\MethodeAllocation;
 use App\Enums\ModeSaisie;
 use App\Enums\PayeurFrais;
@@ -10,6 +9,7 @@ use App\Enums\PublicAutorise;
 use App\Enums\RegleArret;
 use App\Enums\RegleSiEchec;
 use App\Enums\TypeFraisSouscription;
+use App\Models\MoyenPaiement;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -72,7 +72,7 @@ class TrancheParametresRequest extends FormRequest
 
             // Paiement & conformité
             'canaux_actifs' => ['required', 'array', 'min:1'],
-            'canaux_actifs.*' => [$enum(CanalPaiement::class)],
+            'canaux_actifs.*' => [Rule::in(MoyenPaiement::proposables()->pluck('code')->all())],
             'delai_paiement_heures' => ['required', 'integer', 'min:1', 'max:720'],
             'seuil_kyc_renforce' => ['nullable', 'integer', 'min:0'],
             'seuil_revue_conformite' => ['nullable', 'integer', 'min:0'],

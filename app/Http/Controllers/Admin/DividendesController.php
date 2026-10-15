@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\CanalPaiement;
 use App\Enums\ClasseActions;
 use App\Enums\Droit;
 use App\Enums\ModeCalculDividende;
@@ -252,8 +251,8 @@ class DividendesController extends Controller
             'taux_irvm_pb' => 1250,
             'frais_supportes_par' => PayeurFrais::Raaga,
             'seuil_minimal' => 500,
-            'canaux_autorises' => [CanalPaiement::OrangeMoney->value, CanalPaiement::MoovMoney->value, CanalPaiement::Virement->value],
-            'canal_defaut' => CanalPaiement::OrangeMoney,
+            'canaux_autorises' => DistributionParametresRequest::canaux()->pluck('code')->all(),
+            'canal_defaut' => DistributionParametresRequest::canaux()->first(),
             'tentatives' => 3,
             'delai_tentatives_heures' => 24,
             'conservation_non_reclames_mois' => 60,

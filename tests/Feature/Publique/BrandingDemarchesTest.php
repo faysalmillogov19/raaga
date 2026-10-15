@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Publique;
 
-use App\Enums\CanalPaiement;
 use App\Enums\MethodeAllocation;
 use App\Enums\ModeSaisie;
 use App\Enums\PayeurFrais;
@@ -45,7 +44,7 @@ class BrandingDemarchesTest extends TestCase
             'publics_autorises' => [PublicAutorise::ResidentBf->value], 'mode_saisie' => ModeSaisie::NbActions, 'souscriptions_multiples' => true,
             'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata, 'regle_si_echec' => RegleSiEchec::RemboursementIntegral,
             'delai_remboursement_jours' => 30, 'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Pourcentage,
-            'frais_souscription_valeur' => 150, 'canaux_actifs' => [CanalPaiement::OrangeMoney->value], 'delai_paiement_heures' => 48, 'seuil_kyc_renforce' => 1_000_000,
+            'frais_souscription_valeur' => 150, 'canaux_actifs' => ['ORANGE_MONEY'], 'delai_paiement_heures' => 48, 'seuil_kyc_renforce' => 1_000_000,
             'version' => 1, 'cree_par' => User::factory()->create()->id,
         ]);
     }

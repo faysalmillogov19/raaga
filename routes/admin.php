@@ -141,15 +141,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::get('/niveaux', 'index')->defaults('liste', 'niveaux')->middleware('can:'.Droit::SitesVoir->value)->name('niveaux');
                 Route::get('/zones', 'index')->defaults('liste', 'zones')->middleware('can:'.Droit::SitesVoir->value)->name('zones');
                 Route::get('/unites', 'index')->defaults('liste', 'unites')->middleware('can:'.Droit::UnitesVoir->value)->name('unites');
-                Route::get('/{liste}/{id}', 'show')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.show');
-                Route::post('/{liste}', 'store')->whereIn('liste', ['niveaux', 'zones', 'unites'])->name('zones.store');
-                Route::put('/{liste}/{id}', 'update')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.update');
-                Route::post('/{liste}/{id}/activer', 'activer')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.activer');
-                Route::post('/{liste}/{id}/desactiver', 'desactiver')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.desactiver');
-                Route::delete('/{liste}/{id}', 'destroy')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.destroy');
-                Route::post('/{liste}/{id}/soumettre', 'soumettre')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.soumettre');
-                Route::post('/{liste}/{id}/confirmer', 'confirmer')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.confirmer');
-                Route::post('/{liste}/{id}/rejeter', 'rejeter')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.rejeter');
+                Route::get('/moyens-paiement', 'index')->defaults('liste', 'moyens')->middleware('can:'.Droit::MoyensPaiementVoir->value)->name('moyens');
+                Route::get('/{liste}/{id}', 'show')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.show');
+                Route::post('/{liste}', 'store')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->name('zones.store');
+                Route::put('/{liste}/{id}', 'update')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.update');
+                Route::post('/{liste}/{id}/activer', 'activer')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.activer');
+                Route::post('/{liste}/{id}/desactiver', 'desactiver')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.desactiver');
+                Route::delete('/{liste}/{id}', 'destroy')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.destroy');
+                Route::post('/{liste}/{id}/soumettre', 'soumettre')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.soumettre');
+                Route::post('/{liste}/{id}/confirmer', 'confirmer')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.confirmer');
+                Route::post('/{liste}/{id}/rejeter', 'rejeter')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.rejeter');
             });
             // Anciennes adresses (avant le menu « Référentiels ») : redirection permanente.
             Route::permanentRedirect('/niveaux-zones', '/admin/referencement/referentiels/niveaux')->name('niveaux-zones');

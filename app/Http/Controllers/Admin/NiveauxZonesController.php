@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\StatutTypeBoutique;
+use App\Enums\TypeMoyenPaiement;
 use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
 use App\Models\GrilleTarifaireLigne;
+use App\Models\MoyenPaiement;
 use App\Models\Niveau;
+use App\Models\Paiement;
 use App\Models\Unite;
 use App\Models\ZoneSite;
 use App\Services\Audit\Journal;
@@ -43,16 +46,18 @@ class NiveauxZonesController extends Controller
     use EnregistreEtSoumet;
 
     /** Liste => modèle. */
-    private const LISTES = ['niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class];
+    private const LISTES = ['niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class, 'moyens' => MoyenPaiement::class];
 
     /**
      * Droit requis pour une action sur une liste : voir, gerer (auteur), confirmer (VALIDATEUR).
      */
     public static function droit(string $liste, string $action): Droit
     {
-        return $liste === 'unites'
-            ? ['voir' => Droit::UnitesVoir, 'gerer' => Droit::UnitesGerer, 'confirmer' => Droit::UnitesConfirmer][$action]
-            : ['voir' => Droit::SitesVoir, 'gerer' => Droit::SitesGerer, 'confirmer' => Droit::SitesConfirmer][$action];
+        return match ($liste) {
+            'unites' => ['voir' => Droit::UnitesVoir, 'gerer' => Droit::UnitesGerer, 'confirmer' => Droit::UnitesConfirmer][$action],
+            'moyens' => ['voir' => Droit::MoyensPaiementVoir, 'gerer' => Droit::MoyensPaiementGerer, 'confirmer' => Droit::MoyensPaiementConfirmer][$action],
+            default => ['voir' => Droit::SitesVoir, 'gerer' => Droit::SitesGerer, 'confirmer' => Droit::SitesConfirmer][$action],
+        };
     }
 
     private function autoriser(string $liste, string $action): void
@@ -69,12 +74,15 @@ class NiveauxZonesController extends Controller
         $classe = $this->classe($liste);
         $niveaux = $liste === 'niveaux';
         $unites = $liste === 'unites';
+        $moyens = $liste === 'moyens';
         $z = __('admin.zones');
         $table = (new $classe)->getTable();
-        // Boutiques qui portent ce code (niveau, ou bloc pour une zone) ou lignes de grille (unité) : sous-requête, triable.
-        $compte = $unites
-            ? GrilleTarifaireLigne::query()->selectRaw('count(*)')->whereColumn('grille_tarifaire_lignes.unite_id', $table.'.id')
-            : Boutique::query()->selectRaw('count(*)')->whereColumn($niveaux ? 'niveau' : 'bloc', $table.'.code');
+        // Boutiques qui portent ce code (niveau, ou bloc pour une zone), lignes de grille (unité) ou paiements (moyen de paiement) : sous-requête, triable.
+        $compte = match (true) {
+            $unites => GrilleTarifaireLigne::query()->selectRaw('count(*)')->whereColumn('grille_tarifaire_lignes.unite_id', $table.'.id'),
+            $moyens => Paiement::query()->selectRaw('count(*)')->whereColumn('paiements.canal', $table.'.code'),
+            default => Boutique::query()->selectRaw('count(*)')->whereColumn($niveaux ? 'niveau' : 'bloc', $table.'.code'),
+        };
         $statut = fn (Model $e) => new HtmlString(BadgeStatut::html($e->statut)->toHtml().($e->actif ? '' : ' '.BadgeStatut::html($z['desactive'])->toHtml()));
 
         return Tableau::pour($classe::query()->select($table.'.*'), $liste)
@@ -82,6 +90,7 @@ class NiveauxZonesController extends Controller
                 Colonne::make('code', $z['colonnes']['code'])->triable()->recherchable()->classe('font-mono font-semibold'),
                 Colonne::make('libelle', $z['colonnes']['libelle'])->triable()->recherchable(),
                 $niveaux ? null : Colonne::make('description', $z['colonnes']['description'])->recherchable(),
+                $moyens ? Colonne::make('type', $z['colonnes']['type'])->triable()->valeur(fn (MoyenPaiement $m) => $m->type->label()) : null,
                 $unites ? null : Colonne::make($niveaux ? 'rang' : 'ordre', $z['colonnes'][$niveaux ? 'rang' : 'ordre'])->numerique()->triable(),
                 Colonne::make('statut', $z['colonnes']['statut'])->triable()->valeur($statut)
                     ->texte(fn (Model $e) => $e->statut->label().($e->actif ? '' : ' · '.$z['desactive'])),
@@ -89,7 +98,7 @@ class NiveauxZonesController extends Controller
                     ->valeur(fn (Model $e) => $e->par_defaut ? new HtmlString(''.BadgeStatut::html($z['par_defaut'], 'info')->toHtml()) : $z['non'])
                     ->texte(fn (Model $e) => $e->par_defaut ? $z['oui'] : $z['non']),
                 Colonne::make('utilise', $z['colonnes']['utilisation'])->numerique()->triable('boutiques_count')->avec(fn ($q) => $q->addSelect(['boutiques_count' => $compte]))
-                    ->valeur(fn (Model $e) => trans_choice($unites ? 'admin.zones.lignes_grille' : 'admin.zones.boutiques', (int) $e->boutiques_count, ['n' => format_nombre((int) $e->boutiques_count)]))
+                    ->valeur(fn (Model $e) => trans_choice($unites ? 'admin.zones.lignes_grille' : ($moyens ? 'admin.zones.paiements' : 'admin.zones.boutiques'), (int) $e->boutiques_count, ['n' => format_nombre((int) $e->boutiques_count)]))
                     ->texte(fn (Model $e) => (int) $e->boutiques_count),
                 Colonne::make('actions', $z['colonnes']['actions'])->vue('admin.zones._actions', 'el')->exportable(false),
             ])
@@ -130,6 +139,9 @@ class NiveauxZonesController extends Controller
             'code' => ['required', 'string', 'regex:'.$classe::FORMAT_CODE, Rule::unique((new $classe)->getTable(), 'code')],
             ...$this->reglesLibres($liste),
         ], [], __('admin.zones.attributs'));
+        if ($liste === 'moyens') {
+            $donnees['ordre'] ??= (int) MoyenPaiement::query()->max('ordre') + 1;
+        }
 
         $brouillon = $request->input('apres') === 'brouillon';
         $element = DB::transaction(function () use ($request, $classe, $donnees, $brouillon) {
@@ -254,7 +266,7 @@ class NiveauxZonesController extends Controller
         }, 'admin.zones.messages.rejetee');
     }
 
-    private function activation(Request $request, string $liste, Niveau|ZoneSite|Unite $element, bool $actif): RedirectResponse
+    private function activation(Request $request, string $liste, Niveau|ZoneSite|Unite|MoyenPaiement $element, bool $actif): RedirectResponse
     {
         $this->autoriser($liste, 'gerer');
 
@@ -277,7 +289,7 @@ class NiveauxZonesController extends Controller
      *
      * @throws RegleGestionException
      */
-    private function demander(Request $request, Niveau|ZoneSite|Unite $element, array $valeurs): void
+    private function demander(Request $request, Niveau|ZoneSite|Unite|MoyenPaiement $element, array $valeurs): void
     {
         if ($element->aModificationEnAttente()) {
             throw new RegleGestionException(__('admin.zones.regles.modification_en_attente'));
@@ -287,7 +299,7 @@ class NiveauxZonesController extends Controller
     }
 
     /** Auteur de la demande prévenu, une fois la décision enregistrée. */
-    private function notifier(string $liste, Niveau|ZoneSite|Unite $element, string $decision, ?string $motif): void
+    private function notifier(string $liste, Niveau|ZoneSite|Unite|MoyenPaiement $element, string $decision, ?string $motif): void
     {
         $auteur = $element->demande_par;
         DB::afterCommit(fn () => $this->notifications->envoyer($auteur, __('admin.a_valider.elements.'.$liste), $element->code.' · '.$element->libelle,
@@ -300,23 +312,25 @@ class NiveauxZonesController extends Controller
         return match ($liste) {
             'niveaux' => ['libelle' => ['required', 'string', 'max:80'], 'rang' => ['required', 'integer', 'min:-9', 'max:99']],
             'unites' => ['libelle' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:300']],
+            'moyens' => ['libelle' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:300'],
+                'type' => ['required', Rule::enum(TypeMoyenPaiement::class)], 'ordre' => ['nullable', 'integer', 'min:0', 'max:9999']],
             default => ['libelle' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:300'], 'ordre' => ['nullable', 'integer', 'min:0', 'max:9999']],
         };
     }
 
-    /** @return class-string<Niveau|ZoneSite|Unite> */
+    /** @return class-string<Niveau|ZoneSite|Unite|MoyenPaiement> */
     private function classe(string $liste): string
     {
         return self::LISTES[$liste] ?? abort(404);
     }
 
-    private function element(string $liste, int $id): Niveau|ZoneSite|Unite
+    private function element(string $liste, int $id): Niveau|ZoneSite|Unite|MoyenPaiement
     {
         return $this->classe($liste)::query()->findOrFail($id);
     }
 
     /** @throws RegleGestionException */
-    private function exigerEnAttente(Request $request, Niveau|ZoneSite|Unite $element): void
+    private function exigerEnAttente(Request $request, Niveau|ZoneSite|Unite|MoyenPaiement $element): void
     {
         if ($element->statut !== StatutTypeBoutique::AValider && ! $element->aModificationEnAttente()) {
             throw new RegleGestionException(__('admin.zones.regles.rien_a_valider'));
@@ -327,7 +341,7 @@ class NiveauxZonesController extends Controller
     }
 
     /** Action sur un élément ; retour à sa fiche, avec le message ou l'erreur. */
-    private function executer(string $liste, Niveau|ZoneSite|Unite $element, Closure $action, string $message): RedirectResponse
+    private function executer(string $liste, Niveau|ZoneSite|Unite|MoyenPaiement $element, Closure $action, string $message): RedirectResponse
     {
         $fiche = redirect()->route('admin.referencement.zones.show', [$liste, $element->id]);
         try {

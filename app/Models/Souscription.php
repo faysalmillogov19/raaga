@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Contracts\Payable;
-use App\Enums\CanalPaiement;
 use App\Enums\CanalSouscription;
 use App\Enums\StatutRevue;
 use App\Enums\StatutSouscription;
@@ -101,10 +100,10 @@ class Souscription extends Model implements Payable
         return $this->statut === StatutSouscription::Expiree;
     }
 
-    /** @return list<CanalPaiement> */
+    /** @return list<MoyenPaiement> */
     public function canauxPaiement(): array
     {
-        return array_values(array_filter(array_map(fn (string $c) => CanalPaiement::tryFrom($c), (array) $this->tranche->canaux_actifs)));
+        return MoyenPaiement::parmi((array) $this->tranche->canaux_actifs);
     }
 
     public function smsPaiementConfirme(Paiement $paiement): array

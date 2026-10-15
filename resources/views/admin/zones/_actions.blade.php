@@ -1,7 +1,7 @@
 {{-- Actions d'une ligne des listes Niveaux et Zones : fiche (modification ou lecture), suppression si l'élément n'est ni « par défaut » ni utilisé. --}}
 @php
     $z = __('admin.zones');
-    $liste = match (true) { $el instanceof \App\Models\Niveau => 'niveaux', $el instanceof \App\Models\Unite => 'unites', default => 'zones' };
+    $liste = match (true) { $el instanceof \App\Models\Niveau => 'niveaux', $el instanceof \App\Models\Unite => 'unites', $el instanceof \App\Models\MoyenPaiement => 'moyens', default => 'zones' };
     $gerer = auth()->user()->can(\App\Http\Controllers\Admin\NiveauxZonesController::droit($liste, 'gerer')->value);
     $supprimable = ! $el->par_defaut && $el->nombreUtilisations() === 0;
 @endphp
