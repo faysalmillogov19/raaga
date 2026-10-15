@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\Parametrable;
 use App\Enums\StatutCampagneBoutiques;
+use App\Enums\UsageMoyenPaiement;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -49,10 +50,14 @@ class CampagneBoutiques extends Model implements Parametrable
         return self::query()->where('statut', StatutCampagneBoutiques::Ouverte)->latest('date_ouverture')->first();
     }
 
-    /** @return list<MoyenPaiement> */
-    public function canaux(): array
+    /**
+     * Moyens retenus par la campagne, autorisés pour la caution et dont les plafonds couvrent le montant.
+     *
+     * @return list<MoyenPaiement>
+     */
+    public function canaux(int $montant): array
     {
-        return MoyenPaiement::parmi((array) $this->canaux_actifs);
+        return MoyenPaiement::pourPaiement((array) $this->canaux_actifs, UsageMoyenPaiement::Caution, $montant);
     }
 
     public function typeParametrage(): string

@@ -110,7 +110,7 @@ class CandidatureBoutique extends Model implements Payable
     /** @return list<MoyenPaiement> */
     public function canauxPaiement(): array
     {
-        return $this->campagne->canaux();
+        return $this->campagne->canaux($this->montantAPayer() + $this->fraisAPayer());
     }
 
     public function smsPaiementConfirme(Paiement $paiement): array

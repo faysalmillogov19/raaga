@@ -6,7 +6,6 @@ use App\Enums\ClasseActions;
 use App\Enums\ModeCalculDividende;
 use App\Enums\PayeurFrais;
 use App\Enums\TraitementNonReclames;
-use App\Enums\TypeMoyenPaiement;
 use App\Models\MoyenPaiement;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Collection;
@@ -19,13 +18,13 @@ class DistributionParametresRequest extends FormRequest
 {
     /** Canaux de versement possibles pour les dividendes (pas d'espèces). */
     /**
-     * Moyens de versement des dividendes : mobile money et virement, validés et actifs au référentiel.
+     * Moyens de versement des dividendes : mobile money et virement bancaire, validés et actifs au référentiel.
      *
      * @return Collection<int, MoyenPaiement>
      */
     public static function canaux()
     {
-        return MoyenPaiement::proposables([TypeMoyenPaiement::MobileMoney, TypeMoyenPaiement::Virement]);
+        return MoyenPaiement::proposables()->filter(fn (MoyenPaiement $m) => $m->estMobile() || $m->code === MoyenPaiement::VIREMENT)->values();
     }
 
     public function authorize(): bool

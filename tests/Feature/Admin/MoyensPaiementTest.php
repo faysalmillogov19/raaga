@@ -2,38 +2,32 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Enums\CanalSouscription;
-use App\Enums\MethodeAllocation;
-use App\Enums\ModeSaisie;
-use App\Enums\PayeurFrais;
-use App\Enums\PublicAutorise;
-use App\Enums\RegleArret;
-use App\Enums\RegleSiEchec;
+use App\Enums\FamilleMoyenPaiement;
 use App\Enums\Role;
 use App\Enums\StatutKyc;
-use App\Enums\StatutSouscription;
-use App\Enums\StatutTranche;
 use App\Enums\StatutTypeBoutique;
-use App\Enums\TypeFraisSouscription;
-use App\Enums\TypeMoyenPaiement;
+use App\Enums\UsageMoyenPaiement;
+use App\Models\CandidatureBoutique;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\ParametrageDecision;
-use App\Models\Souscription;
-use App\Models\Tranche;
 use App\Models\User;
 use Database\Seeders\MoyensPaiementSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Tests\Feature\Compte\CandidatureBoutiqueTest;
 use Tests\Support\ActeursParametrage;
 use Tests\TestCase;
 
-/** Référentiel des moyens de paiement : contenu par défaut, gestion RÉGULATEUR et VALIDATEUR, effet sur le paiement. */
+/**
+ * Référentiel des moyens de paiement : contenu de départ, droits par profil, circuit soumission puis validation
+ * (« À valider › Données financières »), filtre par usage et par plafond côté citoyen, désactivation sans suppression.
+ */
 class MoyensPaiementTest extends TestCase
 {
     use ActeursParametrage, RefreshDatabase;
 
-    private const DEFAUTS = ['ORANGE_MONEY' => 'Orange Money', 'MOOV_MONEY' => 'Moov Africa Money', 'TELECEL_MONEY' => 'Telecel Money',
-        'FASO_ARZEKA' => 'Faso Arzeka', 'VIREMENT' => 'Virement bancaire', 'ESPECES' => 'Espèces au guichet'];
+    private const ACTIFS = ['FASO_ARZEKA', 'ORANGE_MONEY', 'MOOV_MONEY', 'TELECEL_MONEY', 'VIREMENT', 'VERSEMENT', 'ESPECES'];
 
     protected function setUp(): void
     {
@@ -42,98 +36,141 @@ class MoyensPaiementTest extends TestCase
         $this->creerActeurs();
     }
 
-    private function souscription(array $canaux): Souscription
+    /** Champs de la fenêtre d'ajout ou de modification. */
+    private function champs(array $surcharges = []): array
     {
-        $tranche = Tranche::create([
-            'statut' => StatutTranche::Ouverte, 'nom' => 'Tranche 1', 'valeur_unitaire' => 10_000, 'min_actions_par_souscription' => 1,
-            'objectif_montant' => 3_000_000_000, 'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addDays(30),
-            'publics_autorises' => [PublicAutorise::ResidentBf->value], 'mode_saisie' => ModeSaisie::NbActions, 'souscriptions_multiples' => true,
-            'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata, 'regle_si_echec' => RegleSiEchec::RemboursementIntegral,
-            'delai_remboursement_jours' => 30, 'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Aucun,
-            'canaux_actifs' => $canaux, 'delai_paiement_heures' => 48, 'version' => 1, 'cree_par' => $this->regulateur->id,
-        ]);
-        $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'pays_residence' => 'BF', 'telephone' => '+22670123456']);
-
-        return Souscription::create([
-            'reference' => 'RAA-B-TEST0001', 'user_id' => $citoyen->id, 'tranche_id' => $tranche->id, 'nb_actions_demandees' => 25, 'valeur_unitaire' => 10_000,
-            'montant' => 250_000, 'frais_souscription' => 0, 'canal' => CanalSouscription::Web, 'statut' => StatutSouscription::Reservee, 'expire_le' => now()->addHours(48),
-        ]);
+        return array_replace_recursive([
+            'libelle' => 'Sank Money', 'famille' => 'MOBILE_MONEY', 'instructions' => 'Numéro marchand : 77 00 00 00', 'ordre' => 10,
+            'usages' => ['ACTIONS' => ['autorise' => 1, 'min' => '', 'max' => ''], 'CAUTION' => ['autorise' => 1, 'min' => '', 'max' => '']],
+        ], $surcharges);
     }
 
-    public function test_moyens_par_defaut_confirmes_et_seeder_rejouable(): void
+    /** Candidature à une boutique dont la caution à payer vaut ce montant. */
+    private function caution(int $montant, array $canaux): CandidatureBoutique
     {
-        $this->assertSame(self::DEFAUTS, MoyenPaiement::query()->orderBy('ordre')->pluck('libelle', 'code')->all());
+        $campagne = CandidatureBoutiqueTest::campagneOuverte();
+        $campagne->forceFill(['canaux_actifs' => $canaux])->save();
+        $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670123456']);
+        $this->actingAs($citoyen)->post('/boutiques/candidater', [
+            'categorie' => $campagne->categories()->where('libelle', 'Grande boutique')->value('id'),
+            'engagements' => ['TIRAGE_SANS_GARANTIE', 'CAUTION_SANS_LIEN_ACTIONS', 'REGLEMENT_CAMPAGNE_BOUTIQUES', 'ORIGINE_LICITE_FONDS'],
+        ])->assertRedirect();
+        $candidature = CandidatureBoutique::sole();
+        $candidature->forceFill(['caution' => $montant, 'avance' => 0])->save();
+
+        return $candidature->fresh();
+    }
+
+    public function test_seeder_moyens_de_depart_confirmes_sans_validation(): void
+    {
+        $this->assertSame([...self::ACTIFS, 'CORIS_MONEY', 'WAVE'], MoyenPaiement::query()->orderBy('ordre')->pluck('code')->all());
+        $this->assertSame(self::ACTIFS, MoyenPaiement::proposables()->pluck('code')->all());
+        $this->assertSame(['CORIS_MONEY', 'WAVE'], MoyenPaiement::query()->where('actif', false)->orderBy('ordre')->pluck('code')->all());
         foreach (MoyenPaiement::all() as $m) {
-            $this->assertTrue($m->par_defaut && $m->actif && $m->statut === StatutTypeBoutique::Valide, $m->code);
+            $this->assertTrue($m->par_defaut && $m->statut === StatutTypeBoutique::Valide, $m->code);
+            foreach (UsageMoyenPaiement::cases() as $u) {
+                $this->assertSame(['autorise' => true, 'min' => null, 'max' => null], $m->usage($u), $m->code.' '.$u->value);
+            }
             $premiere = $m->versions()->sortBy('numero')->first();
             $this->assertSame([1, null], [$premiere->numero, $premiere->auteur_id], $m->code);
         }
-        $this->assertSame(TypeMoyenPaiement::Passerelle, MoyenPaiement::parCode('FASO_ARZEKA')->type);
-        $this->assertSame(['ORANGE_MONEY', 'MOOV_MONEY', 'TELECEL_MONEY'], MoyenPaiement::proposables([TypeMoyenPaiement::MobileMoney])->pluck('code')->all());
+        $this->assertSame(FamilleMoyenPaiement::PlateformePublique, MoyenPaiement::parCode('FASO_ARZEKA')->famille);
+        $this->assertSame(FamilleMoyenPaiement::Banque, MoyenPaiement::parCode('VERSEMENT')->famille);
 
-        // Rejoué : rien de créé ni de modifié.
+        // Rejoué : rien de créé ni de modifié, aucune décision de validation.
         $this->seed(MoyensPaiementSeeder::class);
         $this->seed(MoyensPaiementSeeder::class);
-        $this->assertSame(self::DEFAUTS, MoyenPaiement::query()->orderBy('ordre')->pluck('libelle', 'code')->all());
+        $this->assertSame(9, MoyenPaiement::query()->count());
         $this->assertSame(0, ParametrageDecision::query()->count());
-    }
-
-    public function test_le_regulateur_ajoute_un_moyen_que_le_validateur_confirme(): void
-    {
-        $this->en($this->regulateur)->get(route('admin.referencement.moyens'))->assertOk()->assertSee('Telecel Money')->assertSee('Faso Arzeka')->assertSee('Ajouter un moyen de paiement');
-        $this->en($this->regulateur)->post(route('admin.referencement.zones.store', 'moyens'), ['code' => 'SANK_MONEY', 'libelle' => 'Sank Money', 'type' => 'MOBILE_MONEY'])
-            ->assertSessionHas('succes');
-        $sank = MoyenPaiement::query()->where('code', 'SANK_MONEY')->sole();
-        $this->assertSame([StatutTypeBoutique::AValider, 7], [$sank->statut, $sank->ordre]);
-        $this->assertNotContains('SANK_MONEY', MoyenPaiement::proposables()->pluck('code')->all());
-
-        // Dans « À valider › Référentiels », puis validé : proposé dans les tranches et les campagnes.
-        $this->en($this->validateur)->get(route('admin.a-valider.rubrique', 'referentiels'))->assertSee('SANK_MONEY · Sank Money');
-        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['moyens', $sank->id]))->assertSessionHas('succes');
-        $this->assertContains('SANK_MONEY', MoyenPaiement::proposables()->pluck('code')->all());
-        $this->en($this->regulateur)->get(route('admin.tranches.create'))->assertSee('Sank Money');
-        $this->en($this->regulateur)->get(route('admin.boutiques.create'))->assertSee('Sank Money');
-
-        // Code invalide ou type inconnu : refusés.
-        $this->en($this->regulateur)->post(route('admin.referencement.zones.store', 'moyens'), ['code' => 'sank money', 'libelle' => 'X', 'type' => 'CHEQUE'])
-            ->assertSessionHasErrors(['code', 'type']);
+        // Aucune clé ni aucun secret d'opérateur dans la table.
+        $this->assertEmpty(array_filter(DB::getSchemaBuilder()->getColumnListing('moyens_paiement'), fn ($c) => preg_match('/cle|secret|token|api/i', $c)));
     }
 
     public function test_droits_par_profil(): void
     {
         $gestionnaire = User::factory()->role(Role::GestionnaireSites)->create();
         $this->en($gestionnaire)->get(route('admin.referencement.moyens'))->assertForbidden();
+        $this->en($this->regulateur)->get(route('admin.referencement.moyens'))->assertOk()->assertSee('Ajouter un moyen de paiement')->assertSee('Coris Money')
+            ->assertSee('<dialog id="ajouter-moyens"', false);
+        $this->en($this->regulateur)->get(route('admin.tableau'))->assertSee('href="'.route('admin.referencement.moyens').'"', false);
         $this->en($this->superAdmin)->get(route('admin.referencement.moyens'))->assertOk()->assertDontSee('Ajouter un moyen de paiement');
-        $this->en($this->superAdmin)->post(route('admin.referencement.zones.store', 'moyens'), ['code' => 'X_PAY', 'libelle' => 'X', 'type' => 'MOBILE_MONEY'])->assertForbidden();
-        $this->en($this->validateur)->post(route('admin.referencement.zones.store', 'moyens'), ['code' => 'X_PAY', 'libelle' => 'X', 'type' => 'MOBILE_MONEY'])->assertForbidden();
-
-        // Moyen par défaut : sa désactivation passe par le VALIDATEUR.
-        $especes = MoyenPaiement::parCode('ESPECES');
-        $this->en($this->regulateur)->post(route('admin.referencement.zones.desactiver', ['moyens', $especes->id]))->assertSessionHas('succes');
-        $this->assertTrue($especes->refresh()->actif);
-        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['moyens', $especes->id]))->assertSessionHas('succes');
-        $this->assertFalse($especes->refresh()->actif);
+        foreach ([$this->superAdmin, $this->validateur, $gestionnaire] as $profil) {
+            $this->en($profil)->post(route('admin.referencement.zones.store', 'moyens'), ['code' => 'SANK_MONEY', ...$this->champs()])->assertForbidden();
+        }
     }
 
-    public function test_paiement_avec_les_moyens_du_referentiel(): void
+    public function test_circuit_soumission_puis_validation(): void
     {
-        $s = $this->souscription(['TELECEL_MONEY', 'FASO_ARZEKA', 'VIREMENT']);
-        $page = $this->actingAs($s->user)->get('/paiement/'.$s->reference)->assertOk();
-        $page->assertSee('Telecel Money')->assertSee('Faso Arzeka')->assertSee('Virement bancaire')->assertDontSee('Orange Money')
-            ->assertSee('Vous allez payer en ligne sur la plateforme Faso Arzeka', false);
+        // Ajout : soumis au VALIDATEUR, pas encore proposé.
+        $this->en($this->regulateur)->post(route('admin.referencement.zones.store', 'moyens'), ['code' => 'SANK_MONEY', ...$this->champs()])->assertSessionHas('succes');
+        $sank = MoyenPaiement::query()->where('code', 'SANK_MONEY')->sole();
+        $this->assertSame(StatutTypeBoutique::AValider, $sank->statut);
+        $this->assertNotContains('SANK_MONEY', MoyenPaiement::proposables()->pluck('code')->all());
+        $this->en($this->validateur)->get(route('admin.a-valider.rubrique', 'finances-sites'))->assertSee('<title>Données financières', false)->assertSee('SANK_MONEY · Sank Money');
+        $this->en($this->validateur)->get(route('admin.a-valider.rubrique', 'referentiels'))->assertDontSee('SANK_MONEY');
+        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['moyens', $sank->id]))->assertSessionHas('succes');
+        $this->assertContains('SANK_MONEY', MoyenPaiement::proposables()->pluck('code')->all());
 
-        // Mobile money : numéro exigé ; passerelle : sans numéro.
-        $this->actingAs($s->user)->post('/paiement/'.$s->reference, ['canal' => 'TELECEL_MONEY'])->assertSessionHasErrors('telephone');
-        $this->actingAs($s->user)->post('/paiement/'.$s->reference, ['canal' => 'FASO_ARZEKA'])->assertSessionHasNoErrors();
-        $paiement = Paiement::query()->latest('id')->firstOrFail();
-        $this->assertSame('FASO_ARZEKA', $paiement->getRawOriginal('canal'));
-        $this->assertSame('Faso Arzeka', $paiement->canal->label());
+        // Modification d'un moyen confirmé (plafond) : soumise, appliquée seulement à la validation.
+        $orange = MoyenPaiement::parCode('ORANGE_MONEY');
+        $this->en($this->regulateur)->put(route('admin.referencement.zones.update', ['moyens', $orange->id]), $this->champs([
+            'libelle' => 'Orange Money', 'famille' => 'MOBILE_MONEY', 'instructions' => '', 'ordre' => 2, 'usages' => ['CAUTION' => ['max' => 1000000]],
+        ]))->assertSessionHas('succes', __('admin.zones.messages.modification_soumise'));
+        $this->assertNull($orange->refresh()->usage(UsageMoyenPaiement::Caution)['max']);
+        $this->en($this->validateur)->get(route('admin.a-valider.rubrique', 'finances-sites'))->assertSee('ORANGE_MONEY · Orange Money');
+        $this->en($this->regulateur)->post(route('admin.referencement.zones.confirmer', ['moyens', $orange->id]))->assertForbidden();
+        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['moyens', $orange->id]))->assertSessionHas('succes');
+        $this->assertSame(1_000_000, $orange->refresh()->usage(UsageMoyenPaiement::Caution)['max']);
 
-        // Moyen désactivé : plus proposé ni accepté ; les paiements passés gardent leur libellé.
-        MoyenPaiement::parCode('FASO_ARZEKA')->forceFill(['actif' => false])->save();
-        $this->actingAs($s->user)->get('/paiement/'.$s->reference.'?changer=1');
-        $this->actingAs($s->user)->post('/paiement/'.$s->reference, ['canal' => 'FASO_ARZEKA'])->assertSessionHasErrors('canal');
-        $this->assertSame('Faso Arzeka', $paiement->fresh()->canal->label());
-        $this->assertSame(['TELECEL_MONEY', 'VIREMENT'], array_map(fn ($m) => $m->code, $s->fresh()->canauxPaiement()));
+        // Plafonds incohérents : refusés.
+        $this->en($this->regulateur)->put(route('admin.referencement.zones.update', ['moyens', $sank->id]), $this->champs(['usages' => ['ACTIONS' => ['min' => 5000, 'max' => 1000]]]))
+            ->assertSessionHasErrors('usages.ACTIONS.max');
+    }
+
+    public function test_filtre_par_usage_et_par_plafond(): void
+    {
+        MoyenPaiement::parCode('ORANGE_MONEY')->forceFill(['usages' => [
+            'ACTIONS' => ['autorise' => true, 'min' => null, 'max' => null], 'CAUTION' => ['autorise' => true, 'min' => null, 'max' => 1_000_000]]])->save();
+        MoyenPaiement::parCode('TELECEL_MONEY')->forceFill(['usages' => [
+            'ACTIONS' => ['autorise' => true, 'min' => null, 'max' => null], 'CAUTION' => ['autorise' => false, 'min' => null, 'max' => null]]])->save();
+        MoyenPaiement::parCode('VERSEMENT')->forceFill(['usages' => [
+            'ACTIONS' => ['autorise' => true, 'min' => null, 'max' => null], 'CAUTION' => ['autorise' => true, 'min' => 2_500_000, 'max' => null]]])->save();
+
+        // Caution de 2 139 744 FCFA : Orange Money plafonné à 1 000 000 et Telecel (non autorisé) ne sont pas proposés.
+        $c = $this->caution(2_139_744, ['ORANGE_MONEY', 'TELECEL_MONEY', 'FASO_ARZEKA', 'VIREMENT', 'VERSEMENT']);
+        $this->assertSame(['FASO_ARZEKA', 'VIREMENT'], array_map(fn ($m) => $m->code, $c->canauxPaiement()));
+        $page = $this->actingAs($c->user)->get('/boutiques/candidatures/'.$c->reference.'/caution')->assertOk();
+        $page->assertSee("2\u{00A0}139\u{00A0}744\u{00A0}FCFA")->assertSee('Faso Arzeka')->assertSee('Virement bancaire')
+            ->assertDontSee('Orange Money')->assertDontSee('Telecel Money')->assertDontSee('Versement bancaire');
+        $this->actingAs($c->user)->post('/boutiques/candidatures/'.$c->reference.'/caution', ['canal' => 'ORANGE_MONEY', 'telephone' => '70 12 34 56'])
+            ->assertSessionHasErrors('canal');
+
+        // Petite caution : Orange Money redevient proposé.
+        $c->forceFill(['caution' => 500_000])->save();
+        $this->assertSame(['FASO_ARZEKA', 'ORANGE_MONEY', 'VIREMENT'], array_map(fn ($m) => $m->code, $c->fresh()->canauxPaiement()));
+    }
+
+    public function test_desactivation_sans_suppression(): void
+    {
+        $c = $this->caution(500_000, ['ORANGE_MONEY', 'MOOV_MONEY', 'VIREMENT']);
+        $this->actingAs($c->user)->post('/boutiques/candidatures/'.$c->reference.'/caution', ['canal' => 'MOOV_MONEY', 'telephone' => '70 12 34 56'])->assertSessionHasNoErrors();
+        $paiement = Paiement::query()->sole();
+        $moov = MoyenPaiement::parCode('MOOV_MONEY');
+
+        // Désactivation d'un moyen confirmé : soumise, puis validée.
+        $this->en($this->regulateur)->post(route('admin.referencement.zones.desactiver', ['moyens', $moov->id]))->assertSessionHas('succes');
+        $this->assertTrue($moov->refresh()->actif);
+        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['moyens', $moov->id]))->assertSessionHas('succes');
+        $this->assertFalse($moov->refresh()->actif);
+
+        // Plus proposé ; l'historique garde le moyen utilisé.
+        $this->assertSame(['ORANGE_MONEY', 'VIREMENT'], array_map(fn ($m) => $m->code, $c->fresh()->canauxPaiement()));
+        $this->assertSame('Moov Africa Money', $paiement->fresh()->canal->label());
+
+        // Jamais supprimé, même inutilisé.
+        $wave = MoyenPaiement::parCode('WAVE');
+        $this->en($this->regulateur)->delete(route('admin.referencement.zones.destroy', ['moyens', $wave->id]))->assertSessionHas('erreur', __('admin.moyens_paiement.regles.jamais_supprime'));
+        $this->assertModelExists($wave);
+        $this->en($this->regulateur)->get(route('admin.referencement.zones.show', ['moyens', $wave->id]))->assertOk()->assertDontSee('>Supprimer<', false);
     }
 }

@@ -64,7 +64,7 @@
                             <span class="mt-1 inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-[3px] border-vert-pale border-t-vert-fonce motion-reduce:animate-none" aria-hidden="true"></span>
                             <div>
                                 <h2 id="attente-titre" class="!text-lg">{{ __('public.paiement.attente_titre') }}</h2>
-                                <p class="mt-1">{{ __('public.paiement.attente.'.$paiement->canal->type?->value, ['telephone' => isset($paiement->metadonnees['telephone']) ? Telephone::formaterLocal($paiement->metadonnees['telephone']) : '']) }}</p>
+                                <p class="mt-1">{{ __('public.paiement.attente.'.$paiement->canal->famille?->value, ['telephone' => isset($paiement->metadonnees['telephone']) ? Telephone::formaterLocal($paiement->metadonnees['telephone']) : '']) }}</p>
                             </div>
                         </div>
 

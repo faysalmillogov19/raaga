@@ -3,7 +3,8 @@
     $z = __('admin.zones');
     $liste = match (true) { $el instanceof \App\Models\Niveau => 'niveaux', $el instanceof \App\Models\Unite => 'unites', $el instanceof \App\Models\MoyenPaiement => 'moyens', default => 'zones' };
     $gerer = auth()->user()->can(\App\Http\Controllers\Admin\NiveauxZonesController::droit($liste, 'gerer')->value);
-    $supprimable = ! $el->par_defaut && $el->nombreUtilisations() === 0;
+    // Moyen de paiement : jamais supprimé, seulement désactivé.
+    $supprimable = $liste !== 'moyens' && ! $el->par_defaut && $el->nombreUtilisations() === 0;
 @endphp
 <div class="flex justify-end gap-2">
     <x-admin.bouton :variante="$gerer ? 'secondaire' : 'contour'" taille="petit" :href="route('admin.referencement.zones.show', [$liste, $el->id])"

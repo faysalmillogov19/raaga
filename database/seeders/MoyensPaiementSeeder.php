@@ -2,32 +2,39 @@
 
 namespace Database\Seeders;
 
+use App\Enums\FamilleMoyenPaiement;
 use App\Enums\StatutTypeBoutique;
-use App\Enums\TypeMoyenPaiement;
+use App\Enums\UsageMoyenPaiement;
 use App\Models\MoyenPaiement;
 use Illuminate\Database\Seeder;
 
 /**
- * Moyens de paiement par défaut : confirmés d'office, marqués « par défaut », version 1 au nom du système ; créés
- * s'ils manquent, jamais modifiés s'ils existent. Aucun passage par le circuit de validation.
+ * Moyens de paiement de départ : confirmés d'office, marqués « par défaut », version 1 au nom du système, sans
+ * décision de validation ; créés s'ils manquent, jamais modifiés s'ils existent. Autorisés pour les deux usages
+ * (actions, caution), plafonds vides : le RÉGULATEUR les saisit. CORIS_MONEY et WAVE sont créés inactifs.
  */
 class MoyensPaiementSeeder extends Seeder
 {
-    /** code => [libellé, type, ordre] */
+    /** code => [libellé, famille, ordre, actif] */
     public const MOYENS = [
-        'ORANGE_MONEY' => ['Orange Money', TypeMoyenPaiement::MobileMoney, 1],
-        'MOOV_MONEY' => ['Moov Africa Money', TypeMoyenPaiement::MobileMoney, 2],
-        'TELECEL_MONEY' => ['Telecel Money', TypeMoyenPaiement::MobileMoney, 3],
-        'FASO_ARZEKA' => ['Faso Arzeka', TypeMoyenPaiement::Passerelle, 4],
-        'VIREMENT' => ['Virement bancaire', TypeMoyenPaiement::Virement, 5],
-        'ESPECES' => ['Espèces au guichet', TypeMoyenPaiement::Especes, 6],
+        'FASO_ARZEKA' => ['Faso Arzeka', FamilleMoyenPaiement::PlateformePublique, 1, true],
+        'ORANGE_MONEY' => ['Orange Money', FamilleMoyenPaiement::MobileMoney, 2, true],
+        'MOOV_MONEY' => ['Moov Africa Money', FamilleMoyenPaiement::MobileMoney, 3, true],
+        'TELECEL_MONEY' => ['Telecel Money', FamilleMoyenPaiement::MobileMoney, 4, true],
+        'VIREMENT' => ['Virement bancaire', FamilleMoyenPaiement::Banque, 5, true],
+        'VERSEMENT' => ['Versement bancaire', FamilleMoyenPaiement::Banque, 6, true],
+        'ESPECES' => ['Espèces au guichet', FamilleMoyenPaiement::Guichet, 7, true],
+        'CORIS_MONEY' => ['Coris Money', FamilleMoyenPaiement::MobileMoney, 8, false],
+        'WAVE' => ['Wave', FamilleMoyenPaiement::MobileMoney, 9, false],
     ];
 
     public function run(): void
     {
-        foreach (self::MOYENS as $code => [$libelle, $type, $ordre]) {
+        $usages = collect(UsageMoyenPaiement::cases())->mapWithKeys(fn (UsageMoyenPaiement $u) => [$u->value => ['autorise' => true, 'min' => null, 'max' => null]])->all();
+        foreach (self::MOYENS as $code => [$libelle, $famille, $ordre, $actif]) {
             $moyen = MoyenPaiement::query()->firstOrCreate(['code' => $code], [
-                'libelle' => $libelle, 'type' => $type, 'ordre' => $ordre, 'actif' => true, 'par_defaut' => true, 'statut' => StatutTypeBoutique::Valide,
+                'libelle' => $libelle, 'famille' => $famille, 'usages' => $usages, 'ordre' => $ordre, 'actif' => $actif,
+                'par_defaut' => true, 'statut' => StatutTypeBoutique::Valide,
             ]);
             if ($moyen->wasRecentlyCreated) {
                 $moyen->forceFill(['valide_le' => now()])->save();

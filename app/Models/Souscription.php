@@ -6,6 +6,7 @@ use App\Contracts\Payable;
 use App\Enums\CanalSouscription;
 use App\Enums\StatutRevue;
 use App\Enums\StatutSouscription;
+use App\Enums\UsageMoyenPaiement;
 use App\Support\Recu;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -100,10 +101,10 @@ class Souscription extends Model implements Payable
         return $this->statut === StatutSouscription::Expiree;
     }
 
-    /** @return list<MoyenPaiement> */
+    /** @return list<MoyenPaiement> moyens retenus par la tranche, autorisés pour les actions et dont les plafonds couvrent le montant */
     public function canauxPaiement(): array
     {
-        return MoyenPaiement::parmi((array) $this->tranche->canaux_actifs);
+        return MoyenPaiement::pourPaiement((array) $this->tranche->canaux_actifs, UsageMoyenPaiement::Actions, $this->montantAPayer() + $this->fraisAPayer());
     }
 
     public function smsPaiementConfirme(Paiement $paiement): array

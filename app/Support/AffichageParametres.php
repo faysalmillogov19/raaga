@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\ClasseActions;
+use App\Enums\FamilleMoyenPaiement;
 use App\Enums\MethodeAllocation;
 use App\Enums\ModeCalculDividende;
 use App\Enums\ModeInscriptionA;
@@ -13,6 +14,7 @@ use App\Enums\RegleArret;
 use App\Enums\RegleSiEchec;
 use App\Enums\TraitementNonReclames;
 use App\Enums\TypeFraisSouscription;
+use App\Enums\UsageMoyenPaiement;
 use App\Models\MoyenPaiement;
 use Carbon\CarbonImmutable;
 
@@ -33,6 +35,7 @@ final class AffichageParametres
         'traitement_non_reclames' => TraitementNonReclames::class,
         'mode_inscription' => ModeInscriptionA::class,
         'classe_actions' => ClasseActions::class,
+        'famille' => FamilleMoyenPaiement::class,
     ];
 
     private const MONTANTS = [
@@ -68,6 +71,21 @@ final class AffichageParametres
 
         if ($champ === 'nb_actions') {
             return format_nombre((int) $valeur);
+        }
+
+        // Usages d'un moyen de paiement : « Souscription d’actions : jusqu’à 1 000 000 FCFA · Caution d’une boutique : non autorisé ».
+        if ($champ === 'usages' && is_array($valeur)) {
+            $p = __('admin.moyens_paiement');
+
+            return collect(UsageMoyenPaiement::cases())->map(function (UsageMoyenPaiement $u) use ($valeur, $p) {
+                $v = (array) ($valeur[$u->value] ?? []);
+                $plafonds = ! ($v['autorise'] ?? false) ? $p['non_autorise'] : (collect([
+                    isset($v['min']) ? __('admin.moyens_paiement.plafond_min', ['montant' => format_fcfa((int) $v['min'])]) : null,
+                    isset($v['max']) ? __('admin.moyens_paiement.plafond_max', ['montant' => format_fcfa((int) $v['max'])]) : null,
+                ])->filter()->implode(', ') ?: $p['sans_limite']);
+
+                return __('admin.moyens_paiement.usage_resume', ['usage' => $u->label(), 'plafonds' => $plafonds]);
+            })->implode(' · ');
         }
 
         // Moyens de paiement : libellés du référentiel (un code retiré reste affiché tel quel).

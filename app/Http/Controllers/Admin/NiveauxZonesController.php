@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
+use App\Enums\FamilleMoyenPaiement;
 use App\Enums\StatutTypeBoutique;
-use App\Enums\TypeMoyenPaiement;
+use App\Enums\UsageMoyenPaiement;
 use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
@@ -17,6 +18,7 @@ use App\Models\ZoneSite;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Validation\NotificationDecision;
+use App\Support\AffichageParametres;
 use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
@@ -90,7 +92,8 @@ class NiveauxZonesController extends Controller
                 Colonne::make('code', $z['colonnes']['code'])->triable()->recherchable()->classe('font-mono font-semibold'),
                 Colonne::make('libelle', $z['colonnes']['libelle'])->triable()->recherchable(),
                 $niveaux ? null : Colonne::make('description', $z['colonnes']['description'])->recherchable(),
-                $moyens ? Colonne::make('type', $z['colonnes']['type'])->triable()->valeur(fn (MoyenPaiement $m) => $m->type->label()) : null,
+                $moyens ? Colonne::make('famille', __('admin.moyens_paiement.colonnes.famille'))->triable()->valeur(fn (MoyenPaiement $m) => $m->famille?->label()) : null,
+                $moyens ? Colonne::make('usages', __('admin.moyens_paiement.colonnes.usages'))->valeur(fn (MoyenPaiement $m) => AffichageParametres::valeur('usages', $m->usages)) : null,
                 $unites ? null : Colonne::make($niveaux ? 'rang' : 'ordre', $z['colonnes'][$niveaux ? 'rang' : 'ordre'])->numerique()->triable(),
                 Colonne::make('statut', $z['colonnes']['statut'])->triable()->valeur($statut)
                     ->texte(fn (Model $e) => $e->statut->label().($e->actif ? '' : ' · '.$z['desactive'])),
@@ -110,7 +113,7 @@ class NiveauxZonesController extends Controller
             ->selection($liste, $request->user())
             ->triParDefaut($unites ? 'code' : ($niveaux ? 'rang' : 'ordre'))
             ->export('Raaga_'.$liste)
-            ->repondre($request, fn (ResultatTableau $t) => view('admin.zones.liste', ['liste' => $liste, 'tableau' => $t]));
+            ->repondre($request, fn (ResultatTableau $t) => view($moyens ? 'admin.moyens-paiement.liste' : 'admin.zones.liste', ['liste' => $liste, 'tableau' => $t]));
     }
 
     /** Fiche : détail, modification (GESTIONNAIRE), validation (VALIDATEUR), historique des versions. */
@@ -119,7 +122,7 @@ class NiveauxZonesController extends Controller
         $this->autoriser($liste, 'voir');
         $element = $this->element($liste, $id);
 
-        return view('admin.zones.fiche', [
+        return view($liste === 'moyens' ? 'admin.moyens-paiement.fiche' : 'admin.zones.fiche', [
             'liste' => $liste,
             'element' => $element,
             'utilisations' => $element->nombreUtilisations(),
@@ -141,6 +144,7 @@ class NiveauxZonesController extends Controller
         ], [], __('admin.zones.attributs'));
         if ($liste === 'moyens') {
             $donnees['ordre'] ??= (int) MoyenPaiement::query()->max('ordre') + 1;
+            $donnees['usages'] = $this->usages($request);
         }
 
         $brouillon = $request->input('apres') === 'brouillon';
@@ -162,22 +166,29 @@ class NiveauxZonesController extends Controller
         $this->autoriser($liste, 'gerer');
         $element = $this->element($liste, $id);
         $donnees = $request->validate($this->reglesLibres($liste), [], __('admin.zones.attributs'));
+        if ($liste === 'moyens') {
+            $donnees['usages'] = $this->usages($request);
+            $donnees['ordre'] ??= $element->ordre;
+        }
+        $circuit = $this->parCircuit($liste, $element);
 
-        return $this->puisSoumettre($request, $this->executer($liste, $element, function () use ($request, $element, $donnees) {
+        return $this->puisSoumettre($request, $this->executer($liste, $element, function () use ($request, $element, $donnees, $circuit) {
             $avant = $element->only(array_keys($donnees));
             $element->fill($donnees);
             if (! $element->isDirty()) {
                 return;
             }
-            if ($element->par_defaut) {
-                $this->demander($request, $element, $element->getDirty());
+            if ($circuit) {
+                // Valeurs telles que lues (tableau des usages, code de la famille), pas leur forme brute en base.
+                $this->demander($request, $element, collect($element->getDirty())->keys()
+                    ->mapWithKeys(fn (string $k) => [$k => ($v = $element->getAttribute($k)) instanceof \BackedEnum ? $v->value : $v])->all());
 
                 return;
             }
             $element->save();
             $element->creerVersion($request->user(), __('admin.types.motifs.modification'));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().'.modifie', class_basename($element), $element->id, $avant, $element->only(array_keys($donnees)));
-        }, $element->par_defaut ? 'admin.zones.messages.modification_soumise' : 'admin.zones.messages.renommee'), $liste, $element, route('admin.referencement.zones.show', [$liste, $element->id]), 'modifier-element');
+        }, $circuit ? 'admin.zones.messages.modification_soumise' : 'admin.zones.messages.renommee'), $liste, $element, route('admin.referencement.zones.show', [$liste, $element->id]), 'modifier-element');
     }
 
     public function activer(Request $request, string $liste, int $id): RedirectResponse
@@ -197,7 +208,11 @@ class NiveauxZonesController extends Controller
         $element = $this->element($liste, $id);
 
         try {
-            DB::transaction(function () use ($request, $element) {
+            DB::transaction(function () use ($request, $liste, $element) {
+                // Moyen de paiement : jamais supprimé, seulement désactivé (l'historique des paiements le garde).
+                if ($liste === 'moyens') {
+                    throw new RegleGestionException(__('admin.moyens_paiement.regles.jamais_supprime'));
+                }
                 if ($element->par_defaut || $element->nombreUtilisations() > 0) {
                     throw new RegleGestionException(__($element->par_defaut ? 'admin.zones.regles.defaut' : 'admin.zones.regles.utilisee'));
                 }
@@ -270,8 +285,10 @@ class NiveauxZonesController extends Controller
     {
         $this->autoriser($liste, 'gerer');
 
-        return $this->executer($liste, $element, function () use ($request, $element, $actif) {
-            if ($element->par_defaut) {
+        $circuit = $this->parCircuit($liste, $element);
+
+        return $this->executer($liste, $element, function () use ($request, $element, $actif, $circuit) {
+            if ($circuit) {
                 $this->demander($request, $element, ['actif' => $actif]);
 
                 return;
@@ -279,7 +296,7 @@ class NiveauxZonesController extends Controller
             $element->forceFill(['actif' => $actif])->save();
             $element->creerVersion($request->user(), __($actif ? 'admin.types.motifs.reactivation' : 'admin.types.motifs.desactivation'));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().($actif ? '.reactive' : '.desactive'), class_basename($element), $element->id);
-        }, $element->par_defaut ? 'admin.zones.messages.modification_soumise' : ($actif ? 'admin.zones.messages.reactivee' : 'admin.zones.messages.desactivee'));
+        }, $circuit ? 'admin.zones.messages.modification_soumise' : ($actif ? 'admin.zones.messages.reactivee' : 'admin.zones.messages.desactivee'));
     }
 
     /**
@@ -306,14 +323,47 @@ class NiveauxZonesController extends Controller
             $decision, $motif, route('admin.referencement.zones.show', [$liste, $element->id])));
     }
 
+    /**
+     * La modification n'est pas appliquée directement mais soumise au VALIDATEUR : élément « par défaut », ou moyen de
+     * paiement déjà confirmé (donnée financière : toute modification passe par le circuit).
+     */
+    private function parCircuit(string $liste, Model $element): bool
+    {
+        return $element->par_defaut || ($liste === 'moyens' && $element->statut === StatutTypeBoutique::Valide);
+    }
+
+    /**
+     * Usages d'un moyen de paiement saisis dans le formulaire : autorisé, montant minimum et maximum (vide = sans limite).
+     *
+     * @return array<string, array{autorise: bool, min: ?int, max: ?int}>
+     */
+    private function usages(Request $request): array
+    {
+        $saisie = (array) $request->input('usages', []);
+        $entier = fn ($v) => $v === null || $v === '' ? null : (int) $v;
+
+        return collect(UsageMoyenPaiement::cases())->mapWithKeys(fn (UsageMoyenPaiement $u) => [$u->value => [
+            'autorise' => (bool) ($saisie[$u->value]['autorise'] ?? false),
+            'min' => $entier($saisie[$u->value]['min'] ?? null),
+            'max' => $entier($saisie[$u->value]['max'] ?? null),
+        ]])->all();
+    }
+
     /** @return array<string, list<mixed>> */
     private function reglesLibres(string $liste): array
     {
         return match ($liste) {
             'niveaux' => ['libelle' => ['required', 'string', 'max:80'], 'rang' => ['required', 'integer', 'min:-9', 'max:99']],
             'unites' => ['libelle' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:300']],
-            'moyens' => ['libelle' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:300'],
-                'type' => ['required', Rule::enum(TypeMoyenPaiement::class)], 'ordre' => ['nullable', 'integer', 'min:0', 'max:9999']],
+            'moyens' => ['libelle' => ['required', 'string', 'max:100'], 'famille' => ['required', Rule::enum(FamilleMoyenPaiement::class)],
+                'instructions' => ['nullable', 'string', 'max:2000'], 'ordre' => ['nullable', 'integer', 'min:0', 'max:9999'],
+                ...collect(UsageMoyenPaiement::cases())->flatMap(fn (UsageMoyenPaiement $u) => [
+                    'usages.'.$u->value.'.autorise' => ['nullable', 'boolean'],
+                    'usages.'.$u->value.'.min' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
+                    'usages.'.$u->value.'.max' => ['nullable', 'integer', 'min:0', 'max:999999999999',
+                        fn (string $a, mixed $max, Closure $echec) => ($min = request()->input('usages.'.$u->value.'.min')) !== null && $min !== '' && (int) $max < (int) $min
+                            ? $echec(__('admin.moyens_paiement.erreurs.max_min')) : null],
+                ])->all()],
             default => ['libelle' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:300'], 'ordre' => ['nullable', 'integer', 'min:0', 'max:9999']],
         };
     }

@@ -58,14 +58,28 @@ final class AValider
             'sites' => ['slug' => 'sites', 'droits' => [Droit::SitesConfirmer], 'groupable' => true, 'elements' => ['site'],
                 'source' => fn (\Closure $e) => $lesSites()->where('statut', StatutSite::Soumis)->values()
                     ->map(fn (Site $s) => $e('site:'.$s->id, 'site', $nomSite($s), $s->soumis_par, $s->soumis_le, route('admin.sites.show', $s)))],
-            'finances' => ['slug' => 'finances-sites', 'droits' => [Droit::BoutiquesConfirmer], 'groupable' => false, 'elements' => ['finances'],
-                'source' => fn (\Closure $e) => SiteFinance::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get()
-                    ->map(fn (SiteFinance $f) => $e('finances:'.$f->site_id, 'finances', $nomSite($f->site), $f->soumis_par, $f->soumis_le, route('admin.sites.finances', $f->site_id)))],
+            // Données financières : données financières des sites, et moyens de paiement (ajout ou modification, une décision à la fois).
+            'finances' => ['slug' => 'finances-sites', 'droits' => [Droit::BoutiquesConfirmer, Droit::MoyensPaiementConfirmer], 'groupable' => false,
+                'elements' => ['finances', 'moyens'],
+                'source' => function (\Closure $e, User $user) use ($nomSite) {
+                    $liste = collect();
+                    if ($user->can(Droit::BoutiquesConfirmer->value)) {
+                        $liste = SiteFinance::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get()
+                            ->map(fn (SiteFinance $f) => $e('finances:'.$f->site_id, 'finances', $nomSite($f->site), $f->soumis_par, $f->soumis_le, route('admin.sites.finances', $f->site_id)));
+                    }
+                    if ($user->can(Droit::MoyensPaiementConfirmer->value)) {
+                        foreach (MoyenPaiement::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('modification_demandee'))->get() as $m) {
+                            $liste->push($e('moyens:'.$m->id, 'moyens', $m->code.' · '.$m->libelle, $m->demande_par, $m->updated_at, route('admin.referencement.zones.show', ['moyens', $m->id])));
+                        }
+                    }
+
+                    return $liste;
+                }],
             'grilles' => ['slug' => 'grilles', 'droits' => [Droit::BoutiquesConfirmer], 'groupable' => true, 'elements' => ['grille'],
                 'source' => fn (\Closure $e) => GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get()
                     ->map(fn (GrilleTarifaire $g) => $e('grille:'.$g->site_id, 'grille', $nomSite($g->site), $g->soumis_par, $g->soumis_le, route('admin.boutiques.grilles.show', $g->site_id)))],
-            'referentiels' => ['slug' => 'referentiels', 'droits' => [Droit::SitesConfirmer, Droit::UnitesConfirmer, Droit::MoyensPaiementConfirmer], 'groupable' => true,
-                'elements' => ['type', 'niveaux', 'zones', 'unites', 'moyens'],
+            'referentiels' => ['slug' => 'referentiels', 'droits' => [Droit::SitesConfirmer, Droit::UnitesConfirmer], 'groupable' => true,
+                'elements' => ['type', 'niveaux', 'zones', 'unites'],
                 'source' => function (\Closure $e, User $user) {
                     $liste = collect();
                     if ($user->can(Droit::SitesConfirmer->value)) {
@@ -76,11 +90,6 @@ final class AValider
                             foreach ($classe::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('modification_demandee'))->get() as $r) {
                                 $liste->push($e($type.':'.$r->id, $type, $r->code.' · '.$r->libelle, $r->demande_par, $r->updated_at, route('admin.referencement.zones.show', [$type, $r->id])));
                             }
-                        }
-                    }
-                    if ($user->can(Droit::MoyensPaiementConfirmer->value)) {
-                        foreach (MoyenPaiement::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('modification_demandee'))->get() as $m) {
-                            $liste->push($e('moyens:'.$m->id, 'moyens', $m->code.' · '.$m->libelle, $m->demande_par, $m->updated_at, route('admin.referencement.zones.show', ['moyens', $m->id])));
                         }
                     }
                     if ($user->can(Droit::UnitesConfirmer->value)) {

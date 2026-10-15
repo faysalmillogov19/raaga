@@ -53,6 +53,8 @@ final class MenuBackoffice
                 // « Mes brouillons » (GESTIONNAIRE, RÉGULATEUR) : badge = brouillons et rejetés non soumis.
                 ['cle' => 'brouillons', 'route' => 'admin.brouillons', 'droit' => Droit::BrouillonsVoir, 'icone' => 'taches', 'etape' => 0],
                 ['cle' => 'tranches', 'route' => 'admin.tranches', 'droit' => Droit::TranchesVoir, 'icone' => 'tranches', 'etape' => 3, 'masque_si' => $parametres],
+                // Moyens de paiement (RÉGULATEUR, VALIDATEUR ; SUPER_ADMIN en lecture) : donnée financière, hors des référentiels des sites.
+                ['cle' => 'moyens', 'route' => 'admin.referencement.moyens', 'droit' => Droit::MoyensPaiementVoir, 'icone' => 'dividendes', 'etape' => 0],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
                 ['cle' => 'simulations', 'route' => 'admin.simulations', 'droit' => Droit::SimulationsVoir, 'icone' => 'simulations', 'etape' => 4, 'masque_si' => $parametres],
@@ -77,8 +79,6 @@ final class MenuBackoffice
                     'exclure' => ['admin.referencement.zones.*'], 'liste' => 'zones', 'sous_menu' => 'referentiels'],
                 ['cle' => 'unites', 'route' => 'admin.referencement.unites', 'droit' => Droit::UnitesVoir, 'icone' => 'tableau', 'etape' => 0,
                     'liste' => 'unites', 'sous_menu' => 'referentiels'],
-                ['cle' => 'moyens', 'route' => 'admin.referencement.moyens', 'droit' => Droit::MoyensPaiementVoir, 'icone' => 'tableau', 'etape' => 0,
-                    'liste' => 'moyens', 'sous_menu' => 'referentiels'],
             ],
             'support' => [
                 ['cle' => 'assistance', 'route' => 'admin.assistance', 'droit' => Droit::AssistanceVoir, 'icone' => 'assistance', 'etape' => 1, 'module' => 'admin'],

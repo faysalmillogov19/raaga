@@ -50,7 +50,7 @@ class AValiderRubriquesTest extends TestCase
         // Entrée « À valider » : bouton, badge total (3) visible même menu fermé.
         $this->assertMatchesRegularExpression('#aria-controls="sous-menu-a_valider".*?<span class="adm-libelle">À valider</span>\s*<span class="adm-compteur">3<#s', $menu);
         $attendus = ['Vue d’ensemble' => [route('admin.a-valider'), '3'], 'Sites' => [route('admin.a-valider.rubrique', 'sites'), '2'],
-            'Données financières des sites' => [route('admin.a-valider.rubrique', 'finances-sites'), '0'], 'Grilles tarifaires' => [route('admin.a-valider.rubrique', 'grilles'), '0'],
+            'Données financières' => [route('admin.a-valider.rubrique', 'finances-sites'), '0'], 'Grilles tarifaires' => [route('admin.a-valider.rubrique', 'grilles'), '0'],
             'Référentiels' => [route('admin.a-valider.rubrique', 'referentiels'), '1'], 'Campagnes' => [route('admin.a-valider.rubrique', 'campagnes'), '0'],
             'Démarches du site public' => [route('admin.a-valider.rubrique', 'demarches'), '0'], 'Autorisations de modification' => [route('admin.a-valider.rubrique', 'autorisations-sites'), '0']];
         foreach ($attendus as $libelle => [$url, $n]) {
