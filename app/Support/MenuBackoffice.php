@@ -11,6 +11,7 @@ use App\Enums\StatutTypeBoutique;
 use App\Models\Boutique;
 use App\Models\CapaciteSite;
 use App\Models\GrilleTarifaire;
+use App\Models\ImportEnAttente;
 use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -222,6 +223,8 @@ final class MenuBackoffice
                 $user->can(Droit::UnitesGerer->value) => Unite::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
+            // GESTIONNAIRE : imports de boutiques déposés mais pas encore confirmés (moins de 24 h).
+            'imports_boutiques' => $gere ? ImportEnAttente::query()->actifs()->where('entite', 'boutiques')->count() : 0,
             // GESTIONNAIRE : boutiques sans niveau (à compléter avant soumission) et capacités incomplètes.
             'boutiques_referentiel' => $gere ? Boutique::query()->whereNull('niveau')->where('statut', '!=', StatutBoutique::Retiree)->count() : 0,
             'capacites' => $gere ? CapaciteSite::query()->whereNull('nombre_prevu')->whereNull('surface_totale')->count() : 0,

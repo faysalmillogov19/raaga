@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\ImportEnAttente;
 use App\Models\Site;
 use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
@@ -40,6 +41,8 @@ class ImportsController extends Controller
         return self::journal(true, 'imports_'.$entite, self::ENTITES[$entite])->repondre($request, fn (ResultatTableau $t) => view('admin.referencement.imports', [
             'entite' => $entite,
             'tableau' => $t,
+            // Aperçus non confirmés (boutiques) : en attente (« Reprendre »), expirés ou annulés.
+            'attentes' => $entite === 'boutiques' ? self::attentes() : collect(),
         ]));
     }
 
@@ -83,6 +86,15 @@ class ImportsController extends Controller
             ->unite($i['unite'])
             ->lignesParDefaut($complet ? Tableau::LIGNES_DEFAUT : 10)
             ->when($complet, fn (Tableau $t) => $t->export('Raaga_journal-imports'.($action ? '-'.strtok($action, '.') : '')));
+    }
+
+    /** Imports de boutiques non confirmés, les plus récents d'abord (les aperçus de plus de 24 h passent en « Expiré »). */
+    public static function attentes()
+    {
+        ImportEnAttente::expirer();
+
+        return ImportEnAttente::query()->where('entite', 'boutiques')->where('statut', '!=', ImportEnAttente::CONFIRME)
+            ->with(['site', 'auteur'])->latest('id')->limit(20)->get();
     }
 
     /** Fichier d'origine d'un import, conservé hors du dossier public. */

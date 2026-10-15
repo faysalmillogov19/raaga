@@ -1407,3 +1407,21 @@ html.adm-fenetre-ouverte body {
         margin-left: auto;
     }
 }
+
+/* Aperçu d'un import : bandeau jaune fixe en haut de la page (rien n'est enregistré avant « Confirmer l'import »). */
+.adm .adm-bandeau-apercu {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid #E5C400;
+    border-radius: 12px;
+    background: #FCD116;
+    color: #1a1a00;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+}

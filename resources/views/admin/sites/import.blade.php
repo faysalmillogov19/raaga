@@ -12,7 +12,20 @@
 @endphp
 
 <x-admin.layout :titre="$x['apercu_titre']" :fil="$fil">
-    <section class="bo-carte !mt-0" aria-labelledby="apercu-titre">
+    {{-- Bandeau fixe : l'aperçu n'enregistre rien ; le bouton « Confirmer l'import » est répété en haut et en bas. --}}
+    <div class="adm-bandeau-apercu" role="status">
+        <p class="font-semibold">{{ $x['bandeau'] }}</p>
+        @if ($erreurs === [])
+            <x-admin.confirmation id="confirmer-import-haut" :titre="$x['confirmer']" :message="$x['confirmer_message']"
+                                  :action="$routeConfirmer" :bouton="$x['confirmer']" variante="principal">
+                <x-slot:declencheur>{{ $x['confirmer'] }}</x-slot:declencheur>
+            </x-admin.confirmation>
+        @else
+            <x-admin.bouton variante="principal" type="button" disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</x-admin.bouton>
+        @endif
+    </div>
+
+    <section class="bo-carte" aria-labelledby="apercu-titre">
         <h2 id="apercu-titre" class="!text-[1.15rem]">{{ trans_choice('admin.sites.excel.lignes_valides', $valides, ['n' => format_nombre($valides)]) }}</h2>
         <p class="texte-carte mt-1">{{ __('admin.sites.excel.apercu_intro', ['nom' => $depot['nom'], 'empreinte' => substr($depot['empreinte'], 0, 12).'…']) }}</p>
         @if ($valides > 0)

@@ -217,6 +217,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Boutiques de plusieurs sites existants en un fichier (import combiné ; ne crée jamais de site).
         Route::controller(ImportBoutiquesController::class)->prefix('referencement/imports/boutiques')->middleware('can:'.Droit::SitesGerer->value)->name('sites.boutiques-excel.')->group(function () {
+            Route::get('/attente/{import}/reprendre', 'reprendre')->whereNumber('import')->name('reprendre');
             Route::get('/modele', 'modeleCombine')->name('modele');
             Route::post('/import', 'deposerCombine')->middleware('throttle:20,1')->name('deposer');
             Route::get('/import', 'apercuCombine')->name('apercu');
