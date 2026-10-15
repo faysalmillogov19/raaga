@@ -10,6 +10,7 @@ use App\Services\Paiement\SimulatedProvider;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Services\Sms\LogSmsProvider;
 use App\Support\MemoRequete;
+use App\Support\Recherche;
 use App\Support\VerrouEnvironnement;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Console\Events\CommandFinished;
@@ -67,6 +68,9 @@ class AppServiceProvider extends ServiceProvider
                 $evenement->output->writeln('  Rôles synchronisés (RoleSeeder).');
             }
         });
+
+        // Recherches « contient » insensibles à la casse et aux accents : whereContient, orWhereContient.
+        Recherche::enregistrer();
 
         // Calculs coûteux de la page (file « À valider », « À traiter ») : une seule fois par requête de lecture.
         Event::listen(RouteMatched::class, fn (RouteMatched $e) => $e->request->isMethodSafe() ? MemoRequete::demarrer() : MemoRequete::arreter());

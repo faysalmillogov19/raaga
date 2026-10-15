@@ -51,20 +51,19 @@ class CadreController extends Controller
     public function recherche(Request $request): View
     {
         $q = mb_substr(trim((string) (is_scalar($request->query('q')) ? $request->query('q') : '')), 0, 100);
-        $motif = '%'.addcslashes($q, '%_\\').'%';
         $resultats = [];
 
         if ($q !== '' && Gate::allows(Droit::SitesVoir->value)) {
-            $resultats['sites'] = Site::query()->where(fn ($r) => $r->where('code', 'like', $motif)->orWhere('nom', 'like', $motif)->orWhere('ville', 'like', $motif))
+            $resultats['sites'] = Site::query()->where(fn ($r) => $r->whereContient('code', $q)->orWhereContient('nom', $q)->orWhereContient('ville', $q))
                 ->orderBy('code')->limit(10)->get()
                 ->map(fn (Site $s) => ['libelle' => ($s->code ? $s->code.' · ' : '').$s->nom, 'detail' => $s->statut->label(), 'url' => route('admin.sites.show', $s)]);
-            $resultats['boutiques'] = Boutique::query()->with('site')->where(fn ($r) => $r->where('code', 'like', mb_strtoupper($motif))->orWhere('numero', 'like', $motif))
+            $resultats['boutiques'] = Boutique::query()->with('site')->where(fn ($r) => $r->whereContient('code', $q)->orWhereContient('numero', $q))
                 ->orderBy('code')->limit(10)->get()
                 ->map(fn (Boutique $b) => ['libelle' => $b->reference(), 'detail' => $b->site->nom, 'url' => route('admin.referencement.boutiques.show', $b)]);
         }
         if ($q !== '' && Gate::allows(Droit::UtilisateursGerer->value)) {
             $resultats['utilisateurs'] = User::query()->whereHas('role', fn ($r) => $r->whereIn('code', array_map(fn ($x) => $x->value, Role::backoffice())))
-                ->where(fn ($r) => $r->where('name', 'like', $motif)->orWhere('email', 'like', $motif))->orderBy('name')->limit(10)->get()
+                ->where(fn ($r) => $r->whereContient('name', $q)->orWhereContient('email', $q))->orderBy('name')->limit(10)->get()
                 ->map(fn (User $u) => ['libelle' => $u->name, 'detail' => $u->email, 'url' => route('admin.utilisateurs.show', $u)]);
         }
 

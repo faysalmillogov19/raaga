@@ -48,7 +48,7 @@ class ReferentielBoutiquesController extends Controller
             ->colonnes([
                 Colonne::make('code', $c['code'])->triable(fn ($q, $sens) => $q->orderByRaw('code IS NULL')->orderBy('code', $sens))->recherchable(['code', 'numero'])
                     ->classe('whitespace-nowrap font-bold')->valeur(fn (Boutique $x) => $x->reference()),
-                Colonne::make('site', $c['site'])->triable('site_id')->recherchable(fn ($q, $terme) => $q->whereHas('site', fn ($s) => $s->where('code', 'like', '%'.$terme.'%')->orWhere('nom', 'like', '%'.$terme.'%')))
+                Colonne::make('site', $c['site'])->triable('site_id')->recherchable(fn ($q, $terme) => $q->whereHas('site', fn ($s) => $s->whereContient('code', $terme)->orWhereContient('nom', $terme)))
                     ->valeur(fn (Boutique $x) => $x->site->code ?? $x->site->nom),
                 Colonne::make('niveau', $c['niveau'])->triable()->valeur(fn (Boutique $x) => $x->niveau ?? '—'),
                 Colonne::make('zone', $c['zone'])->triable('bloc')->recherchable('bloc')->valeur(fn (Boutique $x) => $x->bloc ?: '—'),
@@ -127,7 +127,7 @@ class ReferentielBoutiquesController extends Controller
     private function requete(array $f): Builder
     {
         return Boutique::query()
-            ->when($f['q'] ?? null, fn ($q, $texte) => $q->where(fn ($q) => $q->where('code', 'like', '%'.mb_strtoupper($texte).'%')->orWhere('numero', 'like', '%'.$texte.'%')))
+            ->when($f['q'] ?? null, fn ($q, $texte) => $q->where(fn ($q) => $q->whereContient('code', $texte)->orWhereContient('numero', $texte)))
             ->when($f['site'] ?? null, fn ($q, $site) => $q->where('site_id', $site))
             ->when($f['niveau'] ?? null, fn ($q, $niveau) => $q->where('niveau', $niveau))
             ->when($f['zone'] ?? null, fn ($q, $zone) => $q->where('bloc', mb_strtoupper($zone)))

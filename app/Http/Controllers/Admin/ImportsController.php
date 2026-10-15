@@ -85,7 +85,7 @@ class ImportsController extends Controller
                     ->texte(fn (AuditLog $e) => $e->nouvelle_valeur['fichier'] ?? null),
                 Colonne::make('site', $c['site'])->triable('entite_id')->valeur($site),
                 $complet && ! $action ? Colonne::make('type', $c['type'])->triable('action')->valeur(fn (AuditLog $e) => $i['types'][$e->action] ?? $e->action) : null,
-                $complet ? Colonne::make('auteur', $c['auteur'])->recherchable(fn ($q, $terme) => $q->whereHas('acteur', fn ($a) => $a->where('name', 'like', '%'.$terme.'%')))
+                $complet ? Colonne::make('auteur', $c['auteur'])->recherchable(fn ($q, $terme) => $q->whereHas('acteur', fn ($a) => $a->whereContient('name', $terme)))
                     ->valeur(fn (AuditLog $e) => $e->acteur?->name ?? '—') : null,
                 Colonne::make('creees', $c['creees'])->numerique()->valeur($nombre('creees', 'sites_crees')),
                 Colonne::make('mises_a_jour', $c['mises_a_jour'])->numerique()->valeur($nombre('mises_a_jour', 'sites_mis_a_jour')),

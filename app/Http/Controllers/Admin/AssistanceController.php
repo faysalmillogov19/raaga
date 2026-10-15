@@ -45,11 +45,9 @@ class AssistanceController extends Controller
                 $terme = trim((string) $request->query('q'));
                 $chiffres = Telephone::chiffresLocaux($terme);
                 $q->where(function (Builder $q) use ($terme, $chiffres) {
-                    $q->where('name', 'like', "%{$terme}%")
-                        ->orWhere('nom', 'like', "%{$terme}%")
-                        ->orWhere('prenoms', 'like', "%{$terme}%");
+                    $q->whereContient('name', $terme)->orWhereContient('nom', $terme)->orWhereContient('prenoms', $terme);
                     if (strlen($chiffres) >= 4) {
-                        $q->orWhere('telephone', 'like', "%{$chiffres}%");
+                        $q->orWhereContient('telephone', $chiffres);
                     }
                 });
             })

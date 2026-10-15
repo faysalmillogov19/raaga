@@ -190,7 +190,7 @@ final class Colonne
             return;
         }
         foreach ($this->recherche as $colonne) {
-            $requete->orWhere($colonne, 'like', '%'.addcslashes($terme, '%_\\').'%');
+            $requete->orWhereContient($colonne, $terme); // insensible à la casse et aux accents (App\Support\Recherche)
         }
     }
 

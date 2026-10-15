@@ -52,9 +52,9 @@ class UtilisateursController extends Controller
             ->colonnes([
                 Colonne::make('nom', $c['nom'])->triable('name')
                     ->recherchable(function (Builder $q, string $terme) {
-                        $q->where('name', 'like', "%{$terme}%")->orWhere('email', 'like', "%{$terme}%");
+                        $q->whereContient('name', $terme)->orWhereContient('email', $terme);
                         if (strlen($chiffres = Telephone::chiffresLocaux($terme)) >= 4) {
-                            $q->orWhere('telephone', 'like', "%{$chiffres}%");
+                            $q->orWhereContient('telephone', $chiffres);
                         }
                     })
                     ->valeur(fn (User $x) => new HtmlString('<a href="'.e(route('admin.utilisateurs.show', $x)).'" class="font-bold text-vert-fonce underline underline-offset-2">'.e($x->name).'</a>'))
