@@ -25,24 +25,6 @@
                 </div>
             </section>
             @else
-            <section class="bo-carte !mt-0" aria-labelledby="imp-site">
-                <h2 id="imp-site" class="!text-base">{{ $i['boutiques_site_titre'] }}</h2>
-                <p class="texte-carte">{{ $i['boutiques_site_aide'] }}</p>
-                <div class="mt-3">
-                    <x-admin.fenetre id="importer-boutiques-site" :titre="$i['boutiques_site_titre']" :action="route('admin.referencement.imports.boutiques-site')" :bouton="__('admin.sites.excel.importer')"
-                                     fichiers declencheur-icone="importer">
-                        <x-slot:declencheur>{{ __('admin.sites.excel.importer') }}</x-slot:declencheur>
-                        @if ($sitesModifiables->isEmpty())
-                            <x-admin.message type="avertissement">{{ $i['aucun_site_modifiable'] }}</x-admin.message>
-                        @else
-                            <x-admin.champ nom="site_id" id="site-import" :libelle="ucfirst($i['site'])" type="liste" :vide="$i['choisir_site']" required
-                                           :options="$sitesModifiables->mapWithKeys(fn ($s) => [$s->id => $s->code.' · '.$s->nom])->all()" />
-                            <x-admin.depot-fichier nom="fichier" id="fichier-site" class="mt-4" :libelle="__('admin.sites.excel.importer')" required />
-                        @endif
-                    </x-admin.fenetre>
-                </div>
-            </section>
-
             <section class="bo-carte !mt-0" aria-labelledby="imp-combine">
                 <h2 id="imp-combine" class="!text-base">{{ $i['combine_titre'] }}</h2>
                 <p class="texte-carte">{{ $i['combine_aide'] }}</p>

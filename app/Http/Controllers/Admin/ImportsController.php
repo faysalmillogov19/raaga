@@ -21,7 +21,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Imports du référencement, un sous-onglet par entité importable (menu dépliant « Imports ») : sites et capacités
- * prévues, boutiques (d'un site ou de plusieurs sites). Chaque sous-onglet montre ses boutons d'import (GESTIONNAIRE
+ * prévues, boutiques (le site de chaque boutique est lu dans le fichier, aucun site à choisir). Chaque sous-onglet montre ses boutons d'import (GESTIONNAIRE
  * DES SITES ET BOUTIQUES) et l'historique des imports de cette entité, avec le fichier d'origine téléchargeable.
  */
 class ImportsController extends Controller
@@ -40,7 +40,6 @@ class ImportsController extends Controller
         return self::journal(true, 'imports_'.$entite, self::ENTITES[$entite])->repondre($request, fn (ResultatTableau $t) => view('admin.referencement.imports', [
             'entite' => $entite,
             'tableau' => $t,
-            'sitesModifiables' => $entite === 'boutiques' ? Site::query()->whereNotNull('code')->orderBy('code')->get()->filter->estModifiable() : collect(),
         ]));
     }
 

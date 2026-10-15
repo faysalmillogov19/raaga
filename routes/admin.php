@@ -164,7 +164,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/imports/{entite}', [ImportsController::class, 'index'])->whereIn('entite', array_keys(ImportsController::ENTITES))
                 ->middleware('can:'.Droit::ImportsVoir->value)->name('imports.entite');
             Route::get('/imports/{journal}/fichier', [ImportsController::class, 'fichier'])->whereNumber('journal')->middleware('can:'.Droit::ImportsVoir->value)->name('imports.fichier');
-            Route::post('/imports/boutiques-site', [ImportBoutiquesController::class, 'deposerPourSite'])->middleware(['can:'.Droit::SitesGerer->value, 'throttle:20,1'])->name('imports.boutiques-site');
         });
 
         // Types de boutiques : GESTIONNAIRE DES SITES ET BOUTIQUES gère, VALIDATEUR valide, autres profils en lecture.

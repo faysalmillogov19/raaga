@@ -27,7 +27,9 @@ class ImportsParEntiteTest extends TestCase
 
         $boutiques = $this->get(route('admin.referencement.imports.entite', 'boutiques'))->assertOk();
         $boutiques->assertSee('Imports des boutiques')->assertSee('locaux-raaga.xlsx')->assertDontSee('sites-ouaga.xlsx')
-            ->assertSee(route('admin.sites.boutiques-excel.deposer'), false)->assertDontSee(route('admin.sites.excel.deposer'), false);
+            ->assertSee(route('admin.sites.boutiques-excel.deposer'), false)->assertDontSee(route('admin.sites.excel.deposer'), false)
+            // Aucun site à choisir : le site de chaque boutique est lu dans la colonne « Site » du fichier.
+            ->assertDontSee('name="site_id"', false)->assertSee('Aucun site à choisir');
 
         // Menu dépliant « Imports » : deux sous-onglets, celui de la page surligné ; l'ancienne page renvoie au premier.
         $boutiques->assertSee('aria-controls="sous-menu-imports"', false)
