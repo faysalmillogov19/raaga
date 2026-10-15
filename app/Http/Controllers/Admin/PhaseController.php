@@ -15,7 +15,7 @@ use Illuminate\View\View;
 
 /**
  * Démarches du site public : « présentation des actions visible » et « souscription d'actions ouverte ».
- * Le SUPER_ADMIN propose, le VALIDATEUR confirme ou rejette (quatre yeux) ; chaque décision reste dans l'historique
+ * Le RÉGULATEUR propose (et peut retirer sa proposition), le VALIDATEUR confirme ou rejette (quatre yeux) ; chaque décision reste dans l'historique
  * et au journal d'audit. Le site public applique la dernière décision confirmée.
  */
 class PhaseController extends Controller
@@ -75,6 +75,28 @@ class PhaseController extends Controller
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.phase.erreurs.motif')])['motif'];
 
         return $this->decider($request, $decision, DecisionPhase::REJETEE, $motif);
+    }
+
+    /** Proposition retirée par son auteur tant que le VALIDATEUR ne l'a pas traitée. */
+    public function retirer(Request $request, int $decision): RedirectResponse
+    {
+        $erreur = DB::transaction(function () use ($request, $decision) {
+            $d = DecisionPhase::query()->lockForUpdate()->findOrFail($decision);
+            if ($d->statut !== DecisionPhase::SOUMISE) {
+                return 'non_soumise';
+            }
+            if ($d->propose_par !== $request->user()->id) {
+                return 'pas_auteur';
+            }
+            $d->forceFill(['statut' => DecisionPhase::RETIREE])->save();
+            $this->journal->ecrire($request->user(), 'phase.retiree', 'DecisionPhase', $d->id, ['statut' => DecisionPhase::SOUMISE], ['statut' => DecisionPhase::RETIREE]);
+
+            return null;
+        });
+
+        return $erreur
+            ? redirect()->route('admin.phase')->with('erreur', __('admin.phase.erreurs.'.$erreur))
+            : redirect()->route('admin.phase')->with('succes', __('admin.phase.messages.retiree'));
     }
 
     private function decider(Request $request, int $id, string $statut, ?string $motif): RedirectResponse

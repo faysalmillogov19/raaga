@@ -1443,6 +1443,23 @@ html.adm-fenetre-ouverte body {
     box-shadow: 0 -4px 12px rgba(0, 0, 0, .08);
 }
 
+/* Listes de gestion : filtre rapide « À soumettre (n) » (puce, pleine quand active). */
+.adm .adm-filtre-rapide {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 4px 14px;
+    border: 1px solid var(--primary);
+    border-radius: 999px;
+    color: var(--soft-text);
+    background: var(--card);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.adm .adm-filtre-rapide:hover { background: var(--soft); }
+.adm .adm-filtre-rapide-actif, .adm .adm-filtre-rapide-actif:hover { background: var(--primary); color: var(--primary-text); }
+
 /* « À valider » : en-tête de groupe dépliable (bouton, flèche qui pivote). */
 .adm .adm-groupe-bouton {
     display: inline-flex;

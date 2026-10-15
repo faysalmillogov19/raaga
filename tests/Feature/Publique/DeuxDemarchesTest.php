@@ -57,10 +57,10 @@ class DeuxDemarchesTest extends TestCase
         ]);
     }
 
-    /** Le SUPER_ADMIN propose, le VALIDATEUR confirme. */
+    /** Le RÉGULATEUR propose, le VALIDATEUR confirme. */
     private function decider(bool $presentation, bool $souscription): void
     {
-        $this->connecterBackoffice(Role::SuperAdmin);
+        $this->connecterBackoffice(Role::Regulateur);
         $this->post(route('admin.phase.proposer'), ['presentation_actions' => (int) $presentation, 'souscription_actions' => (int) $souscription, 'motif' => 'Décision de la direction'])
             ->assertSessionHas('succes');
         $this->connecterBackoffice(Role::Validateur);
@@ -84,7 +84,7 @@ class DeuxDemarchesTest extends TestCase
         $this->get(route('offre'))->assertRedirect(route('boutiques'));
 
         // Proposée seulement : rien ne change avant la confirmation du VALIDATEUR.
-        $this->connecterBackoffice(Role::SuperAdmin);
+        $this->connecterBackoffice(Role::Regulateur);
         $this->post(route('admin.phase.proposer'), ['presentation_actions' => 1, 'souscription_actions' => 1, 'motif' => 'Ouverture de la tranche 1'])->assertSessionHas('succes');
         $this->post(route('admin.phase.confirmer', DecisionPhase::query()->value('id')))->assertForbidden();
         auth()->logout();
@@ -117,12 +117,12 @@ class DeuxDemarchesTest extends TestCase
 
     public function test_la_souscription_ne_s_ouvre_pas_sans_presentation(): void
     {
-        $this->connecterBackoffice(Role::SuperAdmin);
+        $this->connecterBackoffice(Role::Regulateur);
         $this->post(route('admin.phase.proposer'), ['presentation_actions' => 0, 'souscription_actions' => 1, 'motif' => 'Essai'])
             ->assertSessionHas('erreur', 'La souscription ne peut être ouverte que si la présentation des actions est visible.');
         $this->assertSame(0, DecisionPhase::query()->count());
-        // L'ADMIN et le RÉGULATEUR ne proposent rien.
-        foreach ([Role::Admin, Role::Regulateur] as $role) {
+        // L'ADMIN et le SUPER_ADMIN ne proposent rien.
+        foreach ([Role::Admin, Role::SuperAdmin] as $role) {
             $this->connecterBackoffice($role);
             $this->post(route('admin.phase.proposer'), ['presentation_actions' => 1, 'souscription_actions' => 0, 'motif' => 'Essai'])->assertForbidden();
         }

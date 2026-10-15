@@ -28,7 +28,7 @@ class NavigationTest extends TestCase
         'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme'],
         'gestionnaire_sites' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'imports_sites', 'imports_boutiques', 'unites'],
         'validateur' => ['tableau', 'a_valider', 'a_valider_sites', 'a_valider_finances', 'a_valider_grilles', 'a_valider_referentiels', 'a_valider_campagnes', 'a_valider_demarches', 'a_valider_autorisations', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels', 'phase', 'unites'],
-        'regulateur' => ['tableau', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels', 'unites'],
+        'regulateur' => ['tableau', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels', 'phase', 'unites'],
     ];
 
     public static function profils(): array

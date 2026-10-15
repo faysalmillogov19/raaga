@@ -1,6 +1,23 @@
-{{-- Résultats d'un tableau de données : rechargés seuls (en-tête X-Tableau) après une recherche, un tri ou un changement de page. --}}
-@php($l = __('admin.donnees'))
+{{--
+    Résultats d'un tableau de données : rechargés seuls (en-tête X-Tableau) après une recherche, un tri ou un changement de page.
+    Soumission groupée ($t->selection) : filtre rapide « À soumettre (n) », case sur les lignes à soumettre (brouillon ou
+    rejeté) et sur ses propres lignes soumises (retrait) ; « tout cocher » limité aux lignes à soumettre de la page.
+--}}
+@php
+    $l = __('admin.donnees');
+    $s = __('admin.soumission');
+    $selection = $t->selection;
+    $etats = $selection ? $t->lignes->mapWithKeys(fn ($ligne) => [$ligne->getKey() => \App\Services\Validation\SoumissionGroupee::etat($selection, $ligne, auth()->user())]) : collect();
+    $filtreActif = isset($t->etat['filtres']['a_soumettre']);
+@endphp
 <div data-tableau-resultats data-export="{{ $t->exportable ? $t->urlExport() : '' }}">
+    @if ($selection)
+        <div class="mb-3 flex flex-wrap gap-2" data-filtre-rapide>
+            <a href="{{ $t->url(['a_soumettre' => $filtreActif ? null : '1', 'page' => '']) }}" @class(['adm-filtre-rapide', 'adm-filtre-rapide-actif' => $filtreActif])
+               @if ($filtreActif) aria-current="true" @endif>{{ __('admin.soumission.a_soumettre', ['n' => format_nombre($t->aSoumettre)]) }}</a>
+        </div>
+    @endif
+
     @if ($t->exportable && ! $t->exportEnTete && $t->filtrees > 0)
         <div class="mb-3 flex justify-end">
             <x-admin.bouton variante="contour" icone="exporter" :href="$t->urlExport()" title="{{ $l['exporter_aide'] }}">{{ $l['exporter'] }}</x-admin.bouton>
@@ -16,6 +33,15 @@
             <table class="bo-tableau bo-tableau-donnees">
                 <thead>
                     <tr>
+                        @if ($selection)
+                            <th scope="col" class="w-10">
+                                @if ($etats->contains('soumettre'))
+                                    <input type="checkbox" data-tout-cocher aria-label="{{ $s['tout_cocher'] }}" @change="toutCocher($event.target.checked)">
+                                @else
+                                    <span class="sr-only">{{ $s['colonne'] }}</span>
+                                @endif
+                            </th>
+                        @endif
                         @foreach ($t->colonnes as $c)
                             <th scope="col" class="{{ $c->classes() }}" @if ($c->estTriable()) aria-sort="{{ $t->ariaSort($c) }}" @endif>
                                 @if ($c->estTriable())
@@ -34,6 +60,22 @@
                 <tbody>
                     @foreach ($t->lignes as $ligne)
                         <tr>
+                            @if ($selection)
+                                <td class="w-10" data-selection>
+                                    @if ($etat = $etats[$ligne->getKey()] ?? null)
+                                        @php($libelleLigne = \App\Services\Validation\SoumissionGroupee::libelle($selection, $ligne))
+                                        <input type="checkbox" name="elements[]" value="{{ $selection }}:{{ $ligne->getKey() }}" data-etat="{{ $etat }}"
+                                               data-libelle="{{ $libelleLigne }}" aria-label="{{ __('admin.soumission.cocher', ['libelle' => $libelleLigne]) }}" @change="compter()">
+                                        @if ($etat === 'retirer')
+                                            <form method="POST" action="{{ route('admin.soumission.retirer') }}" class="mt-1">
+                                                @csrf
+                                                <input type="hidden" name="elements[]" value="{{ $selection }}:{{ $ligne->getKey() }}">
+                                                <button type="submit" class="text-sm font-semibold text-vert-fonce underline underline-offset-2" data-retirer-ligne>{{ $s['retirer_ligne'] }}</button>
+                                            </form>
+                                        @endif
+                                    @endif
+                                </td>
+                            @endif
                             @foreach ($t->colonnes as $c)
                                 <td class="{{ $c->classes() }}" data-libelle="{{ $c->libelle }}">{{ $c->rendre($ligne) }}</td>
                             @endforeach

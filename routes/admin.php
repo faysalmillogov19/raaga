@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\RegistreAController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SiteFinancesController;
 use App\Http\Controllers\Admin\SitesController;
+use App\Http\Controllers\Admin\SoumissionGroupeeController;
 use App\Http\Controllers\Admin\TranchesController;
 use App\Http\Controllers\Admin\TypesBoutiqueController;
 use App\Http\Controllers\Admin\UtilisateursController;
@@ -95,10 +96,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/a-valider', [AValiderController::class, 'decider'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.decider');
         Route::get('/a-valider/{rubrique}', [AValiderController::class, 'index'])->where('rubrique', '[a-z-]+')->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.rubrique');
 
-        // Décisions de phase du site public : le SUPER_ADMIN propose, le VALIDATEUR confirme ou rejette.
+        // Listes de gestion : soumission groupée à validation et retrait (droit de l'auteur vérifié par élément).
+        Route::controller(SoumissionGroupeeController::class)->prefix('soumission')->name('soumission.')->group(function () {
+            Route::post('/controle', 'controler')->name('controle');
+            Route::post('/', 'soumettre')->name('soumettre');
+            Route::post('/retrait', 'retirer')->name('retirer');
+        });
+
+        // Décisions de phase du site public : le RÉGULATEUR propose (ou retire), le VALIDATEUR confirme ou rejette ; SUPER_ADMIN en lecture.
         Route::controller(PhaseController::class)->prefix('phase')->name('phase')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::PhaseVoir->value);
             Route::post('/', 'proposer')->middleware('can:'.Droit::PhaseProposer->value)->name('.proposer');
+            Route::post('/{decision}/retirer', 'retirer')->whereNumber('decision')->middleware('can:'.Droit::PhaseProposer->value)->name('.retirer');
             Route::post('/{decision}/confirmer', 'confirmer')->whereNumber('decision')->middleware('can:'.Droit::PhaseConfirmer->value)->name('.confirmer');
             Route::post('/{decision}/rejeter', 'rejeter')->whereNumber('decision')->middleware('can:'.Droit::PhaseConfirmer->value)->name('.rejeter');
         });
@@ -125,6 +134,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::post('/{liste}/{id}/activer', 'activer')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.activer');
                 Route::post('/{liste}/{id}/desactiver', 'desactiver')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.desactiver');
                 Route::delete('/{liste}/{id}', 'destroy')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.destroy');
+                Route::post('/{liste}/{id}/soumettre', 'soumettre')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.soumettre');
                 Route::post('/{liste}/{id}/confirmer', 'confirmer')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.confirmer');
                 Route::post('/{liste}/{id}/rejeter', 'rejeter')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.rejeter');
             });

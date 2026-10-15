@@ -76,7 +76,7 @@ class AValiderRubriquesTest extends TestCase
 
     public function test_groupage_absent_sur_les_rubriques_sensibles(): void
     {
-        $this->en($this->superAdmin)->post(route('admin.phase.proposer'), ['presentation_actions' => 1, 'souscription_actions' => 0, 'motif' => 'Ouverture prochaine']);
+        $this->en($this->regulateur)->post(route('admin.phase.proposer'), ['presentation_actions' => 1, 'souscription_actions' => 0, 'motif' => 'Ouverture prochaine']);
         $phase = DecisionPhase::query()->sole();
 
         $demarches = $this->en($this->validateur)->get(route('admin.a-valider.rubrique', 'demarches'))->assertOk();

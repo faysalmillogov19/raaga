@@ -103,6 +103,12 @@ class GrilleTarifaire extends Model implements Parametrable
         $this->forceFill(['statut' => StatutGrilleTarifaire::Confirme, 'valide_par' => $validateur->id, 'valide_le' => now()])->save();
     }
 
+    /** Retiré de la validation par son auteur, avant toute décision : retour au brouillon. */
+    public function marquerRetire(): void
+    {
+        $this->forceFill(['statut' => StatutGrilleTarifaire::Brouillon])->save();
+    }
+
     public function marquerRejete(string $motif): void
     {
         $this->forceFill(['statut' => StatutGrilleTarifaire::Brouillon, 'motif_rejet' => $motif])->save();

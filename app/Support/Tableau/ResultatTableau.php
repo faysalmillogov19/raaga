@@ -27,6 +27,8 @@ final class ResultatTableau
         public readonly int $lignesDefaut = Tableau::LIGNES_DEFAUT,
         public readonly ?string $unite = null,
         public readonly bool $exportEnTete = false,
+        public readonly ?string $selection = null,
+        public readonly int $aSoumettre = 0,
     ) {}
 
     /** Adresse sans recherche, filtres ni tri (« Réinitialiser »). */

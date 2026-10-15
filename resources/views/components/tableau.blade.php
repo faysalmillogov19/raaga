@@ -8,6 +8,10 @@
     Sous 768 px, le tableau défile horizontalement dans la carte.
 --}}
 @php($l = __('admin.donnees'))
+{{-- Soumission groupée : barre d'action et fenêtre de confirmation autour du tableau (voir tableau-soumission). --}}
+@if ($t->selection)
+<div x-data="soumissionGroupee(@js(['controle' => route('admin.soumission.controle')]))" @tableau-charge="compter()" data-soumission="{{ $t->selection }}">
+@endif
 <div {{ $attributes->merge(['class' => 'bo-donnees']) }} x-data="tableau" data-tableau="{{ $t->id }}" data-lignes-defaut="{{ $t->lignesDefaut }}"
      :aria-busy="charge ? 'true' : 'false'">
     <form method="GET" action="{{ request()->url() }}" x-ref="formulaire" @submit.prevent="soumettre()" class="bo-donnees-outils" role="search"
@@ -70,3 +74,8 @@
         <div class="bo-donnees-chargement" x-show="charge" x-cloak role="status">{{ $l['chargement'] }}</div>
     </div>
 </div>
+
+@if ($t->selection)
+    @include('components.tableau-soumission')
+</div>
+@endif

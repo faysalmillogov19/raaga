@@ -19,12 +19,19 @@ use App\Services\Backoffice\RegleGestionException;
 use App\Services\Boutiques\LotsCampagne;
 use App\Services\Boutiques\TirageAuSort;
 use App\Services\Parametrage\WorkflowParametrage;
+use App\Support\BadgeStatut;
+use App\Support\Tableau\Colonne;
+use App\Support\Tableau\ResultatTableau;
+use App\Support\Tableau\Tableau;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Campagnes d'attribution des boutiques : le RÉGULATEUR saisit et soumet (sites et types proposés ; montants issus de la grille),
@@ -39,13 +46,27 @@ class CampagnesBoutiquesController extends Controller
         private readonly LotsCampagne $lots,
     ) {}
 
-    public function index(): View
+    /** Campagnes, les plus récentes d'abord ; le RÉGULATEUR coche les brouillons et rejetées pour les soumettre ensemble. */
+    public function index(Request $request): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::BoutiquesVoir->value);
+        $c = __('admin.boutiques.colonnes');
 
-        return view('admin.boutiques.index', [
-            'campagnes' => CampagneBoutiques::query()->withSum('categories', 'nombre_boutiques')->latest('id')->paginate(20),
-        ]);
+        return Tableau::pour(CampagneBoutiques::query()->withSum('categories', 'nombre_boutiques'), 'campagnes')
+            ->colonnes([
+                Colonne::make('nom', $c['nom'])->triable()->recherchable()
+                    ->valeur(fn (CampagneBoutiques $x) => new HtmlString('<a href="'.e(route('admin.boutiques.show', $x)).'" class="font-bold text-vert-fonce underline underline-offset-2">'.e($x->nom).'</a>'))
+                    ->texte(fn (CampagneBoutiques $x) => $x->nom),
+                Colonne::make('statut', $c['statut'])->triable()->valeur(fn (CampagneBoutiques $x) => BadgeStatut::html($x->statut))->texte(fn (CampagneBoutiques $x) => $x->statut->label()),
+                Colonne::make('periode', $c['periode'])->triable('date_ouverture')->classe('whitespace-nowrap')
+                    ->valeur(fn (CampagneBoutiques $x) => $x->date_ouverture?->format('d/m/Y').' → '.$x->date_cloture?->format('d/m/Y')),
+                Colonne::make('boutiques', $c['boutiques'])->numerique()->valeur(fn (CampagneBoutiques $x) => format_nombre((int) $x->categories_sum_nombre_boutiques)),
+                Colonne::make('version', $c['version'])->numerique()->valeur(fn (CampagneBoutiques $x) => $x->version ?: ''),
+            ])
+            ->selection('campagne', $request->user())
+            ->departage(fn ($q) => $q->orderByDesc('id'))
+            ->unite(__('admin.boutiques.unite'))
+            ->repondre($request, fn (ResultatTableau $t) => view('admin.boutiques.index', ['tableau' => $t]));
     }
 
     public function create(): View

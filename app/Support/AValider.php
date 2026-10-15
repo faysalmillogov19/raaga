@@ -9,6 +9,7 @@ use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutGrilleTarifaire;
 use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
+use App\Models\AuditLog;
 use App\Models\CampagneBoutiques;
 use App\Models\DecisionPhase;
 use App\Models\GrilleTarifaire;
@@ -221,6 +222,13 @@ final class AValider
                     'infos' => [__('admin.phase.motif') => $d->motif]];
             })(),
         };
+
+        // Commentaire laissé au VALIDATEUR lors d'une soumission groupée depuis une liste.
+        $commentaire = AuditLog::query()->where('action', 'soumission.commentaire')->where('entite_type', $type)->where('entite_id', $id)
+            ->when($element['date'] ?? null, fn ($q, $date) => $q->where('created_at', '>=', $date->copy()->subMinute()))->latest('id')->value('nouvelle_valeur');
+        if (! empty($commentaire['commentaire'])) {
+            $d['infos'] = [...($d['infos'] ?? []), __('admin.soumission.commentaire_detail') => $commentaire['commentaire']];
+        }
 
         return ['element' => $element, ...$vide, ...$d];
     }

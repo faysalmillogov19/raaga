@@ -16,14 +16,21 @@ use App\Models\Unite;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Parametrage\WorkflowParametrage;
+use App\Support\BadgeStatut;
+use App\Support\Tableau\Colonne;
+use App\Support\Tableau\ResultatTableau;
+use App\Support\Tableau\Tableau;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Grilles tarifaires des boutiques, une par site : le RÉGULATEUR saisit (loyer au m², mois de caution, mois d'avance
@@ -34,13 +41,27 @@ class GrillesTarifairesController extends Controller
 {
     public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal) {}
 
-    public function index(): View
+    /** Grilles des sites confirmés ; le RÉGULATEUR coche les brouillons et rejetées pour les soumettre ensemble. */
+    public function index(Request $request): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::GrilleVoir->value);
+        $g = __('admin.grilles');
 
-        return view('admin.grilles.index', [
-            'sites' => Site::query()->confirmes()->with('grilleTarifaire')->orderBy('nom')->get(),
-        ]);
+        return Tableau::pour(Site::query()->confirmes()->with('grilleTarifaire'), 'grilles')
+            ->colonnes([
+                Colonne::make('nom', $g['colonnes']['site'])->triable()->recherchable(['nom', 'code'])
+                    ->valeur(fn (Site $s) => new HtmlString('<a href="'.e(route('admin.boutiques.grilles.show', $s)).'" class="font-bold text-vert-fonce underline underline-offset-2">'
+                        .e(($s->code ? $s->code.' · ' : '').$s->nom).'</a>'))
+                    ->texte(fn (Site $s) => $s->nom),
+                Colonne::make('statut', $g['colonnes']['statut'])
+                    ->valeur(fn (Site $s) => $s->grilleTarifaire ? BadgeStatut::html($s->grilleTarifaire->statut) : $g['aucune_grille'])
+                    ->texte(fn (Site $s) => $s->grilleTarifaire?->statut->label() ?? $g['aucune_grille']),
+                Colonne::make('version', $g['colonnes']['version'])->numerique()->valeur(fn (Site $s) => $s->grilleTarifaire?->confirmee()['version'] ?? ''),
+            ])
+            ->selection('grille', $request->user())
+            ->triParDefaut('nom')
+            ->unite($g['unite_liste'])
+            ->repondre($request, fn (ResultatTableau $t) => view('admin.grilles.index', ['tableau' => $t]));
     }
 
     public function show(Site $site): View

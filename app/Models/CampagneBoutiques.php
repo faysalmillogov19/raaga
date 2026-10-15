@@ -81,6 +81,12 @@ class CampagneBoutiques extends Model implements Parametrable
         $this->forceFill(['statut' => StatutCampagneBoutiques::Confirmee, 'valide_par' => $validateur->id, 'validee_le' => now()])->save();
     }
 
+    /** Retiré de la validation par son auteur, avant toute décision : retour au brouillon. */
+    public function marquerRetire(): void
+    {
+        $this->forceFill(['statut' => StatutCampagneBoutiques::Brouillon])->save();
+    }
+
     public function marquerRejete(string $motif): void
     {
         $this->forceFill(['statut' => StatutCampagneBoutiques::Brouillon, 'motif_rejet' => $motif])->save();

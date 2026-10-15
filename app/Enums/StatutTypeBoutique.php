@@ -2,9 +2,13 @@
 
 namespace App\Enums;
 
-/** Statut d'un type de boutique : un type ajouté par le GESTIONNAIRE n'est utilisable qu'après validation. */
+/**
+ * Statut d'un élément de référentiel (type de boutique, niveau, zone, unité) : utilisable seulement validé.
+ * Brouillon : retiré de la validation par son auteur, à soumettre de nouveau.
+ */
 enum StatutTypeBoutique: string
 {
+    case Brouillon = 'BROUILLON';
     case AValider = 'A_VALIDER';
     case Valide = 'VALIDE';
     case Rejete = 'REJETE';

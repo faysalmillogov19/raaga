@@ -270,6 +270,53 @@ Alpine.data('pieceKyc', ({ maxOctets, messages }) => ({
  * le bloc des résultats, puis l'adresse est mise à jour (rechargement et partage du lien). En cas d'échec, la page
  * complète est chargée.
  */
+/*
+ * Soumission groupée à validation depuis une liste (<x-tableau> avec sélection) : cases des lignes à soumettre ou à
+ * retirer, barre collante, contrôle préalable de chaque élément (✓ prêt ou ✗ raison) avant l'envoi des seuls éléments prêts.
+ */
+Alpine.data('soumissionGroupee', ({ controle }) => ({
+    aSoumettre: 0,
+    aRetirer: 0,
+    controles: [],
+    enCours: false,
+    erreur: false,
+    cases(etat = null) {
+        return [...this.$el.querySelectorAll(`input[name="elements[]"][data-etat${etat ? `="${etat}"` : ''}]`)];
+    },
+    compter() {
+        this.aSoumettre = this.cases('soumettre').filter((c) => c.checked).length;
+        this.aRetirer = this.cases('retirer').filter((c) => c.checked).length;
+    },
+    toutCocher(coche) {
+        this.cases('soumettre').forEach((c) => { c.checked = coche; });
+        this.compter();
+    },
+    get total() { return this.aSoumettre + this.aRetirer; },
+    get prets() { return this.controles.filter((c) => c.pret); },
+    selectionnes(etat) { return this.cases(etat).filter((c) => c.checked).map((c) => c.value); },
+    async ouvrirSoumission() {
+        this.controles = [];
+        this.erreur = false;
+        this.enCours = true;
+        this.$refs.dialogueSoumettre.showModal();
+        try {
+            const reponse = await fetch(controle, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': jeton(), 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ elements: this.selectionnes('soumettre') }),
+            });
+            if (!reponse.ok) {
+                throw new Error(String(reponse.status));
+            }
+            this.controles = (await reponse.json()).elements;
+        } catch {
+            this.erreur = true;
+        } finally {
+            this.enCours = false;
+        }
+    },
+}));
+
 Alpine.data('tableau', () => ({
     charge: false,
     controleur: null,
@@ -320,6 +367,7 @@ Alpine.data('tableau', () => ({
             }
             this.$refs.resultats.innerHTML = await reponse.text();
             window.history.pushState({}, '', url);
+            this.$dispatch('tableau-charge');
             // Bouton « Exporter » de l'en-tête de page : il suit le résultat affiché.
             const exporter = this.$refs.resultats.querySelector('[data-tableau-resultats]')?.dataset.export;
             if (exporter) {

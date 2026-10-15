@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Décision de phase du site public : présentation des actions visible, souscription d'actions ouverte.
- * Proposée par le SUPER_ADMIN, confirmée ou rejetée par le VALIDATEUR ; la dernière décision confirmée s'applique.
+ * Proposée par le RÉGULATEUR, confirmée ou rejetée par le VALIDATEUR ; la dernière décision confirmée s'applique.
+ * Retirée : proposition reprise par son auteur avant la décision (ou annulée lors du passage au RÉGULATEUR).
  */
 class DecisionPhase extends Model
 {
@@ -16,6 +17,8 @@ class DecisionPhase extends Model
     public const CONFIRMEE = 'CONFIRMEE';
 
     public const REJETEE = 'REJETEE';
+
+    public const RETIREE = 'RETIREE';
 
     protected $table = 'decisions_phase';
 

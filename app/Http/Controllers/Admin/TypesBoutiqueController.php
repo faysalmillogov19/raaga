@@ -68,6 +68,7 @@ class TypesBoutiqueController extends Controller
                 Filtre::make('actif', $t['filtre_actif'], [1 => $t['actif'], 0 => $t['desactive']], 'actif'),
                 Filtre::make('attribuable', $c['attribuable'], $ouiNon, 'attribuable'),
             ])
+            ->selection('type', $request->user())
             ->triParDefaut('ordre')
             ->export('Raaga_types-boutiques')
             ->repondre($request, fn (ResultatTableau $resultat) => view('admin.types.index', ['tableau' => $resultat]));
@@ -233,14 +234,14 @@ class TypesBoutiqueController extends Controller
         }, 'admin.types.messages.rejete');
     }
 
-    /** Type rejeté : le GESTIONNAIRE le soumet de nouveau après correction. */
+    /** Type rejeté ou retiré de la validation (brouillon) : le GESTIONNAIRE le soumet de nouveau. */
     public function soumettre(Request $request, TypeBoutique $type): RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
 
         return $this->executer($type, function () use ($request, $type) {
-            if ($type->statut !== StatutTypeBoutique::Rejete) {
-                throw new RegleGestionException(__('admin.types.regles.rien_a_soumettre'));
+            if (! in_array($type->statut, [StatutTypeBoutique::Rejete, StatutTypeBoutique::Brouillon], true)) {
+                throw new RegleGestionException(__($type->statut === StatutTypeBoutique::AValider ? 'admin.soumission.erreurs.deja_soumis' : 'admin.types.regles.rien_a_soumettre'));
             }
             $type->forceFill(['statut' => StatutTypeBoutique::AValider, 'demande_par' => $request->user()->id, 'demande_le' => now()])->save();
             $type->creerVersion($request->user(), __('admin.types.motifs.soumission'));

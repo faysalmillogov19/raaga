@@ -19,6 +19,7 @@ use App\Services\Backoffice\RegleGestionException;
 use App\Services\Parametrage\WorkflowParametrage;
 use App\Services\Sites\ComparaisonCapacites;
 use App\Services\Validation\NotificationDecision;
+use App\Support\BadgeStatut;
 use App\Support\FicheSite;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
@@ -71,6 +72,8 @@ class SitesController extends Controller
                 Colonne::make('cout_total', $c['cout_total'])->numerique()->droit(Droit::BoutiquesVoir)->avec(fn ($q) => $q->with('finances'))
                     ->valeur(fn (Site $s) => $s->finances?->cout_total !== null ? format_nombre($s->finances->cout_total) : '—')
                     ->texte(fn (Site $s) => $s->finances?->cout_total),
+                Colonne::make('finances', $c['finances'])->droit(Droit::BoutiquesSaisir)->avec(fn ($q) => $q->with('finances'))
+                    ->valeur(fn (Site $s) => $s->finances ? BadgeStatut::html($s->finances->statut) : '')->exportable(false),
                 Colonne::make('actions', $c['actions'])->vue('admin.sites._actions', 'site')->exportable(false),
             ])
             ->filtres([
@@ -78,6 +81,8 @@ class SitesController extends Controller
                 Filtre::make('phase', $c['phase'], collect(PhaseSite::cases())->mapWithKeys(fn ($x) => [$x->value => $x->label()])->all(), 'phase'),
                 Filtre::make('ville', ucfirst(__('admin.sites.champs.ville')), Site::query()->whereNotNull('ville')->distinct()->orderBy('ville')->pluck('ville', 'ville')->all(), 'ville'),
             ])
+            // Soumission groupée : sites pour le GESTIONNAIRE, données financières des sites pour le RÉGULATEUR.
+            ->selection($request->user()->can(Droit::SitesGerer->value) ? 'site' : 'finances', $request->user())
             ->triParDefaut('nom')
             ->export('Raaga_liste-sites')
             ->repondre($request, fn (ResultatTableau $t) => view('admin.sites.index', ['tableau' => $t]));

@@ -120,7 +120,7 @@ class AValiderTest extends TestCase
     public function test_groupage_refuse_pour_les_elements_sensibles(): void
     {
         $sar = $this->siteSoumis('SAR');
-        $this->en($this->superAdmin)->post(route('admin.phase.proposer'), ['presentation_actions' => 1, 'souscription_actions' => 0, 'motif' => 'Ouverture prochaine'])->assertSessionHas('succes');
+        $this->en($this->regulateur)->post(route('admin.phase.proposer'), ['presentation_actions' => 1, 'souscription_actions' => 0, 'motif' => 'Ouverture prochaine'])->assertSessionHas('succes');
         $phase = DecisionPhase::query()->sole();
 
         // Pas de case à cocher dans les groupes sensibles ; la ligne garde ses boutons.

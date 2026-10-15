@@ -10,31 +10,6 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="bo-tableau">
-                <thead>
-                    <tr>
-                        @foreach (__('admin.boutiques.colonnes') as $cle => $libelle)
-                            @continue($cle === 'candidatures')
-                            <th scope="col" @class(['montant' => $cle === 'boutiques'])>{{ $libelle }}</th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($campagnes as $c)
-                        <tr>
-                            <td><a href="{{ route('admin.boutiques.show', $c) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $c->nom }}</a></td>
-                            <td><x-admin.badge-statut :statut="$c->statut" /></td>
-                            <td class="whitespace-nowrap">{{ $c->date_ouverture?->format('d/m/Y') }} → {{ $c->date_cloture?->format('d/m/Y') }}</td>
-                            <td class="montant">{{ format_nombre((int) $c->categories_sum_nombre_boutiques) }}</td>
-                            <td>{{ $c->version ?: '—' }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5">{{ __('admin.boutiques.aucune') }}</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="mt-4">{{ $campagnes->links('admin._pagination') }}</div>
+        <x-tableau :t="$tableau" :libelle="__('admin.boutiques.titre')" />
     </div>
 </x-admin.layout>

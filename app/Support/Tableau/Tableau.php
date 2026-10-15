@@ -2,6 +2,8 @@
 
 namespace App\Support\Tableau;
 
+use App\Models\User;
+use App\Services\Validation\SoumissionGroupee;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -52,6 +54,9 @@ final class Tableau
 
     /** Bouton « Exporter » placé dans l'en-tête de la page (et non au-dessus du tableau). */
     private bool $exportEnTete = false;
+
+    /** Entité des cases de soumission groupée (App\Services\Validation\SoumissionGroupee), si l'utilisateur en est l'auteur. */
+    private ?string $selection = null;
 
     private function __construct(private readonly Builder $requete, public readonly string $id) {}
 
@@ -105,6 +110,21 @@ final class Tableau
         return $this;
     }
 
+    /**
+     * Cases à cocher de soumission groupée à validation (lignes brouillon ou rejetées) et filtre « À soumettre ».
+     * Sans effet si l'utilisateur n'a pas le droit de soumettre cette entité. À appeler après filtres().
+     */
+    public function selection(string $entite, ?User $user): self
+    {
+        if (SoumissionGroupee::peut($user, $entite)) {
+            $this->selection = $entite;
+            $this->filtres[] = Filtre::make('a_soumettre', __('admin.soumission.a_soumettre', ['n' => '']), ['1' => '1'],
+                fn (Builder $q) => SoumissionGroupee::aSoumettre($entite, $q))->masque();
+        }
+
+        return $this;
+    }
+
     /** Ordre secondaire stable (identifiant par défaut), pour une pagination sans doublon. */
     public function departage(Closure $departage): self
     {
@@ -153,7 +173,8 @@ final class Tableau
         $lignes = $requete->forPage($page, $etat['lignes'])->get();
 
         return new ResultatTableau($this->id, $colonnes, $this->filtres, $etat, $lignes, $page, $total, $filtrees, $this->nomExport !== null, $request,
-            $this->lignesDefaut, $this->unite, $this->exportEnTete);
+            $this->lignesDefaut, $this->unite, $this->exportEnTete, $this->selection,
+            $this->selection ? SoumissionGroupee::aSoumettre($this->selection, clone $this->requete)->count() : 0);
     }
 
     /** Excel du résultat filtré et trié, avec les seules colonnes autorisées et exportables. */

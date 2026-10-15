@@ -49,6 +49,14 @@
                 </div>
                 @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
             @endcan
+            @if ($enAttente->propose_par === auth()->id())
+                <div class="mt-4">
+                    <x-admin.confirmation variante="contour" id="retirer-phase" :titre="$p['retirer']" :message="$p['retirer_message']"
+                                          :action="route('admin.phase.retirer', $enAttente->id)" :bouton="$p['retirer']">
+                        <x-slot:declencheur>{{ $p['retirer'] }}</x-slot:declencheur>
+                    </x-admin.confirmation>
+                </div>
+            @endif
         </section>
     @endif
 

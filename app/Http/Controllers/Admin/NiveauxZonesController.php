@@ -95,6 +95,7 @@ class NiveauxZonesController extends Controller
                 Filtre::make('actif', __('admin.types.filtre_actif'), [1 => __('admin.types.actif'), 0 => $z['desactive']], 'actif'),
                 Filtre::make('par_defaut', $z['colonnes']['par_defaut'], [1 => $z['oui'], 0 => $z['non']], 'par_defaut'),
             ])
+            ->selection($liste, $request->user())
             ->triParDefaut($unites ? 'code' : ($niveaux ? 'rang' : 'ordre'))
             ->export('Raaga_'.$liste)
             ->repondre($request, fn (ResultatTableau $t) => view('admin.zones.liste', ['liste' => $liste, 'tableau' => $t]));
@@ -192,6 +193,22 @@ class NiveauxZonesController extends Controller
         }
 
         return redirect()->route('admin.referencement.'.$liste)->with('succes', __('admin.zones.messages.supprimee'));
+    }
+
+    /** Élément rejeté ou retiré de la validation (brouillon) : soumis de nouveau au VALIDATEUR. */
+    public function soumettre(Request $request, string $liste, int $id): RedirectResponse
+    {
+        $this->autoriser($liste, 'gerer');
+        $element = $this->element($liste, $id);
+
+        return $this->executer($liste, $element, function () use ($request, $element) {
+            if (! in_array($element->statut, [StatutTypeBoutique::Rejete, StatutTypeBoutique::Brouillon], true)) {
+                throw new RegleGestionException(__($element->statut === StatutTypeBoutique::AValider ? 'admin.soumission.erreurs.deja_soumis' : 'admin.types.regles.rien_a_soumettre'));
+            }
+            $element->forceFill(['statut' => StatutTypeBoutique::AValider, 'demande_par' => $request->user()->id])->save();
+            $element->creerVersion($request->user(), __('admin.types.motifs.soumission'));
+            $this->journal->ecrire($request->user(), $element::typeReferentiel().'.soumis', class_basename($element), $element->id);
+        }, 'admin.parametrage.messages.soumis');
     }
 
     public function confirmer(Request $request, string $liste, int $id): RedirectResponse

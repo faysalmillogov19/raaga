@@ -232,7 +232,7 @@ enum Droit: string
                 self::ApprobationsTraiter,
                 self::UtilisateursGerer,
                 self::SecuriteGerer, self::ConnexionsVoir, self::CharteVoir,
-                self::PhaseVoir, self::PhaseProposer,
+                self::PhaseVoir,
                 self::AuditVoir,
                 self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
                 self::SitesVoir, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir,
@@ -269,6 +269,7 @@ enum Droit: string
             ],
             Role::Regulateur => [
                 self::TableauDeBordVoir,
+                self::PhaseVoir, self::PhaseProposer,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
                 self::BoutiquesVoir, self::BoutiquesSaisir,

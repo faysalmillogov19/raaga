@@ -38,6 +38,28 @@ class WorkflowParametrage
         });
     }
 
+    /**
+     * Retrait de la validation par l'auteur de la soumission, tant que le VALIDATEUR n'a pas décidé : retour au
+     * brouillon. La version soumise reste dans l'historique (ajout seul) ; le retrait est tracé au journal.
+     */
+    public function retirer(Parametrable $objet, User $auteur): void
+    {
+        if (! $objet->estSoumis()) {
+            throw new RegleGestionException(__('admin.soumission.erreurs.non_soumis'));
+        }
+        if ((int) $objet->soumis_par !== $auteur->id) {
+            throw new RegleGestionException(__('admin.soumission.erreurs.pas_auteur'));
+        }
+        if (! method_exists($objet, 'marquerRetire')) {
+            throw new RegleGestionException(__('admin.soumission.erreurs.non_retirable'));
+        }
+
+        DB::transaction(function () use ($objet, $auteur) {
+            $objet->marquerRetire();
+            $this->journal->ecrire($auteur, $objet->typeParametrage().'.retire', class_basename($objet), $objet->getKey(), ['statut' => 'SOUMIS'], ['statut' => 'BROUILLON']);
+        });
+    }
+
     public function confirmer(Parametrable $objet, User $validateur): void
     {
         $this->verifierDecisionPossible($objet, $validateur);
