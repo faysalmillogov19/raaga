@@ -25,8 +25,8 @@ class Boutique extends Model
 {
     use AvecNiveau, SoftDeletes;
 
-    /** Bloc : lettres majuscules ou chiffres (A, B2, C10). */
-    public const FORMAT_BLOC = '/^[A-Z0-9]{1,3}$/';
+    /** Bloc : code d'une zone, 1 à 5 lettres majuscules ou chiffres (A, B2, MAG, ETAL), comme ZoneSite::FORMAT_CODE. */
+    public const FORMAT_BLOC = '/^[A-Z0-9]{1,5}$/';
 
     /** Numéro : 1 à 3 chiffres, écrit sur 3 chiffres dans le code. */
     public const CHIFFRES_NUMERO = 3;

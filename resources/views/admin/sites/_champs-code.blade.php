@@ -13,7 +13,7 @@
 </div>
 <div class="formulaire-champ !mt-0">
     <label for="{{ $prefixe }}-bloc">{{ $b['bloc'] }}</label>
-    <input id="{{ $prefixe }}-bloc" name="bloc" value="{{ old('bloc', $boutique?->bloc) }}" maxlength="3" required autocomplete="off"
+    <input id="{{ $prefixe }}-bloc" name="bloc" value="{{ old('bloc', $boutique?->bloc) }}" maxlength="5" required autocomplete="off"
            class="champ uppercase @error('bloc') est-invalide @enderror" aria-describedby="{{ $prefixe }}-bloc-aide">
     <p id="{{ $prefixe }}-bloc-aide" class="aide-champ">{{ $b['bloc_aide'] }}</p>
     @error('bloc') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
