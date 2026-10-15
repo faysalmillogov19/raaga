@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\Payable;
 use App\Enums\CanalSouscription;
+use App\Enums\CompteDestination;
 use App\Enums\StatutRevue;
 use App\Enums\StatutSouscription;
 use App\Enums\UsageMoyenPaiement;
@@ -74,6 +75,11 @@ class Souscription extends Model implements Payable
     public static function clePaiement(): string
     {
         return 'souscription_id';
+    }
+
+    public function compteDestination(): CompteDestination
+    {
+        return CompteDestination::Investissement;
     }
 
     public function montantAPayer(): int

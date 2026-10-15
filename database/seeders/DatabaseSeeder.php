@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
      *   niveaux, zones, types de boutiques et unités de loyer M2, UNITE, REDEVANCE (NiveauxSeeder, ZonesSeeder,
      *   TypesBoutiqueSeeder, UnitesSeeder ; chacun lançable seul, y compris en production, sans rien écraser) ;
      *   moyens de paiement par défaut (MoyensPaiementSeeder : Faso Arzeka, Orange Money, Moov Africa Money,
-     *   Telecel Money, virement et versement bancaires, espèces ; Coris Money et Wave créés inactifs).
+     *   Telecel Money, virement et versement bancaires, carte bancaire, espèces ; Coris Money et Wave créés inactifs).
      * - Comptes de démonstration : créés s'ils manquent, avec un mot de passe identique à leur adresse e-mail
      *   (exemple : sites@raaga.test / sites@raaga.test) ; s'ils existent, seul leur rôle est remis à jour
      *   (jamais le mot de passe, le nom ni le TOTP). Back-office : sans TOTP enrôlé, la double authentification

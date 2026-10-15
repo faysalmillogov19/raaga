@@ -77,10 +77,21 @@ return [
         'fournisseur' => env('RAAGA_PAIEMENT_FOURNISSEUR'),
     ],
 
+    /*
+    | Comptes de destination séparés (App\Enums\CompteDestination) : fonds d'investissement (souscriptions d'actions,
+    | appels de fonds des actions A) et fonds de location (caution, avance, loyers des boutiques). Jamais de mélange.
+    | Le compte d'investissement reprend les variables RAAGA_SEQUESTRE_* existantes. Les clés et identifiants des
+    | opérateurs de paiement (par compte) restent ici, dans le .env : jamais dans la base.
+    */
     'compte_sequestre' => [
         'titulaire' => env('RAAGA_SEQUESTRE_TITULAIRE'),
         'banque' => env('RAAGA_SEQUESTRE_BANQUE'),
         'numero' => env('RAAGA_SEQUESTRE_NUMERO'),
+    ],
+    'compte_location' => [
+        'titulaire' => env('RAAGA_COMPTE_LOCATION_TITULAIRE'),
+        'banque' => env('RAAGA_COMPTE_LOCATION_BANQUE'),
+        'numero' => env('RAAGA_COMPTE_LOCATION_NUMERO'),
     ],
 
     /*

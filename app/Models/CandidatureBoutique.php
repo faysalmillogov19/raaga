@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\Payable;
+use App\Enums\CompteDestination;
 use App\Enums\StatutCandidatureBoutique;
 use App\Support\MontantsBoutique;
 use App\Support\Recu;
@@ -80,6 +81,11 @@ class CandidatureBoutique extends Model implements Payable
     public static function clePaiement(): string
     {
         return 'candidature_boutique_id';
+    }
+
+    public function compteDestination(): CompteDestination
+    {
+        return CompteDestination::Location;
     }
 
     public function montantAPayer(): int

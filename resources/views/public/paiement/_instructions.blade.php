@@ -10,6 +10,9 @@
         <p class="mt-2 font-semibold text-encre">{{ __('public.paiement.instructions.code_secret') }}</p>
     @elseif ($c === 'PLATEFORME_PUBLIQUE')
         <p>{{ __('public.paiement.instructions.passerelle', ['operateur' => $canal->label()]) }}</p>
+    @elseif ($c === 'CARTE_BANCAIRE')
+        {{-- Carte : uniquement sur la page sécurisée de l'opérateur ; aucun champ de carte ici. --}}
+        <p data-carte-operateur>{{ __('public.paiement.instructions.carte') }}</p>
     @elseif ($c === 'BANQUE')
         <p>{{ __('public.paiement.instructions.virement') }}</p>
         <dl class="mt-2 space-y-1">

@@ -46,7 +46,7 @@ trait GerePaiements
             'paiement' => $enAttente,
             'simule' => $fournisseur?->estSimule() ?? false,
             'canaux' => $objet->canauxPaiement(),
-            'sequestre' => CompteSequestre::actuel(),
+            'sequestre' => CompteSequestre::pour($objet->compteDestination()),
         ]);
     }
 

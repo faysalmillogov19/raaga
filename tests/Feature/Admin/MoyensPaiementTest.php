@@ -2,19 +2,35 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\CanalSouscription;
+use App\Enums\CompteDestination;
 use App\Enums\FamilleMoyenPaiement;
+use App\Enums\MethodeAllocation;
+use App\Enums\ModeSaisie;
+use App\Enums\PayeurFrais;
+use App\Enums\PublicAutorise;
+use App\Enums\RegleArret;
+use App\Enums\RegleSiEchec;
 use App\Enums\Role;
 use App\Enums\StatutKyc;
+use App\Enums\StatutSouscription;
+use App\Enums\StatutTranche;
 use App\Enums\StatutTypeBoutique;
+use App\Enums\TypeFraisSouscription;
 use App\Enums\UsageMoyenPaiement;
+use App\Models\AuditLog;
 use App\Models\CandidatureBoutique;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\ParametrageDecision;
+use App\Models\Souscription;
+use App\Models\Tranche;
 use App\Models\User;
 use Database\Seeders\MoyensPaiementSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 use Tests\Feature\Compte\CandidatureBoutiqueTest;
 use Tests\Support\ActeursParametrage;
 use Tests\TestCase;
@@ -27,7 +43,7 @@ class MoyensPaiementTest extends TestCase
 {
     use ActeursParametrage, RefreshDatabase;
 
-    private const ACTIFS = ['FASO_ARZEKA', 'ORANGE_MONEY', 'MOOV_MONEY', 'TELECEL_MONEY', 'VIREMENT', 'VERSEMENT', 'ESPECES'];
+    private const ACTIFS = ['FASO_ARZEKA', 'ORANGE_MONEY', 'MOOV_MONEY', 'TELECEL_MONEY', 'VIREMENT', 'VERSEMENT', 'CARTE_BANCAIRE', 'ESPECES'];
 
     protected function setUp(): void
     {
@@ -80,7 +96,8 @@ class MoyensPaiementTest extends TestCase
         // Rejoué : rien de créé ni de modifié, aucune décision de validation.
         $this->seed(MoyensPaiementSeeder::class);
         $this->seed(MoyensPaiementSeeder::class);
-        $this->assertSame(9, MoyenPaiement::query()->count());
+        $this->assertSame(10, MoyenPaiement::query()->count());
+        $this->assertSame(FamilleMoyenPaiement::CarteBancaire, MoyenPaiement::parCode('CARTE_BANCAIRE')->famille);
         $this->assertSame(0, ParametrageDecision::query()->count());
         // Aucune clé ni aucun secret d'opérateur dans la table.
         $this->assertEmpty(array_filter(DB::getSchemaBuilder()->getColumnListing('moyens_paiement'), fn ($c) => preg_match('/cle|secret|token|api/i', $c)));
@@ -172,5 +189,71 @@ class MoyensPaiementTest extends TestCase
         $this->en($this->regulateur)->delete(route('admin.referencement.zones.destroy', ['moyens', $wave->id]))->assertSessionHas('erreur', __('admin.moyens_paiement.regles.jamais_supprime'));
         $this->assertModelExists($wave);
         $this->en($this->regulateur)->get(route('admin.referencement.zones.show', ['moyens', $wave->id]))->assertOk()->assertDontSee('>Supprimer<', false);
+    }
+
+    public function test_separation_des_comptes_de_destination(): void
+    {
+        config(['raaga.compte_sequestre' => ['titulaire' => 'Raaga SA · investissement', 'banque' => 'Banque A', 'numero' => 'BF00 INVEST'],
+            'raaga.compte_location' => ['titulaire' => 'Raaga SA · location', 'banque' => 'Banque B', 'numero' => 'BF00 LOCATION']]);
+
+        // Caution : compte des fonds de location, partout (paiement, instructions de virement, reçu).
+        $c = $this->caution(500_000, ['ORANGE_MONEY', 'VIREMENT']);
+        $this->actingAs($c->user)->get('/boutiques/candidatures/'.$c->reference.'/caution')->assertSee('BF00 LOCATION')->assertDontSee('BF00 INVEST');
+        $this->actingAs($c->user)->post('/boutiques/candidatures/'.$c->reference.'/caution', ['canal' => 'VIREMENT'])->assertSessionHasNoErrors();
+        $caution = Paiement::query()->sole();
+        $this->assertSame(CompteDestination::Location, $caution->compte_destination);
+        $this->assertSame('LOCATION', AuditLog::query()->where('action', 'paiement.initie')->sole()->nouvelle_valeur['compte']);
+
+        // Souscription d'actions : compte des fonds d'investissement.
+        $s = $this->souscription();
+        $this->actingAs($s->user)->get('/paiement/'.$s->reference)->assertSee('BF00 INVEST')->assertDontSee('BF00 LOCATION');
+        $this->actingAs($s->user)->post('/paiement/'.$s->reference, ['canal' => 'VIREMENT'])->assertSessionHasNoErrors();
+        $this->assertSame(CompteDestination::Investissement, Paiement::query()->where('souscription_id', $s->id)->sole()->compte_destination);
+
+        // Aucun mélange possible : refusé par le modèle et par la base.
+        try {
+            $caution->forceFill(['compte_destination' => CompteDestination::Investissement])->save();
+            $this->fail('Caution envoyée au compte d’investissement.');
+        } catch (LogicException) {
+        }
+        try {
+            DB::transaction(fn () => DB::table('paiements')->where('id', $caution->id)->update(['compte_destination' => 'INVESTISSEMENT']));
+            $this->fail('Mélange accepté par la base.');
+        } catch (QueryException) {
+        }
+        $this->assertSame(CompteDestination::Location, $caution->fresh()->compte_destination);
+    }
+
+    public function test_carte_bancaire_par_la_page_de_l_operateur_seulement(): void
+    {
+        $s = $this->souscription(['CARTE_BANCAIRE']);
+        $this->actingAs($s->user)->get('/paiement/'.$s->reference)->assertOk()->assertSee('Carte bancaire')->assertSee('data-carte-operateur', false)
+            ->assertDontSee('name="numero_carte"', false)->assertDontSee('autocomplete="cc-number"', false);
+
+        // Un numéro de carte envoyé malgré tout n'est jamais conservé.
+        $this->actingAs($s->user)->post('/paiement/'.$s->reference, ['canal' => 'CARTE_BANCAIRE', 'numero_carte' => '4111111111111111', 'cvv' => '123'])->assertSessionHasNoErrors();
+        $paiement = Paiement::query()->sole();
+        $this->assertSame('CARTE_BANCAIRE', $paiement->getRawOriginal('canal'));
+        $this->assertStringNotContainsString('4111', json_encode($paiement->getAttributes()));
+        $this->assertFalse(AuditLog::query()->where('nouvelle_valeur', 'like', '%4111%')->exists());
+    }
+
+    /** Souscription d'actions réservée, en attente de paiement. */
+    private function souscription(array $canaux = ['ORANGE_MONEY', 'VIREMENT']): Souscription
+    {
+        $tranche = Tranche::create([
+            'statut' => StatutTranche::Ouverte, 'nom' => 'Tranche 1', 'valeur_unitaire' => 10_000, 'min_actions_par_souscription' => 1,
+            'objectif_montant' => 3_000_000_000, 'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addDays(30),
+            'publics_autorises' => [PublicAutorise::ResidentBf->value], 'mode_saisie' => ModeSaisie::NbActions, 'souscriptions_multiples' => true,
+            'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata, 'regle_si_echec' => RegleSiEchec::RemboursementIntegral,
+            'delai_remboursement_jours' => 30, 'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Aucun,
+            'canaux_actifs' => $canaux, 'delai_paiement_heures' => 48, 'version' => 1, 'cree_par' => $this->regulateur->id,
+        ]);
+        $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'pays_residence' => 'BF', 'telephone' => '+22670999999']);
+
+        return Souscription::create([
+            'reference' => 'RAA-B-TEST0001', 'user_id' => $citoyen->id, 'tranche_id' => $tranche->id, 'nb_actions_demandees' => 25, 'valeur_unitaire' => 10_000,
+            'montant' => 250_000, 'frais_souscription' => 0, 'canal' => CanalSouscription::Web, 'statut' => StatutSouscription::Reservee, 'expire_le' => now()->addHours(48),
+        ]);
     }
 }

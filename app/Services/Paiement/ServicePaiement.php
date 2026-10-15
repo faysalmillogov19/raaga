@@ -46,6 +46,7 @@ class ServicePaiement
 
             $paiement = $objet->paiements()->create([
                 'canal' => $canal,
+                'compte_destination' => $objet->compteDestination(),
                 'montant' => $objet->montantAPayer(),
                 'frais' => $objet->fraisAPayer(),
                 'reference' => 'PAY-'.Str::upper(Str::ulid()),
@@ -54,7 +55,7 @@ class ServicePaiement
             ]);
 
             $this->journal->ecrire($acteur, 'paiement.initie', 'Paiement', $paiement->id, null, [
-                'objet' => $objet->reference, 'canal' => $canal->code, 'reference' => $paiement->reference,
+                'objet' => $objet->reference, 'canal' => $canal->code, 'compte' => $objet->compteDestination()->value, 'reference' => $paiement->reference,
             ]);
 
             return $paiement;

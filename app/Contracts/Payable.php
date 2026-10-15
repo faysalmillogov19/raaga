@@ -2,6 +2,7 @@
 
 namespace App\Contracts;
 
+use App\Enums\CompteDestination;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,9 @@ interface Payable
 
     /** Expiré faute de paiement dans le délai. */
     public function estExpire(): bool;
+
+    /** Compte qui reçoit le paiement : investissement (actions) ou location (caution, avance, loyers). */
+    public function compteDestination(): CompteDestination;
 
     /** @return list<MoyenPaiement> moyens de paiement actifs selon les paramètres confirmés (validés et actifs au référentiel) */
     public function canauxPaiement(): array;

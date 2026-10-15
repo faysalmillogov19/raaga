@@ -23,9 +23,10 @@ class MoyensPaiementSeeder extends Seeder
         'TELECEL_MONEY' => ['Telecel Money', FamilleMoyenPaiement::MobileMoney, 4, true],
         'VIREMENT' => ['Virement bancaire', FamilleMoyenPaiement::Banque, 5, true],
         'VERSEMENT' => ['Versement bancaire', FamilleMoyenPaiement::Banque, 6, true],
-        'ESPECES' => ['Espèces au guichet', FamilleMoyenPaiement::Guichet, 7, true],
-        'CORIS_MONEY' => ['Coris Money', FamilleMoyenPaiement::MobileMoney, 8, false],
-        'WAVE' => ['Wave', FamilleMoyenPaiement::MobileMoney, 9, false],
+        'CARTE_BANCAIRE' => ['Carte bancaire', FamilleMoyenPaiement::CarteBancaire, 7, true],
+        'ESPECES' => ['Espèces au guichet', FamilleMoyenPaiement::Guichet, 8, true],
+        'CORIS_MONEY' => ['Coris Money', FamilleMoyenPaiement::MobileMoney, 9, false],
+        'WAVE' => ['Wave', FamilleMoyenPaiement::MobileMoney, 10, false],
     ];
 
     public function run(): void
