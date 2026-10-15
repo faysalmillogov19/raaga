@@ -13,9 +13,12 @@ use RuntimeException;
 final class VerrouEnvironnement
 {
     /**
-     * @throws RuntimeException en production si une fonction de recette est activée
+     * Le paiement simulé, lui, n'empêche pas le démarrage : en production, le simulateur refuse de fonctionner et la
+     * page de paiement affiche « moyen de paiement indisponible » ; « raaga:verifier-production » arrête le déploiement.
+     *
+     * @throws RuntimeException en production si les données de démonstration sont activées
      */
-    public static function verifier(string $environnement, bool $demo, ?string $fournisseurPaiement = null): void
+    public static function verifier(string $environnement, bool $demo): void
     {
         if ($environnement !== 'production') {
             return;
@@ -24,11 +27,6 @@ final class VerrouEnvironnement
         if ($demo) {
             self::refuser('RAAGA_DEMO=true est interdit avec APP_ENV=production '
                 .'(des données fictives s’afficheraient sur le site). Passez RAAGA_DEMO à false.');
-        }
-
-        if ($fournisseurPaiement === 'simule') {
-            self::refuser('RAAGA_PAIEMENT_FOURNISSEUR=simule est interdit avec APP_ENV=production '
-                .'(aucune somme ne serait réellement encaissée). Configurez un fournisseur de paiement réel.');
         }
     }
 

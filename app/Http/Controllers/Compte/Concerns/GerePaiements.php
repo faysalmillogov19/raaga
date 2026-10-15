@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
 
@@ -64,8 +65,11 @@ trait GerePaiements
                 }],
         ], [], __('public.paiement.attributs'));
 
+        // Aucun opérateur réel (production sans opérateur : le simulateur refuse de fonctionner) : aucun paiement démarré.
         $fournisseur = $this->fournisseur();
-        abort_unless($fournisseur, 503);
+        if ($fournisseur === null) {
+            throw ValidationException::withMessages(['canal' => __('public.paiement.indisponible_titre')]);
+        }
         $this->service->expirerReservations();
         abort_unless($objet->fresh()->attendPaiement(), 409);
 

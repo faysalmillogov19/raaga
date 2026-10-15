@@ -24,6 +24,7 @@ use App\Models\User;
 use App\Services\Paiement\ServicePaiement;
 use App\Services\Paiement\SimulatedProvider;
 use App\Support\VerrouEnvironnement;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\TestCase;
@@ -152,17 +153,16 @@ class PaiementTest extends TestCase
             $this->assertStringContainsString('paiement simulé', $e->getMessage());
         }
 
-        // Démarrage refusé si la configuration le demande explicitement.
-        $this->expectExceptionMessage('RAAGA_PAIEMENT_FOURNISSEUR=simule est interdit avec APP_ENV=production');
-        try {
-            $this->actingAs($this->citoyen)->get($this->url())->assertOk()
-                ->assertSee('Paiement en ligne indisponible')->assertDontSee('Paiement simulé');
-            $this->actingAs($this->citoyen)->post($this->url(), ['canal' => 'ORANGE_MONEY', 'telephone' => '70123456'])->assertStatus(503);
-            $this->assertSame(0, Paiement::count());
-            $this->assertThrows(fn () => app(PaymentProvider::class), RuntimeException::class);
-        } finally {
-            VerrouEnvironnement::verifier('production', false, 'simule');
-        }
+        // Production sans opérateur réel (même « simule » demandé) : « moyen de paiement indisponible », aucun paiement démarré.
+        VerrouEnvironnement::verifier('production', false);
+        config(['raaga.paiement.fournisseur' => 'simule']);
+        $this->actingAs($this->citoyen)->get($this->url())->assertOk()
+            ->assertSee('Moyen de paiement indisponible')->assertDontSee('Paiement simulé');
+        // En « production », le jeton CSRF n'est plus ignoré par les tests : seul ce contrôle est levé ici.
+        $this->withoutMiddleware(PreventRequestForgery::class)->actingAs($this->citoyen)->post($this->url(), ['canal' => 'ORANGE_MONEY', 'telephone' => '70123456'])
+            ->assertSessionHasErrors(['canal' => 'Moyen de paiement indisponible']);
+        $this->assertSame(0, Paiement::count());
+        $this->assertThrows(fn () => app(PaymentProvider::class), RuntimeException::class);
     }
 
     public function test_une_reservation_non_payee_expire_apres_le_delai(): void

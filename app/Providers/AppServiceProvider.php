@@ -59,7 +59,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // Données de démonstration et paiement simulé interdits en production : démarrage refusé.
-        VerrouEnvironnement::verifier((string) $this->app->environment(), (bool) config('raaga.demo'), config('raaga.paiement.fournisseur'));
+        VerrouEnvironnement::verifier((string) $this->app->environment(), (bool) config('raaga.demo'));
 
         // Après chaque « php artisan migrate » réussi (même sans nouvelle migration) : table des rôles alignée
         // sur l'enum (RoleSeeder, sans effet de bord).
