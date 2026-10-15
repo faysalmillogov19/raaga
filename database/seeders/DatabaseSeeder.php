@@ -34,8 +34,9 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database. Se relance sans risque (« php artisan db:seed ») :
      *
-     * - Rôles : table alignée sur l'enum (RoleSeeder) ; zones (ReferentielsSitesSeeder) et types de boutiques par défaut
-     *   (TypesBoutiqueSeeder, appelé par ReferentielsSitesSeeder ; lançable seul, y compris en production).
+     * - Rôles : table alignée sur l'enum (RoleSeeder) ; référentiels par défaut appelés par ReferentielsSitesSeeder :
+     *   niveaux, zones, types de boutiques et unités de loyer M2, UNITE, REDEVANCE (NiveauxSeeder, ZonesSeeder,
+     *   TypesBoutiqueSeeder, UnitesSeeder ; chacun lançable seul, y compris en production, sans rien écraser).
      * - Comptes de démonstration : créés s'ils manquent, avec un mot de passe identique à leur adresse e-mail
      *   (exemple : sites@raaga.test / sites@raaga.test) ; s'ils existent, seul leur rôle est remis à jour
      *   (jamais le mot de passe, le nom ni le TOTP). Back-office : sans TOTP enrôlé, la double authentification
