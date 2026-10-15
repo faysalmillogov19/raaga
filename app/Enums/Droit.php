@@ -53,6 +53,9 @@ enum Droit: string
     case PhaseProposer = 'phase.proposer';
     case PhaseConfirmer = 'phase.confirmer';
 
+    // File « À valider » : tout ce qui attend une décision du VALIDATEUR, décision sur une ligne ou une sélection.
+    case AValiderVoir = 'a_valider.voir';
+
     case ReferentielsVoir = 'referentiels.voir';
     case ReferentielsGerer = 'referentiels.gerer';
 
@@ -239,7 +242,7 @@ enum Droit: string
             // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre.
             Role::Validateur => [
                 self::TableauDeBordVoir,
-                self::PhaseVoir, self::PhaseConfirmer,
+                self::PhaseVoir, self::PhaseConfirmer, self::AValiderVoir,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
                 self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter,

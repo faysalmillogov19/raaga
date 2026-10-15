@@ -46,6 +46,7 @@ class Site extends Model implements Parametrable
             'longitude' => 'decimal:7',
             'version' => 'integer',
             'soumis_le' => 'datetime',
+            'revision_demandee_le' => 'datetime',
             'valide_le' => 'datetime',
         ];
     }

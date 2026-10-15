@@ -28,6 +28,14 @@
                 </x-admin.confirmation>
             @elseif ($gerer && $site->statut === StatutSite::Confirme)
                 <p class="texte-carte">{{ __('admin.sites.valide_verrouille') }}</p>
+                @if ($site->revision_demandee_le)
+                    <x-admin.message type="info" class="!mb-0 w-full">{{ __('admin.sites.demande.envoyee', ['date' => $site->revision_demandee_le->format('d/m/Y à H:i'), 'motif' => $site->revision_demande_motif]) }}</x-admin.message>
+                @else
+                    <x-admin.confirmation id="demander-revision" :titre="__('admin.sites.demande.titre')" :message="__('admin.sites.demande.message')"
+                                          :action="route('admin.sites.demander-revision', $site)" :bouton="__('admin.sites.demande.bouton')" motif>
+                        <x-slot:declencheur>{{ __('admin.sites.demande.titre') }}</x-slot:declencheur>
+                    </x-admin.confirmation>
+                @endif
             @endif
 
             @can(Droit::SitesConfirmer->value)
@@ -39,6 +47,13 @@
                     <x-admin.confirmation etape="rejeter" id="rejeter" :titre="__('admin.parametrage.actions.rejeter')" :message="__('admin.parametrage.confirmations.rejeter')"
                                           :action="route('admin.sites.rejeter', $site)" :bouton="__('admin.parametrage.actions.rejeter')" motif danger>
                         <x-slot:declencheur>{{ __('admin.parametrage.actions.rejeter') }}</x-slot:declencheur>
+                    </x-admin.confirmation>
+                @endif
+                @if ($site->statut === StatutSite::Confirme && $site->revision_demandee_le)
+                    <x-admin.message type="avertissement" class="!mb-0 w-full">{{ __('admin.sites.demande.recue', ['date' => $site->revision_demandee_le->format('d/m/Y à H:i'), 'motif' => $site->revision_demande_motif]) }}</x-admin.message>
+                    <x-admin.confirmation etape="rejeter" id="refuser-revision" :titre="__('admin.sites.demande.refuser')" :message="__('admin.sites.demande.refuser_message')"
+                                          :action="route('admin.sites.refuser-revision', $site)" :bouton="__('admin.sites.demande.refuser')" motif danger>
+                        <x-slot:declencheur>{{ __('admin.sites.demande.refuser') }}</x-slot:declencheur>
                     </x-admin.confirmation>
                 @endif
                 @if ($site->statut === StatutSite::Confirme)

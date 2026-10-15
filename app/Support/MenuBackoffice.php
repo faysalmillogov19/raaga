@@ -42,6 +42,7 @@ final class MenuBackoffice
         return [
             'pilotage' => [
                 ['cle' => 'tableau', 'route' => 'admin.tableau', 'droit' => Droit::TableauDeBordVoir, 'icone' => 'tableau', 'etape' => 1],
+                ['cle' => 'a_valider', 'route' => 'admin.a-valider', 'droit' => Droit::AValiderVoir, 'icone' => 'taches', 'etape' => 0],
                 ['cle' => 'tranches', 'route' => 'admin.tranches', 'droit' => Droit::TranchesVoir, 'icone' => 'tranches', 'etape' => 3, 'masque_si' => $parametres],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
@@ -195,6 +196,8 @@ final class MenuBackoffice
         $gere = $user->can(Droit::SitesGerer->value);
 
         return array_filter([
+            // VALIDATEUR : total de la file « À valider ».
+            'a_valider' => $user->can(Droit::AValiderVoir->value) ? AValider::total($user) : 0,
             // VALIDATEUR : sites soumis ; GESTIONNAIRE : sites rejetés à reprendre.
             'sites' => match (true) {
                 $valide => Site::query()->where('statut', StatutSite::Soumis)->count(),

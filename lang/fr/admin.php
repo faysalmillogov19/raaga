@@ -100,6 +100,49 @@ return [
         'administration' => 'Administration',
     ],
 
+    'a_valider' => [
+        'titre' => 'À valider',
+        'intro' => 'Tout ce qui attend votre décision. Cochez des lignes pour décider en une fois ; un rejet groupé applique le même motif à chaque élément.',
+        'groupes' => [
+            'sites' => 'Sites',
+            'grilles' => 'Grilles tarifaires',
+            'finances' => 'Données financières des sites',
+            'referentiels' => 'Référentiels : types, niveaux, zones, unités',
+            'campagnes' => 'Campagnes',
+            'demarches' => 'Démarches du site public',
+            'autorisations' => 'Autorisations de modification de site',
+        ],
+        'elements' => [
+            'site' => 'Site', 'grille' => 'Grille', 'finances' => 'Finances', 'type' => 'Type', 'niveaux' => 'Niveau', 'zones' => 'Zone',
+            'unites' => 'Unité', 'campagne' => 'Campagne', 'phase' => 'Démarches', 'autorisation' => 'Demande',
+        ],
+        'colonnes' => ['selection' => 'Sélection', 'element' => 'Élément', 'par' => 'Soumis par', 'date' => 'Date', 'attente' => 'En attente depuis', 'actions' => 'Actions'],
+        'tout_cocher' => 'Tout cocher : :groupe',
+        'cocher' => 'Sélectionner :element',
+        'vide' => 'Rien à valider.',
+        'voir' => 'Voir :element',
+        'valider' => 'Valider :element',
+        'rejeter' => 'Rejeter :element',
+        'selection' => '{0} Aucune ligne sélectionnée|{1} 1 ligne sélectionnée|[2,*] :n lignes sélectionnées',
+        'valider_selection' => 'Valider la sélection',
+        'rejeter_selection' => 'Rejeter la sélection…',
+        'confirmer_message' => 'Les éléments sélectionnés sont validés, chacun avec sa propre décision dans l’historique et le journal d’audit.',
+        'rejeter_message' => 'Le même motif est appliqué à chaque élément rejeté. Indiquez-le :',
+        'confirmer_ligne' => 'Valider cet élément ?',
+        'rejeter_ligne' => 'Motif du rejet :',
+        'motif' => 'Motif',
+        'annuler' => 'Annuler',
+        'motif_autorisation' => 'Demande du gestionnaire acceptée.',
+        'messages' => [
+            'confirmer' => '{1} 1 élément validé.|[2,*] :n éléments validés.',
+            'rejeter' => '{1} 1 élément rejeté.|[2,*] :n éléments rejetés.',
+        ],
+        'erreurs' => [
+            'selection' => 'Cochez au moins une ligne.',
+            'element' => 'Décision impossible pour :cle.',
+        ],
+    ],
+
     'menus_deroulants' => [
         'referentiels' => 'Référentiels',
         'imports' => 'Imports',
@@ -107,6 +150,7 @@ return [
 
     'menu' => [
         'tableau' => 'Tableau de bord',
+        'a_valider' => 'À valider',
         'tranches' => 'Tranches',
         'sites' => 'Sites',
         'types' => 'Types de boutiques',
@@ -176,6 +220,7 @@ return [
         'phase.voir' => 'Consulter les décisions de phase du site public (présentation des actions, souscription)',
         'phase.proposer' => 'Proposer une décision de phase du site public',
         'phase.confirmer' => 'Confirmer ou rejeter une décision de phase du site public',
+        'a_valider.voir' => 'Consulter la file « À valider » et décider sur une ou plusieurs lignes',
         'utilisateurs.gerer' => 'Inviter, modifier et désactiver les utilisateurs back-office',
         'connexions.voir' => 'Consulter le journal des connexions',
         'referentiels.voir' => 'Consulter les référentiels',
@@ -1563,8 +1608,19 @@ return [
         'messages' => [
             'enregistre' => 'Site enregistré.',
             'revision' => 'Modification autorisée : le site repasse en brouillon.',
+            'revision_demandee' => 'Demande envoyée au VALIDATEUR.',
+            'revision_refusee' => 'Demande de modification refusée : le site reste validé.',
         ],
         'valide_verrouille' => 'Site validé : il n’est plus modifiable. Seul le VALIDATEUR peut en autoriser la modification.',
+        'demande' => [
+            'titre' => 'Demander l’autorisation de modifier',
+            'message' => 'Le VALIDATEUR reçoit votre demande dans sa file « À valider ». Indiquez ce que vous devez modifier.',
+            'bouton' => 'Envoyer la demande',
+            'envoyee' => 'Demande d’autorisation envoyée le :date : « :motif ». En attente de la décision du VALIDATEUR.',
+            'recue' => 'Le GESTIONNAIRE demande l’autorisation de modifier ce site (le :date) : « :motif ».',
+            'refuser' => 'Refuser la demande',
+            'refuser_message' => 'Le site reste validé et non modifiable. Indiquez le motif du refus.',
+        ],
         'excel' => [
             'titre' => 'Fichier Excel',
             'aide' => 'Saisissez les boutiques dans le modèle (onglet « Locaux »), puis importez-le : un aperçu liste les erreurs avant tout enregistrement. Format .xlsx, :taille Mo au plus.',
@@ -1648,6 +1704,7 @@ return [
             'sans_code' => '{1} Une boutique n’a pas encore de code (bloc ou numéro à corriger) : complétez sa fiche avant de soumettre le site.|[2,*] :n boutiques n’ont pas encore de code (bloc ou numéro à corriger) : complétez leur fiche avant de soumettre le site.',
             'code_fige' => 'Le code du site ne change plus : le site est soumis ou confirmé, ou une de ses boutiques est engagée dans une campagne ou attribuée.',
             'revision_confirme' => 'Seul un site validé peut faire l’objet d’une autorisation de modification.',
+            'aucune_demande' => 'Aucune demande d’autorisation n’est en attente pour ce site.',
         ],
     ],
 

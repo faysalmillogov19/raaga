@@ -1425,3 +1425,36 @@ html.adm-fenetre-ouverte body {
     color: #1a1a00;
     box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
 }
+
+/* « À valider » : barre des actions groupées, fixe en bas de l'écran. */
+.adm .adm-barre-selection {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, .08);
+}
+
+/* « À valider » : en-tête de groupe dépliable (bouton, flèche qui pivote). */
+.adm .adm-groupe-bouton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.adm .adm-groupe-bouton[aria-expanded="true"] .adm-chevron { transform: rotate(90deg); }

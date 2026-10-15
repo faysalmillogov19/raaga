@@ -3,6 +3,7 @@
 use App\Enums\Droit;
 use App\Http\Controllers\Admin\AppelsFondsController;
 use App\Http\Controllers\Admin\AssistanceController;
+use App\Http\Controllers\Admin\AValiderController;
 use App\Http\Controllers\Admin\CadreController;
 use App\Http\Controllers\Admin\CampagnesBoutiquesController;
 use App\Http\Controllers\Admin\CapacitesController;
@@ -89,6 +90,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/preferences/menu', [CadreController::class, 'menu'])->name('preferences.menu');
         Route::post('/notifications/lues', [CadreController::class, 'notificationsLues'])->name('notifications.lues');
         Route::get('/recherche', [CadreController::class, 'recherche'])->name('recherche');
+        // File « À valider » du VALIDATEUR : décision sur une ligne ou sur une sélection (rejet : motif commun).
+        Route::get('/a-valider', [AValiderController::class, 'index'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider');
+        Route::post('/a-valider', [AValiderController::class, 'decider'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.decider');
+
         // Décisions de phase du site public : le SUPER_ADMIN propose, le VALIDATEUR confirme ou rejette.
         Route::controller(PhaseController::class)->prefix('phase')->name('phase')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::PhaseVoir->value);
@@ -191,6 +196,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/{site}', 'update')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.update');
             Route::post('/{site}/soumettre', 'soumettre')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.soumettre');
             Route::post('/{site}/reviser', 'reviser')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.reviser');
+            Route::post('/{site}/demander-revision', 'demanderRevision')->whereNumber('site')->middleware('can:'.Droit::SitesGerer->value)->name('.demander-revision');
+            Route::post('/{site}/refuser-revision', 'refuserRevision')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.refuser-revision');
             Route::post('/{site}/confirmer', 'confirmer')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
             Route::post('/{site}/rejeter', 'rejeter')->whereNumber('site')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
         });

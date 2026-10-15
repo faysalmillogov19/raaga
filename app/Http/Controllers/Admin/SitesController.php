@@ -331,9 +331,39 @@ class SitesController extends Controller
             if ($site->statut !== StatutSite::Confirme) {
                 throw new RegleGestionException(__('admin.sites.regles.revision_confirme'));
             }
-            $site->forceFill(['statut' => StatutSite::Brouillon])->save();
+            $site->forceFill(['statut' => StatutSite::Brouillon, 'revision_demandee_par' => null, 'revision_demandee_le' => null, 'revision_demande_motif' => null])->save();
             $this->journal->ecrire($request->user(), 'site.modification_autorisee', 'Site', $site->id, ['statut' => 'CONFIRME'], ['statut' => 'BROUILLON', 'motif' => $motif]);
         }, 'admin.sites.messages.revision');
+    }
+
+    /** Site validé : le GESTIONNAIRE demande au VALIDATEUR l'autorisation de le modifier (motif obligatoire). */
+    public function demanderRevision(Request $request, Site $site): RedirectResponse
+    {
+        Gate::authorize(Droit::SitesGerer->value);
+        $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
+
+        return $this->executer($site, function () use ($request, $site, $motif) {
+            if ($site->statut !== StatutSite::Confirme) {
+                throw new RegleGestionException(__('admin.sites.regles.revision_confirme'));
+            }
+            $site->forceFill(['revision_demandee_par' => $request->user()->id, 'revision_demandee_le' => now(), 'revision_demande_motif' => $motif])->save();
+            $this->journal->ecrire($request->user(), 'site.modification_demandee', 'Site', $site->id, null, ['motif' => $motif]);
+        }, 'admin.sites.messages.revision_demandee');
+    }
+
+    /** Demande d'autorisation refusée par le VALIDATEUR (motif obligatoire) : le site reste validé. */
+    public function refuserRevision(Request $request, Site $site): RedirectResponse
+    {
+        Gate::authorize(Droit::SitesConfirmer->value);
+        $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
+
+        return $this->executer($site, function () use ($request, $site, $motif) {
+            if ($site->revision_demandee_le === null) {
+                throw new RegleGestionException(__('admin.sites.regles.aucune_demande'));
+            }
+            $site->forceFill(['revision_demandee_par' => null, 'revision_demandee_le' => null, 'revision_demande_motif' => null])->save();
+            $this->journal->ecrire($request->user(), 'site.modification_refusee', 'Site', $site->id, null, ['motif' => $motif]);
+        }, 'admin.sites.messages.revision_refusee');
     }
 
     /** @return array<string, mixed> */
