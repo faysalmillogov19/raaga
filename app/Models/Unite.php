@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 /**
  * Unité de loyer de la grille tarifaire (au m², à l'unité, redevance…). Saisie par le RÉGULATEUR, validée par le
  * VALIDATEUR, code jamais modifié (voir ReferentielGere). Les lignes de grille tarifaire y renvoient par une clé
- * étrangère sur le code (grille_tarifaire_lignes.unite_loyer → unites.code). Le calcul des montants dépend du mode de
+ * étrangère sur l'identifiant (grille_tarifaire_lignes.unite_id → unites.id). Le calcul des montants dépend du mode de
  * l'unité (App\Enums\UniteLoyer) : seules les unités dont le code correspond à un mode de calcul sont proposées.
  */
 #[Table(name: 'unites')]
@@ -49,26 +49,24 @@ class Unite extends Model
     /** Lignes de grille tarifaire qui utilisent cette unité. */
     public function nombreUtilisations(): int
     {
-        return GrilleTarifaireLigne::query()->where('unite_loyer', $this->code)->count();
+        return GrilleTarifaireLigne::query()->where('unite_id', $this->id)->count();
     }
 
     /**
      * Unités proposées dans la grille tarifaire : validées, actives et associées à un mode de calcul.
      *
-     * @return Collection<string, string> code de l'unité (valeur de la clé étrangère) => libellé
+     * @return Collection<int, string> identifiant de l'unité (valeur de la clé étrangère) => libellé
      */
     public static function pourGrille(): Collection
     {
         return static::query()->utilisables()->orderBy('id')->get()
             ->filter(fn (Unite $u) => $u->calcul() !== null)
-            ->mapWithKeys(fn (Unite $u) => [$u->calcul()->value => $u->libelle]);
+            ->mapWithKeys(fn (Unite $u) => [$u->id => $u->libelle]);
     }
 
-    /** Libellé d'une unité de la grille, lu dans le référentiel ; à défaut, celui du mode de calcul. */
-    public static function libelle(UniteLoyer $unite): string
+    /** Identifiant d'une unité d'après son code (configuration, données de test). */
+    public static function idDuCode(string $code): ?int
     {
-        $libelles = once(fn () => static::query()->pluck('libelle', 'code')->all());
-
-        return $libelles[$unite->value] ?? $unite->label();
+        return static::query()->where('code', mb_strtoupper($code))->value('id');
     }
 }

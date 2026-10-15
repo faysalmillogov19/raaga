@@ -69,7 +69,7 @@ class NiveauxZonesController extends Controller
         $table = (new $classe)->getTable();
         // Boutiques qui portent ce code (niveau, ou bloc pour une zone) ou lignes de grille (unité) : sous-requête, triable.
         $compte = $unites
-            ? GrilleTarifaireLigne::query()->selectRaw('count(*)')->whereColumn('grille_tarifaire_lignes.unite_loyer', $table.'.code')
+            ? GrilleTarifaireLigne::query()->selectRaw('count(*)')->whereColumn('grille_tarifaire_lignes.unite_id', $table.'.id')
             : Boutique::query()->selectRaw('count(*)')->whereColumn($niveaux ? 'niveau' : 'bloc', $table.'.code');
         $statut = fn (Model $e) => new HtmlString(BadgeStatut::html($e->statut)->toHtml().($e->actif ? '' : ' '.BadgeStatut::html($z['desactive'])->toHtml()));
 

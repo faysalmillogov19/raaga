@@ -6,6 +6,7 @@ use App\Enums\StatutGrilleTarifaire;
 use App\Models\GrilleTarifaire;
 use App\Models\Site;
 use App\Models\TypeBoutique;
+use App\Models\Unite;
 
 /** Grille tarifaire saisie par le RÉGULATEUR puis confirmée par le VALIDATEUR (circuit réel, par HTTP). */
 trait GrillesTarifaires
@@ -21,7 +22,7 @@ trait GrillesTarifaires
             foreach ($parType as $typeId => $ligne) {
                 [$loyer, $caution, $avance] = $ligne;
                 $unite = $ligne[3] ?? config('raaga.grille_tarifaire.unite_par_type')[TypeBoutique::query()->whereKey($typeId)->value('code')] ?? 'M2';
-                $saisie[$niveau][$typeId] = ['unite_loyer' => $unite, 'loyer_m2' => $loyer, 'mois_caution' => $caution, 'mois_avance' => $avance];
+                $saisie[$niveau][$typeId] = ['unite_id' => Unite::idDuCode($unite), 'loyer_m2' => $loyer, 'mois_caution' => $caution, 'mois_avance' => $avance];
             }
         }
         if ($site->grilleTarifaire()->where('statut', StatutGrilleTarifaire::Confirme)->exists()) {

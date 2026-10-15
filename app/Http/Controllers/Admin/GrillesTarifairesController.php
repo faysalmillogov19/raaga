@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutGrilleTarifaire;
-use App\Enums\UniteLoyer;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
 use App\Models\GrilleTarifaire;
@@ -58,7 +57,7 @@ class GrillesTarifairesController extends Controller
             'site' => $site,
             'grille' => $grille,
             'combinaisons' => $this->combinaisons($site),
-            'lignes' => $grille?->lignes()->get()->keyBy(fn ($l) => GrilleTarifaire::cle($l->niveau, $l->type_boutique_id)) ?? collect(),
+            'lignes' => $grille?->lignes()->with('unite')->get()->keyBy(fn ($l) => GrilleTarifaire::cle($l->niveau, $l->type_boutique_id)) ?? collect(),
             'confirmee' => $grille?->confirmee(),
             'versions' => $versions->reverse()->values(),
             'decisions' => $grille ? ParametrageDecision::query()->where('objet_type', $grille->typeParametrage())->where('objet_id', $grille->id)
@@ -80,7 +79,7 @@ class GrillesTarifairesController extends Controller
             'site' => $site,
             'combinaisons' => $this->combinaisons($site),
             'unitesGrille' => Unite::pourGrille(),
-            'lignes' => $grille?->lignes()->get()->keyBy(fn ($l) => GrilleTarifaire::cle($l->niveau, $l->type_boutique_id)) ?? collect(),
+            'lignes' => $grille?->lignes()->with('unite')->get()->keyBy(fn ($l) => GrilleTarifaire::cle($l->niveau, $l->type_boutique_id)) ?? collect(),
         ]);
     }
 
@@ -88,13 +87,13 @@ class GrillesTarifairesController extends Controller
     {
         Gate::authorize(Droit::BoutiquesSaisir->value);
         $combinaisons = $this->combinaisons($site);
-        $unites = [...Unite::pourGrille()->keys(), ...($site->grilleTarifaire?->lignes()->pluck('unite_loyer')->map(fn ($u) => $u->value) ?? [])];
+        $unites = [...Unite::pourGrille()->keys(), ...($site->grilleTarifaire?->lignes()->pluck('unite_id') ?? [])];
         $regles = [];
         foreach ($combinaisons as $c) {
             $p = 'lignes.'.$c['niveau']->code.'.'.$c['type']->id;
             $regles[$p.'.loyer_m2'] = ['nullable', 'integer', 'min:1', 'max:100000000'];
             // Unités du référentiel « Unités » (validées, actives, avec un mode de calcul) ; l'unité déjà enregistrée reste admise.
-            $regles[$p.'.unite_loyer'] = ['required_with:'.$p.'.loyer_m2', 'nullable', Rule::enum(UniteLoyer::class), Rule::in($unites)];
+            $regles[$p.'.unite_id'] = ['required_with:'.$p.'.loyer_m2', 'nullable', 'integer', Rule::in($unites)];
             $regles[$p.'.mois_caution'] = ['required_with:'.$p.'.loyer_m2', 'nullable', 'integer', 'min:0', 'max:240'];
             $regles[$p.'.mois_avance'] = ['required_with:'.$p.'.loyer_m2', 'nullable', 'integer', 'min:0', 'max:240'];
         }
@@ -115,7 +114,7 @@ class GrillesTarifairesController extends Controller
                         continue; // Pas de loyer : pas de ligne (les boutiques concernées ne pourront pas entrer en campagne).
                     }
                     $grille->lignes()->create([
-                        'niveau' => $c['niveau']->code, 'type_boutique_id' => $c['type']->id, 'unite_loyer' => $saisie['unite_loyer'], 'loyer_m2' => (int) $saisie['loyer_m2'],
+                        'niveau' => $c['niveau']->code, 'type_boutique_id' => $c['type']->id, 'unite_id' => (int) $saisie['unite_id'], 'loyer_m2' => (int) $saisie['loyer_m2'],
                         'mois_caution' => (int) $saisie['mois_caution'], 'mois_avance' => (int) $saisie['mois_avance'],
                     ]);
                 }

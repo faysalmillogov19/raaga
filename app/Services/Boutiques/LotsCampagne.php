@@ -108,7 +108,7 @@ class LotsCampagne
         // Instantanés antérieurs à la clé étrangère : « m2 » en minuscules, lu comme « M2 ».
         $unite = UniteLoyer::depuis($ligne['unite_loyer'] ?? null)
             ?? GrilleTarifaireLigne::query()->whereHas('grille', fn ($q) => $q->where('site_id', $lot->site_id))
-                ->where('niveau', $lot->niveau)->where('type_boutique_id', $lot->type_boutique_id)->first()?->unite_loyer
+                ->where('niveau', $lot->niveau)->where('type_boutique_id', $lot->type_boutique_id)->first()?->modeCalcul()
             ?? UniteLoyer::M2;
 
         return [
