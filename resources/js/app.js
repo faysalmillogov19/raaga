@@ -348,6 +348,50 @@ const envoyer = (url, donnees = {}) => fetch(url, {
     body: JSON.stringify(donnees),
 });
 
+/*
+ * Menu dépliant de la barre latérale (<x-admin.menu-deroulant>) : déplié ou replié (état mémorisé pour l'utilisateur) ;
+ * barre réduite en icônes : panneau flottant au survol ou au clic, placé à la hauteur du bouton.
+ */
+Alpine.data('menuDeroulant', ({ deplie = false, cle = '', url = '' } = {}) => ({
+    deplie,
+    flottant: false,
+    haut: 0,
+    minuterie: null,
+    replie() {
+        return this.$root.closest('.adm-ferme') !== null && window.matchMedia('(min-width: 1024px)').matches;
+    },
+    positionner() {
+        this.haut = Math.round(this.$refs.bouton.getBoundingClientRect().top);
+    },
+    basculer() {
+        if (this.replie()) {
+            this.positionner();
+            this.flottant = !this.flottant;
+            return;
+        }
+        this.deplie = !this.deplie;
+        envoyer(url, { menu: cle, ouvert: this.deplie }).catch(() => {
+            // Sans réseau, l'état n'est simplement pas mémorisé.
+        });
+    },
+    survol() {
+        if (this.replie()) {
+            this.garder();
+            this.positionner();
+            this.flottant = true;
+        }
+    },
+    garder() {
+        clearTimeout(this.minuterie);
+    },
+    fermerBientot() {
+        clearTimeout(this.minuterie);
+        this.minuterie = setTimeout(() => {
+            this.flottant = false;
+        }, 200);
+    },
+}));
+
 Alpine.data('cadreAdmin', ({ theme = 'clair', urlTheme = '', urlLues = '' } = {}) => ({
     theme,
     ouvert: true,

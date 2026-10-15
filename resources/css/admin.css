@@ -203,6 +203,66 @@ body.adm {
     font-weight: 700;
 }
 
+/* Icônes du menu : visibles seulement quand la barre latérale est réduite en icônes. */
+.adm-nav .adm-icone-menu {
+    display: none;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* Menu dépliant (<x-admin.menu-deroulant>) : bouton, flèche qui pivote, sous-menus en retrait, hauteur animée. */
+.adm-nav .adm-deroulant-bouton {
+    font: inherit;
+    width: 100%;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+
+.adm-chevron {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-left: auto;
+    transition: transform .2s ease;
+}
+
+.adm-compteur + .adm-chevron {
+    margin-left: 6px;
+}
+
+.adm-deroulant-bouton[aria-expanded="true"] .adm-chevron {
+    transform: rotate(90deg);
+}
+
+.adm-deroulant-corps {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows .2s ease;
+}
+
+.adm-deroulant-corps.est-deplie {
+    grid-template-rows: 1fr;
+}
+
+.adm-nav .adm-deroulant-liste {
+    min-height: 0;
+    overflow: hidden;
+    padding-left: 14px;
+}
+
+.adm-nav .adm-sous-lien {
+    font-size: 13.5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adm-chevron,
+    .adm-deroulant-corps {
+        transition: none;
+    }
+}
+
 .adm-compteur {
     display: inline-flex;
     min-width: 20px;
@@ -1240,4 +1300,110 @@ html.adm-fenetre-ouverte body {
     }
 
     .adm-fenetre-grille { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ------------------------------------------------------------------ Barre latérale réduite en icônes (ordinateur) */
+
+@media (min-width: 1024px) {
+    .adm-cadre.adm-ferme {
+        grid-template-columns: 64px minmax(0, 1fr);
+    }
+
+    /* Au-dessus du contenu, pour le panneau flottant des menus dépliants. */
+    .adm-ferme .adm-lateral {
+        z-index: 50;
+        display: flex;
+    }
+
+    .adm-ferme .adm-marque {
+        justify-content: center;
+        padding: 16px 0 12px;
+    }
+
+    .adm-ferme .adm-marque > span:last-child,
+    .adm-ferme .adm-version {
+        display: none;
+    }
+
+    .adm-ferme .adm-groupe {
+        height: 1px;
+        margin: 10px 8px;
+        overflow: hidden;
+        background: var(--side-border);
+        color: transparent;
+    }
+
+    .adm-ferme .adm-nav .adm-icone-menu {
+        display: inline-block;
+    }
+
+    /* Libellés gardés pour les lecteurs d'écran ; l'infobulle (title) les montre au survol. */
+    .adm-ferme .adm-nav .adm-libelle {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    .adm-ferme .adm-nav .bo-lien {
+        position: relative;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .adm-ferme .adm-nav .adm-compteur {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        font-size: 10px;
+    }
+
+    .adm-ferme .adm-chevron {
+        display: none;
+    }
+
+    .adm-ferme .adm-deroulant-corps {
+        display: none;
+    }
+
+    /* Panneau flottant : à droite de la barre, à la hauteur du bouton. */
+    .adm-ferme .adm-deroulant-corps.est-flottant {
+        position: fixed;
+        left: 60px;
+        z-index: 60;
+        display: block;
+        min-width: 220px;
+        padding: 6px;
+        border: 1px solid var(--side-border);
+        border-radius: 10px;
+        background: var(--side);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+    }
+
+    .adm-ferme .adm-deroulant-corps.est-flottant .adm-deroulant-liste {
+        padding-left: 0;
+    }
+
+    .adm-ferme .adm-deroulant-corps.est-flottant .bo-lien {
+        justify-content: flex-start;
+        padding: 0 10px;
+    }
+
+    .adm-ferme .adm-deroulant-corps.est-flottant .adm-libelle {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+    }
+
+    .adm-ferme .adm-deroulant-corps.est-flottant .adm-compteur {
+        position: static;
+        margin-left: auto;
+    }
 }

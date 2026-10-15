@@ -140,7 +140,7 @@ class GrilleTarifaire extends Model implements Parametrable
 
         return [
             'grille' => $lignes->map(fn (GrilleTarifaireLigne $l) => __('admin.grilles.resume_ligne', [
-                'niveau' => $l->libelleNiveau(), 'type' => $l->type->libelle, 'loyer' => format_fcfa($l->loyer_m2), 'unite' => $l->unite_loyer->label(),
+                'niveau' => $l->libelleNiveau(), 'type' => $l->type->libelle, 'loyer' => format_fcfa($l->loyer_m2), 'unite' => Unite::libelle($l->unite_loyer),
                 'caution' => $l->mois_caution, 'avance' => $l->mois_avance,
             ]))->implode(' ; '),
             'lignes' => $lignes->mapWithKeys(fn (GrilleTarifaireLigne $l) => [self::cle($l->niveau, $l->type_boutique_id) => [

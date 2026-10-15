@@ -50,6 +50,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'menus_backoffice' => 'array',
             'password' => 'hashed',
             'date_naissance' => 'date',
             'statut_kyc' => StatutKyc::class,

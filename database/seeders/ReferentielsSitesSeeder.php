@@ -15,6 +15,6 @@ class ReferentielsSitesSeeder extends Seeder
 
     public function run(): void
     {
-        $this->call([NiveauxSeeder::class, ZonesSeeder::class, TypesBoutiqueSeeder::class]);
+        $this->call([NiveauxSeeder::class, ZonesSeeder::class, TypesBoutiqueSeeder::class, UnitesSeeder::class]);
     }
 }

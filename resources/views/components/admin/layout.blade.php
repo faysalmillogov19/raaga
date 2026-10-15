@@ -55,14 +55,22 @@
                 @foreach ($menu as $groupe => $entrees)
                     <p class="adm-groupe">{{ __('admin.groupes.'.$groupe) }}</p>
                     <ul>
-                        @foreach ($entrees as $entree)
+                        @foreach (MenuBackoffice::regrouper($entrees) as $element)
+                            @if ($element['type'] === 'menu')
+                                {{-- Menu dépliant (par exemple « Référentiels ») : ses sous-menus, ouvert sur l'un d'eux. --}}
+                                <x-admin.menu-deroulant :cle="$element['cle']" :libelle="__('admin.menus_deroulants.'.$element['cle'])" :entrees="$element['entrees']"
+                                                        :badges="$badges" :ouvert="MenuBackoffice::menuOuvert($user, $element['cle'], $element['entrees'])" />
+                                @continue
+                            @endif
                             @php
+                                $entree = $element['entree'];
                                 $actif = MenuBackoffice::estActive($entree);
                                 $n = $badges[$entree['cle']] ?? 0;
                             @endphp
                             <li>
-                                <a href="{{ route($entree['route']) }}" @class(['bo-lien', 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif>
-                                    <span>{{ __('admin.menu.'.$entree['cle']) }}</span>
+                                <a href="{{ route($entree['route']) }}" @class(['bo-lien', 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif title="{{ __('admin.menu.'.$entree['cle']) }}">
+                                    <x-icon :name="$entree['icone']" class="adm-icone-menu" />
+                                    <span class="adm-libelle">{{ __('admin.menu.'.$entree['cle']) }}</span>
                                     @if ($n)
                                         <span class="adm-compteur">{{ $n }}<span class="sr-only"> {{ trans_choice('admin.a_traiter', $n, ['n' => $n]) }}</span></span>
                                     @endif

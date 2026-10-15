@@ -13,6 +13,7 @@ use App\Models\GrilleTarifaire;
 use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
+use App\Models\Unite;
 use App\Models\User;
 use App\Models\ZoneSite;
 
@@ -41,20 +42,23 @@ final class MenuBackoffice
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
                 ['cle' => 'simulations', 'route' => 'admin.simulations', 'droit' => Droit::SimulationsVoir, 'icone' => 'simulations', 'etape' => 4, 'masque_si' => $parametres],
             ],
-            // Référencement des sites et des boutiques (GESTIONNAIRE DES SITES ET BOUTIQUES, RÉGULATEUR pour la grille).
+            // Référencement des sites et des boutiques (GESTIONNAIRE DES SITES ET BOUTIQUES, RÉGULATEUR pour la grille), puis le
+            // menu dépliant « Référentiels » (entrées marquées « sous_menu ») : types, niveaux, zones, unités.
             'referencement' => [
                 ['cle' => 'sites', 'route' => 'admin.sites', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
                     'exclure' => ['admin.sites.types', 'admin.sites.types.*', 'admin.sites.excel.*', 'admin.sites.boutiques-excel.*']],
-                ['cle' => 'types', 'route' => 'admin.sites.types', 'droit' => Droit::SitesVoir, 'icone' => 'referentiels', 'etape' => 0],
-                ['cle' => 'niveaux', 'route' => 'admin.referencement.niveaux', 'droit' => Droit::SitesVoir, 'icone' => 'tranches', 'etape' => 0,
-                    'inclure' => ['admin.referencement.zones.*'], 'liste' => 'niveaux'],
-                ['cle' => 'zones', 'route' => 'admin.referencement.zones', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
-                    'exclure' => ['admin.referencement.zones.*'], 'inclure' => ['admin.referencement.zones.*'], 'liste' => 'zones'],
                 ['cle' => 'boutiques_referentiel', 'route' => 'admin.referencement.boutiques', 'droit' => Droit::SitesVoir, 'icone' => 'boutiques', 'etape' => 0],
                 ['cle' => 'capacites', 'route' => 'admin.referencement.capacites', 'droit' => Droit::SitesVoir, 'icone' => 'simulations', 'etape' => 0],
                 ['cle' => 'grille', 'route' => 'admin.boutiques.grilles', 'droit' => Droit::GrilleVoir, 'icone' => 'dividendes', 'etape' => 0],
                 ['cle' => 'imports', 'route' => 'admin.referencement.imports', 'droit' => Droit::ImportsVoir, 'icone' => 'registre', 'etape' => 0,
                     'inclure' => ['admin.sites.excel.*', 'admin.sites.boutiques-excel.*']],
+                ['cle' => 'types', 'route' => 'admin.sites.types', 'droit' => Droit::SitesVoir, 'icone' => 'referentiels', 'etape' => 0, 'sous_menu' => 'referentiels'],
+                ['cle' => 'niveaux', 'route' => 'admin.referencement.niveaux', 'droit' => Droit::SitesVoir, 'icone' => 'tranches', 'etape' => 0,
+                    'liste' => 'niveaux', 'sous_menu' => 'referentiels'],
+                ['cle' => 'zones', 'route' => 'admin.referencement.zones', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
+                    'exclure' => ['admin.referencement.zones.*'], 'liste' => 'zones', 'sous_menu' => 'referentiels'],
+                ['cle' => 'unites', 'route' => 'admin.referencement.unites', 'droit' => Droit::UnitesVoir, 'icone' => 'tableau', 'etape' => 0,
+                    'liste' => 'unites', 'sous_menu' => 'referentiels'],
             ],
             'support' => [
                 ['cle' => 'assistance', 'route' => 'admin.assistance', 'droit' => Droit::AssistanceVoir, 'icone' => 'assistance', 'etape' => 1, 'module' => 'admin'],
@@ -107,6 +111,44 @@ final class MenuBackoffice
         ));
     }
 
+    /**
+     * Entrées d'un groupe regroupées pour l'affichage : une entrée seule, ou un menu dépliant (« sous_menu ») qui
+     * réunit ses sous-entrées à la place de la première d'entre elles.
+     *
+     * @param  list<array<string, mixed>>  $entrees
+     * @return list<array{type: string, entree?: array, cle?: string, entrees?: list<array>}>
+     */
+    public static function regrouper(array $entrees): array
+    {
+        $elements = [];
+        $positions = [];
+        foreach ($entrees as $entree) {
+            $menu = $entree['sous_menu'] ?? null;
+            if ($menu === null) {
+                $elements[] = ['type' => 'entree', 'entree' => $entree];
+
+                continue;
+            }
+            if (! isset($positions[$menu])) {
+                $positions[$menu] = count($elements);
+                $elements[] = ['type' => 'menu', 'cle' => $menu, 'entrees' => []];
+            }
+            $elements[$positions[$menu]]['entrees'][] = $entree;
+        }
+
+        return $elements;
+    }
+
+    /** Menu dépliant ouvert : page affichée dans le menu, sinon dernier état mémorisé pour l'utilisateur. */
+    public static function menuOuvert(User $user, string $menu, array $entrees): bool
+    {
+        if (collect($entrees)->contains(fn (array $e) => self::estActive($e))) {
+            return true;
+        }
+
+        return (bool) (($user->menus_backoffice ?? [])[$menu] ?? false);
+    }
+
     /** L'entrée est-elle celle de la page affichée ? (route et sous-routes, moins les exclusions, plus les inclusions) */
     public static function estActive(array $entree): bool
     {
@@ -149,6 +191,12 @@ final class MenuBackoffice
             'zones' => match (true) {
                 $valide => ZoneSite::query()->where('statut', StatutTypeBoutique::AValider)->count(),
                 $gere => ZoneSite::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
+                default => 0,
+            },
+            // VALIDATEUR : unités à valider ; RÉGULATEUR : unités rejetées à corriger.
+            'unites' => match (true) {
+                $user->can(Droit::UnitesConfirmer->value) => Unite::query()->where('statut', StatutTypeBoutique::AValider)->count(),
+                $user->can(Droit::UnitesGerer->value) => Unite::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
             // GESTIONNAIRE : boutiques sans niveau (à compléter avant soumission) et capacités incomplètes.

@@ -66,6 +66,11 @@ enum Droit: string
     case SitesGerer = 'sites.gerer';
     case SitesConfirmer = 'sites.confirmer';
 
+    // Unités de loyer (référentiel de la grille tarifaire) : RÉGULATEUR saisit, VALIDATEUR confirme.
+    case UnitesVoir = 'unites.voir';
+    case UnitesGerer = 'unites.gerer';
+    case UnitesConfirmer = 'unites.confirmer';
+
     // Référencement : grille tarifaire en lecture (la saisie et la confirmation suivent les droits des campagnes),
     // journal des imports (sites et boutiques).
     case GrilleVoir = 'grille.voir';
@@ -138,7 +143,7 @@ enum Droit: string
             self::UtilisateursGerer, self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
             self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
-            self::SitesGerer, self::SitesConfirmer,
+            self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter,
@@ -154,7 +159,7 @@ enum Droit: string
      */
     public static function saisies(): array
     {
-        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir, self::BoutiquesSaisir, self::SitesGerer];
+        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir, self::BoutiquesSaisir, self::SitesGerer, self::UnitesGerer];
     }
 
     /**
@@ -165,7 +170,7 @@ enum Droit: string
     public static function confirmationsEtExecutions(): array
     {
         return [self::TranchesConfirmer, self::TranchesPiloter, self::DividendesConfirmer, self::DividendesPayer, self::AllocationExecuter,
-            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::SitesConfirmer];
+            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::SitesConfirmer, self::UnitesConfirmer];
     }
 
     /**
@@ -197,7 +202,7 @@ enum Droit: string
             self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
             self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
-            self::SitesGerer, self::SitesConfirmer,
+            self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter,
@@ -227,7 +232,7 @@ enum Droit: string
                 self::PhaseVoir, self::PhaseProposer,
                 self::AuditVoir,
                 self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
-                self::SitesVoir, self::GrilleVoir, self::ImportsVoir,
+                self::SitesVoir, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir,
             ],
             // Support et assistance uniquement.
             Role::Admin => self::support(),
@@ -238,7 +243,7 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
                 self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
-                self::SitesVoir, self::SitesConfirmer, self::GrilleVoir, self::ImportsVoir,
+                self::SitesVoir, self::SitesConfirmer, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir, self::UnitesConfirmer,
                 self::DividendesVoir, self::DividendesConfirmer, self::DividendesPayer,
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
                 self::KycVoir, self::KycVoirPieces, self::KycTraiter,
@@ -257,14 +262,14 @@ enum Droit: string
             // Référentiel des sites et des boutiques uniquement : saisie et soumission, jamais de confirmation.
             Role::GestionnaireSites => [
                 self::TableauDeBordVoir,
-                self::SitesVoir, self::SitesGerer, self::ImportsVoir,
+                self::SitesVoir, self::SitesGerer, self::ImportsVoir, self::UnitesVoir,
             ],
             Role::Regulateur => [
                 self::TableauDeBordVoir,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
                 self::BoutiquesVoir, self::BoutiquesSaisir,
-                self::SitesVoir, self::GrilleVoir,
+                self::SitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer,
                 self::DividendesVoir, self::DividendesSaisir,
                 self::SimulationsVoir, self::SimulationsLancer,
                 self::KycVoir,

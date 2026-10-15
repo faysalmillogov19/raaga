@@ -1,10 +1,11 @@
 @php
-    use App\Enums\Droit;
     use App\Enums\StatutTypeBoutique;
+    use App\Http\Controllers\Admin\NiveauxZonesController;
 
     $z = __('admin.zones');
     $niveaux = $liste === 'niveaux';
-    $gerer = auth()->user()->can(Droit::SitesGerer->value);
+    $unites = $liste === 'unites';
+    $gerer = auth()->user()->can(NiveauxZonesController::droit($liste, 'gerer')->value);
     $titre = $element->code.' · '.$element->libelle;
     $supprimable = ! $element->par_defaut && $utilisations === 0;
 @endphp
@@ -20,7 +21,7 @@
         @endif
 
         <div class="mt-4 flex flex-wrap gap-3">
-            @can(Droit::SitesConfirmer->value)
+            @can(NiveauxZonesController::droit($liste, 'confirmer')->value)
                 @if ($element->statut === StatutTypeBoutique::AValider)
                     <x-admin.confirmation id="confirmer" :titre="$z['confirmer']" :message="$z['confirmer_message']"
                                           :action="route('admin.referencement.zones.confirmer', [$liste, $element->id])" :bouton="$z['confirmer']">
@@ -42,7 +43,9 @@
                         @if ($niveaux)
                             <x-admin.champ nom="rang" :libelle="$z['colonnes']['rang']" :valeur="$element->rang" type="number" min="-9" max="99" required :aide="$z['rang_aide']" />
                         @else
-                            <x-admin.champ nom="ordre" :libelle="$z['colonnes']['ordre']" :valeur="$element->ordre" type="number" min="0" max="9999" />
+                            @unless ($unites)
+                                <x-admin.champ nom="ordre" :libelle="$z['colonnes']['ordre']" :valeur="$element->ordre" type="number" min="0" max="9999" />
+                            @endunless
                             <x-admin.champ nom="description" :libelle="$z['colonnes']['description']" :valeur="$element->description" maxlength="300" class="adm-plein" />
                         @endif
                     </div>
@@ -70,7 +73,7 @@
         <dl class="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-4">
             <div><dt class="texte-carte">{{ $z['colonnes']['code'] }}</dt><dd class="font-mono font-semibold">{{ $element->code }}</dd></div>
             <div><dt class="texte-carte">{{ $z['colonnes']['libelle'] }}</dt><dd class="font-semibold">{{ $element->libelle }}</dd></div>
-            <div><dt class="texte-carte">{{ $z['colonnes'][$niveaux ? 'rang' : 'ordre'] }}</dt><dd class="font-semibold">{{ $niveaux ? $element->rang : $element->ordre }}</dd></div>
+            @unless ($unites)<div><dt class="texte-carte">{{ $z['colonnes'][$niveaux ? 'rang' : 'ordre'] }}</dt><dd class="font-semibold">{{ $niveaux ? $element->rang : $element->ordre }}</dd></div>@endunless
             @unless ($niveaux)<div><dt class="texte-carte">{{ $z['colonnes']['description'] }}</dt><dd class="font-semibold">{{ $element->description ?? '—' }}</dd></div>@endunless
         </dl>
     </section>

@@ -30,6 +30,16 @@ class CadreController extends Controller
         return $request->expectsJson() ? response()->json(['theme' => $theme]) : back()->with('succes', __('admin.cadre.theme_enregistre'));
     }
 
+    /** Menu dépliant de la barre latérale ouvert ou fermé : mémorisé pour l'utilisateur. */
+    public function menu(Request $request): JsonResponse
+    {
+        $donnees = $request->validate(['menu' => ['required', 'string', 'in:referentiels'], 'ouvert' => ['required', 'boolean']]);
+        $user = $request->user();
+        $user->forceFill(['menus_backoffice' => [...($user->menus_backoffice ?? []), $donnees['menu'] => (bool) $donnees['ouvert']]])->save();
+
+        return response()->json(['ouvert' => (bool) $donnees['ouvert']]);
+    }
+
     public function notificationsLues(Request $request): JsonResponse|RedirectResponse
     {
         $request->user()->unreadNotifications->markAsRead();

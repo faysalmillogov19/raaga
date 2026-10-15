@@ -65,7 +65,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         }
         $nouveau = match (true) {
             $chemin === '' => 'referencement/sites',
-            str_starts_with($chemin, 'types') => 'referencement/'.$chemin,
+            str_starts_with($chemin, 'types') => 'referencement/referentiels/'.$chemin,
             str_starts_with($chemin, 'excel/boutiques') => 'referencement/imports/boutiques'.substr($chemin, strlen('excel/boutiques')),
             str_starts_with($chemin, 'excel') => 'referencement/imports/sites'.substr($chemin, strlen('excel')),
             default => 'referencement/sites/'.$chemin,
@@ -86,6 +86,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Barre du haut : thème mémorisé par utilisateur, notifications, recherche globale.
         Route::post('/preferences/theme', [CadreController::class, 'theme'])->name('preferences.theme');
+        Route::post('/preferences/menu', [CadreController::class, 'menu'])->name('preferences.menu');
         Route::post('/notifications/lues', [CadreController::class, 'notificationsLues'])->name('notifications.lues');
         Route::get('/recherche', [CadreController::class, 'recherche'])->name('recherche');
         // Décisions de phase du site public : le SUPER_ADMIN propose, le VALIDATEUR confirme ou rejette.
@@ -106,20 +107,26 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Référencement : niveaux et zones, boutiques de tous les sites, capacités prévues, imports.
         Route::prefix('referencement')->name('referencement.')->group(function () {
-            // Niveaux et zones : deux onglets, une fiche par élément ; mêmes actions pour les deux listes.
-            Route::controller(NiveauxZonesController::class)->group(function () {
+            // Référentiels (menu dépliant) : niveaux, zones et unités, une fiche par élément ; mêmes actions pour les
+            // trois listes, droits vérifiés par liste dans le contrôleur. Types de boutiques : plus bas.
+            Route::controller(NiveauxZonesController::class)->prefix('referentiels')->group(function () {
                 Route::get('/niveaux', 'index')->defaults('liste', 'niveaux')->middleware('can:'.Droit::SitesVoir->value)->name('niveaux');
                 Route::get('/zones', 'index')->defaults('liste', 'zones')->middleware('can:'.Droit::SitesVoir->value)->name('zones');
-                Route::permanentRedirect('/niveaux-zones', '/admin/referencement/niveaux')->name('niveaux-zones'); // Ancienne adresse (un seul onglet).
-                Route::get('/{liste}/{id}', 'show')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesVoir->value)->name('zones.show');
-                Route::post('/{liste}', 'store')->whereIn('liste', ['niveaux', 'zones'])->middleware('can:'.Droit::SitesGerer->value)->name('zones.store');
-                Route::put('/{liste}/{id}', 'update')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('zones.update');
-                Route::post('/{liste}/{id}/activer', 'activer')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('zones.activer');
-                Route::post('/{liste}/{id}/desactiver', 'desactiver')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('zones.desactiver');
-                Route::delete('/{liste}/{id}', 'destroy')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesGerer->value)->name('zones.destroy');
-                Route::post('/{liste}/{id}/confirmer', 'confirmer')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('zones.confirmer');
-                Route::post('/{liste}/{id}/rejeter', 'rejeter')->whereIn('liste', ['niveaux', 'zones'])->whereNumber('id')->middleware('can:'.Droit::SitesConfirmer->value)->name('zones.rejeter');
+                Route::get('/unites', 'index')->defaults('liste', 'unites')->middleware('can:'.Droit::UnitesVoir->value)->name('unites');
+                Route::get('/{liste}/{id}', 'show')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.show');
+                Route::post('/{liste}', 'store')->whereIn('liste', ['niveaux', 'zones', 'unites'])->name('zones.store');
+                Route::put('/{liste}/{id}', 'update')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.update');
+                Route::post('/{liste}/{id}/activer', 'activer')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.activer');
+                Route::post('/{liste}/{id}/desactiver', 'desactiver')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.desactiver');
+                Route::delete('/{liste}/{id}', 'destroy')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.destroy');
+                Route::post('/{liste}/{id}/confirmer', 'confirmer')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.confirmer');
+                Route::post('/{liste}/{id}/rejeter', 'rejeter')->whereIn('liste', ['niveaux', 'zones', 'unites'])->whereNumber('id')->name('zones.rejeter');
             });
+            // Anciennes adresses (avant le menu « Référentiels ») : redirection permanente.
+            Route::permanentRedirect('/niveaux-zones', '/admin/referencement/referentiels/niveaux')->name('niveaux-zones');
+            Route::get('/{ancien}/{chemin?}', fn (string $ancien, ?string $chemin = null) => redirect(url('admin/referencement/referentiels/'.$ancien.($chemin ? '/'.$chemin : ''))
+                .(request()->getQueryString() ? '?'.request()->getQueryString() : ''), 301))
+                ->whereIn('ancien', ['niveaux', 'zones', 'types'])->where('chemin', '.*')->name('anciennes-adresses');
             // Boutiques : ajout (site choisi d'abord), fiche, Excel ; seulement sur un site en brouillon ou en révision (sauf export).
             Route::prefix('boutiques')->name('boutiques.')->middleware('can:'.Droit::SitesGerer->value)->group(function () {
                 Route::get('/ajouter', fn () => redirect()->route('admin.referencement.boutiques', ['ajouter' => 1, 'site' => request('site')]))->name('ajouter.ecran');
@@ -158,7 +165,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Types de boutiques : GESTIONNAIRE DES SITES ET BOUTIQUES gère, VALIDATEUR valide, autres profils en lecture.
-        Route::controller(TypesBoutiqueController::class)->prefix('referencement/types')->name('sites.types')->group(function () {
+        Route::controller(TypesBoutiqueController::class)->prefix('referencement/referentiels/types')->name('sites.types')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
             Route::post('/', 'store')->middleware('can:'.Droit::SitesGerer->value)->name('.store');
             Route::get('/{type}', 'show')->whereNumber('type')->middleware('can:'.Droit::SitesVoir->value)->name('.show');

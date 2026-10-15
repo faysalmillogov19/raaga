@@ -40,8 +40,10 @@
                             <td class="montant">{{ format_nombre($c['nombre']) }}</td>
                             <td><label for="{{ $id }}-unite" class="sr-only">{{ $g['unite'] }} — {{ $c['niveau']->label() }}, {{ $c['type']->libelle }}</label>
                                 <select id="{{ $id }}-unite" name="{{ $nom }}[unite_loyer]" class="champ !w-36 @error($cle.'.unite_loyer') est-invalide @enderror">
-                                    @foreach (\App\Enums\UniteLoyer::cases() as $unite)
-                                        <option value="{{ $unite->value }}" @selected(old($cle.'.unite_loyer', $ligne?->unite_loyer?->value ?? $propose['unite_loyer']) === $unite->value)>{{ $unite->label() }}</option>
+                                    {{-- Unités lues dans le référentiel « Unités » (validées et actives) ; l'unité déjà enregistrée reste proposée. --}}
+                                    @php($choisie = old($cle.'.unite_loyer', $ligne?->unite_loyer?->value ?? $propose['unite_loyer']))
+                                    @foreach ($unitesGrille->union($ligne?->unite_loyer ? [$ligne->unite_loyer->value => \App\Models\Unite::libelle($ligne->unite_loyer)] : []) as $valeur => $libelleUnite)
+                                        <option value="{{ $valeur }}" @selected($choisie === $valeur)>{{ $libelleUnite }}</option>
                                     @endforeach
                                 </select></td>
                             <td><label for="{{ $id }}-loyer" class="sr-only">{{ $g['loyer_m2'] }} — {{ $c['niveau']->label() }}, {{ $c['type']->libelle }}</label>

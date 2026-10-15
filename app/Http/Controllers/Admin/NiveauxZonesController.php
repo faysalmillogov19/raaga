@@ -6,7 +6,9 @@ use App\Enums\Droit;
 use App\Enums\StatutTypeBoutique;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
+use App\Models\GrilleTarifaireLigne;
 use App\Models\Niveau;
+use App\Models\Unite;
 use App\Models\ZoneSite;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
@@ -28,27 +30,47 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Niveaux et zones : deux onglets (tableau filtrable, une fiche par élément), gérés comme les types de boutiques.
- * GESTIONNAIRE DES SITES ET BOUTIQUES : ajoute (soumis au VALIDATEUR), modifie le libellé, la description, le rang ou
- * l'ordre à tout moment, désactive ou réactive, supprime un élément jamais utilisé et non « par défaut ». Code jamais
- * modifié. VALIDATEUR : valide ou rejette. Autres profils : lecture seule. « {liste} » vaut « niveaux » ou « zones ».
+ * Référentiels niveaux, zones et unités de loyer (tableau filtrable, une fiche par élément), gérés comme les types de
+ * boutiques. Auteur (GESTIONNAIRE DES SITES ET BOUTIQUES pour les niveaux et les zones, RÉGULATEUR pour les unités) :
+ * ajoute (soumis au VALIDATEUR), modifie le libellé, la description, le rang ou l'ordre à tout moment, désactive ou
+ * réactive, supprime un élément jamais utilisé et non « par défaut ». Code jamais modifié. VALIDATEUR : valide ou
+ * rejette. Autres profils : lecture seule. « {liste} » vaut « niveaux », « zones » ou « unites ».
  */
 class NiveauxZonesController extends Controller
 {
     /** Liste => modèle. */
-    private const LISTES = ['niveaux' => Niveau::class, 'zones' => ZoneSite::class];
+    private const LISTES = ['niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class];
+
+    /**
+     * Droit requis pour une action sur une liste : voir, gerer (auteur), confirmer (VALIDATEUR).
+     */
+    public static function droit(string $liste, string $action): Droit
+    {
+        return $liste === 'unites'
+            ? ['voir' => Droit::UnitesVoir, 'gerer' => Droit::UnitesGerer, 'confirmer' => Droit::UnitesConfirmer][$action]
+            : ['voir' => Droit::SitesVoir, 'gerer' => Droit::SitesGerer, 'confirmer' => Droit::SitesConfirmer][$action];
+    }
+
+    private function autoriser(string $liste, string $action): void
+    {
+        $this->classe($liste);
+        Gate::authorize(self::droit($liste, $action)->value);
+    }
 
     public function __construct(private readonly Journal $journal) {}
 
     public function index(Request $request, string $liste): Response|StreamedResponse|View
     {
-        Gate::authorize(Droit::SitesVoir->value);
+        $this->autoriser($liste, 'voir');
         $classe = $this->classe($liste);
         $niveaux = $liste === 'niveaux';
+        $unites = $liste === 'unites';
         $z = __('admin.zones');
         $table = (new $classe)->getTable();
-        // Boutiques qui portent ce code (niveau, ou bloc pour une zone) : sous-requête, triable.
-        $compte = Boutique::query()->selectRaw('count(*)')->whereColumn($niveaux ? 'niveau' : 'bloc', $table.'.code');
+        // Boutiques qui portent ce code (niveau, ou bloc pour une zone) ou lignes de grille (unité) : sous-requête, triable.
+        $compte = $unites
+            ? GrilleTarifaireLigne::query()->selectRaw('count(*)')->whereRaw('LOWER(grille_tarifaire_lignes.unite_loyer) = LOWER('.$table.'.code)')
+            : Boutique::query()->selectRaw('count(*)')->whereColumn($niveaux ? 'niveau' : 'bloc', $table.'.code');
         $statut = fn (Model $e) => new HtmlString(BadgeStatut::html($e->statut)->toHtml().($e->actif ? '' : ' '.BadgeStatut::html($z['desactive'])->toHtml()));
 
         return Tableau::pour($classe::query()->select($table.'.*'), $liste)
@@ -56,14 +78,14 @@ class NiveauxZonesController extends Controller
                 Colonne::make('code', $z['colonnes']['code'])->triable()->recherchable()->classe('font-mono font-semibold'),
                 Colonne::make('libelle', $z['colonnes']['libelle'])->triable()->recherchable(),
                 $niveaux ? null : Colonne::make('description', $z['colonnes']['description'])->recherchable(),
-                Colonne::make($niveaux ? 'rang' : 'ordre', $z['colonnes'][$niveaux ? 'rang' : 'ordre'])->numerique()->triable(),
+                $unites ? null : Colonne::make($niveaux ? 'rang' : 'ordre', $z['colonnes'][$niveaux ? 'rang' : 'ordre'])->numerique()->triable(),
                 Colonne::make('statut', $z['colonnes']['statut'])->triable()->valeur($statut)
                     ->texte(fn (Model $e) => $e->statut->label().($e->actif ? '' : ' · '.$z['desactive'])),
                 Colonne::make('par_defaut', $z['colonnes']['par_defaut'])->triable()
                     ->valeur(fn (Model $e) => $e->par_defaut ? new HtmlString(''.BadgeStatut::html($z['par_defaut'], 'info')->toHtml()) : $z['non'])
                     ->texte(fn (Model $e) => $e->par_defaut ? $z['oui'] : $z['non']),
                 Colonne::make('utilise', $z['colonnes']['utilisation'])->numerique()->triable('boutiques_count')->avec(fn ($q) => $q->addSelect(['boutiques_count' => $compte]))
-                    ->valeur(fn (Model $e) => trans_choice('admin.zones.boutiques', (int) $e->boutiques_count, ['n' => format_nombre((int) $e->boutiques_count)]))
+                    ->valeur(fn (Model $e) => trans_choice($unites ? 'admin.zones.lignes_grille' : 'admin.zones.boutiques', (int) $e->boutiques_count, ['n' => format_nombre((int) $e->boutiques_count)]))
                     ->texte(fn (Model $e) => (int) $e->boutiques_count),
                 Colonne::make('actions', $z['colonnes']['actions'])->vue('admin.zones._actions', 'el')->exportable(false),
             ])
@@ -72,15 +94,15 @@ class NiveauxZonesController extends Controller
                 Filtre::make('actif', __('admin.types.filtre_actif'), [1 => __('admin.types.actif'), 0 => $z['desactive']], 'actif'),
                 Filtre::make('par_defaut', $z['colonnes']['par_defaut'], [1 => $z['oui'], 0 => $z['non']], 'par_defaut'),
             ])
-            ->triParDefaut($niveaux ? 'rang' : 'ordre')
-            ->export($niveaux ? 'Raaga_niveaux' : 'Raaga_zones')
+            ->triParDefaut($unites ? 'code' : ($niveaux ? 'rang' : 'ordre'))
+            ->export('Raaga_'.$liste)
             ->repondre($request, fn (ResultatTableau $t) => view('admin.zones.liste', ['liste' => $liste, 'tableau' => $t]));
     }
 
     /** Fiche : détail, modification (GESTIONNAIRE), validation (VALIDATEUR), historique des versions. */
     public function show(string $liste, int $id): View
     {
-        Gate::authorize(Droit::SitesVoir->value);
+        $this->autoriser($liste, 'voir');
         $element = $this->element($liste, $id);
 
         return view('admin.zones.fiche', [
@@ -94,7 +116,7 @@ class NiveauxZonesController extends Controller
     /** Nouvel élément : utilisable seulement après validation. */
     public function store(Request $request, string $liste): RedirectResponse
     {
-        Gate::authorize(Droit::SitesGerer->value);
+        $this->autoriser($liste, 'gerer');
         $classe = $this->classe($liste);
         if (is_string($request->input('code'))) {
             $request->merge(['code' => mb_strtoupper(trim($request->input('code')))]);
@@ -119,7 +141,7 @@ class NiveauxZonesController extends Controller
     /** Libellé, description, rang ou ordre : à tout moment, sans validation. */
     public function update(Request $request, string $liste, int $id): RedirectResponse
     {
-        Gate::authorize(Droit::SitesGerer->value);
+        $this->autoriser($liste, 'gerer');
         $element = $this->element($liste, $id);
         $donnees = $request->validate($this->reglesLibres($liste), [], __('admin.zones.attributs'));
 
@@ -148,7 +170,7 @@ class NiveauxZonesController extends Controller
     /** Suppression : jamais pour un élément « par défaut » ni pour un élément utilisé. Retour à la liste. */
     public function destroy(Request $request, string $liste, int $id): RedirectResponse
     {
-        Gate::authorize(Droit::SitesGerer->value);
+        $this->autoriser($liste, 'gerer');
         $element = $this->element($liste, $id);
 
         try {
@@ -168,7 +190,7 @@ class NiveauxZonesController extends Controller
 
     public function confirmer(Request $request, string $liste, int $id): RedirectResponse
     {
-        Gate::authorize(Droit::SitesConfirmer->value);
+        $this->autoriser($liste, 'confirmer');
         $element = $this->element($liste, $id);
 
         return $this->executer($liste, $element, function () use ($request, $element) {
@@ -181,7 +203,7 @@ class NiveauxZonesController extends Controller
 
     public function rejeter(Request $request, string $liste, int $id): RedirectResponse
     {
-        Gate::authorize(Droit::SitesConfirmer->value);
+        $this->autoriser($liste, 'confirmer');
         $element = $this->element($liste, $id);
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
 
@@ -193,9 +215,9 @@ class NiveauxZonesController extends Controller
         }, 'admin.zones.messages.rejetee');
     }
 
-    private function activation(Request $request, string $liste, Niveau|ZoneSite $element, bool $actif): RedirectResponse
+    private function activation(Request $request, string $liste, Niveau|ZoneSite|Unite $element, bool $actif): RedirectResponse
     {
-        Gate::authorize(Droit::SitesGerer->value);
+        $this->autoriser($liste, 'gerer');
 
         return $this->executer($liste, $element, function () use ($request, $element, $actif) {
             $element->forceFill(['actif' => $actif])->save();
@@ -207,24 +229,26 @@ class NiveauxZonesController extends Controller
     /** @return array<string, list<mixed>> */
     private function reglesLibres(string $liste): array
     {
-        return $liste === 'niveaux'
-            ? ['libelle' => ['required', 'string', 'max:80'], 'rang' => ['required', 'integer', 'min:-9', 'max:99']]
-            : ['libelle' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:300'], 'ordre' => ['nullable', 'integer', 'min:0', 'max:9999']];
+        return match ($liste) {
+            'niveaux' => ['libelle' => ['required', 'string', 'max:80'], 'rang' => ['required', 'integer', 'min:-9', 'max:99']],
+            'unites' => ['libelle' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:300']],
+            default => ['libelle' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:300'], 'ordre' => ['nullable', 'integer', 'min:0', 'max:9999']],
+        };
     }
 
-    /** @return class-string<Niveau|ZoneSite> */
+    /** @return class-string<Niveau|ZoneSite|Unite> */
     private function classe(string $liste): string
     {
         return self::LISTES[$liste] ?? abort(404);
     }
 
-    private function element(string $liste, int $id): Niveau|ZoneSite
+    private function element(string $liste, int $id): Niveau|ZoneSite|Unite
     {
         return $this->classe($liste)::query()->findOrFail($id);
     }
 
     /** @throws RegleGestionException */
-    private function exigerEnAttente(Request $request, Niveau|ZoneSite $element): void
+    private function exigerEnAttente(Request $request, Niveau|ZoneSite|Unite $element): void
     {
         if ($element->statut !== StatutTypeBoutique::AValider) {
             throw new RegleGestionException(__('admin.zones.regles.rien_a_valider'));
@@ -235,7 +259,7 @@ class NiveauxZonesController extends Controller
     }
 
     /** Action sur un élément ; retour à sa fiche, avec le message ou l'erreur. */
-    private function executer(string $liste, Niveau|ZoneSite $element, Closure $action, string $message): RedirectResponse
+    private function executer(string $liste, Niveau|ZoneSite|Unite $element, Closure $action, string $message): RedirectResponse
     {
         $fiche = redirect()->route('admin.referencement.zones.show', [$liste, $element->id]);
         try {

@@ -75,7 +75,7 @@
                             <td>{{ $c['type']->code ? $c['type']->code.' · ' : '' }}{{ $c['type']->libelle }}</td>
                             <td class="montant">{{ format_nombre($c['nombre']) }}</td>
                             @if ($ligne)
-                                <td class="montant">{{ format_fcfa($ligne->loyer_m2) }}<br><span class="texte-carte">{{ $ligne->unite_loyer->label() }}</span></td>
+                                <td class="montant">{{ format_fcfa($ligne->loyer_m2) }}<br><span class="texte-carte">{{ \App\Models\Unite::libelle($ligne->unite_loyer) }}</span></td>
                                 <td class="montant">{{ format_nombre($ligne->mois_caution) }}</td>
                                 <td class="montant">{{ format_nombre($ligne->mois_avance) }}</td>
                                 <td><ul class="space-y-1 text-sm">
