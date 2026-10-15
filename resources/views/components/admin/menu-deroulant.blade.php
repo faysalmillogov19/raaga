@@ -33,7 +33,7 @@
                     $n = $badges[$entree['cle']] ?? 0;
                 @endphp
                 <li>
-                    <a href="{{ route($entree['route']) }}" @class(['bo-lien', 'adm-sous-lien', 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif>
+                    <a href="{{ MenuBackoffice::url($entree) }}" @class(['bo-lien', 'adm-sous-lien', 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif>
                         <span class="adm-libelle">{{ __('admin.menu.'.$entree['cle']) }}</span>
                         @if ($n)
                             <span class="adm-compteur">{{ $n }}<span class="sr-only"> {{ trans_choice('admin.a_traiter', $n, ['n' => $n]) }}</span></span>

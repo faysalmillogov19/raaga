@@ -33,7 +33,7 @@ class CadreController extends Controller
     /** Menu dépliant de la barre latérale ouvert ou fermé : mémorisé pour l'utilisateur. */
     public function menu(Request $request): JsonResponse
     {
-        $donnees = $request->validate(['menu' => ['required', 'string', 'in:referentiels'], 'ouvert' => ['required', 'boolean']]);
+        $donnees = $request->validate(['menu' => ['required', 'string', 'in:referentiels,imports'], 'ouvert' => ['required', 'boolean']]);
         $user = $request->user();
         $user->forceFill(['menus_backoffice' => [...($user->menus_backoffice ?? []), $donnees['menu'] => (bool) $donnees['ouvert']]])->save();
 

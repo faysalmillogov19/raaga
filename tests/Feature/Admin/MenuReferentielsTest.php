@@ -28,7 +28,7 @@ class MenuReferentielsTest extends TestCase
     /** Contenu du menu dépliant (bouton et sous-menus) de la page, ou chaîne vide. */
     private function menu(string $html): string
     {
-        return preg_match('#<li class="adm-deroulant".*?</ul>\s*</div>\s*</li>#s', $html, $m) ? $m[0] : '';
+        return preg_match('#<li class="adm-deroulant" x-data="menuDeroulant\(\{ deplie: \w+, cle: \'referentiels\'.*?</ul>\s*</div>\s*</li>#s', $html, $m) ? $m[0] : '';
     }
 
     public static function profils(): array
@@ -63,7 +63,7 @@ class MenuReferentielsTest extends TestCase
 
         $this->connecterBackoffice(Role::Validateur);
         $html = $this->get(route('admin.tableau'))->assertOk()->getContent();
-        $this->assertGreaterThan($position($html, 'href="'.route('admin.referencement.imports').'"'), $position($html, 'aria-controls="sous-menu-referentiels"'));
+        $this->assertGreaterThan($position($html, 'href="'.route('admin.referencement.imports.entite', 'boutiques').'"'), $position($html, 'aria-controls="sous-menu-referentiels"'));
     }
 
     public function test_entree_absente_sans_aucun_droit(): void

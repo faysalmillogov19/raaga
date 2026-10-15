@@ -20,29 +20,36 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Imports du référencement : boutons d'import (sites, boutiques d'un site, boutiques de plusieurs sites) pour le
- * GESTIONNAIRE DES SITES ET BOUTIQUES, et journal de tous les imports avec le fichier d'origine téléchargeable.
+ * Imports du référencement, un sous-onglet par entité importable (menu dépliant « Imports ») : sites et capacités
+ * prévues, boutiques (d'un site ou de plusieurs sites). Chaque sous-onglet montre ses boutons d'import (GESTIONNAIRE
+ * DES SITES ET BOUTIQUES) et l'historique des imports de cette entité, avec le fichier d'origine téléchargeable.
  */
 class ImportsController extends Controller
 {
     /** Actions du journal d'audit qui sont des imports : [action => [type, configuration du stockage]]. */
     public const ACTIONS = ['sites.importes' => 'referentiel_sites', 'boutiques.importees' => 'referentiel_boutiques'];
 
-    public function index(Request $request): Response|StreamedResponse|View
+    /** Entités importables (sous-onglets) => action du journal d'audit qui enregistre leurs imports. */
+    public const ENTITES = ['sites' => 'sites.importes', 'boutiques' => 'boutiques.importees'];
+
+    public function index(Request $request, string $entite): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::ImportsVoir->value);
+        abort_unless(isset(self::ENTITES[$entite]), 404);
 
-        return self::journal()->repondre($request, fn (ResultatTableau $t) => view('admin.referencement.imports', [
+        return self::journal(true, 'imports_'.$entite, self::ENTITES[$entite])->repondre($request, fn (ResultatTableau $t) => view('admin.referencement.imports', [
+            'entite' => $entite,
             'tableau' => $t,
-            'sitesModifiables' => Site::query()->whereNotNull('code')->orderBy('code')->get()->filter->estModifiable(),
+            'sitesModifiables' => $entite === 'boutiques' ? Site::query()->whereNotNull('code')->orderBy('code')->get()->filter->estModifiable() : collect(),
         ]));
     }
 
     /**
-     * Journal des imports confirmés en tableau de données : complet (onglet Imports) ou réduit (« Derniers imports » du
-     * tableau de bord). Créées, mises à jour, erreurs (toujours 0 : un fichier en erreur n'est jamais confirmé), statut.
+     * Journal des imports confirmés en tableau de données : complet (sous-onglet d'une entité, $action donnée) ou réduit
+     * (« Derniers imports » du tableau de bord, toutes entités). Créées, mises à jour, erreurs (toujours 0 : un fichier en
+     * erreur n'est jamais confirmé), statut.
      */
-    public static function journal(bool $complet = true, string $id = 'imports'): Tableau
+    public static function journal(bool $complet = true, string $id = 'imports', ?string $action = null): Tableau
     {
         $i = __('admin.imports');
         $c = $i['colonnes'];
@@ -55,7 +62,7 @@ class ImportsController extends Controller
         };
         $nombre = fn (string ...$cles) => fn (AuditLog $e) => (int) collect($cles)->sum(fn ($k) => $e->nouvelle_valeur[$k] ?? 0);
 
-        return Tableau::pour(AuditLog::query()->whereIn('action', array_keys(self::ACTIONS))->with('acteur'), $id)
+        return Tableau::pour(AuditLog::query()->whereIn('action', $action ? [$action] : array_keys(self::ACTIONS))->with('acteur'), $id)
             ->colonnes([
                 Colonne::make('date', $c['date'])->triable('created_at')->classe('whitespace-nowrap')->valeur(fn (AuditLog $e) => $e->created_at->format('d/m/Y H:i')),
                 Colonne::make('fichier', $c['fichier'])->triable('nouvelle_valeur')->recherchable('nouvelle_valeur')->classe('font-semibold')
@@ -64,7 +71,7 @@ class ImportsController extends Controller
                         : ($e->nouvelle_valeur['fichier'] ?? '—'))
                     ->texte(fn (AuditLog $e) => $e->nouvelle_valeur['fichier'] ?? null),
                 Colonne::make('site', $c['site'])->triable('entite_id')->valeur($site),
-                $complet ? Colonne::make('type', $c['type'])->triable('action')->valeur(fn (AuditLog $e) => $i['types'][$e->action] ?? $e->action) : null,
+                $complet && ! $action ? Colonne::make('type', $c['type'])->triable('action')->valeur(fn (AuditLog $e) => $i['types'][$e->action] ?? $e->action) : null,
                 $complet ? Colonne::make('auteur', $c['auteur'])->recherchable(fn ($q, $terme) => $q->whereHas('acteur', fn ($a) => $a->where('name', 'like', '%'.$terme.'%')))
                     ->valeur(fn (AuditLog $e) => $e->acteur?->name ?? '—') : null,
                 Colonne::make('creees', $c['creees'])->numerique()->valeur($nombre('creees', 'sites_crees')),
@@ -72,11 +79,11 @@ class ImportsController extends Controller
                 Colonne::make('erreurs', $c['erreurs'])->numerique()->valeur(fn () => 0),
                 Colonne::make('statut', $c['statut'])->valeur(fn () => BadgeStatut::html($i['confirme']))->texte(fn () => $i['confirme']),
             ])
-            ->filtres($complet ? [Filtre::make('type', $c['type'], $i['types'], 'action')] : [])
+            ->filtres($complet && ! $action ? [Filtre::make('type', $c['type'], $i['types'], 'action')] : [])
             ->triParDefaut('date', 'desc')
             ->unite($i['unite'])
             ->lignesParDefaut($complet ? Tableau::LIGNES_DEFAUT : 10)
-            ->when($complet, fn (Tableau $t) => $t->export('Raaga_journal-imports'));
+            ->when($complet, fn (Tableau $t) => $t->export('Raaga_journal-imports'.($action ? '-'.strtok($action, '.') : '')));
     }
 
     /** Fichier d'origine d'un import, conservé hors du dossier public. */

@@ -1,13 +1,16 @@
+{{-- Imports d'une entité (sous-onglet du menu « Imports ») : boutons d'import et historique des imports de l'entité. --}}
 @php
     $i = __('admin.imports');
     $gerer = auth()->user()->can(\App\Enums\Droit::SitesGerer->value);
+    $titre = $i['entites'][$entite];
 @endphp
 
-<x-admin.layout :titre="$i['titre']" :sous-titre="$i['intro']" :fil="[['libelle' => $i['titre']]]">
+<x-admin.layout :titre="$titre" :fil="[['libelle' => $i['titre']], ['libelle' => $titre]]">
 
     @if ($gerer)
-        {{-- Trois imports : chacun s'ouvre dans une fenêtre (modèle, fichier, envoi). --}}
-        <div class="mt-[18px] grid gap-[18px] xl:grid-cols-3">
+        {{-- Imports de l'entité : chacun s'ouvre dans une fenêtre (modèle, fichier, envoi). --}}
+        <div class="mt-[18px] grid gap-[18px] xl:grid-cols-2">
+            @if ($entite === 'sites')
             <section class="bo-carte !mt-0" aria-labelledby="imp-sites">
                 <h2 id="imp-sites" class="!text-base">{{ $i['sites_titre'] }}</h2>
                 <p class="texte-carte">{{ $i['sites_aide'] }}</p>
@@ -21,7 +24,7 @@
                     </x-admin.fenetre>
                 </div>
             </section>
-
+            @else
             <section class="bo-carte !mt-0" aria-labelledby="imp-site">
                 <h2 id="imp-site" class="!text-base">{{ $i['boutiques_site_titre'] }}</h2>
                 <p class="texte-carte">{{ $i['boutiques_site_aide'] }}</p>
@@ -53,12 +56,13 @@
                     </x-admin.fenetre>
                 </div>
             </section>
+            @endif
         </div>
     @endif
 
-    {{-- Journal de tous les imports --}}
+    {{-- Historique des imports de cette entité --}}
     <section class="bo-carte" aria-labelledby="journal-titre">
-        <h2 id="journal-titre" class="!text-[1.15rem]">{{ $i['journal_titre'] }}</h2>
-        <x-tableau :t="$tableau" :libelle="$i['journal_titre']" class="mt-3" />
+        <h2 id="journal-titre" class="!text-[1.15rem]">{{ $i['historique'] }}</h2>
+        <x-tableau :t="$tableau" :libelle="$i['historique'].' — '.$titre" class="mt-3" />
     </section>
 </x-admin.layout>

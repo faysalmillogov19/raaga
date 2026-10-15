@@ -59,6 +59,7 @@
                             @if ($element['type'] === 'menu')
                                 {{-- Menu dépliant (par exemple « Référentiels ») : ses sous-menus, ouvert sur l'un d'eux. --}}
                                 <x-admin.menu-deroulant :cle="$element['cle']" :libelle="__('admin.menus_deroulants.'.$element['cle'])" :entrees="$element['entrees']"
+                                                        :icone="MenuBackoffice::ICONES_MENUS[$element['cle']] ?? 'referentiels'"
                                                         :badges="$badges" :ouvert="MenuBackoffice::menuOuvert($user, $element['cle'], $element['entrees'])" />
                                 @continue
                             @endif
@@ -68,7 +69,7 @@
                                 $n = $badges[$entree['cle']] ?? 0;
                             @endphp
                             <li>
-                                <a href="{{ route($entree['route']) }}" @class(['bo-lien', 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif title="{{ __('admin.menu.'.$entree['cle']) }}">
+                                <a href="{{ MenuBackoffice::url($entree) }}" @class(['bo-lien', 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif title="{{ __('admin.menu.'.$entree['cle']) }}">
                                     <x-icon :name="$entree['icone']" class="adm-icone-menu" />
                                     <span class="adm-libelle">{{ __('admin.menu.'.$entree['cle']) }}</span>
                                     @if ($n)

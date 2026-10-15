@@ -24,10 +24,10 @@ class NavigationTest extends TestCase
 
     /** Menus attendus par profil (d'après le tableau des droits de la spécification). */
     private const MENUS = [
-        'superadmin' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'phase', 'plateforme', 'securite', 'audit', 'parametres', 'connexions', 'unites'],
+        'superadmin' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'phase', 'plateforme', 'securite', 'audit', 'parametres', 'connexions', 'unites'],
         'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme'],
-        'gestionnaire_sites' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'imports', 'unites'],
-        'validateur' => ['tableau', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels', 'phase', 'unites'],
+        'gestionnaire_sites' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'imports_sites', 'imports_boutiques', 'unites'],
+        'validateur' => ['tableau', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels', 'phase', 'unites'],
         'regulateur' => ['tableau', 'tranches', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels', 'unites'],
     ];
 
@@ -55,7 +55,7 @@ class NavigationTest extends TestCase
 
         foreach (MenuBackoffice::definition() as $entrees) {
             foreach ($entrees as $entree) {
-                $lien = 'href="'.route($entree['route']).'" class="bo-lien';
+                $lien = 'href="'.MenuBackoffice::url($entree).'" class="bo-lien';
                 in_array($entree['cle'], self::MENUS[$role->value], true)
                     ? $page->assertSee($lien, false)
                     : $page->assertDontSee($lien, false);
@@ -70,7 +70,7 @@ class NavigationTest extends TestCase
 
         foreach (MenuBackoffice::definition() as $entrees) {
             foreach ($entrees as $entree) {
-                $reponse = $this->get(route($entree['route']));
+                $reponse = $this->get(MenuBackoffice::url($entree));
                 $autorises = [...self::MENUS[$role->value], ...(self::LECTURE_HORS_MENU[$role->value] ?? [])];
 
                 in_array($entree['cle'], $autorises, true)

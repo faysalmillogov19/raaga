@@ -159,7 +159,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::put('/{capacite}', 'update')->whereNumber('capacite')->name('update');
                 Route::delete('/{capacite}', 'destroy')->whereNumber('capacite')->name('destroy');
             });
-            Route::get('/imports', [ImportsController::class, 'index'])->middleware('can:'.Droit::ImportsVoir->value)->name('imports');
+            // Imports : un sous-onglet par entité importable ; l'ancienne page unique renvoie vers le premier.
+            Route::redirect('/imports', '/admin/referencement/imports/sites')->name('imports');
+            Route::get('/imports/{entite}', [ImportsController::class, 'index'])->whereIn('entite', array_keys(ImportsController::ENTITES))
+                ->middleware('can:'.Droit::ImportsVoir->value)->name('imports.entite');
             Route::get('/imports/{journal}/fichier', [ImportsController::class, 'fichier'])->whereNumber('journal')->middleware('can:'.Droit::ImportsVoir->value)->name('imports.fichier');
             Route::post('/imports/boutiques-site', [ImportBoutiquesController::class, 'deposerPourSite'])->middleware(['can:'.Droit::SitesGerer->value, 'throttle:20,1'])->name('imports.boutiques-site');
         });

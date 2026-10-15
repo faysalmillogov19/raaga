@@ -24,6 +24,9 @@ use App\Models\ZoneSite;
  */
 final class MenuBackoffice
 {
+    /** Icône de chaque menu dépliant (barre latérale réduite en icônes). */
+    public const ICONES_MENUS = ['referentiels' => 'referentiels', 'imports' => 'importer'];
+
     /**
      * « etape » : étape de livraison (back-office métier), ou du module d'administration quand « module » = admin.
      * « masque_si » : entrée retirée du menu pour qui détient ce droit (le SUPER_ADMIN consulte les paramètres
@@ -51,8 +54,11 @@ final class MenuBackoffice
                 ['cle' => 'boutiques_referentiel', 'route' => 'admin.referencement.boutiques', 'droit' => Droit::SitesVoir, 'icone' => 'boutiques', 'etape' => 0],
                 ['cle' => 'capacites', 'route' => 'admin.referencement.capacites', 'droit' => Droit::SitesVoir, 'icone' => 'simulations', 'etape' => 0],
                 ['cle' => 'grille', 'route' => 'admin.boutiques.grilles', 'droit' => Droit::GrilleVoir, 'icone' => 'dividendes', 'etape' => 0],
-                ['cle' => 'imports', 'route' => 'admin.referencement.imports', 'droit' => Droit::ImportsVoir, 'icone' => 'registre', 'etape' => 0,
-                    'inclure' => ['admin.sites.excel.*', 'admin.sites.boutiques-excel.*']],
+                // Menu dépliant « Imports » : un sous-onglet par entité importable, avec son historique.
+                ['cle' => 'imports_sites', 'route' => 'admin.referencement.imports.entite', 'parametres' => ['entite' => 'sites'], 'droit' => Droit::ImportsVoir,
+                    'icone' => 'registre', 'etape' => 0, 'inclure' => ['admin.sites.excel.*'], 'sous_menu' => 'imports'],
+                ['cle' => 'imports_boutiques', 'route' => 'admin.referencement.imports.entite', 'parametres' => ['entite' => 'boutiques'], 'droit' => Droit::ImportsVoir,
+                    'icone' => 'registre', 'etape' => 0, 'inclure' => ['admin.sites.boutiques-excel.*'], 'sous_menu' => 'imports'],
                 ['cle' => 'types', 'route' => 'admin.sites.types', 'droit' => Droit::SitesVoir, 'icone' => 'referentiels', 'etape' => 0, 'sous_menu' => 'referentiels'],
                 ['cle' => 'niveaux', 'route' => 'admin.referencement.niveaux', 'droit' => Droit::SitesVoir, 'icone' => 'tranches', 'etape' => 0,
                     'liste' => 'niveaux', 'sous_menu' => 'referentiels'],
@@ -115,7 +121,7 @@ final class MenuBackoffice
     /**
      * Entrées d'un groupe regroupées pour l'affichage : une entrée seule, ou un menu dépliant (« sous_menu ») qui
      * réunit ses sous-entrées à la place de la première d'entre elles. Pour le GESTIONNAIRE DES SITES ET BOUTIQUES,
-     * dont c'est le travail principal, les menus dépliants (« Référentiels ») passent en tête de leur groupe.
+     * dont c'est le travail principal, le menu « Référentiels » passe en tête de son groupe.
      *
      * @param  list<array<string, mixed>>  $entrees
      * @return list<array{type: string, entree?: array, cle?: string, entrees?: list<array>}>
@@ -139,7 +145,8 @@ final class MenuBackoffice
         }
 
         if ($user?->hasRole(Role::GestionnaireSites)) {
-            usort($elements, fn (array $a, array $b) => ($b['type'] === 'menu') <=> ($a['type'] === 'menu'));
+            $tete = fn (array $e) => ($e['cle'] ?? null) === 'referentiels';
+            usort($elements, fn (array $a, array $b) => $tete($b) <=> $tete($a));
         }
 
         return $elements;
@@ -155,11 +162,21 @@ final class MenuBackoffice
         return (bool) (($user->menus_backoffice ?? [])[$menu] ?? false);
     }
 
+    /** Adresse d'une entrée du menu (route et paramètres éventuels). */
+    public static function url(array $entree): string
+    {
+        return route($entree['route'], $entree['parametres'] ?? []);
+    }
+
     /** L'entrée est-elle celle de la page affichée ? (route et sous-routes, moins les exclusions, plus les inclusions) */
     public static function estActive(array $entree): bool
     {
         if (isset($entree['liste']) && request()->routeIs('admin.referencement.zones.*')) {
             return request()->route('liste') === $entree['liste'];
+        }
+        // Entrées d'une même route qui diffèrent par un paramètre (sous-onglets des imports).
+        if (isset($entree['parametres']) && request()->routeIs($entree['route'])) {
+            return collect($entree['parametres'])->every(fn ($v, $k) => request()->route($k) === $v);
         }
 
         return (request()->routeIs($entree['route'], $entree['route'].'.*') && ! request()->routeIs(...($entree['exclure'] ?? ['-'])))

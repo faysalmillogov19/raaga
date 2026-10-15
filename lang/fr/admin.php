@@ -102,6 +102,7 @@ return [
 
     'menus_deroulants' => [
         'referentiels' => 'Référentiels',
+        'imports' => 'Imports',
     ],
 
     'menu' => [
@@ -112,6 +113,8 @@ return [
         'niveaux' => 'Niveaux',
         'zones' => 'Zones',
         'unites' => 'Unités',
+        'imports_sites' => 'Sites et capacités',
+        'imports_boutiques' => 'Boutiques',
         'boutiques_referentiel' => 'Boutiques',
         'capacites' => 'Capacités prévues',
         'grille' => 'Grille tarifaire',
@@ -1114,6 +1117,8 @@ return [
     'imports' => [
         'titre' => 'Imports',
         'intro' => 'Imports Excel du référencement et journal de tous les imports confirmés. Le fichier d’origine reste téléchargeable.',
+        'entites' => ['sites' => 'Imports des sites et capacités prévues', 'boutiques' => 'Imports des boutiques'],
+        'historique' => 'Historique des imports',
         'sites_titre' => 'Sites et capacités prévues',
         'sites_aide' => 'Onglets « Sites » et « Capacités ». Les sites sont créés en brouillon.',
         'boutiques_site_titre' => 'Boutiques d’un site',

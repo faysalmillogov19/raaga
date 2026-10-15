@@ -24,7 +24,7 @@ class CadreAdminTest extends TestCase
     public function test_le_cadre_est_present_sur_toutes_les_pages_admin(Role $role): void
     {
         $user = $this->connecterBackoffice($role);
-        $pages = collect(MenuBackoffice::pour($user))->flatten(1)->map(fn ($e) => route($e['route']))
+        $pages = collect(MenuBackoffice::pour($user))->flatten(1)->map(fn ($e) => MenuBackoffice::url($e))
             ->push(route('admin.profil'), route('admin.recherche', ['q' => 'RAA']));
 
         foreach ($pages as $url) {
@@ -47,7 +47,7 @@ class CadreAdminTest extends TestCase
                 ? $page->assertSee('<p class="adm-groupe">'.e(__('admin.groupes.'.$groupe)).'</p>', false)
                 : $page->assertDontSee('<p class="adm-groupe">'.e(__('admin.groupes.'.$groupe)).'</p>', false);
             foreach ($entrees as $entree) {
-                $lien = 'href="'.route($entree['route']).'" class="bo-lien';
+                $lien = 'href="'.MenuBackoffice::url($entree).'" class="bo-lien';
                 collect($menu[$groupe] ?? [])->contains('cle', $entree['cle']) ? $page->assertSee($lien, false) : $page->assertDontSee($lien, false);
             }
         }
