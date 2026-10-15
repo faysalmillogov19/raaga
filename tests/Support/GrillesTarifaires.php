@@ -20,7 +20,7 @@ trait GrillesTarifaires
         foreach ($lignes as $niveau => $parType) {
             foreach ($parType as $typeId => $ligne) {
                 [$loyer, $caution, $avance] = $ligne;
-                $unite = $ligne[3] ?? config('raaga.grille_tarifaire.unite_par_type')[TypeBoutique::query()->whereKey($typeId)->value('code')] ?? 'm2';
+                $unite = $ligne[3] ?? config('raaga.grille_tarifaire.unite_par_type')[TypeBoutique::query()->whereKey($typeId)->value('code')] ?? 'M2';
                 $saisie[$niveau][$typeId] = ['unite_loyer' => $unite, 'loyer_m2' => $loyer, 'mois_caution' => $caution, 'mois_avance' => $avance];
             }
         }

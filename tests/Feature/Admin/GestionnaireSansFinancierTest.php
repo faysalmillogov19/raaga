@@ -47,7 +47,7 @@ class GestionnaireSansFinancierTest extends TestCase
     public function test_le_loyer_lit_l_unite_de_la_ligne_de_grille(): void
     {
         // Même type, deux unités : forfait par local au rez-de-chaussée, au m² au R+1.
-        $this->grilleConfirmee($this->site, ['RC' => [$this->boutique->id => [20000, 12, 60, 'unite']], 'R1' => [$this->boutique->id => [2000, 12, 36, 'm2']]]);
+        $this->grilleConfirmee($this->site, ['RC' => [$this->boutique->id => [20000, 12, 60, 'UNITE']], 'R1' => [$this->boutique->id => [2000, 12, 36, 'M2']]]);
         $campagne = CampagneBoutiques::create([
             'statut' => StatutCampagneBoutiques::Confirmee, 'nom' => 'Attribution 2027', 'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addMonth(),
             'delai_paiement_heures' => 72, 'canaux_actifs' => ['ORANGE_MONEY'], 'version' => 1, 'cree_par' => $this->regulateur->id,

@@ -105,7 +105,8 @@ class LotsCampagne
         }
 
         // Unité lue sur la ligne de grille (versions antérieures à ce champ : unité de la ligne actuelle, sinon au m²).
-        $unite = UniteLoyer::tryFrom((string) ($ligne['unite_loyer'] ?? ''))
+        // Instantanés antérieurs à la clé étrangère : « m2 » en minuscules, lu comme « M2 ».
+        $unite = UniteLoyer::depuis($ligne['unite_loyer'] ?? null)
             ?? GrilleTarifaireLigne::query()->whereHas('grille', fn ($q) => $q->where('site_id', $lot->site_id))
                 ->where('niveau', $lot->niveau)->where('type_boutique_id', $lot->type_boutique_id)->first()?->unite_loyer
             ?? UniteLoyer::M2;

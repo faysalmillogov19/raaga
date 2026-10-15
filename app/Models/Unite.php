@@ -12,8 +12,9 @@ use Illuminate\Support\Collection;
 
 /**
  * Unité de loyer de la grille tarifaire (au m², à l'unité, redevance…). Saisie par le RÉGULATEUR, validée par le
- * VALIDATEUR, code jamais modifié (voir ReferentielGere). Le calcul des montants dépend du mode de l'unité
- * (App\Enums\UniteLoyer) : seules les unités dont le code correspond à un mode de calcul sont proposées dans la grille.
+ * VALIDATEUR, code jamais modifié (voir ReferentielGere). Les lignes de grille tarifaire y renvoient par une clé
+ * étrangère sur le code (grille_tarifaire_lignes.unite_loyer → unites.code). Le calcul des montants dépend du mode de
+ * l'unité (App\Enums\UniteLoyer) : seules les unités dont le code correspond à un mode de calcul sont proposées.
  */
 #[Table(name: 'unites')]
 #[Fillable(['code', 'libelle', 'description', 'actif', 'par_defaut', 'statut'])]
@@ -42,19 +43,19 @@ class Unite extends Model
     /** Mode de calcul de l'unité (null : aucun calcul connu, l'unité n'est pas proposée dans la grille). */
     public function calcul(): ?UniteLoyer
     {
-        return UniteLoyer::tryFrom(mb_strtolower($this->code));
+        return UniteLoyer::tryFrom($this->code);
     }
 
     /** Lignes de grille tarifaire qui utilisent cette unité. */
     public function nombreUtilisations(): int
     {
-        return $this->calcul() ? GrilleTarifaireLigne::query()->where('unite_loyer', $this->calcul()->value)->count() : 0;
+        return GrilleTarifaireLigne::query()->where('unite_loyer', $this->code)->count();
     }
 
     /**
      * Unités proposées dans la grille tarifaire : validées, actives et associées à un mode de calcul.
      *
-     * @return Collection<string, string> valeur enregistrée dans la grille => libellé
+     * @return Collection<string, string> code de l'unité (valeur de la clé étrangère) => libellé
      */
     public static function pourGrille(): Collection
     {
@@ -63,11 +64,11 @@ class Unite extends Model
             ->mapWithKeys(fn (Unite $u) => [$u->calcul()->value => $u->libelle]);
     }
 
-    /** Libellé d'une valeur de la grille (« m2 »), lu dans le référentiel ; à défaut, celui du mode de calcul. */
+    /** Libellé d'une unité de la grille, lu dans le référentiel ; à défaut, celui du mode de calcul. */
     public static function libelle(UniteLoyer $unite): string
     {
         $libelles = once(fn () => static::query()->pluck('libelle', 'code')->all());
 
-        return $libelles[mb_strtoupper($unite->value)] ?? $unite->label();
+        return $libelles[$unite->value] ?? $unite->label();
     }
 }
