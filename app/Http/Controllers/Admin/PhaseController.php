@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DecisionPhase;
 use App\Services\Audit\Journal;
+use App\Services\Validation\NotificationDecision;
 use App\Support\Phase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ use Illuminate\View\View;
  */
 class PhaseController extends Controller
 {
-    public function __construct(private readonly Journal $journal) {}
+    public function __construct(private readonly Journal $journal, private readonly NotificationDecision $notifications) {}
 
     public function index(): View
     {
@@ -89,6 +90,8 @@ class PhaseController extends Controller
             $decision->forceFill(['statut' => $statut, 'decide_par' => $request->user()->id, 'decide_le' => now(), 'motif_rejet' => $motif])->save();
             $this->journal->ecrire($request->user(), $statut === DecisionPhase::CONFIRMEE ? 'phase.confirmee' : 'phase.rejetee', 'DecisionPhase', $decision->id,
                 ['statut' => DecisionPhase::SOUMISE], ['statut' => $statut, 'motif' => $motif]);
+            DB::afterCommit(fn () => $this->notifications->envoyer($decision->propose_par, __('admin.a_valider.elements.phase'), __('admin.phase.titre'),
+                $statut === DecisionPhase::CONFIRMEE ? 'confirmer' : 'rejeter', $motif, route('admin.phase')));
 
             return null;
         });

@@ -15,12 +15,14 @@ use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
 use App\Models\User;
+use App\Notifications\DecisionRendue;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Boutiques\CandidatureBoutiques;
 use App\Services\Boutiques\LotsCampagne;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\GrillesTarifaires;
 use Tests\TestCase;
@@ -195,5 +197,15 @@ class GrilleTarifaireTest extends TestCase
         // Unité utilisée par une ligne de grille (clé étrangère par identifiant) : suppression refusée par la base elle-même.
         $this->expectException(QueryException::class);
         DB::table('unites')->where('code', 'M2')->delete();
+    }
+
+    public function test_decision_depuis_la_fiche_de_la_grille_notifiee_une_seule_fois(): void
+    {
+        Notification::fake();
+        $this->grilleConfirmee($this->site, ['RC' => [$this->boutique->id => [2000, 12, 60]]]);
+
+        Notification::assertSentToTimes($this->regulateur, DecisionRendue::class, 1);
+        Notification::assertSentTo($this->regulateur, DecisionRendue::class, fn (DecisionRendue $n) => str_contains($n->toArray($this->regulateur)['message'], 'validé'));
+        Notification::assertCount(1);
     }
 }

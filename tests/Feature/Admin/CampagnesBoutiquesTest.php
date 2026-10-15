@@ -11,7 +11,9 @@ use App\Models\CampagneBoutiques;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\User;
+use App\Notifications\DecisionRendue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\GrillesTarifaires;
@@ -153,5 +155,18 @@ class CampagnesBoutiquesTest extends TestCase
         $this->en($superAdmin)->post(route('admin.boutiques.confirmer', $campagne))->assertForbidden();
         $this->en($superAdmin)->get(route('admin.boutiques.create'))->assertForbidden();
         $this->en(User::factory()->role(Role::Admin)->create())->get(route('admin.boutiques'))->assertForbidden();
+    }
+
+    public function test_decision_depuis_la_fiche_de_la_campagne_notifiee_une_seule_fois(): void
+    {
+        $campagne = $this->campagneSoumise();
+        Notification::fake();
+
+        $this->en($this->validateur)->post(route('admin.boutiques.confirmer', $campagne))->assertSessionHas('succes');
+
+        Notification::assertSentToTimes($this->regulateur, DecisionRendue::class, 1);
+        Notification::assertSentTo($this->regulateur, DecisionRendue::class, fn (DecisionRendue $n) => str_contains($n->toArray($this->regulateur)['message'], 'Campagne')
+            && str_contains($n->toArray($this->regulateur)['message'], 'validé'));
+        Notification::assertCount(1);
     }
 }

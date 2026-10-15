@@ -9,9 +9,7 @@ use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
-use App\Models\User;
 use App\Models\ZoneSite;
-use App\Notifications\DecisionRendue;
 use App\Support\AValider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +23,7 @@ use Throwable;
  * sélection. Règles : jamais de décision sur un élément que l'on a soumis soi-même ; campagnes, démarches du site public
  * et données financières jamais en lot (422) ; traitement élément par élément, résultat partiel sans tout annuler ;
  * un élément déjà traité par quelqu'un d'autre est signalé. Chaque décision passe par l'action existante de l'élément
- * (mêmes droits, mêmes règles, même journal d'audit) et est notifiée à l'auteur.
+ * (mêmes droits, mêmes règles, même journal d'audit, même notification de l'auteur).
  */
 class AValiderController extends Controller
 {
@@ -77,7 +75,6 @@ class AValiderController extends Controller
                 continue;
             }
             $reussis++;
-            $this->notifier($element, $donnees['decision'], $donnees['motif'] ?? null);
         }
 
         $message = $this->resultat($donnees['decision'], $reussis, $refus);
@@ -130,12 +127,6 @@ class AValiderController extends Controller
         $i = $cles->search($cle);
 
         return $i === false ? null : $cles->get($i + 1);
-    }
-
-    private function notifier(array $element, string $decision, ?string $motif): void
-    {
-        $auteur = $element['auteur_id'] ? User::query()->find($element['auteur_id']) : null;
-        $auteur?->notify(new DecisionRendue(__('admin.a_valider.elements.'.$element['element']), $element['libelle'], $decision, $motif, $element['url']));
     }
 
     /** Applique la décision par l'action existante de l'élément ; rend le message d'erreur, ou null en cas de succès. */

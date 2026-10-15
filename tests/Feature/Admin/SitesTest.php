@@ -8,7 +8,9 @@ use App\Enums\StatutSite;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\User;
+use App\Notifications\DecisionRendue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\Support\ActeursParametrage;
 use Tests\TestCase;
 
@@ -138,5 +140,19 @@ class SitesTest extends TestCase
 
         $this->en($this->gestionnaire)->delete(route('admin.sites.types.destroy', $kiosque))->assertSessionHas('erreur');
         $this->assertModelExists($kiosque);
+    }
+
+    public function test_decision_depuis_la_fiche_du_site_notifiee_une_seule_fois(): void
+    {
+        $site = $this->siteAvecBoutiques();
+        $this->en($this->gestionnaire)->post(route('admin.sites.soumettre', $site))->assertSessionHas('succes');
+        Notification::fake();
+
+        $this->en($this->validateur)->post(route('admin.sites.rejeter', $site), ['motif' => 'Plans à compléter'])->assertSessionHas('succes');
+
+        Notification::assertSentToTimes($this->gestionnaire, DecisionRendue::class, 1);
+        Notification::assertSentTo($this->gestionnaire, DecisionRendue::class, fn (DecisionRendue $n, array $canaux) => $canaux === ['database', 'mail']
+            && $n->toArray($this->gestionnaire)['motif'] === 'Plans à compléter' && str_contains($n->toArray($this->gestionnaire)['message'], 'rejeté'));
+        Notification::assertCount(1);
     }
 }

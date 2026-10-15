@@ -12,6 +12,7 @@ use App\Models\Unite;
 use App\Models\ZoneSite;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
+use App\Services\Validation\NotificationDecision;
 use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
@@ -57,7 +58,7 @@ class NiveauxZonesController extends Controller
         Gate::authorize(self::droit($liste, $action)->value);
     }
 
-    public function __construct(private readonly Journal $journal) {}
+    public function __construct(private readonly Journal $journal, private readonly NotificationDecision $notifications) {}
 
     public function index(Request $request, string $liste): Response|StreamedResponse|View
     {
@@ -193,11 +194,12 @@ class NiveauxZonesController extends Controller
         $this->autoriser($liste, 'confirmer');
         $element = $this->element($liste, $id);
 
-        return $this->executer($liste, $element, function () use ($request, $element) {
+        return $this->executer($liste, $element, function () use ($request, $liste, $element) {
             $this->exigerEnAttente($request, $element);
             $element->forceFill(['statut' => StatutTypeBoutique::Valide, 'valide_par' => $request->user()->id, 'valide_le' => now(), 'motif_rejet' => null])->save();
             $element->creerVersion($request->user(), __('admin.types.motifs.confirmation'));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().'.confirme', class_basename($element), $element->id);
+            $this->notifier($liste, $element, 'confirmer', null);
         }, 'admin.zones.messages.confirmee');
     }
 
@@ -207,11 +209,12 @@ class NiveauxZonesController extends Controller
         $element = $this->element($liste, $id);
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
 
-        return $this->executer($liste, $element, function () use ($request, $element, $motif) {
+        return $this->executer($liste, $element, function () use ($request, $liste, $element, $motif) {
             $this->exigerEnAttente($request, $element);
             $element->forceFill(['statut' => StatutTypeBoutique::Rejete, 'motif_rejet' => $motif])->save();
             $element->creerVersion($request->user(), __('admin.types.motifs.rejet', ['motif' => $motif]));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().'.rejete', class_basename($element), $element->id, null, ['motif' => $motif]);
+            $this->notifier($liste, $element, 'rejeter', $motif);
         }, 'admin.zones.messages.rejetee');
     }
 
@@ -224,6 +227,14 @@ class NiveauxZonesController extends Controller
             $element->creerVersion($request->user(), __($actif ? 'admin.types.motifs.reactivation' : 'admin.types.motifs.desactivation'));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().($actif ? '.reactive' : '.desactive'), class_basename($element), $element->id);
         }, $actif ? 'admin.zones.messages.reactivee' : 'admin.zones.messages.desactivee');
+    }
+
+    /** Auteur de la demande prévenu, une fois la décision enregistrée. */
+    private function notifier(string $liste, Niveau|ZoneSite|Unite $element, string $decision, ?string $motif): void
+    {
+        $auteur = $element->demande_par;
+        DB::afterCommit(fn () => $this->notifications->envoyer($auteur, __('admin.a_valider.elements.'.$liste), $element->code.' · '.$element->libelle,
+            $decision, $motif, route('admin.referencement.zones.show', [$liste, $element->id])));
     }
 
     /** @return array<string, list<mixed>> */

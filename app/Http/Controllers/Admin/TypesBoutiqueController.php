@@ -9,6 +9,7 @@ use App\Models\HistoriqueCode;
 use App\Models\TypeBoutique;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
+use App\Services\Validation\NotificationDecision;
 use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
@@ -32,7 +33,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class TypesBoutiqueController extends Controller
 {
-    public function __construct(private readonly Journal $journal) {}
+    public function __construct(private readonly Journal $journal, private readonly NotificationDecision $notifications) {}
 
     public function index(Request $request): Response|StreamedResponse|View
     {
@@ -194,6 +195,7 @@ class TypesBoutiqueController extends Controller
             }
             $type->creerVersion($request->user(), __($motif));
             $this->journal->ecrire($request->user(), 'type_boutique.confirme', 'TypeBoutique', $type->id, null, ['statut' => $type->statut->value, 'attribuable' => $type->attribuable]);
+            $this->notifier($type, 'confirmer', null);
         }, 'admin.types.messages.confirme');
     }
 
@@ -213,6 +215,7 @@ class TypesBoutiqueController extends Controller
             }
             $type->creerVersion($request->user(), __('admin.types.motifs.rejet', ['motif' => $motif]));
             $this->journal->ecrire($request->user(), 'type_boutique.rejete', 'TypeBoutique', $type->id, null, ['motif' => $motif]);
+            $this->notifier($type, 'rejeter', $motif);
         }, 'admin.types.messages.rejete');
     }
 
@@ -231,6 +234,14 @@ class TypesBoutiqueController extends Controller
     }
 
     // ------------------------------------------------------------------ Outils
+
+    /** Auteur de la demande prévenu, une fois la décision enregistrée. */
+    private function notifier(TypeBoutique $type, string $decision, ?string $motif): void
+    {
+        $auteur = $type->demande_par;
+        DB::afterCommit(fn () => $this->notifications->envoyer($auteur, __('admin.a_valider.elements.type'), ($type->code ? $type->code.' · ' : '').$type->libelle,
+            $decision, $motif, route('admin.sites.types.show', $type)));
+    }
 
     private function changerActivation(Request $request, TypeBoutique $type, bool $actif): RedirectResponse
     {

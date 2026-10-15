@@ -18,6 +18,7 @@ use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Parametrage\WorkflowParametrage;
 use App\Services\Sites\ComparaisonCapacites;
+use App\Services\Validation\NotificationDecision;
 use App\Support\FicheSite;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
@@ -41,7 +42,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class SitesController extends Controller
 {
-    public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal) {}
+    public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal, private readonly NotificationDecision $notifications) {}
 
     /** Liste des sites : tableau de données (recherche, filtres, tri, pagination, export) ; coût total réservé aux profils financiers. */
     public function index(Request $request): Response|StreamedResponse|View
@@ -331,6 +332,10 @@ class SitesController extends Controller
             if ($site->statut !== StatutSite::Confirme) {
                 throw new RegleGestionException(__('admin.sites.regles.revision_confirme'));
             }
+            // Une demande d'autorisation était en attente : son auteur est prévenu de l'accord.
+            if ($demandeur = $site->revision_demandee_par) {
+                DB::afterCommit(fn () => $this->notifierDemande($demandeur, $site, 'confirmer', null));
+            }
             $site->forceFill(['statut' => StatutSite::Brouillon, 'revision_demandee_par' => null, 'revision_demandee_le' => null, 'revision_demande_motif' => null])->save();
             $this->journal->ecrire($request->user(), 'site.modification_autorisee', 'Site', $site->id, ['statut' => 'CONFIRME'], ['statut' => 'BROUILLON', 'motif' => $motif]);
         }, 'admin.sites.messages.revision');
@@ -361,12 +366,21 @@ class SitesController extends Controller
             if ($site->revision_demandee_le === null) {
                 throw new RegleGestionException(__('admin.sites.regles.aucune_demande'));
             }
+            $demandeur = $site->revision_demandee_par;
             $site->forceFill(['revision_demandee_par' => null, 'revision_demandee_le' => null, 'revision_demande_motif' => null])->save();
             $this->journal->ecrire($request->user(), 'site.modification_refusee', 'Site', $site->id, null, ['motif' => $motif]);
+            DB::afterCommit(fn () => $this->notifierDemande($demandeur, $site, 'rejeter', $motif));
         }, 'admin.sites.messages.revision_refusee');
     }
 
     /** @return array<string, mixed> */
+    /** Demande d'autorisation de modifier un site validé : décision notifiée au GESTIONNAIRE qui l'a déposée. */
+    private function notifierDemande(?int $demandeur, Site $site, string $decision, ?string $motif): void
+    {
+        $this->notifications->envoyer($demandeur, __('admin.a_valider.elements.autorisation'), ($site->code ? $site->code.' · ' : '').$site->nom,
+            $decision, $motif, route('admin.sites.show', $site));
+    }
+
     private function valider(Request $request, ?Site $site = null): array
     {
         $this->majuscules($request, ['code']);
