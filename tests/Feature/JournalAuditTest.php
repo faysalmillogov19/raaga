@@ -61,7 +61,10 @@ class JournalAuditTest extends TestCase
 
     public function test_les_tables_de_preuve_sont_toutes_protegees(): void
     {
-        $tables = collect(DB::select('SHOW TRIGGERS'))->pluck('Table')->unique()->sort()->values()->all();
+        // Triggers de la base (PostgreSQL comme en production ; MySQL : SHOW TRIGGERS).
+        $tables = (DB::getDriverName() === 'pgsql'
+            ? collect(DB::select("select event_object_table as \"Table\" from information_schema.triggers where trigger_schema = 'public'"))
+            : collect(DB::select('SHOW TRIGGERS')))->pluck('Table')->unique()->sort()->values()->all();
 
         $this->assertSame(['acceptations', 'affectations_boutiques', 'audit_logs', 'campagne_boutiques_versions', 'convention_versions', 'distribution_versions', 'grille_tarifaire_versions', 'historique_codes', 'lignes_registre', 'lignes_registre_a', 'parametrage_decisions', 'parametres_plateforme_versions', 'referentiel_versions', 'site_finance_versions', 'site_versions', 'tirages_boutiques', 'tranche_versions', 'type_boutique_versions'], $tables);
     }
