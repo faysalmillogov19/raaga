@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
 use App\Http\Controllers\Admin\NiveauxZonesController;
+use App\Http\Controllers\Admin\PhaseController;
 use App\Http\Controllers\Admin\PiecesKycController;
 use App\Http\Controllers\Admin\PlateformeController;
 use App\Http\Controllers\Admin\ProfilController;
@@ -87,6 +88,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/preferences/theme', [CadreController::class, 'theme'])->name('preferences.theme');
         Route::post('/notifications/lues', [CadreController::class, 'notificationsLues'])->name('notifications.lues');
         Route::get('/recherche', [CadreController::class, 'recherche'])->name('recherche');
+        // Décisions de phase du site public : le SUPER_ADMIN propose, le VALIDATEUR confirme ou rejette.
+        Route::controller(PhaseController::class)->prefix('phase')->name('phase')->group(function () {
+            Route::get('/', 'index')->middleware('can:'.Droit::PhaseVoir->value);
+            Route::post('/', 'proposer')->middleware('can:'.Droit::PhaseProposer->value)->name('.proposer');
+            Route::post('/{decision}/confirmer', 'confirmer')->whereNumber('decision')->middleware('can:'.Droit::PhaseConfirmer->value)->name('.confirmer');
+            Route::post('/{decision}/rejeter', 'rejeter')->whereNumber('decision')->middleware('can:'.Droit::PhaseConfirmer->value)->name('.rejeter');
+        });
+
         // Charte du back-office : tous les composants, pour contrôle visuel (SUPER_ADMIN).
         Route::view('/charte', 'admin.charte')->middleware('can:'.Droit::CharteVoir->value)->name('charte');
 

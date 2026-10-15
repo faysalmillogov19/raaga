@@ -51,7 +51,7 @@ class PageController extends Controller
 
         // Phase 1 : boutiques et cautions uniquement ; phase 2 : questions sur les actions.
         return view('public.faq', [
-            'groupes' => Phase::actionsPubliques()
+            'groupes' => Phase::presentationActions()
                 ? array_diff_key($groupes, ['boutiques' => true])
                 : array_intersect_key($groupes, array_flip(['boutiques', 'securite'])),
         ]);
@@ -122,8 +122,9 @@ class PageController extends Controller
         return $fichier && is_file(public_path($fichier)) ? asset($fichier) : null;
     }
 
+    /** Souscription ouverte : souscription (ou création de compte) ; sinon, alerte SMS « bientôt ouverte ». */
     private function urlSouscrire(): string
     {
-        return auth()->check() ? route('souscrire') : route('inscription');
+        return Phase::lienSouscription();
     }
 }

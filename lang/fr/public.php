@@ -131,6 +131,7 @@ return [
         'offre' => 'Comprendre l’offre',
         'souscrire' => 'Souscrire',
         'transparence' => 'Transparence',
+        'investir' => 'Investir',
         'boutiques' => 'Boutiques',
         'espace' => 'Mon espace',
         'faq' => 'Aide & FAQ',
@@ -595,7 +596,9 @@ return [
             'attribuees' => 'Boutiques attribuées',
         ],
         'onglets_libelle' => 'Rubriques de mon espace',
+        'rubriques' => ['souscriptions' => 'Mes souscriptions', 'documents' => 'Mes documents', 'dividendes' => 'Mes dividendes'],
         'onglets' => [
+            'actions' => 'Mes actions',
             'souscriptions' => 'Mes souscriptions',
             'boutiques' => 'Mes boutiques',
             'documents' => 'Mes documents',
@@ -713,6 +716,42 @@ return [
     ],
 
     // Accueil de la phase 1 (boutiques) : bannière, chiffres, étapes, versements, sites, questions, aide.
+    'demarches' => [
+        'titre' => 'Deux démarches distinctes',
+        'actions' => 'Acheter des actions ne donne aucun droit ni priorité pour obtenir une boutique.',
+        'boutiques' => 'Candidater à une boutique ne fait pas de vous un actionnaire.',
+        'souscription_fermee' => 'La souscription d’actions n’est pas ouverte.',
+        'bientot' => 'Souscription bientôt ouverte',
+        'investir' => [
+            'titre' => 'J’investis dans le marché',
+            'prix' => 'Prix de l’action : :prix',
+            'minimum' => 'Minimum : :n actions, soit :montant',
+            'minimum_un' => 'Minimum : 1 action',
+            'prix_a_venir' => 'Le prix de l’action sera publié avec la prochaine tranche.',
+            'risque' => 'Rendement non garanti : la valeur et les dividendes dépendent des résultats du marché.',
+            'bouton' => 'Devenir actionnaire',
+        ],
+        'boutique' => [
+            'titre' => 'Je veux une boutique',
+            'texte' => 'Vous versez une caution (remboursable selon le règlement) et une avance de loyers, déduite de vos premiers loyers.',
+            'tirage' => 'Attribution par tirage au sort',
+            'bouton' => 'Candidater',
+        ],
+        'alerte' => [
+            'titre' => 'Souscription bientôt ouverte',
+            'intro' => 'La souscription d’actions n’est pas encore ouverte. Laissez votre numéro : vous recevrez un SMS dès son ouverture.',
+            'telephone' => 'Numéro de téléphone',
+            'telephone_aide' => '8 chiffres, numéro burkinabè.',
+            'consentement' => 'J’accepte de recevoir un SMS à l’ouverture de la souscription. Mon numéro ne sert qu’à cela ; je peux demander sa suppression à tout moment.',
+            'envoyer' => 'Recevoir l’alerte',
+            'enregistree' => 'C’est noté : vous recevrez un SMS dès l’ouverture de la souscription.',
+            'erreurs' => [
+                'telephone' => 'Saisissez un numéro burkinabè à 8 chiffres.',
+                'consentement' => 'Cochez la case pour accepter de recevoir le SMS.',
+            ],
+        ],
+    ],
+
     'accueil_raaga' => [
         'titre_page' => 'Votre boutique au marché Raaga',
         'titre' => 'Votre boutique au marché Raaga',

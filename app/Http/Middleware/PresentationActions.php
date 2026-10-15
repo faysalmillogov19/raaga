@@ -8,14 +8,14 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Pages publiques des actions : hors périmètre de la phase 1 (boutiques et cautions uniquement),
- * elles renvoient vers la page des boutiques. Redirection temporaire : elles reviendront en phase 2.
+ * Pages d'information sur les actions : tant que la « présentation des actions » n'est pas visible (décision de
+ * phase confirmée par le VALIDATEUR), elles renvoient vers la page des boutiques (redirection temporaire).
  */
-class ActionsPubliques
+class PresentationActions
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! Phase::actionsPubliques()) {
+        if (! Phase::presentationActions()) {
             return $request->expectsJson() ? abort(404) : redirect()->route('boutiques');
         }
 

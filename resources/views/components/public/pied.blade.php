@@ -22,7 +22,7 @@
         <div>
             <h2 class="pied-titre">{{ __('public.pied.decouvrir') }}</h2>
             <ul>
-                @foreach (\App\Support\Phase::actionsPubliques() ? ['offre', 'transparence', 'faq'] : ['boutiques', 'faq'] as $cle)
+                @foreach (\App\Support\Phase::presentationActions() ? ['offre', 'transparence', 'faq'] : ['boutiques', 'faq'] as $cle)
                     <li><a href="{{ route($cle) }}" class="pied-lien">{{ __('public.menu.'.$cle) }}</a></li>
                 @endforeach
             </ul>
@@ -33,7 +33,7 @@
             <ul>
                 <li><a href="{{ route('inscription') }}" class="pied-lien">{{ __('public.pied.creer_compte') }}</a></li>
                 <li><a href="{{ route('espace') }}" class="pied-lien">{{ __('public.pied.mon_espace') }}</a></li>
-                @if (\App\Support\Phase::actionsPubliques())
+                @if (\App\Support\Phase::presentationActions())
                     <li><a href="{{ route('souscrire') }}" class="pied-lien">{{ __('public.pied.souscrire') }}</a></li>
                 @else
                     <li><a href="{{ route('boutiques') }}" class="pied-lien">{{ __('public.boutiques.candidater_boutique') }}</a></li>

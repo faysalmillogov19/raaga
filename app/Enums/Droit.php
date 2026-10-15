@@ -48,6 +48,11 @@ enum Droit: string
     // Page de contrôle visuel de la charte du back-office (SUPER_ADMIN).
     case CharteVoir = 'charte.voir';
 
+    // Décisions de phase du site public (présentation des actions, souscription) : SUPER_ADMIN propose, VALIDATEUR confirme.
+    case PhaseVoir = 'phase.voir';
+    case PhaseProposer = 'phase.proposer';
+    case PhaseConfirmer = 'phase.confirmer';
+
     case ReferentielsVoir = 'referentiels.voir';
     case ReferentielsGerer = 'referentiels.gerer';
 
@@ -127,7 +132,7 @@ enum Droit: string
         return in_array($this, [
             self::AssistanceAgir, self::DemandesTraiter, self::ContenusGerer,
             self::TextesLegauxRediger, self::TextesLegauxPublier, self::ApprobationsTraiter, self::SecuriteGerer,
-            self::PlateformeModifier, self::PlateformeModifierTout,
+            self::PlateformeModifier, self::PlateformeModifierTout, self::PhaseProposer, self::PhaseConfirmer,
             self::InstitutionsGerer, self::InstitutionsInterlocuteur, self::KybVerifier,
             self::ConventionsSaisir, self::ConventionsConfirmer, self::AppelsFondsRapprocher,
             self::UtilisateursGerer, self::ReferentielsGerer,
@@ -219,6 +224,7 @@ enum Droit: string
                 self::ApprobationsTraiter,
                 self::UtilisateursGerer,
                 self::SecuriteGerer, self::ConnexionsVoir, self::CharteVoir,
+                self::PhaseVoir, self::PhaseProposer,
                 self::AuditVoir,
                 self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
                 self::SitesVoir, self::GrilleVoir, self::ImportsVoir,
@@ -228,6 +234,7 @@ enum Droit: string
             // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre.
             Role::Validateur => [
                 self::TableauDeBordVoir,
+                self::PhaseVoir, self::PhaseConfirmer,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
                 self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter,

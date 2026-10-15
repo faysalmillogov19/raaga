@@ -192,11 +192,9 @@ class SouscriptionTest extends TestCase
         $this->assertSame(0, Souscription::count());
     }
 
-    public function test_sans_tranche_ouverte_l_etat_vide_reste_affiche(): void
+    public function test_sans_tranche_ouverte_la_souscription_renvoie_vers_l_alerte_sms(): void
     {
-        $this->get('/souscrire')->assertOk()
-            ->assertSee('La souscription en ligne n’est pas encore ouverte')
-            ->assertSee('Consultez cette page ou la rubrique Actualités pour connaître la date d’ouverture.')
-            ->assertDontSee('Vous serez informé par SMS');
+        $this->get('/souscrire')->assertRedirect(route('souscription.bientot'));
+        $this->get(route('souscription.bientot'))->assertOk()->assertSee('Souscription bientôt ouverte');
     }
 }

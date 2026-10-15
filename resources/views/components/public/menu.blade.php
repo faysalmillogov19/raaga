@@ -1,17 +1,16 @@
 @php
     // Chaque entrée est active si la route courante correspond à l'un de ses motifs.
+    // Deux démarches distinctes : « Investir » (actions B) et « Boutiques ».
     $entrees = [
-        ['cle' => 'accueil', 'route' => 'accueil', 'motifs' => ['accueil', 'actualites.*']],
-        ['cle' => 'offre', 'route' => 'offre', 'motifs' => ['offre']],
-        ['cle' => 'souscrire', 'route' => 'souscrire', 'motifs' => ['souscrire', 'inscription', 'inscription.*', 'paiement', 'souscription.*']],
-        ['cle' => 'transparence', 'route' => 'transparence', 'motifs' => ['transparence']],
+        ['cle' => 'accueil', 'route' => 'accueil', 'motifs' => ['accueil']],
+        ['cle' => 'investir', 'route' => 'offre', 'motifs' => ['offre', 'transparence', 'actualites.*', 'souscrire', 'souscrire.*', 'souscription.*', 'paiement', 'paiement.*']],
         ['cle' => 'boutiques', 'route' => 'boutiques', 'motifs' => ['boutiques', 'boutiques.*']],
         ['cle' => 'espace', 'route' => auth()->check() ? 'espace' : 'connexion', 'motifs' => ['espace', 'espace.*', 'connexion', 'connexion.*']],
         ['cle' => 'faq', 'route' => 'faq', 'motifs' => ['faq']],
     ];
-    // Phase 1 (boutiques et cautions uniquement) : pas d'entrées vers les pages des actions.
-    if (! \App\Support\Phase::actionsPubliques()) {
-        $entrees = array_values(array_filter($entrees, fn ($e) => ! in_array($e['cle'], ['offre', 'souscrire', 'transparence'], true)));
+    // Présentation des actions non visible : seule la démarche « boutiques » est proposée.
+    if (! \App\Support\Phase::presentationActions()) {
+        $entrees = array_values(array_filter($entrees, fn ($e) => $e['cle'] !== 'investir'));
     }
 @endphp
 

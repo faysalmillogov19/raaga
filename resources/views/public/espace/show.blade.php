@@ -1,4 +1,4 @@
-{{-- Mon espace (citoyen) : indicateurs, onglets souscriptions / documents / dividendes / profil. Statuts toujours écrits. --}}
+{{-- Mon espace (citoyen) : onglets « Mes actions » (souscriptions, documents, dividendes), « Mes boutiques », « Mon profil ». Statuts toujours écrits. --}}
 @php
     use App\Enums\StatutKyc;
     use App\Enums\StatutSouscription;
@@ -28,18 +28,8 @@
     </div>
 
     <div class="conteneur py-8">
-        {{-- Indicateurs --}}
-        <dl class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            @foreach ($indicateurs as $cle => $valeur)
-                <div class="carte flex flex-col-reverse justify-end p-4">
-                    <dt class="mt-1 text-sm text-gris">{{ __('public.espace.indicateurs.'.$cle) }}</dt>
-                    <dd class="text-lg font-extrabold text-encre tab:text-xl">{{ $valeur }}</dd>
-                </div>
-            @endforeach
-        </dl>
-
         {{-- Onglets : liens (chaque onglet a son adresse, aucun script requis) --}}
-        <nav class="mt-8 border-b border-ligne" aria-label="{{ __('public.espace.onglets_libelle') }}">
+        <nav class="border-b border-ligne" aria-label="{{ __('public.espace.onglets_libelle') }}">
             <ul class="grid grid-cols-2 gap-x-1 sm:flex">
                 @foreach ($onglets as $cle)
                     <li>
@@ -55,9 +45,21 @@
 
         <section class="mt-6" aria-labelledby="onglet-titre">
             <h2 id="onglet-titre" class="sr-only">{{ __('public.espace.onglets.'.$onglet) }}</h2>
+            @if ($indicateurs)
+                <dl class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    @foreach ($indicateurs as $cle => $valeur)
+                        <div class="carte flex flex-col-reverse justify-end p-4">
+                            <dt class="mt-1 text-sm text-gris">{{ __('public.espace.indicateurs.'.$cle) }}</dt>
+                            <dd class="text-lg font-extrabold text-encre tab:text-xl">{{ $valeur }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            @endif
 
             @switch($onglet)
-                @case('souscriptions')
+                @case('actions')
+                    <h3 class="!text-[1.15rem]">{{ __('public.espace.rubriques.souscriptions') }}</h3>
+                    <div class="mt-3">
                     @forelse ($souscriptions as $s)
                         @php($paiementConfirme = $s->paiements->firstWhere('statut', \App\Enums\StatutPaiement::Confirme))
                         @if ($loop->first)<ul class="space-y-3">@endif
@@ -87,6 +89,17 @@
                             {{ __('public.espace.vides.souscriptions') }}
                         </x-etat-vide>
                     @endforelse
+                    </div>
+
+                    <h3 class="mt-8 !text-[1.15rem]">{{ __('public.espace.rubriques.documents') }}</h3>
+                    <div class="mt-3">
+                    @include('public.espace._documents')
+                    </div>
+
+                    <h3 class="mt-8 !text-[1.15rem]">{{ __('public.espace.rubriques.dividendes') }}</h3>
+                    <div class="mt-3">
+                    @include('public.espace._dividendes')
+                    </div>
                     @break
 
                 @case('boutiques')
@@ -116,48 +129,6 @@
                             {{ __('public.espace.vides.boutiques') }}
                         </x-etat-vide>
                     @endforelse
-                    @break
-
-                @case('documents')
-                    @if ($recus->isEmpty() && $reglements->isEmpty() && $attestations->isEmpty())
-                        <x-etat-vide icone="contenus" :titre="__('public.espace.vides.documents_titre')">
-                            {{ __('public.espace.vides.documents') }}
-                        </x-etat-vide>
-                    @else
-                        <ul class="space-y-3">
-                            @foreach ($attestations as $ligne)
-                                <li class="carte flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div><p class="font-semibold text-encre">{{ __('public.espace.documents.attestation', ['n' => format_nombre($ligne->nb_actions)]) }}</p>
-                                        <p class="texte-carte">{{ $ligne->tranche->nom }} · {{ __('public.espace.documents.certificat', ['numero' => $ligne->numero_certificat]) }} · {{ $ligne->date_inscription->format('d/m/Y') }}</p></div>
-                                    <a href="{{ route('espace.documents.attestation', $ligne->numero_certificat) }}" class="btn-secondaire" download>{{ __('public.espace.documents.telecharger') }}</a>
-                                </li>
-                            @endforeach
-                            @foreach ($recus as $r)
-                                <li class="carte flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div><p class="font-semibold text-encre">{{ __('public.espace.documents.recu', ['numero' => \App\Support\Recu::numero($r['paiement'])]) }}</p>
-                                        <p class="texte-carte">{{ $r['souscription']->reference }} · {{ $r['paiement']->date_confirmation->format('d/m/Y') }}</p></div>
-                                    <a href="{{ route('paiement.recu', $r['souscription']->reference) }}" class="btn-secondaire" download>{{ __('public.espace.documents.telecharger') }}</a>
-                                </li>
-                            @endforeach
-                            @foreach ($reglements as $a)
-                                <li class="carte flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div><p class="font-semibold text-encre">{{ __('public.espace.documents.reglement', ['tranche' => $a->souscription->tranche->nom, 'version' => $a->version_document]) }}</p>
-                                        <p class="texte-carte">{{ __('public.espace.documents.accepte_le', ['date' => $a->accepte_le->format('d/m/Y')]) }}</p></div>
-                                    <a href="{{ route('espace.documents.reglement', $a->souscription->reference) }}" class="btn-secondaire">{{ __('public.espace.documents.consulter') }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
-                    @break
-
-                @case('dividendes')
-                    <x-etat-vide icone="dividendes" :titre="__('public.espace.vides.dividendes_titre')">
-                        {{ __('public.espace.vides.dividendes') }}
-                    </x-etat-vide>
-                    <div class="carte mx-auto mt-4 max-w-xl p-5">
-                        <h3 class="!text-base">{{ __('public.espace.compte_versement') }}</h3>
-                        <p class="mt-1 texte-carte">{{ __('public.espace.compte_versement_vide') }}</p>
-                    </div>
                     @break
 
                 @case('profil')

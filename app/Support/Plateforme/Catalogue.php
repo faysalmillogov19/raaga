@@ -39,6 +39,9 @@ final class Catalogue
 
     public const TYPES_BANDEAU = ['information', 'alerte', 'maintenance'];
 
+    /** Promesse de rendement interdite dans les textes du carrousel (« rendement garanti », « 10 % par an »…). */
+    public const PROMESSE_RENDEMENT = '/(rendements?|gains?|bénéfices?|profits?|intérêts?|dividendes?|revenus?)\s+(garanti|assuré|certain|sûr)|\d+([,.]\d+)?\s*%\s*(de\s+)?(rendement|gain|bénéfice|intérêt|par\s+an|l[’\x27]an)|(garanti|assuré)s?\s+(de\s+)?(gagner|rendement|bénéfice)/iu';
+
     /** Position du texte d'une diapositive du carrousel (sur ordinateur ; à gauche sur mobile). */
     public const POSITIONS_TEXTE = ['gauche', 'droite', 'panneau'];
 
@@ -193,9 +196,9 @@ final class Catalogue
                     "{$champ}.*.image" => ['nullable', 'string', 'regex:'.Diapositives::FORMAT, "required_without:{$champ}.*.fichier"],
                     "{$champ}.*.fichier" => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:'.self::PHOTO_MAX_KO, 'dimensions:min_width=640'],
                     "{$champ}.*.alt" => ['required', 'string', 'max:160'],
-                    "{$champ}.*.titre" => ['nullable', 'string', 'max:60'],
-                    "{$champ}.*.sousTitre" => ['nullable', 'string', 'max:140'],
-                    "{$champ}.*.boutonLibelle" => ['nullable', 'string', 'max:40', "required_with:{$champ}.*.boutonLien"],
+                    "{$champ}.*.titre" => ['nullable', 'string', 'max:60', 'not_regex:'.self::PROMESSE_RENDEMENT],
+                    "{$champ}.*.sousTitre" => ['nullable', 'string', 'max:140', 'not_regex:'.self::PROMESSE_RENDEMENT],
+                    "{$champ}.*.boutonLibelle" => ['nullable', 'string', 'max:40', "required_with:{$champ}.*.boutonLien", 'not_regex:'.self::PROMESSE_RENDEMENT],
                     "{$champ}.*.boutonLien" => ['nullable', 'string', 'max:255', 'regex:#^(https://|/(?!/))#i', "required_with:{$champ}.*.boutonLibelle"],
                     "{$champ}.*.ordre" => ['nullable', 'integer', 'min:0', 'max:999'],
                     "{$champ}.*.active" => ['boolean'],

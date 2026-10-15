@@ -2,49 +2,63 @@
 
 namespace App\Http\Controllers\Publique;
 
+use App\Enums\StatutTranche;
 use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
+use App\Models\Tranche;
 use App\Services\Boutiques\CandidatureBoutiques;
 use App\Services\Publique\AccueilBoutiques;
-use App\Services\Publique\CollectePublique;
 use App\Support\Diapositives;
 use App\Support\Phase;
 use Illuminate\View\View;
 
+/**
+ * Accueil public : carrousel, puis les deux démarches côte à côte (investir, obtenir une boutique), chiffres, étapes,
+ * versements, sites, questions, aide. La carte « J'investis » n'apparaît que si la présentation des actions est visible.
+ */
 class AccueilController extends Controller
 {
     /** Questions de la FAQ « Boutiques et cautions » mises en avant sur l'accueil (les plus utiles). */
     private const QUESTIONS_ACCUEIL = [0, 1, 2, 4, 5];
 
-    public function __invoke(CollectePublique $collecte, AccueilBoutiques $accueil): View
+    public function __invoke(AccueilBoutiques $accueil): View
     {
-        // Phase 1 : accueil centré sur les boutiques (chiffres, étapes, versements, sites, questions, aide).
-        if (! Phase::actionsPubliques()) {
-            $campagne = CampagneBoutiques::ouverte();
-            $questions = __('public.faq.groupes.boutiques.questions');
+        $campagne = CampagneBoutiques::ouverte();
+        $ouverte = $campagne && CandidatureBoutiques::accepteCandidatures($campagne);
+        $questions = __('public.faq.groupes.boutiques.questions');
 
-            return view('public.accueil-boutiques', [
-                'campagne' => $campagne,
-                'ouverte' => $campagne && CandidatureBoutiques::accepteCandidatures($campagne),
-                'chiffres' => $accueil->chiffres(),
-                'durees' => $accueil->durees(),
-                'sites' => $accueil->sites(),
-                'diapositives' => Diapositives::affichees(),
-                'questions' => array_values(array_filter(array_map(fn (int $i) => $questions[$i] ?? null, self::QUESTIONS_ACCUEIL))),
-                // Campagne ouverte : candidature (après connexion) ; sinon, la page des boutiques ou la création de compte.
-                'urlCandidater' => $campagne && CandidatureBoutiques::accepteCandidatures($campagne)
-                    ? (auth()->check() ? route('boutiques.candidater') : route('inscription'))
-                    : (auth()->check() ? route('boutiques') : route('inscription')),
-            ]);
-        }
-
-        return view('public.accueil', [
-            'etat' => $collecte->etat(),
-            'actualites' => $collecte->actualites(),
-            // Chiffres de présentation : paramètres de la plateforme (jamais les paramètres de tranche).
-            'projet' => plateforme('projet'),
-            // Connecté : directement la souscription ; sinon, création de compte.
-            'urlSouscrire' => auth()->check() ? route('souscrire') : route('inscription'),
+        return view('public.accueil-boutiques', [
+            'campagne' => $campagne,
+            'ouverte' => $ouverte,
+            'chiffres' => $accueil->chiffres(),
+            'durees' => $accueil->durees(),
+            'sites' => $accueil->sites(),
+            'diapositives' => Diapositives::affichees(),
+            'questions' => array_values(array_filter(array_map(fn (int $i) => $questions[$i] ?? null, self::QUESTIONS_ACCUEIL))),
+            // Campagne ouverte : candidature (après connexion) ; sinon, la page des boutiques ou la création de compte.
+            'urlCandidater' => $ouverte
+                ? (auth()->check() ? route('boutiques.candidater') : route('inscription'))
+                : (auth()->check() ? route('boutiques') : route('inscription')),
+            'investir' => Phase::presentationActions() ? $this->investir() : null,
         ]);
+    }
+
+    /**
+     * Carte « J'investis » : prix de l'action et minimum lus dans la tranche ouverte, à défaut la prochaine tranche
+     * confirmée ; lien vers la souscription si elle est ouverte, sinon vers l'alerte SMS.
+     *
+     * @return array{prix: ?int, minimum: ?int, ouverte: bool, lien: string}
+     */
+    private function investir(): array
+    {
+        $tranche = Phase::trancheOuverte()
+            ?? Tranche::query()->where('statut', StatutTranche::Confirmee)->orderBy('date_ouverture')->first();
+
+        return [
+            'prix' => $tranche?->valeur_unitaire,
+            'minimum' => $tranche ? max(1, (int) $tranche->min_actions_par_souscription) : null,
+            'ouverte' => Phase::souscriptionOuverte(),
+            'lien' => Phase::lienSouscription(),
+        ];
     }
 }

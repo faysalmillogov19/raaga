@@ -138,6 +138,7 @@ class PlateformeController extends Controller
                     "{$champ}.*.fichier.*" => $e('photo'), "{$champ}.*.image.required_without" => $e('diapositive_image'),
                     "{$champ}.*.boutonLien.regex" => $e('lien_bouton'), "{$champ}.*.fin.after_or_equal" => $e('fin_apres_debut'),
                     "{$champ}.max" => $e('diapositives_max'),
+                    "{$champ}.*.titre.not_regex" => $e('promesse'), "{$champ}.*.sousTitre.not_regex" => $e('promesse'), "{$champ}.*.boutonLibelle.not_regex" => $e('promesse'),
                 ],
                 'reseaux', 'liens' => ["{$champ}.*.url.url" => $e('https'), "{$champ}.*.url.regex" => $e('https')],
                 'bandeau' => ["{$champ}.lien.url" => $e('https'), "{$champ}.lien.regex" => $e('https'), "{$champ}.fin.after" => $e('fin_apres_debut')],

@@ -99,13 +99,15 @@
                     @endforeach
                 </ul>
 
-                @if ($etat)
-                    <div class="mt-4 border-t border-ligne pt-4">
+                <div class="mt-4 border-t border-ligne pt-4">
+                    @if (\App\Support\Phase::souscriptionOuverte())
                         <p class="font-bold text-encre">{{ __('public.offre.encart.pret') }}</p>
                         <p class="mt-1 texte-carte">{{ __('public.offre.encart.texte') }}</p>
                         <a href="{{ $urlSouscrire }}" class="btn-primaire mt-3 w-full">{{ __('public.communs.je_souscris') }} <x-public.icone nom="fleche" /></a>
-                    </div>
-                @endif
+                    @else
+                        <a href="{{ $urlSouscrire }}" class="btn-primaire w-full">{{ __('public.demarches.bientot') }}</a>
+                    @endif
+                </div>
 
                 @if ($numeroVert = plateforme('contacts.numeroVert'))
                     <div class="mt-4 flex items-start gap-3 rounded-charte bg-vert-pale p-4">

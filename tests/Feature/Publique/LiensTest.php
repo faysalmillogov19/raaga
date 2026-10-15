@@ -14,7 +14,7 @@ class LiensTest extends TestCase
 
     private const PAGES = [
         '/', '/offre', '/transparence', '/faq', '/actualites/ouverture-tranche-1',
-        '/connexion', '/inscription', '/souscrire', '/paiement',
+        '/connexion', '/inscription', '/souscription-bientot', '/paiement',
         '/contact', '/guichets', '/boutiques', '/mentions-legales', '/donnees-personnelles', '/accessibilite',
     ];
 
@@ -93,10 +93,10 @@ class LiensTest extends TestCase
         $this->actingAs(User::factory()->create())->get('/espace')->assertOk();
     }
 
-    public function test_les_pages_du_tunnel_activent_l_entree_souscrire(): void
+    public function test_les_pages_du_tunnel_activent_l_entree_investir(): void
     {
-        foreach (['/inscription', '/paiement'] as $page) {
-            $this->get($page)->assertSeeInOrder(['aria-current="page"', 'Souscrire'], false);
+        foreach (['/souscription-bientot', '/paiement'] as $page) {
+            $this->get($page)->assertSeeInOrder(['aria-current="page"', 'Investir'], false);
         }
     }
 

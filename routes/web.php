@@ -11,6 +11,7 @@ use App\Http\Controllers\Compte\ProfilController as CompteProfilController;
 use App\Http\Controllers\Compte\SouscriptionController;
 use App\Http\Controllers\Compte\VerificationController;
 use App\Http\Controllers\Publique\AccueilController;
+use App\Http\Controllers\Publique\AlerteSouscriptionController;
 use App\Http\Controllers\Publique\ArmoiriesController;
 use App\Http\Controllers\Publique\ContactController;
 use App\Http\Controllers\Publique\DiapositiveController;
@@ -52,11 +53,11 @@ Route::redirect('/admin/recette', '/recette/sms');
 Route::redirect('/admin/recette/sms', '/recette/sms');
 
 Route::controller(PageController::class)->group(function () {
-    // Pages des actions : masquées en phase 1 (boutiques et cautions uniquement).
-    Route::get('/offre', 'offre')->middleware('actions.publiques')->name('offre');
-    Route::get('/transparence', 'transparence')->middleware('actions.publiques')->name('transparence');
+    // Pages d'information sur les actions : visibles si la « présentation des actions » est décidée.
+    Route::get('/offre', 'offre')->middleware('actions.presentation')->name('offre');
+    Route::get('/transparence', 'transparence')->middleware('actions.presentation')->name('transparence');
     Route::get('/faq', 'faq')->name('faq');
-    Route::get('/actualites/{slug}', 'actualite')->middleware('actions.publiques')->name('actualites.show');
+    Route::get('/actualites/{slug}', 'actualite')->middleware('actions.presentation')->name('actualites.show');
 
     // Tunnel de souscription : pages d'attente jusqu'à la mise en service des parcours.
 
@@ -65,8 +66,13 @@ Route::controller(PageController::class)->group(function () {
     Route::get('/accessibilite', 'legal')->defaults('page', 'accessibilite')->name('legal.accessibilite');
 });
 
-// Souscription (citoyen connecté ; sans tranche ouverte, état vide visible de tous).
-Route::middleware('actions.publiques')->controller(SouscriptionController::class)->group(function () {
+// Souscription d'actions : seulement si elle est ouverte (paramètre confirmé ET tranche ouverte) ; sinon, page
+// « Souscription bientôt ouverte » et inscription à l'alerte SMS.
+Route::middleware('actions.presentation')->controller(AlerteSouscriptionController::class)->prefix('souscription-bientot')->name('souscription.bientot')->group(function () {
+    Route::get('/', 'show');
+    Route::post('/', 'store')->middleware('throttle:10,1')->name('.store');
+});
+Route::middleware('actions.souscription')->controller(SouscriptionController::class)->group(function () {
     Route::get('/souscrire', 'create')->name('souscrire');
     Route::get('/souscrire/reglement', 'reglement')->name('souscrire.reglement');
     Route::post('/souscrire', 'store')->middleware(['auth', 'role:citoyen', 'throttle:10,1'])->name('souscrire.store');
@@ -94,8 +100,8 @@ Route::middleware(['auth', 'role:citoyen'])->controller(CautionController::class
 });
 
 // Paiement d'une souscription réservée (citoyen connecté ; sans réservation, état vide).
-Route::get('/paiement', [PaiementController::class, 'index'])->middleware('actions.publiques')->name('paiement');
-Route::middleware(['actions.publiques', 'auth', 'role:citoyen'])->controller(PaiementController::class)->prefix('paiement/{reference}')->name('paiement.')->group(function () {
+Route::get('/paiement', [PaiementController::class, 'index'])->middleware('actions.presentation')->name('paiement');
+Route::middleware(['actions.presentation', 'auth', 'role:citoyen'])->controller(PaiementController::class)->prefix('paiement/{reference}')->name('paiement.')->group(function () {
     Route::get('/', 'show')->name('show');
     Route::post('/', 'payer')->middleware('throttle:10,1')->name('payer');
     Route::get('/statut', 'statut')->middleware('throttle:60,1')->name('statut');
@@ -107,7 +113,7 @@ Route::middleware(['actions.publiques', 'auth', 'role:citoyen'])->controller(Pai
 
 // Mon espace : tableau de bord du citoyen (un autre profil voit un état vide).
 Route::get('/espace', [EspaceController::class, 'show'])->middleware('auth')->name('espace');
-Route::middleware(['actions.publiques', 'auth', 'role:citoyen'])->controller(EspaceController::class)->prefix('espace/documents')->name('espace.documents.')->group(function () {
+Route::middleware(['actions.presentation', 'auth', 'role:citoyen'])->controller(EspaceController::class)->prefix('espace/documents')->name('espace.documents.')->group(function () {
     Route::get('/reglement/{souscription:reference}', 'reglement')->name('reglement');
     Route::get('/attestation/{ligne:numero_certificat}', 'attestation')->name('attestation');
 });

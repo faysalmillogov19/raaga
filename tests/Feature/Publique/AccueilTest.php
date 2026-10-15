@@ -37,8 +37,9 @@ class AccueilTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Aucune tranche n’est ouverte', false)
-            ->assertDontSee('Je souscris maintenant')
+            ->assertSee('Le prix de l’action sera publié avec la prochaine tranche.', false)
+            ->assertSee('Souscription bientôt ouverte')
+            ->assertDontSee('Devenir actionnaire')
             ->assertDontSee('données fictives');
     }
 
@@ -46,11 +47,10 @@ class AccueilTest extends TestCase
     {
         config(['raaga.demo' => true]);
 
-        $this->get('/')
+        $this->get('/transparence')
             ->assertOk()
             ->assertDontSee('Maquette de démonstration')
-            ->assertSee("1\u{00A0}284\u{00A0}650\u{00A0}000\u{00A0}FCFA", false)
-            ->assertSee('Actualités');
+            ->assertSee("1\u{00A0}284\u{00A0}650\u{00A0}000\u{00A0}FCFA", false);
     }
 
     public function test_les_valeurs_viennent_des_parametres_de_la_tranche_ouverte(): void
@@ -74,19 +74,20 @@ class AccueilTest extends TestCase
             ]);
         }
 
+        // Carte « J'investis » : prix de l'action et minimum lus dans la tranche ouverte.
         $this->get('/')
             ->assertOk()
-            ->assertSee("5\u{00A0}000\u{00A0}FCFA", false)
-            ->assertSee('dans la limite de 200 actions par personne')
-            // Seules les souscriptions payées comptent : 15 actions × 5 000 = 75 000.
-            ->assertSee("75\u{00A0}000\u{00A0}FCFA", false)
-            ->assertSee('Je souscris maintenant')
+            ->assertSee("Prix de l’action : 5\u{00A0}000\u{00A0}FCFA", false)
+            ->assertSee('Minimum : 1 action')
+            ->assertSee('Devenir actionnaire')
             ->assertSee(url('/inscription'));
+        // Seules les souscriptions payées comptent : 15 actions × 5 000 = 75 000.
+        $this->get('/transparence')->assertOk()->assertSee("75\u{00A0}000\u{00A0}FCFA", false);
     }
 
     public function test_un_citoyen_connecte_est_envoye_vers_la_souscription(): void
     {
-        config(['raaga.demo' => true]);
+        $this->trancheOuverte();
 
         $this->actingAs(User::factory()->create())
             ->get('/')
@@ -108,7 +109,7 @@ class AccueilTest extends TestCase
         foreach (['/', '/offre', '/transparence', '/', '/offre', '/transparence'] as $page) {
             $this->get($page)->assertOk();
         }
-        $this->get('/')->assertSee('Tranche test');
+        $this->get('/transparence')->assertSee('Tranche test');
 
         Cache::flush();
     }

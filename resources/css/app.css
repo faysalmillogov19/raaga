@@ -1750,6 +1750,15 @@
 
 /* ==================================================================== Accueil public (phase 1 : boutiques) */
 @layer components {
+    /* Rappel « deux démarches distinctes » en haut des pages des actions et des boutiques. */
+    .encadre-demarche {
+        border-bottom: 1px solid #f0d97a;
+        background: #fff8d9;
+        color: #4d3d00;
+    }
+
+    .encadre-demarche svg { color: #8a6d00; }
+
     /* Carrousel plein écran : hauteur fixe (aucun décalage au chargement), défilement natif au doigt (scroll-snap). */
     .acc-carrousel {
         position: relative;
@@ -1915,6 +1924,26 @@
     .acc-btn-contour:hover { background: rgba(255, 255, 255, .12); }
     .acc-btn-vert { background: var(--vert-fonce); color: #fff; }
     .acc-btn-vert:hover { background: var(--vert); }
+
+    /* Deux démarches côte à côte (empilées sur mobile). */
+    .acc-demarches { padding: 32px 0; background: #fff; }
+    .acc-demarches-grille { display: grid; gap: 16px; }
+
+    .acc-demarche {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .acc-demarche p, .acc-demarche li { color: var(--texte); }
+    .acc-demarche-points { display: grid; gap: 4px; font-weight: 700; }
+    .acc-demarche-points li { color: var(--encre); }
+    .acc-demarche-risque, .acc-demarche-tirage { display: flex; gap: 8px; align-items: flex-start; font-weight: 600; }
+    .acc-demarche-risque svg { color: #8a6d00; margin-top: 2px; }
+    .acc-demarche-tirage svg { color: var(--vert-fonce); margin-top: 2px; }
+    .acc-demarche-bouton { margin-top: auto; }
+    .acc-demarche-rappel { font-size: .9rem; color: var(--gris) !important; }
 
     /* Bandeau de chiffres clés. */
     .acc-chiffres {
@@ -2130,6 +2159,8 @@
     @media (min-width: 640px) {
         .acc-chiffres-grille { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .acc-etapes, .acc-versements, .acc-sites { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .acc-demarches-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .acc-demarches-seule { grid-template-columns: minmax(0, 1fr); max-width: 40rem; }
     }
 
     @media (min-width: 1024px) {

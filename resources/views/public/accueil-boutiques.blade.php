@@ -23,7 +23,44 @@
     {{-- 1. Carrousel --}}
     <x-public.carrousel :diapositives="$diapositives" :url-candidater="$urlCandidater" />
 
-    {{-- 2. Chiffres clés --}}
+    {{-- 2. Deux démarches distinctes : investir (si la présentation des actions est visible) et obtenir une boutique. --}}
+    @php($d = __('public.demarches'))
+    <section class="acc-demarches" aria-labelledby="acc-demarches-titre">
+        <div class="conteneur">
+            <h2 id="acc-demarches-titre" class="sr-only">{{ $d['titre'] }}</h2>
+            <div @class(['acc-demarches-grille', 'acc-demarches-seule' => ! $investir])>
+                @if ($investir)
+                    <article class="acc-carte acc-demarche">
+                        <span class="acc-etape-icone" aria-hidden="true"><x-icon name="souscriptions" class="h-6 w-6" /></span>
+                        <h3 class="acc-h2">{{ $d['investir']['titre'] }}</h3>
+                        @if ($investir['prix'])
+                            <ul class="acc-demarche-points">
+                                <li>{{ __('public.demarches.investir.prix', ['prix' => format_fcfa($investir['prix'])]) }}</li>
+                                <li>{{ $investir['minimum'] > 1
+                                    ? __('public.demarches.investir.minimum', ['n' => format_nombre($investir['minimum']), 'montant' => format_fcfa($investir['minimum'] * $investir['prix'])])
+                                    : $d['investir']['minimum_un'] }}</li>
+                            </ul>
+                        @else
+                            <p>{{ $d['investir']['prix_a_venir'] }}</p>
+                        @endif
+                        <p class="acc-demarche-risque"><x-icon name="danger" class="h-5 w-5 shrink-0" /> <span>{{ $d['investir']['risque'] }}</span></p>
+                        <a href="{{ $investir['lien'] }}" class="acc-btn acc-btn-vert acc-demarche-bouton">{{ $investir['ouverte'] ? $d['investir']['bouton'] : $d['bientot'] }}</a>
+                        <p class="acc-demarche-rappel">{{ $d['actions'] }}</p>
+                    </article>
+                @endif
+                <article class="acc-carte acc-demarche">
+                    <span class="acc-etape-icone" aria-hidden="true"><x-icon name="boutiques" class="h-6 w-6" /></span>
+                    <h3 class="acc-h2">{{ $d['boutique']['titre'] }}</h3>
+                    <p>{{ $d['boutique']['texte'] }}</p>
+                    <p class="acc-demarche-tirage"><x-icon name="check" class="h-5 w-5 shrink-0" /> <span>{{ $d['boutique']['tirage'] }}</span></p>
+                    <a href="{{ $urlCandidater }}" class="acc-btn acc-btn-jaune acc-demarche-bouton">{{ $d['boutique']['bouton'] }}</a>
+                    <p class="acc-demarche-rappel">{{ $d['boutiques'] }}</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    {{-- 3. Chiffres clés --}}
     <section class="acc-chiffres" aria-labelledby="acc-chiffres-titre">
         <h2 id="acc-chiffres-titre" class="sr-only">{{ $a['chiffres_titre'] }}</h2>
         <dl class="conteneur acc-chiffres-grille">

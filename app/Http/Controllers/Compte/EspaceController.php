@@ -20,12 +20,16 @@ use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 /**
- * Mon espace (citoyen) : indicateurs, souscriptions, documents, dividendes, profil.
+ * Mon espace (citoyen) : deux démarches dans deux onglets distincts, « Mes actions » (souscriptions, documents,
+ * dividendes ; si la présentation des actions est visible) et « Mes boutiques » (candidatures, cautions), puis le profil.
  * Toutes les requêtes partent du compte connecté : un citoyen ne voit jamais les données d'un autre.
  */
 class EspaceController extends Controller
 {
-    public const ONGLETS = ['souscriptions', 'boutiques', 'documents', 'dividendes', 'profil'];
+    public const ONGLETS = ['actions', 'boutiques', 'profil'];
+
+    /** Anciennes adresses des rubriques des actions : regroupées dans l'onglet « Mes actions ». */
+    private const RUBRIQUES_ACTIONS = ['souscriptions', 'documents', 'dividendes'];
 
     public function show(Request $request, ServicePaiement $paiements): View
     {
@@ -39,10 +43,11 @@ class EspaceController extends Controller
         $paiements->expirerReservations();
 
         $souscriptions = $user->souscriptions()->with(['paiements', 'tranche'])->latest('id')->get();
-        // Phase 1 (boutiques et cautions uniquement) : ni souscriptions d'actions, ni documents ou dividendes d'actionnaire.
-        $phase2 = Phase::actionsPubliques();
-        $onglets = $phase2 ? self::ONGLETS : ['boutiques', 'profil'];
-        $onglet = in_array($request->query('onglet'), $onglets, true) ? $request->query('onglet') : $onglets[0];
+        // Présentation des actions masquée : ni souscriptions d'actions, ni documents ou dividendes d'actionnaire.
+        $actions = Phase::presentationActions();
+        $onglets = $actions ? self::ONGLETS : ['boutiques', 'profil'];
+        $demande = in_array($request->query('onglet'), self::RUBRIQUES_ACTIONS, true) ? 'actions' : $request->query('onglet');
+        $onglet = in_array($demande, $onglets, true) ? $demande : $onglets[0];
         $candidatures = CandidatureBoutique::query()->where('user_id', $user->id)->with(['campagne', 'categorie.site', 'boutique'])->latest('id')->get();
         $cautionsPayees = $candidatures->whereIn('statut', [StatutCandidatureBoutique::Payee, StatutCandidatureBoutique::Retenue, StatutCandidatureBoutique::NonRetenue]);
 
@@ -54,18 +59,18 @@ class EspaceController extends Controller
             'onglet' => $onglet,
             'onglets' => $onglets,
             'souscriptions' => $souscriptions,
-            'indicateurs' => $phase2 ? [
+            'indicateurs' => $onglet === 'actions' ? [
                 'investi' => format_fcfa($payees->sum('montant') + $allouees->sum(fn (Souscription $s) => $s->montant - (int) $s->montant_a_rembourser)),
                 'en_attente' => format_nombre($payees->sum('nb_actions_demandees')),
                 'allouees' => format_nombre($allouees->sum('nb_actions_allouees')),
                 // Aucun versement de dividende aux actions B n'est encore enregistré par la plateforme.
                 'dividendes' => format_fcfa(0),
-            ] : [
+            ] : ($onglet === 'boutiques' ? [
                 'candidatures' => format_nombre($candidatures->whereIn('statut', StatutCandidatureBoutique::actifs())->count()),
                 'cautions' => format_fcfa($cautionsPayees->sum('caution')),
                 'en_attente_tirage' => format_nombre($candidatures->where('statut', StatutCandidatureBoutique::Payee)->count()),
                 'attribuees' => format_nombre($candidatures->where('statut', StatutCandidatureBoutique::Retenue)->count()),
-            ],
+            ] : []),
             'recus' => $souscriptions->filter(fn (Souscription $s) => Recu::disponible($s))
                 ->map(fn (Souscription $s) => ['souscription' => $s, 'paiement' => Recu::paiement($s)])
                 ->filter(fn (array $r) => $r['paiement'] !== null),

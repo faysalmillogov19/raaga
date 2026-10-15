@@ -1,10 +1,11 @@
 <?php
 
-use App\Http\Middleware\ActionsPubliques;
 use App\Http\Middleware\AuthentifieBackoffice;
 use App\Http\Middleware\DeconnecterCompteDesactive;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\ModeMaintenancePublic;
+use App\Http\Middleware\PresentationActions;
+use App\Http\Middleware\SouscriptionActions;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,7 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'backoffice' => AuthentifieBackoffice::class,
-            'actions.publiques' => ActionsPubliques::class,
+            'actions.presentation' => PresentationActions::class,
+            'actions.souscription' => SouscriptionActions::class,
         ]);
 
         // Back-office et institutionnels → e-mail + mot de passe + TOTP ; tous les autres → téléphone + SMS.

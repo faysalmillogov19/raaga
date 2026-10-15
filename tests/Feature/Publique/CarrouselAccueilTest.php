@@ -21,7 +21,7 @@ class CarrouselAccueilTest extends TestCase
     {
         parent::setUp();
 
-        config(['raaga.phase.actions_publiques' => false]);
+        config(['raaga.phase.presentation_actions' => false]);
         Cache::flush();
         Storage::fake('local');
     }

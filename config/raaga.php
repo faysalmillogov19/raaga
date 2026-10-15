@@ -56,11 +56,13 @@ return [
     | « simule » explicitement en production : démarrage refusé (App\Support\VerrouEnvironnement).
     */
     /*
-    | Périmètre de la phase : la phase 1 (décision du 13/10/2026) ne porte que sur les boutiques et leurs
-    | cautions. true = parcours publics des actions visibles (phase 2).
+    | Deux démarches sur le site public (investir, obtenir une boutique). Les paramètres « présentation des actions
+    | visible » et « souscription d'actions ouverte » sont décidés dans le back-office (SUPER_ADMIN, confirmation du
+    | VALIDATEUR) ; ces valeurs ne servent que tant qu'aucune décision n'est confirmée (fermé par défaut).
     */
     'phase' => [
-        'actions_publiques' => (bool) env('RAAGA_ACTIONS_PUBLIQUES', false),
+        'presentation_actions' => (bool) env('RAAGA_PRESENTATION_ACTIONS', false),
+        'souscription_actions' => (bool) env('RAAGA_SOUSCRIPTION_ACTIONS', false),
     ],
 
     'sms' => [

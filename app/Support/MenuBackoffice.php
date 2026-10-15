@@ -83,6 +83,7 @@ final class MenuBackoffice
             'administration' => [
                 ['cle' => 'approbations', 'route' => 'admin.approbations', 'droit' => Droit::ApprobationsTraiter, 'icone' => 'approbations', 'etape' => 5, 'module' => 'admin'],
                 ['cle' => 'utilisateurs', 'route' => 'admin.utilisateurs', 'droit' => Droit::UtilisateursGerer, 'icone' => 'utilisateurs', 'etape' => 2],
+                ['cle' => 'phase', 'route' => 'admin.phase', 'droit' => Droit::PhaseVoir, 'icone' => 'approbations', 'etape' => 0],
                 ['cle' => 'plateforme', 'route' => 'admin.plateforme', 'droit' => Droit::PlateformeVoir, 'icone' => 'plateforme', 'etape' => 0, 'module' => 'admin'],
                 ['cle' => 'securite', 'route' => 'admin.securite', 'droit' => Droit::SecuriteGerer, 'icone' => 'securite', 'etape' => 6, 'module' => 'admin'],
                 ['cle' => 'connexions', 'route' => 'admin.connexions', 'droit' => Droit::ConnexionsVoir, 'icone' => 'connexions', 'etape' => 1],

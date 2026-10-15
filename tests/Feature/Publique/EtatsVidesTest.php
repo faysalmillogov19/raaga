@@ -13,12 +13,8 @@ class EtatsVidesTest extends TestCase
 
     public function test_souscrire_et_paiement_affichent_un_etat_vide_honnete(): void
     {
-        $this->get('/souscrire')->assertOk()
-            ->assertSee('La souscription en ligne n’est pas encore ouverte')
-            ->assertSee('Consultez cette page ou la rubrique Actualités pour connaître la date d’ouverture.')
-            ->assertSee('href="'.route('offre').'"', false)
-            ->assertSee('Comprendre l’offre')
-            ->assertDontSee('Bientôt disponible');
+        // Sans tranche ouverte : « Souscription bientôt ouverte » (alerte SMS) au lieu du formulaire.
+        $this->get('/souscrire')->assertRedirect(route('souscription.bientot'));
 
         $this->get('/paiement')->assertOk()->assertSee('Le paiement en ligne n’est pas encore ouvert');
     }

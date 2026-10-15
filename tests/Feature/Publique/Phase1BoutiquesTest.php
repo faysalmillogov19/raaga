@@ -20,7 +20,7 @@ class Phase1BoutiquesTest extends TestCase
     {
         parent::setUp();
 
-        config(['raaga.phase.actions_publiques' => false]);
+        config(['raaga.phase.presentation_actions' => false]);
         Cache::flush();
         CandidatureBoutiqueTest::campagneOuverte();
     }
@@ -42,13 +42,13 @@ class Phase1BoutiquesTest extends TestCase
 
     public function test_les_pages_des_actions_renvoient_vers_les_boutiques(): void
     {
-        foreach (['/offre', '/transparence', '/souscrire', '/souscrire/reglement', '/paiement', '/actualites/ouverture-tranche-1'] as $page) {
+        foreach (['/offre', '/transparence', '/souscrire', '/souscrire/reglement', '/souscription-bientot', '/paiement', '/actualites/ouverture-tranche-1'] as $page) {
             $this->get($page)->assertRedirect(route('boutiques'));
         }
 
-        // Connecté (un invité passe d'abord par la connexion) : souscription et paiement d'actions renvoient aussi aux boutiques.
+        // Connecté : un envoi de souscription est refusé ; le paiement d'actions renvoie aux boutiques.
         $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide]);
-        $this->actingAs($citoyen)->post('/souscrire', ['nb_actions' => 1])->assertRedirect(route('boutiques'));
+        $this->actingAs($citoyen)->post('/souscrire', ['nb_actions' => 1])->assertForbidden();
         $this->actingAs($citoyen)->get('/paiement/RAA-B-XXXX')->assertRedirect(route('boutiques'));
     }
 

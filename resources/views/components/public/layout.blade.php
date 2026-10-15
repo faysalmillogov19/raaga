@@ -40,6 +40,7 @@
     <x-public.entete />
 
     <main id="contenu" class="flex-1" tabindex="-1">
+        <x-public.encadre-demarche />
         {{ $slot }}
     </main>
 

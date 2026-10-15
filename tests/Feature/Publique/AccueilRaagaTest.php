@@ -24,7 +24,7 @@ class AccueilRaagaTest extends TestCase
     {
         parent::setUp();
 
-        config(['raaga.phase.actions_publiques' => false]);
+        config(['raaga.phase.presentation_actions' => false]);
         Cache::flush();
         $this->seed(ReferentielsSitesSeeder::class);
     }

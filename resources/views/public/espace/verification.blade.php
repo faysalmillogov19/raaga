@@ -30,7 +30,7 @@
             </div>
             <p class="mt-2">{{ __('public.verification.statut.'.$kyc->value) }}</p>
             @if ($kyc === StatutKyc::Valide)
-                @if (\App\Support\Phase::actionsPubliques())
+                @if (\App\Support\Phase::presentationActions())
                     <a href="{{ route('souscrire') }}" class="btn-secondaire mt-4">{{ __('public.espace.vides.souscrire') }}</a>
                 @else
                     <a href="{{ route('boutiques') }}" class="btn-secondaire mt-4">{{ __('public.boutiques.candidater_boutique') }}</a>
