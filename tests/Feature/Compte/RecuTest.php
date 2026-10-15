@@ -77,6 +77,8 @@ class RecuTest extends TestCase
 
     public function test_le_recu_pdf_contient_les_informations_cles(): void
     {
+        // Seul test qui produit un vrai PDF (DomPDF) ; les autres utilisent la doublure PdfFactice.
+        $this->pdfReel();
         $paiement = $this->payer();
         $numero = Recu::numero($paiement);
         $this->assertMatchesRegularExpression('/^REC-\d{4}-\d{6}$/', $numero);

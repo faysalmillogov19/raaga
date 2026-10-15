@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Services\Medias\ConversionWebp;
 use App\Services\Plateforme\ParametresPlateforme;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
@@ -80,18 +81,9 @@ final class Diapositives
     /** Image déposée : déclinée en WebP (jamais agrandie). Rend le préfixe à enregistrer. */
     public static function deposer(UploadedFile|string $fichier): string
     {
-        $source = imagecreatefromstring((string) file_get_contents($fichier instanceof UploadedFile ? $fichier->getRealPath() : $fichier));
-        abort_if($source === false, 422);
         $base = 'plateforme/diapositive-'.Str::uuid();
-        $disque = Storage::disk(self::DISQUE);
-        $disque->makeDirectory('plateforme');
-        foreach (self::LARGEURS as $largeur) {
-            $l = min($largeur, imagesx($source));
-            $copie = imagescale($source, $l, (int) round($l * imagesy($source) / imagesx($source)), IMG_BICUBIC);
-            imagewebp($copie, $disque->path($base.'-'.$largeur.'.webp'), 70);
-            imagedestroy($copie);
-        }
-        imagedestroy($source);
+        app(ConversionWebp::class)->decliner((string) file_get_contents($fichier instanceof UploadedFile ? $fichier->getRealPath() : $fichier),
+            self::DISQUE, $base, self::LARGEURS);
 
         return $base;
     }

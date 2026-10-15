@@ -26,11 +26,11 @@ class CarrouselAccueilTest extends TestCase
         Storage::fake('local');
     }
 
-    /** Une diapositive saisie dans le formulaire (image déposée par défaut). */
+    /** Une diapositive saisie dans le formulaire (image déposée par défaut : la plus petite admise, 640 px de large). */
     private function diapositive(array $surcharges = []): array
     {
         return [
-            'fichier' => UploadedFile::fake()->image('marche.jpg', 2400, 1350),
+            'fichier' => UploadedFile::fake()->image('marche.jpg', 640, 360),
             'alt' => 'Allée du marché',
             'titre' => 'Votre boutique',
             'sousTitre' => 'Candidatez en ligne.',
@@ -58,10 +58,13 @@ class CarrouselAccueilTest extends TestCase
 
     public function test_l_admin_ajoute_des_diapositives_converties_en_webp(): void
     {
+        // Seul test de la vraie conversion WebP, de bout en bout (photo assez large pour les trois déclinaisons).
+        $this->conversionWebpReelle();
         $this->connecterBackoffice(Role::Admin);
         $this->get(route('admin.plateforme', ['section' => 'site_public']))->assertOk()->assertSee('Carrousel');
 
-        $this->enregistrer([$this->diapositive(), $this->diapositive(['titre' => 'Deuxième', 'boutonLibelle' => null, 'boutonLien' => null])])
+        $photo = fn () => UploadedFile::fake()->image('marche.jpg', 2400, 1350);
+        $this->enregistrer([$this->diapositive(['fichier' => $photo()]), $this->diapositive(['fichier' => $photo(), 'titre' => 'Deuxième', 'boutonLibelle' => null, 'boutonLien' => null])])
             ->assertSessionHasNoErrors()->assertSessionHas('succes');
 
         $diapos = plateforme('site_public.carrousel');
@@ -110,7 +113,7 @@ class CarrouselAccueilTest extends TestCase
         $this->enregistrer([$this->diapositive(['debut' => '2026-12-10', 'fin' => '2026-12-01'])])->assertSessionHasErrors(['carrousel.0.fin' => 'La fin doit être postérieure au début.']);
         $this->enregistrer([$this->diapositive(['fichier' => null])])->assertSessionHasErrors(['carrousel.0.image' => 'Choisissez une image pour cette diapositive.']);
         $this->enregistrer([$this->diapositive(['fichier' => UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf')])])->assertSessionHasErrors('carrousel.0.fichier');
-        $this->enregistrer([$this->diapositive(['fichier' => UploadedFile::fake()->image('grande.jpg', 2400, 1350)->size(6000)])])->assertSessionHasErrors('carrousel.0.fichier');
+        $this->enregistrer([$this->diapositive(['fichier' => UploadedFile::fake()->image('grande.jpg', 640, 360)->size(6000)])])->assertSessionHasErrors('carrousel.0.fichier');
         $this->enregistrer([$this->diapositive(['fichier' => UploadedFile::fake()->image('petite.jpg', 400, 300)])])->assertSessionHasErrors('carrousel.0.fichier');
 
         $this->assertSame([], plateforme('site_public.carrousel'));
