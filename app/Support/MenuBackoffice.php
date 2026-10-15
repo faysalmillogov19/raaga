@@ -202,39 +202,42 @@ final class MenuBackoffice
     {
         $valide = $user->can(Droit::SitesConfirmer->value);
         $gere = $user->can(Droit::SitesGerer->value);
+        // VALIDATEUR : tous les compteurs viennent de la file « À valider », calculée une seule fois pour la page.
+        $file = $user->can(Droit::AValiderVoir->value);
+        $total = $file ? AValider::total($user) : 0;
+        $parElement = $file ? AValider::parElement($user) : [];
 
         return array_filter([
             // VALIDATEUR : total de la file « À valider » (entrée et vue d'ensemble), puis une valeur par rubrique.
-            'a_valider' => $user->can(Droit::AValiderVoir->value) ? AValider::total($user) : 0,
-            'menu:a_valider' => $user->can(Droit::AValiderVoir->value) ? AValider::total($user) : 0,
-            ...($user->can(Droit::AValiderVoir->value)
-                ? collect(AValider::compteurs($user))->mapWithKeys(fn (int $n, string $g) => ['a_valider_'.$g => $n])->all() : []),
+            'a_valider' => $total,
+            'menu:a_valider' => $total,
+            ...($file ? collect(AValider::compteurs($user))->mapWithKeys(fn (int $n, string $g) => ['a_valider_'.$g => $n])->all() : []),
             'brouillons' => $user->can(Droit::BrouillonsVoir->value) ? SoumissionGroupee::nombreBrouillons($user) : 0,
             // VALIDATEUR : sites soumis ; GESTIONNAIRE : sites rejetés à reprendre.
             'sites' => match (true) {
-                $valide => Site::query()->where('statut', StatutSite::Soumis)->count(),
+                $valide => $parElement['site'] ?? 0,
                 $gere => Site::query()->where('statut', StatutSite::Brouillon)->whereNotNull('motif_rejet')->count(),
                 default => 0,
             },
             'types' => match (true) {
-                $valide => TypeBoutique::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('attribuable_demande'))->count(),
+                $valide => $parElement['type'] ?? 0,
                 $gere => TypeBoutique::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
             // VALIDATEUR : niveaux et zones à valider ; GESTIONNAIRE : niveaux et zones rejetés.
             'niveaux' => match (true) {
-                $valide => Niveau::query()->where('statut', StatutTypeBoutique::AValider)->count(),
+                $valide => $parElement['niveaux'] ?? 0,
                 $gere => Niveau::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
             'zones' => match (true) {
-                $valide => ZoneSite::query()->where('statut', StatutTypeBoutique::AValider)->count(),
+                $valide => $parElement['zones'] ?? 0,
                 $gere => ZoneSite::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
             // VALIDATEUR : unités à valider ; RÉGULATEUR : unités rejetées à corriger.
             'unites' => match (true) {
-                $user->can(Droit::UnitesConfirmer->value) => Unite::query()->where('statut', StatutTypeBoutique::AValider)->count(),
+                $user->can(Droit::UnitesConfirmer->value) => $parElement['unites'] ?? 0,
                 $user->can(Droit::UnitesGerer->value) => Unite::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
@@ -245,7 +248,7 @@ final class MenuBackoffice
             'capacites' => $gere ? CapaciteSite::query()->whereNull('nombre_prevu')->whereNull('surface_totale')->count() : 0,
             // RÉGULATEUR : grilles en brouillon ; VALIDATEUR : grilles soumises.
             'grille' => match (true) {
-                $user->can(Droit::BoutiquesConfirmer->value) => GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Soumis)->count(),
+                $user->can(Droit::BoutiquesConfirmer->value) => $parElement['grille'] ?? 0,
                 $user->can(Droit::BoutiquesSaisir->value) => GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Brouillon)->count(),
                 default => 0,
             },

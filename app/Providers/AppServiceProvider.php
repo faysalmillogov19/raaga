@@ -9,9 +9,12 @@ use App\Models\User;
 use App\Services\Paiement\SimulatedProvider;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Services\Sms\LogSmsProvider;
+use App\Support\MemoRequete;
 use App\Support\VerrouEnvironnement;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Console\Events\CommandFinished;
+use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -64,6 +67,10 @@ class AppServiceProvider extends ServiceProvider
                 $evenement->output->writeln('  Rôles synchronisés (RoleSeeder).');
             }
         });
+
+        // Calculs coûteux de la page (file « À valider », « À traiter ») : une seule fois par requête de lecture.
+        Event::listen(RouteMatched::class, fn (RouteMatched $e) => $e->request->isMethodSafe() ? MemoRequete::demarrer() : MemoRequete::arreter());
+        Event::listen(RequestHandled::class, fn () => MemoRequete::arreter());
 
         // Une Gate par droit du back-office, d'après la matrice App\Enums\Droit::pour().
         // Un compte désactivé n'a plus aucun droit.

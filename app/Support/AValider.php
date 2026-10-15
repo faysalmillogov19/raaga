@@ -46,10 +46,16 @@ final class AValider
     public static function rubriques(): array
     {
         $nomSite = fn (?Site $s) => $s ? ($s->code ? $s->code.' · ' : '').$s->nom : '';
+        // Sites soumis et demandes d'autorisation de modification : une seule requête pour les deux rubriques.
+        $sites = null;
+        $lesSites = function () use (&$sites) {
+            return $sites ??= Site::query()->where(fn ($q) => $q->where('statut', StatutSite::Soumis)
+                ->orWhere(fn ($r) => $r->where('statut', StatutSite::Confirme)->whereNotNull('revision_demandee_le')))->get();
+        };
 
         return [
             'sites' => ['slug' => 'sites', 'droits' => [Droit::SitesConfirmer], 'groupable' => true, 'elements' => ['site'],
-                'source' => fn (\Closure $e) => Site::query()->where('statut', StatutSite::Soumis)->get()
+                'source' => fn (\Closure $e) => $lesSites()->where('statut', StatutSite::Soumis)->values()
                     ->map(fn (Site $s) => $e('site:'.$s->id, 'site', $nomSite($s), $s->soumis_par, $s->soumis_le, route('admin.sites.show', $s)))],
             'finances' => ['slug' => 'finances-sites', 'droits' => [Droit::BoutiquesConfirmer], 'groupable' => false, 'elements' => ['finances'],
                 'source' => fn (\Closure $e) => SiteFinance::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get()
@@ -86,7 +92,7 @@ final class AValider
                 'source' => fn (\Closure $e) => DecisionPhase::query()->where('statut', DecisionPhase::SOUMISE)->get()
                     ->map(fn (DecisionPhase $d) => $e('phase:'.$d->id, 'phase', self::libellePhase($d), $d->propose_par, $d->created_at, route('admin.phase')))],
             'autorisations' => ['slug' => 'autorisations-sites', 'droits' => [Droit::SitesConfirmer], 'groupable' => true, 'elements' => ['autorisation'],
-                'source' => fn (\Closure $e) => Site::query()->where('statut', StatutSite::Confirme)->whereNotNull('revision_demandee_le')->get()
+                'source' => fn (\Closure $e) => $lesSites()->where('statut', StatutSite::Confirme)->whereNotNull('revision_demandee_le')->values()
                     ->map(fn (Site $s) => $e('autorisation:'.$s->id, 'autorisation', $nomSite($s).' : « '.$s->revision_demande_motif.' »', $s->revision_demandee_par, $s->revision_demandee_le, route('admin.sites.show', $s)))],
             // Import entier soumis : une ligne par import qui a encore des sites soumis ; jamais plusieurs imports à la fois.
             'imports' => ['slug' => 'imports', 'droits' => [Droit::SitesConfirmer], 'groupable' => false, 'elements' => ['import'],
@@ -115,6 +121,14 @@ final class AValider
      */
     public static function pour(User $user): array
     {
+        // Une seule fois par page (menu, badges, tableau de bord, page « À valider ») : jamais entre deux requêtes ni
+        // pendant une décision (POST), pour rester juste.
+        return MemoRequete::retenir('a_valider.'.$user->id, fn () => self::calculer($user));
+    }
+
+    /** @return array<string, list<array>> */
+    private static function calculer(User $user): array
+    {
         $e = fn (string $cle, string $element, string $libelle, ?int $auteur, ?CarbonInterface $date, string $url) => self::element($user, $cle, $element, $libelle, $auteur, $date, $url);
         $g = [];
         foreach (self::rubriques() as $groupe => $rubrique) {
@@ -123,7 +137,16 @@ final class AValider
             }
         }
 
-        return $g;
+        // Noms des auteurs : une seule requête pour toute la file.
+        $noms = User::query()->whereIn('id', collect($g)->flatten(1)->pluck('auteur_id')->filter()->unique()->all())->pluck('name', 'id');
+
+        return array_map(fn (array $elements) => array_map(fn (array $el) => [...$el, 'par' => $noms[$el['auteur_id']] ?? null], $elements), $g);
+    }
+
+    /** Nombre d'éléments en attente par type d'élément (site, type, niveaux…), y compris ceux soumis par l'utilisateur. @return array<string, int> */
+    public static function parElement(User $user): array
+    {
+        return collect(self::pour($user))->flatten(1)->countBy('element')->all();
     }
 
     /** Nombre d'éléments sur lesquels l'utilisateur peut décider (badge du menu). */
@@ -300,7 +323,7 @@ final class AValider
     {
         return [
             'cle' => $cle, 'element' => $element, 'libelle' => $libelle, 'auteur_id' => $auteur,
-            'par' => $auteur ? User::query()->whereKey($auteur)->value('name') : null, 'date' => $date, 'url' => $url,
+            'par' => null, 'date' => $date, 'url' => $url, // nom de l'auteur : chargé ensuite pour toute la file
             // Quatre yeux : jamais de décision sur un élément que l'on a soumis soi-même.
             'moi' => $auteur !== null && $auteur === $user->id,
             'groupable' => ! in_array($element, self::nonGroupables(), true),

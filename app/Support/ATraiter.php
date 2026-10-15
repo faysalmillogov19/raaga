@@ -5,7 +5,6 @@ namespace App\Support;
 use App\Enums\Droit;
 use App\Enums\StatutAppelFonds;
 use App\Enums\StatutAvenant;
-use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutConvention;
 use App\Enums\StatutDeclarationVirement;
 use App\Enums\StatutDistribution;
@@ -17,7 +16,6 @@ use App\Enums\StatutTranche;
 use App\Enums\StatutTypeBoutique;
 use App\Models\AppelFonds;
 use App\Models\Avenant;
-use App\Models\CampagneBoutiques;
 use App\Models\Convention;
 use App\Models\DeclarationVirement;
 use App\Models\DistributionDividende;
@@ -47,29 +45,34 @@ class ATraiter
     /** Nombre maximal de dossiers KYC listés (les plus anciens). */
     private const KYC_MAX = 20;
 
-    /** @var array<int, ?User> */
-    private static array $auteurs = [];
-
     /**
      * @return list<array{libelle: string, detail: ?string, url: string, element: string, objet: string, par: ?string, date: ?CarbonInterface, statut: string}>
      */
     public static function pour(User $user): array
     {
+        // Une seule fois par page (cloche du cadre, tableau de bord) ; recalculé à chaque requête.
+        return MemoRequete::retenir('a_traiter.'.$user->id, fn () => self::calculer($user));
+    }
+
+    /** @return list<array> */
+    private static function calculer(User $user): array
+    {
         $e = [];
+        // VALIDATEUR : sites, référentiels, grilles, données financières et campagnes soumis viennent de la file
+        // « À valider », déjà calculée pour la page (aucune requête de plus).
+        $file = $user->can(Droit::AValiderVoir->value) ? collect(AValider::pour($user))->flatten(1) : collect();
+        $depuisFile = function (array $elements, array $statuts, bool $sansMoi) use ($file, &$e) {
+            foreach ($file->whereIn('element', array_keys($elements)) as $el) {
+                if (! ($sansMoi && $el['moi'])) {
+                    $e[] = self::element($elements[$el['element']], $el['libelle'], $el['auteur_id'], $el['date'], $statuts[$el['element']], $el['url']);
+                }
+            }
+        };
 
         // ------------------------------------------------------------------ Référencement
         if ($user->can(Droit::SitesConfirmer->value)) {
-            foreach (Site::query()->where('statut', StatutSite::Soumis)->get() as $s) {
-                $e[] = self::element('site', self::nomSite($s), $s->soumis_par, $s->soumis_le, 'Soumis', route('admin.sites.show', $s));
-            }
-            foreach (TypeBoutique::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('attribuable_demande'))->get() as $t) {
-                $e[] = self::element('type', ($t->code ? $t->code.' · ' : '').$t->libelle, $t->demande_par, $t->demande_le ?? $t->updated_at, 'Soumis', route('admin.sites.types.show', $t));
-            }
-            foreach ([Niveau::class => 'niveaux', ZoneSite::class => 'zones'] as $classe => $liste) {
-                foreach ($classe::query()->where('statut', StatutTypeBoutique::AValider)->get() as $r) {
-                    $e[] = self::element($liste === 'niveaux' ? 'niveau' : 'zone', $r->code.' · '.$r->libelle, $r->demande_par, $r->updated_at, 'Soumise', route('admin.referencement.zones.show', [$liste, $r->id]));
-                }
-            }
+            $depuisFile(['site' => 'site', 'type' => 'type', 'niveaux' => 'niveau', 'zones' => 'zone'],
+                ['site' => 'Soumis', 'type' => 'Soumis', 'niveaux' => 'Soumise', 'zones' => 'Soumise'], false);
         }
         if ($user->can(Droit::SitesGerer->value)) {
             foreach (Site::query()->where('statut', StatutSite::Brouillon)->whereNotNull('motif_rejet')->get() as $s) {
@@ -87,15 +90,9 @@ class ATraiter
 
         // ------------------------------------------------------------------ Grilles, données financières, campagnes
         if ($user->can(Droit::BoutiquesConfirmer->value)) {
-            foreach (GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Soumis)->where('soumis_par', '!=', $user->id)->with('site')->get() as $g) {
-                $e[] = self::element('grille', self::nomSite($g->site), $g->soumis_par, $g->soumis_le, 'Soumise', route('admin.boutiques.grilles.show', $g->site_id));
-            }
-            foreach (SiteFinance::query()->where('statut', StatutGrilleTarifaire::Soumis)->where('soumis_par', '!=', $user->id)->with('site')->get() as $f) {
-                $e[] = self::element('finances', self::nomSite($f->site), $f->soumis_par, $f->soumis_le, 'Soumises', route('admin.sites.finances', $f->site_id));
-            }
-            foreach (CampagneBoutiques::query()->where('statut', StatutCampagneBoutiques::Soumise)->where('soumis_par', '!=', $user->id)->get() as $c) {
-                $e[] = self::element('campagne', $c->nom, $c->soumis_par, $c->soumise_le, 'Soumise', route('admin.boutiques.show', $c));
-            }
+            // Jamais ce que le validateur a saisi lui-même.
+            $depuisFile(['grille' => 'grille', 'finances' => 'finances', 'campagne' => 'campagne'],
+                ['grille' => 'Soumise', 'finances' => 'Soumises', 'campagne' => 'Soumise'], true);
         }
         if ($user->can(Droit::BoutiquesSaisir->value)) {
             foreach (GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Brouillon)->whereNotNull('motif_rejet')->with('site')->get() as $g) {
@@ -111,13 +108,13 @@ class ATraiter
             foreach (Tranche::query()->where('statut', StatutTranche::Brouillon)->whereNotNull('motif_rejet')->get() as $t) {
                 $e[] = self::element('tranche', $t->nom, $t->valide_par ?? null, $t->updated_at, 'Rejetée', route('admin.tranches.show', $t), $t->motif_rejet);
             }
-            $e = [...$e, ...self::avenantsRejetes(Tranche::class)];
+            $e = [...$e, ...self::avenantsRejetes(Tranche::class, $user)];
         }
         if ($user->can(Droit::DividendesSaisir->value)) {
             foreach (DistributionDividende::query()->where('statut', StatutDistribution::Brouillon)->whereNotNull('motif_rejet')->get() as $d) {
                 $e[] = self::element('distribution', __('admin.dividendes.exercice', ['annee' => $d->exercice]), $d->valide_par ?? null, $d->updated_at, 'Rejetée', route('admin.dividendes.show', $d), $d->motif_rejet);
             }
-            $e = [...$e, ...self::avenantsRejetes(DistributionDividende::class)];
+            $e = [...$e, ...self::avenantsRejetes(DistributionDividende::class, $user)];
         }
         if ($user->can(Droit::TranchesConfirmer->value)) {
             foreach (Tranche::query()->where('statut', StatutTranche::Soumise)->get() as $t) {
@@ -137,13 +134,16 @@ class ATraiter
             foreach (Convention::query()->where('statut', StatutConvention::Brouillon)->whereNotNull('motif_rejet')->get() as $c) {
                 $e[] = self::element('convention', $c->reference, $c->valide_par ?? null, $c->updated_at, 'Rejetée', route('admin.conventions.show', $c), $c->motif_rejet);
             }
-            $e = [...$e, ...self::avenantsRejetes(Convention::class)];
+            $e = [...$e, ...self::avenantsRejetes(Convention::class, $user)];
         }
         if ($user->can(Droit::ConventionsConfirmer->value)) {
-            foreach (Convention::query()->where('statut', StatutConvention::Soumise)->get() as $c) {
+            // Conventions soumises et signatures déposées : une seule requête.
+            $conventions = Convention::query()->where(fn ($q) => $q->where('statut', StatutConvention::Soumise)
+                ->orWhere(fn ($r) => $r->whereNull('signee_le')->whereNotNull('signature_deposee_le')))->get();
+            foreach ($conventions->where('statut', StatutConvention::Soumise) as $c) {
                 $e[] = self::element('convention', $c->reference.' · v'.$c->version, $c->soumis_par, $c->soumise_le, 'Soumise', route('admin.conventions.show', $c));
             }
-            foreach (Convention::query()->whereNull('signee_le')->whereNotNull('signature_deposee_le')->get() as $c) {
+            foreach ($conventions->whereNull('signee_le')->whereNotNull('signature_deposee_le') as $c) {
                 $e[] = self::element('convention_deposee', $c->reference, null, $c->signature_deposee_le, 'En attente', route('admin.conventions.show', $c));
             }
             $e = [...$e, ...self::avenantsSoumis(Convention::class, $user)];
@@ -176,14 +176,20 @@ class ATraiter
 
         usort($e, fn ($a, $b) => ($a['date']?->getTimestamp() ?? 0) <=> ($b['date']?->getTimestamp() ?? 0));
 
-        return $e;
+        // Profil de chaque auteur : une seule requête pour tout le bloc.
+        $auteurs = User::query()->whereIn('id', array_filter(array_column($e, 'par'), 'is_int'))->get()->keyBy('id');
+
+        return array_map(fn (array $el) => [...$el, 'par' => is_int($el['par']) ? $auteurs[$el['par']]?->codeRole()->label() : $el['par']], $e);
     }
 
     /** @param class-string $type */
-    private static function avenantsRejetes(string $type): array
+    private static function avenantsRejetes(string $type, User $user): array
     {
-        return Avenant::query()->where('avenantable_type', $type)->where('statut', StatutAvenant::Rejete)
-            ->where('decide_le', '>=', now()->subDays(self::JOURS_AVENANT_REJETE))->with('avenantable')->latest('id')->get()
+        // Avenants rejetés récents de tous les types : une seule requête pour le bloc.
+        $tous = MemoRequete::retenir('a_traiter.avenants_rejetes', fn () => Avenant::query()->where('statut', StatutAvenant::Rejete)
+            ->where('decide_le', '>=', now()->subDays(self::JOURS_AVENANT_REJETE))->with('avenantable')->latest('id')->get());
+
+        return $tous->where('avenantable_type', $type)
             ->map(fn (Avenant $a) => self::element('avenant', self::nomObjet($a), $a->decide_par ?? null, $a->decide_le, 'Rejeté', self::url($a), $a->motif_decision))
             ->all();
     }
@@ -195,8 +201,11 @@ class ATraiter
      */
     private static function avenantsSoumis(string $type, User $user): array
     {
-        return Avenant::query()->where('avenantable_type', $type)->where('statut', StatutAvenant::EnAttente)->where('saisi_par', '!=', $user->id)
-            ->with('avenantable')->oldest('id')->get()
+        // Avenants en attente de tous les types : une seule requête pour le bloc.
+        $tous = MemoRequete::retenir('a_traiter.avenants_soumis.'.$user->id, fn () => Avenant::query()->where('statut', StatutAvenant::EnAttente)
+            ->where('saisi_par', '!=', $user->id)->with('avenantable')->oldest('id')->get());
+
+        return $tous->where('avenantable_type', $type)
             ->map(fn (Avenant $a) => self::element('avenant', self::nomObjet($a), $a->saisi_par, $a->created_at, 'Soumis', self::url($a), $a->motif))
             ->all();
     }
@@ -224,17 +233,6 @@ class ATraiter
         };
     }
 
-    /** Profil de l'auteur (« Gestionnaire des sites et boutiques », « Régulateur »…), ou son libellé tel quel. */
-    private static function par(int|string|null $auteur): ?string
-    {
-        if ($auteur === null || is_string($auteur)) {
-            return $auteur;
-        }
-        self::$auteurs[$auteur] ??= User::query()->find($auteur);
-
-        return self::$auteurs[$auteur]?->codeRole()->label();
-    }
-
     /**
      * @return array{libelle: string, detail: ?string, url: string, element: string, objet: string, par: ?string, date: ?CarbonInterface, statut: string}
      */
@@ -244,7 +242,7 @@ class ATraiter
 
         return [
             'libelle' => $element.' · '.$objet.' · '.$statut, 'detail' => $motif, 'url' => $url,
-            'element' => $element, 'objet' => $objet, 'par' => self::par($par), 'date' => $date, 'statut' => $statut,
+            'element' => $element, 'objet' => $objet, 'par' => $par, 'date' => $date, 'statut' => $statut, // auteur : profil chargé à la fin
         ];
     }
 }
