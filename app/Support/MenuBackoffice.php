@@ -18,6 +18,7 @@ use App\Models\TypeBoutique;
 use App\Models\Unite;
 use App\Models\User;
 use App\Models\ZoneSite;
+use App\Services\Validation\SoumissionGroupee;
 
 /**
  * Menu de la barre latérale du back-office. Chaque entrée est protégée par un droit :
@@ -48,6 +49,8 @@ final class MenuBackoffice
                 ...array_map(fn (string $groupe, array $r) => ['cle' => 'a_valider_'.$groupe, 'route' => 'admin.a-valider.rubrique', 'parametres' => ['rubrique' => $r['slug']],
                     'droit' => $r['droits'][0], 'icone' => 'taches', 'etape' => 0, 'sous_menu' => 'a_valider', 'compteur_zero' => true,
                     'libelle' => __('admin.a_valider.menus.'.$groupe)], array_keys(AValider::rubriques()), AValider::rubriques()),
+                // « Mes brouillons » (GESTIONNAIRE, RÉGULATEUR) : badge = brouillons et rejetés non soumis.
+                ['cle' => 'brouillons', 'route' => 'admin.brouillons', 'droit' => Droit::BrouillonsVoir, 'icone' => 'taches', 'etape' => 0],
                 ['cle' => 'tranches', 'route' => 'admin.tranches', 'droit' => Droit::TranchesVoir, 'icone' => 'tranches', 'etape' => 3, 'masque_si' => $parametres],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
@@ -206,6 +209,7 @@ final class MenuBackoffice
             'menu:a_valider' => $user->can(Droit::AValiderVoir->value) ? AValider::total($user) : 0,
             ...($user->can(Droit::AValiderVoir->value)
                 ? collect(AValider::compteurs($user))->mapWithKeys(fn (int $n, string $g) => ['a_valider_'.$g => $n])->all() : []),
+            'brouillons' => $user->can(Droit::BrouillonsVoir->value) ? SoumissionGroupee::nombreBrouillons($user) : 0,
             // VALIDATEUR : sites soumis ; GESTIONNAIRE : sites rejetés à reprendre.
             'sites' => match (true) {
                 $valide => Site::query()->where('statut', StatutSite::Soumis)->count(),

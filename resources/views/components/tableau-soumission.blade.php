@@ -1,19 +1,20 @@
 {{--
     Soumission groupée d'une liste : barre collante « n éléments sélectionnés » (Soumettre à validation, Retirer de la
-    validation), fenêtre de contrôle préalable (✓ prêt ou ✗ raison, commentaire facultatif pour le VALIDATEUR, envoi des
-    seuls éléments prêts) et fenêtre de retrait. Chaque élément passe par l'action « Soumettre » de sa fiche.
+    validation), fenêtre de contrôle préalable, ouverte seulement si un élément a un problème (✓ prêt ou ✗ raison,
+    commentaire facultatif pour le VALIDATEUR, envoi des seuls éléments prêts ; tout prêt : soumission directe) et fenêtre
+    de retrait. Chaque élément passe par l'action « Soumettre » de sa fiche.
 --}}
 @php($s = __('admin.soumission'))
 
 <div class="adm-barre-selection" data-barre-soumission x-show="total > 0" x-cloak>
     <span class="font-semibold" aria-live="polite"
           x-text="total === 1 ? @js(trans_choice('admin.soumission.selection', 1)) : @js(trans_choice('admin.soumission.selection', 2, ['n' => '__N__'])).replace('__N__', total)"></span>
-    <x-admin.bouton variante="principal" type="button" x-show="aSoumettre > 0" x-on:click="ouvrirSoumission()">{{ $s['soumettre'] }}</x-admin.bouton>
+    <x-admin.bouton variante="principal" type="button" x-show="aSoumettre > 0" x-on:click="ouvrirSoumission()" x-bind:disabled="enCours" x-bind:aria-busy="enCours ? 'true' : 'false'">{{ $s['soumettre'] }}</x-admin.bouton>
     <x-admin.bouton variante="contour" type="button" x-show="aRetirer > 0" x-on:click="$refs.dialogueRetirer.showModal()">{{ $s['retirer'] }}</x-admin.bouton>
 </div>
 
 <dialog x-ref="dialogueSoumettre" class="bo-dialogue" aria-labelledby="soumission-titre">
-    <form method="POST" action="{{ route('admin.soumission.soumettre') }}">
+    <form method="POST" action="{{ route('admin.soumission.soumettre') }}" x-ref="formulaireSoumettre">
         @csrf
         <h2 id="soumission-titre" class="!text-[1.2rem]">{{ $s['soumettre'] }}</h2>
         <p class="mt-2">{{ $s['controle'] }}</p>

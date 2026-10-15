@@ -8,6 +8,7 @@ use App\Enums\PhaseSite;
 use App\Enums\PositionBoutique;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutSite;
+use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
 use App\Models\Niveau;
@@ -43,6 +44,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class SitesController extends Controller
 {
+    use EnregistreEtSoumet;
+
     public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal, private readonly NotificationDecision $notifications) {}
 
     /** Liste des sites : tableau de données (recherche, filtres, tri, pagination, export) ; coût total réservé aux profils financiers. */
@@ -104,7 +107,8 @@ class SitesController extends Controller
         $site = Site::create([...$this->valider($request), 'statut' => StatutSite::Brouillon, 'cree_par' => $request->user()->id]);
         $this->journal->ecrire($request->user(), 'site.cree', 'Site', $site->id, null, ['code' => $site->code, 'nom' => $site->nom]);
 
-        return redirect()->route('admin.sites.show', $site)->with('succes', __('admin.sites.messages.enregistre'));
+        return $this->puisSoumettre($request, redirect()->route('admin.sites.show', $site)->with('succes', __('admin.sites.messages.enregistre')),
+            'site', $site, route('admin.sites.edit', $site));
     }
 
     public function show(Request $request, Site $site): View
@@ -148,14 +152,14 @@ class SitesController extends Controller
         Gate::authorize(Droit::SitesGerer->value);
         $donnees = $this->valider($request, $site);
 
-        return $this->executer($site, function () use ($request, $site, $donnees) {
+        return $this->puisSoumettre($request, $this->executer($site, function () use ($request, $site, $donnees) {
             $this->exigerBrouillon($site);
             $ancienCode = $site->code;
             // Un changement de code recalcule les codes des boutiques : tout ou rien.
             DB::transaction(fn () => $site->fill($donnees)->save());
             $this->journal->ecrire($request->user(), 'site.modifie', 'Site', $site->id,
                 $ancienCode !== $site->code ? ['code' => $ancienCode] : null, $ancienCode !== $site->code ? ['code' => $site->code] : null);
-        }, 'admin.sites.messages.enregistre');
+        }, 'admin.sites.messages.enregistre'), 'site', $site, route('admin.sites.edit', $site));
     }
 
     // ------------------------------------------------------------------ Boutiques d'un site (onglet Boutiques du Référencement)

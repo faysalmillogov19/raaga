@@ -1,7 +1,7 @@
 @props([
     'id', 'titre', 'action' => null, 'methode' => 'POST', 'bouton' => null, 'varianteBouton' => 'principal',
     'declencheurVariante' => 'principal', 'declencheurTaille' => 'normal', 'declencheurIcone' => null, 'declencheurLibelle' => null,
-    'ouvrir' => false, 'fichiers' => false, 'ajax' => true,
+    'ouvrir' => false, 'fichiers' => false, 'ajax' => true, 'soumission' => false,
 ])
 
 {{--
@@ -50,7 +50,10 @@
                     {{ $pied }}
                 @else
                     <x-admin.bouton variante="contour" x-on:click="fermer()">{{ $action ? $c['annuler'] : $c['fermer'] }}</x-admin.bouton>
-                    @if ($action)
+                    @if ($action && $soumission)
+                        {{-- Élément soumis à validation : « Enregistrer et soumettre » (principal), « Enregistrer en brouillon ». --}}
+                        <x-admin.enregistrer-soumettre :erreurs="$rouvrir" x-bind:disabled="envoi" />
+                    @elseif ($action)
                         <x-admin.bouton type="submit" :variante="$varianteBouton" x-bind:disabled="envoi" x-bind:aria-busy="envoi ? 'true' : 'false'">{{ $bouton ?? $c['enregistrer'] }}</x-admin.bouton>
                     @endif
                 @endisset

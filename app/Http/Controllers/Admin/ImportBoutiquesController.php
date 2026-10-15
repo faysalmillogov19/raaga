@@ -9,6 +9,7 @@ use App\Models\ImportEnAttente;
 use App\Models\Site;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Boutiques\ReferentielExcel;
+use App\Services\Validation\SoumissionGroupee;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -212,16 +213,27 @@ class ImportBoutiquesController extends Controller
 
         // Le fichier est analysé de nouveau : l'état des sites et des boutiques a pu changer depuis l'aperçu.
         try {
-            $compte = $this->excel->importer($this->excel->analyser($site, $this->chemin($depot)), $request->user(), $depot['nom'], $depot['empreinte'], $depot['chemin']);
+            $analyse = $this->excel->analyser($site, $this->chemin($depot));
+            $compte = $this->excel->importer($analyse, $request->user(), $depot['nom'], $depot['empreinte'], $depot['chemin']);
         } catch (RegleGestionException $e) {
             return ($site ? redirect()->route('admin.referencement.boutiques.excel.import', $site) : redirect()->route('admin.sites.boutiques-excel.apercu'))->with('erreur', $e->getMessage());
         }
         $request->session()->forget($this->cle($site));
         $this->attente($depot)?->terminer(ImportEnAttente::CONFIRME);
 
-        return $this->retour($site)->with('succes', __('admin.sites.excel.importe', [
-            'creees' => format_nombre($compte['creees']), 'mises_a_jour' => format_nombre($compte['mises_a_jour']),
-        ]));
+        $message = __('admin.sites.excel.importe', ['creees' => format_nombre($compte['creees']), 'mises_a_jour' => format_nombre($compte['mises_a_jour'])]);
+        // Case « Soumettre le site au VALIDATEUR après l'import » (cochée par défaut) : action « Soumettre » de chaque site
+        // importé ; un contrôle qui échoue n'annule pas l'import, le site reste en brouillon et le message dit pourquoi.
+        if ($request->boolean('soumettre_site')) {
+            $soumission = app(SoumissionGroupee::class);
+            foreach (Site::query()->whereIn('id', array_unique(array_column($analyse->lignes(), 'site_id')))->orderBy('code')->get() as $importe) {
+                $raison = $soumission->soumettreUn($request, 'site', $importe);
+                $message .= ' '.($raison === null ? __('admin.soumission.import_site_soumis', ['site' => $importe->code])
+                    : __('admin.soumission.import_site_brouillon', ['site' => $importe->code, 'raison' => lcfirst($raison)]));
+            }
+        }
+
+        return $this->retour($site)->with('succes', $message);
     }
 
     /** Site soumis ou confirmé : import entièrement refusé (à remettre en révision). */

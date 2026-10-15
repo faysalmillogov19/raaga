@@ -11,7 +11,7 @@
 <x-admin.layout :titre="$titre" :fil="[['libelle' => $titre]]">
     @if ($gerer)
         <x-slot:actions>
-            <x-admin.fenetre :id="'ajouter-'.$liste" :titre="$z[$liste.'_ajouter']" :action="route('admin.referencement.zones.store', $liste)" :bouton="$z['ajouter']" declencheur-icone="plus">
+            <x-admin.fenetre :id="'ajouter-'.$liste" :titre="$z[$liste.'_ajouter']" :action="route('admin.referencement.zones.store', $liste)" :bouton="$z['ajouter']" declencheur-icone="plus" soumission>
                 <x-slot:declencheur>{{ $z[$liste.'_ajouter'] }}</x-slot:declencheur>
                 <div class="adm-fenetre-grille">
                     <x-admin.champ nom="code" :libelle="$z['colonnes']['code']" :maxlength="$niveaux ? 3 : ($unites ? 10 : 5)" required autocomplete="off" :aide="$z[$liste.'_code_aide']" />

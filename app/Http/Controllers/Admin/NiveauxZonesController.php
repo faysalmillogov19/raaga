@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\StatutTypeBoutique;
+use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
 use App\Models\GrilleTarifaireLigne;
@@ -39,6 +40,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class NiveauxZonesController extends Controller
 {
+    use EnregistreEtSoumet;
+
     /** Liste => modèle. */
     private const LISTES = ['niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class];
 
@@ -128,16 +131,17 @@ class NiveauxZonesController extends Controller
             ...$this->reglesLibres($liste),
         ], [], __('admin.zones.attributs'));
 
-        $element = DB::transaction(function () use ($request, $classe, $donnees) {
-            $element = $classe::create([...$donnees, 'actif' => true, 'par_defaut' => false, 'statut' => StatutTypeBoutique::AValider]);
+        $brouillon = $request->input('apres') === 'brouillon';
+        $element = DB::transaction(function () use ($request, $classe, $donnees, $brouillon) {
+            $element = $classe::create([...$donnees, 'actif' => true, 'par_defaut' => false, 'statut' => $brouillon ? StatutTypeBoutique::Brouillon : StatutTypeBoutique::AValider]);
             $element->forceFill(['demande_par' => $request->user()->id])->save();
-            $element->creerVersion($request->user(), __('admin.types.motifs.creation'));
+            $element->creerVersion($request->user(), __($brouillon ? 'admin.types.motifs.creation_brouillon' : 'admin.types.motifs.creation'));
 
             return $element;
         });
         $this->journal->ecrire($request->user(), $classe::typeReferentiel().'.cree', class_basename($classe), $element->id, null, $donnees);
 
-        return redirect()->route('admin.referencement.'.$liste)->with('succes', __('admin.zones.messages.creee'));
+        return redirect()->route('admin.referencement.'.$liste)->with('succes', __($brouillon ? 'admin.zones.messages.creee_brouillon' : 'admin.zones.messages.creee'));
     }
 
     /** Libellé, description, rang ou ordre : à tout moment, sans validation, sauf pour un élément « par défaut » (circuit). */
@@ -147,7 +151,7 @@ class NiveauxZonesController extends Controller
         $element = $this->element($liste, $id);
         $donnees = $request->validate($this->reglesLibres($liste), [], __('admin.zones.attributs'));
 
-        return $this->executer($liste, $element, function () use ($request, $element, $donnees) {
+        return $this->puisSoumettre($request, $this->executer($liste, $element, function () use ($request, $element, $donnees) {
             $avant = $element->only(array_keys($donnees));
             $element->fill($donnees);
             if (! $element->isDirty()) {
@@ -161,7 +165,7 @@ class NiveauxZonesController extends Controller
             $element->save();
             $element->creerVersion($request->user(), __('admin.types.motifs.modification'));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().'.modifie', class_basename($element), $element->id, $avant, $element->only(array_keys($donnees)));
-        }, $element->par_defaut ? 'admin.zones.messages.modification_soumise' : 'admin.zones.messages.renommee');
+        }, $element->par_defaut ? 'admin.zones.messages.modification_soumise' : 'admin.zones.messages.renommee'), $liste, $element, route('admin.referencement.zones.show', [$liste, $element->id]), 'modifier-element');
     }
 
     public function activer(Request $request, string $liste, int $id): RedirectResponse

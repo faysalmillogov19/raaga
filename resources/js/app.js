@@ -294,11 +294,11 @@ Alpine.data('soumissionGroupee', ({ controle }) => ({
     get total() { return this.aSoumettre + this.aRetirer; },
     get prets() { return this.controles.filter((c) => c.pret); },
     selectionnes(etat) { return this.cases(etat).filter((c) => c.checked).map((c) => c.value); },
+    // Contrôle préalable ; la fenêtre ne s'ouvre que si un élément a un problème (✗), sinon soumission directe.
     async ouvrirSoumission() {
         this.controles = [];
         this.erreur = false;
         this.enCours = true;
-        this.$refs.dialogueSoumettre.showModal();
         try {
             const reponse = await fetch(controle, {
                 method: 'POST',
@@ -309,11 +309,17 @@ Alpine.data('soumissionGroupee', ({ controle }) => ({
                 throw new Error(String(reponse.status));
             }
             this.controles = (await reponse.json()).elements;
+            if (this.controles.length > 0 && this.controles.every((c) => c.pret)) {
+                await this.$nextTick();
+                this.$refs.formulaireSoumettre.submit();
+                return;
+            }
         } catch {
             this.erreur = true;
         } finally {
             this.enCours = false;
         }
+        this.$refs.dialogueSoumettre.showModal();
     },
 }));
 
@@ -628,7 +634,8 @@ Alpine.data('fenetre', () => ({
         try {
             const reponse = await fetch(formulaire.action, {
                 method: 'POST',
-                body: new FormData(formulaire),
+                // Le bouton cliqué est envoyé (« Enregistrer et soumettre » ou « Enregistrer en brouillon »).
+                body: new FormData(formulaire, bouton?.name ? bouton : undefined),
                 headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 credentials: 'same-origin',
             });

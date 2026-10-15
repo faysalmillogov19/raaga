@@ -63,8 +63,8 @@
             </table>
         </div>
 
-        <div class="mt-4 flex gap-3">
-            <x-admin.circuit />
+        <div class="mt-4 flex flex-wrap gap-3">
+            <x-admin.enregistrer-soumettre />
             <x-admin.bouton variante="contour" href="{{ route('admin.boutiques.grilles.show', $site) }}">{{ __('admin.tranches.formulaire.annuler') }}</x-admin.bouton>
         </div>
     </form>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\CanalPaiement;
 use App\Enums\Droit;
 use App\Enums\StatutCampagneBoutiques;
+use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CampagneBoutiquesRequest;
 use App\Models\CampagneBoutiques;
@@ -39,6 +40,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class CampagnesBoutiquesController extends Controller
 {
+    use EnregistreEtSoumet;
+
     public function __construct(
         private readonly WorkflowParametrage $workflow,
         private readonly Journal $journal,
@@ -101,7 +104,8 @@ class CampagnesBoutiquesController extends Controller
             return back()->withInput()->withErrors(['lots' => $e->getMessage()]);
         }
 
-        return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree'));
+        return $this->puisSoumettre($request, redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree')),
+            'campagne', $campagne, route('admin.boutiques.edit', $campagne));
     }
 
     public function show(Request $request, CampagneBoutiques $campagne): View
@@ -165,7 +169,8 @@ class CampagnesBoutiquesController extends Controller
             return back()->withInput()->withErrors(['lots' => $e->getMessage()]);
         }
 
-        return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree'));
+        return $this->puisSoumettre($request, redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree')),
+            'campagne', $campagne, route('admin.boutiques.edit', $campagne));
     }
 
     public function soumettre(Request $request, CampagneBoutiques $campagne): RedirectResponse

@@ -39,7 +39,8 @@
             @endcan
             @if ($gerer)
                 <x-admin.fenetre id="modifier-type" :titre="$t['modifier_titre']" :action="route('admin.sites.types.update', $type)" methode="PUT"
-                                 :bouton="__('admin.composants.circuit.brouillon')" declencheur-variante="secondaire">
+                                 :bouton="__('admin.composants.circuit.brouillon')" declencheur-variante="secondaire"
+                                 :soumission="in_array($type->statut, [\App\Enums\StatutTypeBoutique::Brouillon, \App\Enums\StatutTypeBoutique::Rejete], true)">
                     <x-slot:declencheur>{{ $t['modifier_titre'] }}</x-slot:declencheur>
                     <div class="adm-fenetre-grille">
                         <x-admin.champ nom="code_affiche" :libelle="$t['champs']['code']" type="verrouille" :valeur="$type->code ?? '—'" :aide="$t['code_fige']" />

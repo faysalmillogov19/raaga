@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\StatutTypeBoutique;
+use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Models\HistoriqueCode;
 use App\Models\TypeBoutique;
@@ -33,6 +34,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class TypesBoutiqueController extends Controller
 {
+    use EnregistreEtSoumet;
+
     public function __construct(private readonly Journal $journal, private readonly NotificationDecision $notifications) {}
 
     public function index(Request $request): Response|StreamedResponse|View
@@ -101,17 +104,18 @@ class TypesBoutiqueController extends Controller
             'attribuable' => ['required', 'boolean'],
         ], [], __('admin.types.attributs'));
 
-        $type = DB::transaction(function () use ($request, $donnees) {
+        $brouillon = $request->input('apres') === 'brouillon';
+        $type = DB::transaction(function () use ($request, $donnees, $brouillon) {
             $type = TypeBoutique::create([...$donnees, 'ordre' => $donnees['ordre'] ?? (int) TypeBoutique::max('ordre') + 1,
-                'actif' => true, 'par_defaut' => false, 'statut' => StatutTypeBoutique::AValider]);
+                'actif' => true, 'par_defaut' => false, 'statut' => $brouillon ? StatutTypeBoutique::Brouillon : StatutTypeBoutique::AValider]);
             $type->forceFill(['demande_par' => $request->user()->id, 'demande_le' => now()])->save();
-            $type->creerVersion($request->user(), __('admin.types.motifs.creation'));
+            $type->creerVersion($request->user(), __($brouillon ? 'admin.types.motifs.creation_brouillon' : 'admin.types.motifs.creation'));
 
             return $type;
         });
         $this->journal->ecrire($request->user(), 'type_boutique.cree', 'TypeBoutique', $type->id, null, ['code' => $type->code, 'libelle' => $type->libelle]);
 
-        return redirect()->route('admin.sites.types')->with('succes', __('admin.types.messages.cree'));
+        return redirect()->route('admin.sites.types')->with('succes', __($brouillon ? 'admin.types.messages.cree_brouillon' : 'admin.types.messages.cree'));
     }
 
     /** Libellé, description et ordre : modifiables à tout moment. L'unité du loyer relève de la grille tarifaire. */
@@ -122,7 +126,7 @@ class TypesBoutiqueController extends Controller
             ...$this->reglesLibres($type),
         ], [], __('admin.types.attributs'));
 
-        return $this->executer($type, function () use ($request, $type, $donnees) {
+        return $this->puisSoumettre($request, $this->executer($type, function () use ($request, $type, $donnees) {
             $avant = $type->only(['libelle', 'description', 'ordre']);
             if ($type->par_defaut) {
                 $type->fill($donnees);
@@ -135,7 +139,7 @@ class TypesBoutiqueController extends Controller
             $type->fill($donnees)->save();
             $type->creerVersion($request->user(), __('admin.types.motifs.modification'));
             $this->journal->ecrire($request->user(), 'type_boutique.modifie', 'TypeBoutique', $type->id, $avant, $type->only(array_keys($avant)));
-        }, $type->par_defaut ? 'admin.types.messages.demande' : 'admin.types.messages.modifie');
+        }, $type->par_defaut ? 'admin.types.messages.demande' : 'admin.types.messages.modifie'), 'type', $type, route('admin.sites.types.show', $type), 'modifier-type');
     }
 
     /** Demande de changement d'« attribuable par tirage » : effective après validation. */

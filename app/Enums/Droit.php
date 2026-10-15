@@ -56,6 +56,9 @@ enum Droit: string
     // File « À valider » : tout ce qui attend une décision du VALIDATEUR, décision sur une ligne ou une sélection.
     case AValiderVoir = 'a_valider.voir';
 
+    // « Mes brouillons » : brouillons et rejetés de l'auteur (GESTIONNAIRE, RÉGULATEUR), à soumettre au VALIDATEUR.
+    case BrouillonsVoir = 'brouillons.voir';
+
     case ReferentielsVoir = 'referentiels.voir';
     case ReferentielsGerer = 'referentiels.gerer';
 
@@ -264,11 +267,11 @@ enum Droit: string
             // Saisit et soumet tous les paramètres ; ne confirme ni n'exécute jamais.
             // Référentiel des sites et des boutiques uniquement : saisie et soumission, jamais de confirmation.
             Role::GestionnaireSites => [
-                self::TableauDeBordVoir,
+                self::TableauDeBordVoir, self::BrouillonsVoir,
                 self::SitesVoir, self::SitesGerer, self::ImportsVoir, self::UnitesVoir,
             ],
             Role::Regulateur => [
-                self::TableauDeBordVoir,
+                self::TableauDeBordVoir, self::BrouillonsVoir,
                 self::PhaseVoir, self::PhaseProposer,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,

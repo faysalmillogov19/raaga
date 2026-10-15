@@ -33,7 +33,7 @@ class FenetresModalesTest extends TestCase
         // Bouton d'ouverture, fenêtre <dialog> hors du flux, en-tête (titre + Fermer), corps, pied (Annuler + action).
         $page->assertSee('id="ajouter-type-ouvrir" x-on:click="ouvrir($event)" aria-haspopup="dialog" aria-controls="ajouter-type"', false)
             ->assertSee('<dialog id="ajouter-type" x-ref="dialogue" class="adm-fenetre" aria-labelledby="ajouter-type-titre" aria-modal="true"', false)
-            ->assertSeeInOrder(['class="adm-fenetre-tete"', 'id="ajouter-type-titre"', 'aria-label="Fermer"', 'class="adm-fenetre-corps"', 'name="code"', 'class="adm-fenetre-pied"', 'Annuler', 'Ajouter le type'], false);
+            ->assertSeeInOrder(['class="adm-fenetre-tete"', 'id="ajouter-type-titre"', 'aria-label="Fermer"', 'class="adm-fenetre-corps"', 'name="code"', 'class="adm-fenetre-pied"', 'Annuler', 'Enregistrer et soumettre', 'Enregistrer en brouillon'], false);
 
         // Le script ouvre par showModal() (jamais show()) ; plus aucun formulaire dépliable dans le back-office.
         $script = file_get_contents(resource_path('js/app.js'));

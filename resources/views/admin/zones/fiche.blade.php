@@ -35,7 +35,8 @@
             @endcan
             @if ($gerer)
                 <x-admin.fenetre id="modifier-element" :titre="$z['modifier_titre']" :action="route('admin.referencement.zones.update', [$liste, $element->id])" methode="PUT"
-                                 :bouton="$z['enregistrer']" declencheur-variante="secondaire">
+                                 :bouton="$z['enregistrer']" declencheur-variante="secondaire"
+                                 :soumission="in_array($element->statut, [\App\Enums\StatutTypeBoutique::Brouillon, \App\Enums\StatutTypeBoutique::Rejete], true)">
                     <x-slot:declencheur>{{ $z['modifier_titre'] }}</x-slot:declencheur>
                     <div class="adm-fenetre-grille">
                         <x-admin.champ nom="code_affiche" :libelle="$z['colonnes']['code']" type="verrouille" :valeur="$element->code" :aide="$z['code_fige']" />

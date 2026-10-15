@@ -30,7 +30,7 @@
         <div class="mt-4 flex flex-wrap gap-3">
             @if ($modifiable)
                 <x-admin.fenetre id="modifier-finances" :titre="$f['titre'].' · '.$site->nom" :action="route('admin.sites.finances.update', $site)" methode="PUT"
-                                 :bouton="__('admin.composants.circuit.brouillon')" declencheur-variante="secondaire">
+                                 :bouton="__('admin.composants.circuit.brouillon')" declencheur-variante="secondaire" soumission>
                     <x-slot:declencheur>{{ __('admin.parametrage.actions.modifier') }}</x-slot:declencheur>
                     <x-admin.champ nom="cout_total" :libelle="ucfirst($libelles['cout_total'])" type="number" min="0" :valeur="$finances?->cout_total" />
                     <x-admin.champ nom="part_occupants" :libelle="ucfirst($libelles['part_occupants'])" type="number" min="0" :valeur="$finances?->part_occupants" class="mt-4" />

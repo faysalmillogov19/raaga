@@ -24,6 +24,7 @@ use App\Services\Parametrage\WorkflowParametrage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -91,6 +92,56 @@ class SoumissionGroupee
         }
 
         return null;
+    }
+
+    /** Requête des lignes d'une entité (site pour « site », « grille » et « finances »). */
+    public static function requete(string $entite): Builder
+    {
+        return match ($entite) {
+            'site' => Site::query(),
+            'grille' => Site::query()->with('grilleTarifaire'),
+            'finances' => Site::query()->with('finances'),
+            'campagne' => CampagneBoutiques::query(),
+            default => self::REFERENTIELS[$entite]::query(),
+        };
+    }
+
+    /**
+     * « Mes brouillons » : brouillons et rejetés de chaque entité que l'utilisateur soumet, regroupés par entité.
+     *
+     * @return array<string, Collection<int, Model>>
+     */
+    public static function brouillons(User $user): array
+    {
+        $groupes = [];
+        foreach (array_keys(self::DROITS) as $entite) {
+            if (self::peut($user, $entite)) {
+                $lignes = self::aSoumettre($entite, self::requete($entite))->orderBy(isset(self::REFERENTIELS[$entite]) ? 'code' : 'id')->get();
+                if ($lignes->isNotEmpty()) {
+                    $groupes[$entite] = $lignes;
+                }
+            }
+        }
+
+        return $groupes;
+    }
+
+    public static function nombreBrouillons(User $user): int
+    {
+        return collect(array_keys(self::DROITS))->filter(fn ($e) => self::peut($user, $e))->sum(fn ($e) => self::aSoumettre($e, self::requete($e))->count());
+    }
+
+    /** Fiche de l'élément. */
+    public static function url(string $entite, Model $ligne): string
+    {
+        return match ($entite) {
+            'site' => route('admin.sites.show', $ligne),
+            'grille' => route('admin.boutiques.grilles.show', $ligne),
+            'finances' => route('admin.sites.finances', $ligne),
+            'campagne' => route('admin.boutiques.show', $ligne),
+            'type' => route('admin.sites.types.show', $ligne),
+            default => route('admin.referencement.zones.show', [$entite, $ligne->getKey()]),
+        };
     }
 
     /** Lignes à soumettre (brouillons et rejetés) : filtre rapide « À soumettre ». */
@@ -184,8 +235,17 @@ class SoumissionGroupee
         return $resultat;
     }
 
+    /** Champ du formulaire concerné par la raison d'un refus (sinon « soumission », affiché au-dessus des boutons). */
+    public static function champ(string $raison): string
+    {
+        return match ($raison) {
+            __('admin.sites.regles.sans_code_site') => 'code',
+            default => 'soumission',
+        };
+    }
+
     /** Action « Soumettre » de la fiche, appelée telle quelle ; renvoie la raison du refus ou null. */
-    private function soumettreUn(Request $request, string $entite, Model $ligne): ?string
+    public function soumettreUn(Request $request, string $entite, Model $ligne): ?string
     {
         $etat = self::etat($entite, $ligne, $request->user());
         $objet = self::objet($entite, $ligne);

@@ -71,8 +71,8 @@
             </div>
         </section>
 
-        <div class="flex gap-3">
-            <x-admin.circuit />
+        <div class="flex flex-wrap gap-3">
+            <x-admin.enregistrer-soumettre />
             <x-admin.bouton variante="contour" href="{{ $campagne->exists ? route('admin.boutiques.show', $campagne) : route('admin.boutiques') }}">{{ __('admin.tranches.formulaire.annuler') }}</x-admin.bouton>
         </div>
     </form>

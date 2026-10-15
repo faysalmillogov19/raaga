@@ -55,6 +55,10 @@ class SoumissionGroupeeController extends Controller
     /** « 3 soumis, 1 refusé : SAR, aucune boutique. » */
     private function resultat(array $r, string $action): RedirectResponse
     {
+        // Tout soumis : « n éléments soumis au VALIDATEUR. »
+        if ($action === 'soumis' && $r['refus'] === [] && $r['soumis'] !== []) {
+            return back()->with('succes', trans_choice('admin.soumission.tous_soumis', count($r['soumis']), ['n' => count($r['soumis'])]).'.');
+        }
         $message = trans_choice('admin.soumission.resultat.'.$action, count($r['soumis']), ['n' => count($r['soumis'])]);
         if ($r['refus'] !== []) {
             $message .= ', '.trans_choice('admin.soumission.resultat.refus', count($r['refus']), ['n' => count($r['refus'])]).' : '

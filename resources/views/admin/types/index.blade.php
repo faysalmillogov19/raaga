@@ -8,7 +8,7 @@
 <x-admin.layout :titre="$t['titre']" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $t['titre']]]">
     @if ($gerer)
         <x-slot:actions>
-            <x-admin.fenetre id="ajouter-type" :titre="$t['ajouter_titre']" :action="route('admin.sites.types.store')" :bouton="$t['ajouter']" declencheur-icone="plus">
+            <x-admin.fenetre id="ajouter-type" :titre="$t['ajouter_titre']" :action="route('admin.sites.types.store')" :bouton="$t['ajouter']" declencheur-icone="plus" soumission>
                 <x-slot:declencheur>{{ $t['ajouter_titre'] }}</x-slot:declencheur>
                 <div class="adm-fenetre-grille">
                     <x-admin.champ nom="code" :libelle="$t['champs']['code']" maxlength="5" required autocomplete="off" :aide="$t['code_aide']" />

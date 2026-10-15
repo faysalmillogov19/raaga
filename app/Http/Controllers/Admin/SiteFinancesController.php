@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\StatutGrilleTarifaire;
+use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Models\ParametrageDecision;
 use App\Models\Site;
@@ -25,6 +26,8 @@ use Illuminate\View\View;
  */
 class SiteFinancesController extends Controller
 {
+    use EnregistreEtSoumet;
+
     public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal) {}
 
     public function show(Site $site): View
@@ -56,7 +59,7 @@ class SiteFinancesController extends Controller
             'source_complement' => ['nullable', 'string', 'max:200'],
         ], [], __('admin.sites.champs'));
 
-        return $this->executer($site, function () use ($request, $site, $donnees) {
+        return $this->puisSoumettre($request, $this->executer($site, function () use ($request, $site, $donnees) {
             $finances = $site->finances ?? new SiteFinance(['site_id' => $site->id, 'statut' => StatutGrilleTarifaire::Brouillon]);
             if ($finances->exists && ! $finances->estModifiable()) {
                 throw new RegleGestionException(__('admin.parametrage.regles.non_modifiable'));
@@ -64,7 +67,7 @@ class SiteFinancesController extends Controller
             $avant = $finances->only(SiteFinance::PARAMETRES);
             $finances->fill($donnees)->save();
             $this->journal->ecrire($request->user(), 'site_finance.modifiee', 'SiteFinance', $finances->id, $avant, $donnees);
-        }, 'admin.sites.finances.enregistrees');
+        }, 'admin.sites.finances.enregistrees'), 'finances', $site, route('admin.sites.finances', $site), 'modifier-finances');
     }
 
     public function soumettre(Request $request, Site $site): RedirectResponse

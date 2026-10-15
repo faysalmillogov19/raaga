@@ -31,6 +31,16 @@
         </div>
     @endif
 
+    {{-- GESTIONNAIRE et RÉGULATEUR : brouillons et rejetés non soumis au VALIDATEUR. --}}
+    @can(Droit::BrouillonsVoir->value)
+        @php($brouillons = \App\Services\Validation\SoumissionGroupee::nombreBrouillons(auth()->user()))
+        @if ($brouillons > 0)
+            <p class="bo-carte font-semibold" data-brouillons>
+                <a href="{{ route('admin.brouillons') }}" class="text-vert-fonce underline underline-offset-2">{{ trans_choice('admin.soumission.brouillons.non_soumis', $brouillons, ['n' => format_nombre($brouillons)]) }}</a>
+            </p>
+        @endif
+    @endcan
+
     {{-- À traiter --}}
     <section class="bo-carte adm-carte-tableau" id="a-traiter" aria-labelledby="a-traiter-titre">
         <div class="adm-carte-entete">

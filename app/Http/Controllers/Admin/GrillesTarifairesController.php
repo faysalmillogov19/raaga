@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutGrilleTarifaire;
+use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
 use App\Models\GrilleTarifaire;
@@ -39,6 +40,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class GrillesTarifairesController extends Controller
 {
+    use EnregistreEtSoumet;
+
     public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal) {}
 
     /** Grilles des sites confirmés ; le RÉGULATEUR coche les brouillons et rejetées pour les soumettre ensemble. */
@@ -145,7 +148,8 @@ class GrillesTarifairesController extends Controller
             return redirect()->route('admin.boutiques.grilles.show', $site)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.boutiques.grilles.show', $site)->with('succes', __('admin.grilles.messages.enregistree'));
+        return $this->puisSoumettre($request, redirect()->route('admin.boutiques.grilles.show', $site)->with('succes', __('admin.grilles.messages.enregistree')),
+            'grille', $site, route('admin.boutiques.grilles.edit', $site));
     }
 
     public function soumettre(Request $request, Site $site): RedirectResponse

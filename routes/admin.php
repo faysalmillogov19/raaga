@@ -4,6 +4,7 @@ use App\Enums\Droit;
 use App\Http\Controllers\Admin\AppelsFondsController;
 use App\Http\Controllers\Admin\AssistanceController;
 use App\Http\Controllers\Admin\AValiderController;
+use App\Http\Controllers\Admin\BrouillonsController;
 use App\Http\Controllers\Admin\CadreController;
 use App\Http\Controllers\Admin\CampagnesBoutiquesController;
 use App\Http\Controllers\Admin\CapacitesController;
@@ -95,6 +96,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/a-valider', [AValiderController::class, 'index'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider');
         Route::post('/a-valider', [AValiderController::class, 'decider'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.decider');
         Route::get('/a-valider/{rubrique}', [AValiderController::class, 'index'])->where('rubrique', '[a-z-]+')->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.rubrique');
+
+        // « Mes brouillons » : brouillons et rejetés du GESTIONNAIRE ou du RÉGULATEUR, toutes entités confondues.
+        Route::get('/brouillons', BrouillonsController::class)->middleware('can:'.Droit::BrouillonsVoir->value)->name('brouillons');
 
         // Listes de gestion : soumission groupée à validation et retrait (droit de l'auteur vérifié par élément).
         Route::controller(SoumissionGroupeeController::class)->prefix('soumission')->name('soumission.')->group(function () {
