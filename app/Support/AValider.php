@@ -25,67 +25,94 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 /**
- * File « À valider » du VALIDATEUR : tout ce qui attend une décision, regroupé par type d'élément. Chaque élément porte
- * une clé « type:identifiant ». Un élément soumis par le VALIDATEUR lui-même reste affiché, grisé, sans décision
- * possible (quatre yeux). Campagnes, démarches du site public et données financières : décision une par une seulement.
+ * File « À valider » du VALIDATEUR : tout ce qui attend une décision, rangé par rubrique. Chaque élément porte une clé
+ * « type:identifiant ». Un élément soumis par le VALIDATEUR lui-même reste affiché, grisé, sans décision possible
+ * (quatre yeux). Rubriques sensibles (campagnes, démarches du site public, données financières) : décision une par une.
+ *
+ * Ajouter une rubrique (dossiers KYC, rapprochement des cautions, tranches…) = déclarer UNE entrée dans rubriques() :
+ * le menu « À valider », la route, la page, les compteurs et le groupage en découlent.
  */
 final class AValider
 {
-    /** Ordre des groupes. */
-    public const GROUPES = ['sites', 'grilles', 'finances', 'referentiels', 'campagnes', 'demarches', 'autorisations'];
+    /**
+     * Rubriques, dans l'ordre du menu : groupe => [adresse (slug), droits de décision (l'un suffit), décision groupée
+     * permise, types d'éléments, source des éléments].
+     *
+     * @return array<string, array{slug: string, droits: list<Droit>, groupable: bool, elements: list<string>, source: \Closure}>
+     */
+    public static function rubriques(): array
+    {
+        $nomSite = fn (?Site $s) => $s ? ($s->code ? $s->code.' · ' : '').$s->nom : '';
 
-    /** Éléments sensibles : jamais de décision groupée (cases à cocher masquées, refus 422 côté serveur). */
-    public const NON_GROUPABLES = ['campagne', 'phase', 'finances'];
+        return [
+            'sites' => ['slug' => 'sites', 'droits' => [Droit::SitesConfirmer], 'groupable' => true, 'elements' => ['site'],
+                'source' => fn (\Closure $e) => Site::query()->where('statut', StatutSite::Soumis)->get()
+                    ->map(fn (Site $s) => $e('site:'.$s->id, 'site', $nomSite($s), $s->soumis_par, $s->soumis_le, route('admin.sites.show', $s)))],
+            'finances' => ['slug' => 'finances-sites', 'droits' => [Droit::BoutiquesConfirmer], 'groupable' => false, 'elements' => ['finances'],
+                'source' => fn (\Closure $e) => SiteFinance::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get()
+                    ->map(fn (SiteFinance $f) => $e('finances:'.$f->site_id, 'finances', $nomSite($f->site), $f->soumis_par, $f->soumis_le, route('admin.sites.finances', $f->site_id)))],
+            'grilles' => ['slug' => 'grilles', 'droits' => [Droit::BoutiquesConfirmer], 'groupable' => true, 'elements' => ['grille'],
+                'source' => fn (\Closure $e) => GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get()
+                    ->map(fn (GrilleTarifaire $g) => $e('grille:'.$g->site_id, 'grille', $nomSite($g->site), $g->soumis_par, $g->soumis_le, route('admin.boutiques.grilles.show', $g->site_id)))],
+            'referentiels' => ['slug' => 'referentiels', 'droits' => [Droit::SitesConfirmer, Droit::UnitesConfirmer], 'groupable' => true,
+                'elements' => ['type', 'niveaux', 'zones', 'unites'],
+                'source' => function (\Closure $e, User $user) {
+                    $liste = collect();
+                    if ($user->can(Droit::SitesConfirmer->value)) {
+                        foreach (TypeBoutique::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('attribuable_demande'))->get() as $t) {
+                            $liste->push($e('type:'.$t->id, 'type', ($t->code ? $t->code.' · ' : '').$t->libelle, $t->demande_par, $t->demande_le ?? $t->updated_at, route('admin.sites.types.show', $t)));
+                        }
+                        foreach ([Niveau::class => 'niveaux', ZoneSite::class => 'zones'] as $classe => $type) {
+                            foreach ($classe::query()->where('statut', StatutTypeBoutique::AValider)->get() as $r) {
+                                $liste->push($e($type.':'.$r->id, $type, $r->code.' · '.$r->libelle, $r->demande_par, $r->updated_at, route('admin.referencement.zones.show', [$type, $r->id])));
+                            }
+                        }
+                    }
+                    if ($user->can(Droit::UnitesConfirmer->value)) {
+                        foreach (Unite::query()->where('statut', StatutTypeBoutique::AValider)->get() as $u) {
+                            $liste->push($e('unites:'.$u->id, 'unites', $u->code.' · '.$u->libelle, $u->demande_par, $u->updated_at, route('admin.referencement.zones.show', ['unites', $u->id])));
+                        }
+                    }
+
+                    return $liste;
+                }],
+            'campagnes' => ['slug' => 'campagnes', 'droits' => [Droit::BoutiquesConfirmer], 'groupable' => false, 'elements' => ['campagne'],
+                'source' => fn (\Closure $e) => CampagneBoutiques::query()->where('statut', StatutCampagneBoutiques::Soumise)->get()
+                    ->map(fn (CampagneBoutiques $c) => $e('campagne:'.$c->id, 'campagne', $c->nom, $c->soumis_par, $c->soumise_le, route('admin.boutiques.show', $c)))],
+            'demarches' => ['slug' => 'demarches', 'droits' => [Droit::PhaseConfirmer], 'groupable' => false, 'elements' => ['phase'],
+                'source' => fn (\Closure $e) => DecisionPhase::query()->where('statut', DecisionPhase::SOUMISE)->get()
+                    ->map(fn (DecisionPhase $d) => $e('phase:'.$d->id, 'phase', self::libellePhase($d), $d->propose_par, $d->created_at, route('admin.phase')))],
+            'autorisations' => ['slug' => 'autorisations-sites', 'droits' => [Droit::SitesConfirmer], 'groupable' => true, 'elements' => ['autorisation'],
+                'source' => fn (\Closure $e) => Site::query()->where('statut', StatutSite::Confirme)->whereNotNull('revision_demandee_le')->get()
+                    ->map(fn (Site $s) => $e('autorisation:'.$s->id, 'autorisation', $nomSite($s).' : « '.$s->revision_demande_motif.' »', $s->revision_demandee_par, $s->revision_demandee_le, route('admin.sites.show', $s)))],
+        ];
+    }
+
+    /** Types d'éléments sensibles : jamais de décision groupée (cases à cocher masquées, refus 422 côté serveur). @return list<string> */
+    public static function nonGroupables(): array
+    {
+        return collect(self::rubriques())->reject(fn (array $r) => $r['groupable'])->pluck('elements')->flatten()->values()->all();
+    }
+
+    /** Groupe d'une adresse de rubrique (« finances-sites » → « finances »), ou null. */
+    public static function groupeDuSlug(string $slug): ?string
+    {
+        return collect(self::rubriques())->search(fn (array $r) => $r['slug'] === $slug) ?: null;
+    }
 
     /**
+     * Éléments en attente par rubrique visible pour l'utilisateur (les plus anciens d'abord).
+     *
      * @return array<string, list<array{cle: string, element: string, libelle: string, auteur_id: ?int, par: ?string, date: ?CarbonInterface, url: string, moi: bool, groupable: bool}>>
      */
     public static function pour(User $user): array
     {
-        $g = array_fill_keys(self::GROUPES, []);
-        $nomSite = fn (?Site $s) => $s ? ($s->code ? $s->code.' · ' : '').$s->nom : '';
         $e = fn (string $cle, string $element, string $libelle, ?int $auteur, ?CarbonInterface $date, string $url) => self::element($user, $cle, $element, $libelle, $auteur, $date, $url);
-
-        if ($user->can(Droit::SitesConfirmer->value)) {
-            foreach (Site::query()->where('statut', StatutSite::Soumis)->get() as $s) {
-                $g['sites'][] = $e('site:'.$s->id, 'site', $nomSite($s), $s->soumis_par, $s->soumis_le, route('admin.sites.show', $s));
+        $g = [];
+        foreach (self::rubriques() as $groupe => $rubrique) {
+            if (in_array($groupe, self::groupesVisibles($user), true)) {
+                $g[$groupe] = collect(($rubrique['source'])($e, $user))->sortBy(fn ($el) => $el['date']?->timestamp ?? 0)->values()->all();
             }
-            foreach (TypeBoutique::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('attribuable_demande'))->get() as $t) {
-                $g['referentiels'][] = $e('type:'.$t->id, 'type', ($t->code ? $t->code.' · ' : '').$t->libelle, $t->demande_par, $t->demande_le ?? $t->updated_at, route('admin.sites.types.show', $t));
-            }
-            foreach ([Niveau::class => 'niveaux', ZoneSite::class => 'zones'] as $classe => $liste) {
-                foreach ($classe::query()->where('statut', StatutTypeBoutique::AValider)->get() as $r) {
-                    $g['referentiels'][] = $e($liste.':'.$r->id, $liste, $r->code.' · '.$r->libelle, $r->demande_par, $r->updated_at, route('admin.referencement.zones.show', [$liste, $r->id]));
-                }
-            }
-            foreach (Site::query()->where('statut', StatutSite::Confirme)->whereNotNull('revision_demandee_le')->get() as $s) {
-                $g['autorisations'][] = $e('autorisation:'.$s->id, 'autorisation', $nomSite($s).' : « '.$s->revision_demande_motif.' »', $s->revision_demandee_par, $s->revision_demandee_le, route('admin.sites.show', $s));
-            }
-        }
-        if ($user->can(Droit::UnitesConfirmer->value)) {
-            foreach (Unite::query()->where('statut', StatutTypeBoutique::AValider)->get() as $u) {
-                $g['referentiels'][] = $e('unites:'.$u->id, 'unites', $u->code.' · '.$u->libelle, $u->demande_par, $u->updated_at, route('admin.referencement.zones.show', ['unites', $u->id]));
-            }
-        }
-        if ($user->can(Droit::BoutiquesConfirmer->value)) {
-            foreach (GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get() as $gr) {
-                $g['grilles'][] = $e('grille:'.$gr->site_id, 'grille', $nomSite($gr->site), $gr->soumis_par, $gr->soumis_le, route('admin.boutiques.grilles.show', $gr->site_id));
-            }
-            foreach (SiteFinance::query()->where('statut', StatutGrilleTarifaire::Soumis)->with('site')->get() as $f) {
-                $g['finances'][] = $e('finances:'.$f->site_id, 'finances', $nomSite($f->site), $f->soumis_par, $f->soumis_le, route('admin.sites.finances', $f->site_id));
-            }
-            foreach (CampagneBoutiques::query()->where('statut', StatutCampagneBoutiques::Soumise)->get() as $c) {
-                $g['campagnes'][] = $e('campagne:'.$c->id, 'campagne', $c->nom, $c->soumis_par, $c->soumise_le, route('admin.boutiques.show', $c));
-            }
-        }
-        if ($user->can(Droit::PhaseConfirmer->value)) {
-            foreach (DecisionPhase::query()->where('statut', DecisionPhase::SOUMISE)->get() as $d) {
-                $g['demarches'][] = $e('phase:'.$d->id, 'phase', self::libellePhase($d), $d->propose_par, $d->created_at, route('admin.phase'));
-            }
-        }
-
-        foreach ($g as &$elements) {
-            usort($elements, fn ($a, $b) => ($a['date']?->timestamp ?? 0) <=> ($b['date']?->timestamp ?? 0));
         }
 
         return $g;
@@ -97,23 +124,22 @@ final class AValider
         return collect(self::pour($user))->flatten(1)->where('moi', false)->count();
     }
 
+    /** Compteur de chaque rubrique (éléments sur lesquels l'utilisateur peut décider). @return array<string, int> */
+    public static function compteurs(User $user): array
+    {
+        return array_map(fn (array $elements) => collect($elements)->where('moi', false)->count(), self::pour($user));
+    }
+
     /** Élément encore en attente, ou null (déjà traité, inconnu ou hors des droits de l'utilisateur). */
     public static function trouver(User $user, string $cle): ?array
     {
         return collect(self::pour($user))->flatten(1)->firstWhere('cle', $cle);
     }
 
-    /** Groupes visibles pour ce profil (ceux dont il détient le droit de décision). @return list<string> */
+    /** Rubriques visibles pour ce profil (celles dont il détient un droit de décision). @return list<string> */
     public static function groupesVisibles(User $user): array
     {
-        $droits = [
-            'sites' => Droit::SitesConfirmer, 'grilles' => Droit::BoutiquesConfirmer, 'finances' => Droit::BoutiquesConfirmer,
-            'referentiels' => Droit::SitesConfirmer, 'campagnes' => Droit::BoutiquesConfirmer, 'demarches' => Droit::PhaseConfirmer,
-            'autorisations' => Droit::SitesConfirmer,
-        ];
-
-        return array_values(array_filter(self::GROUPES, fn (string $g) => $user->can($droits[$g]->value)
-            || ($g === 'referentiels' && $user->can(Droit::UnitesConfirmer->value))));
+        return array_keys(array_filter(self::rubriques(), fn (array $r) => collect($r['droits'])->contains(fn (Droit $d) => $user->can($d->value))));
     }
 
     /**
@@ -242,7 +268,7 @@ final class AValider
             'par' => $auteur ? User::query()->whereKey($auteur)->value('name') : null, 'date' => $date, 'url' => $url,
             // Quatre yeux : jamais de décision sur un élément que l'on a soumis soi-même.
             'moi' => $auteur !== null && $auteur === $user->id,
-            'groupable' => ! in_array($element, self::NON_GROUPABLES, true),
+            'groupable' => ! in_array($element, self::nonGroupables(), true),
         ];
     }
 }

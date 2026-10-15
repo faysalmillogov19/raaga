@@ -1481,3 +1481,9 @@ html.adm-fenetre-ouverte body {
 
 /* Différences : champs modifiés surlignés. */
 .adm .adm-diff-ligne td { background: #FFF6CC; }
+
+/* Compteur d'un sous-menu vide (rubrique « À valider » sans élément) : gris. */
+.adm-compteur.adm-compteur-zero {
+    background: var(--side-border);
+    color: var(--side-muted);
+}

@@ -5,11 +5,18 @@
     informations, différences avec la version confirmée, pièces jointes, historique, puis élément suivant.
 --}}
 @php
+    use App\Support\AValider;
+
     $v = __('admin.a_valider');
     $total = collect($groupes)->flatten(1)->where('moi', false)->count();
+    $rubriques = AValider::rubriques();
+    $slug = $rubrique ? $rubriques[$rubrique]['slug'] : null;
+    // Adresse de la page courante (vue d'ensemble ou rubrique), avec un élément ouvert en détail.
+    $page = fn (array $parametres = []) => $slug ? route('admin.a-valider.rubrique', ['rubrique' => $slug, ...$parametres]) : route('admin.a-valider', $parametres);
+    $titrePage = $rubrique ? $v['menus'][$rubrique] : $v['titre'];
 @endphp
 
-<x-admin.layout :titre="$v['titre']" :sous-titre="$v['intro']">
+<x-admin.layout :titre="$titrePage" :sous-titre="$v['intro']" :fil="$rubrique ? [['libelle' => $v['titre'], 'url' => route('admin.a-valider')], ['libelle' => $titrePage]] : []">
     <div x-data="{
              n: 0,
              ligne: { cle: '', libelle: '', decision: 'confirmer' },
@@ -18,15 +25,28 @@
              decider(cle, libelle, decision) { this.ligne = { cle, libelle, decision }; this.$nextTick(() => this.$refs.dialogueLigne.showModal()) },
          }" x-init="$refs.detail && $refs.detail.showModal()">
         <p class="mb-4 flex items-center gap-2 font-bold text-encre">
-            <span>{{ $v['titre'] }}</span><span class="adm-compteur !ml-0" data-total>{{ $total }}</span>
+            <span>{{ $titrePage }}</span><span class="adm-compteur !ml-0" data-total>{{ $total }}</span>
         </p>
+
+        @if ($rubrique && $groupes[$rubrique] === [])
+            {{-- Rubrique traitée : état vide, lien vers la rubrique suivante qui a des éléments. --}}
+            <div class="bo-carte !mt-0" data-rubrique-vide>
+                <p class="font-semibold text-encre">{{ $v['vide_rubrique'] }}</p>
+                @if ($rubriqueSuivante)
+                    <a href="{{ route('admin.a-valider.rubrique', $rubriques[$rubriqueSuivante]['slug']) }}" class="mt-2 inline-flex font-semibold text-vert-fonce underline underline-offset-2">
+                        {{ __('admin.a_valider.rubrique_suivante', ['rubrique' => $v['menus'][$rubriqueSuivante], 'n' => collect(AValider::pour(auth()->user())[$rubriqueSuivante])->where('moi', false)->count()]) }}</a>
+                @endif
+            </div>
+        @endif
 
         {{-- Décision groupée : les cases cochées de tous les groupes (jamais pour les éléments sensibles). --}}
         <form method="POST" action="{{ route('admin.a-valider.decider') }}" x-ref="lot" @change="compter()">
             @csrf
             <input type="hidden" name="mode" value="lot">
+            @if ($slug)<input type="hidden" name="rubrique" value="{{ $slug }}">@endif
             @foreach ($groupes as $groupe => $elements)
-                @php($groupable = ! in_array($groupe, ['finances', 'campagnes', 'demarches'], true))
+                @continue($rubrique && $elements === [])
+                @php($groupable = $rubriques[$groupe]['groupable'])
                 {{-- Groupe dépliable : ouvert s'il contient des éléments. --}}
                 <section class="bo-carte !mt-0 mb-4" data-groupe="{{ $groupe }}" x-data="{ deplie: @js(count($elements) > 0) }">
                     <h2 class="!text-[1.05rem]">
@@ -48,6 +68,7 @@
                                         <th scope="col" class="w-10"><input type="checkbox" aria-label="{{ __('admin.a_valider.tout_cocher', ['groupe' => $v['groupes'][$groupe]]) }}"
                                                                              @change="toutCocher('{{ $groupe }}', $event.target.checked)"></th>
                                     @endif
+                                    @if ($groupe === 'referentiels')<th scope="col">{{ $v['liste'] }}</th>@endif
                                     <th scope="col">{{ $v['colonnes']['element'] }}</th>
                                     <th scope="col">{{ $v['colonnes']['par'] }}</th>
                                     <th scope="col">{{ $v['colonnes']['date'] }}</th>
@@ -61,14 +82,15 @@
                                                 <td>@unless ($e['moi'])<input type="checkbox" name="elements[]" value="{{ $e['cle'] }}" data-groupe="{{ $groupe }}"
                                                            aria-label="{{ __('admin.a_valider.cocher', ['element' => $e['libelle']]) }}">@endunless</td>
                                             @endif
-                                            <td><span class="texte-carte">{{ $v['elements'][$e['element']] }}</span> <span class="font-semibold text-encre">{{ $e['libelle'] }}</span>
+                                            @if ($groupe === 'referentiels')<td>{{ $v['elements'][$e['element']] }}</td>@endif
+                                            <td>@unless ($groupe === 'referentiels')<span class="texte-carte">{{ $v['elements'][$e['element']] }}</span> @endunless<span class="font-semibold text-encre">{{ $e['libelle'] }}</span>
                                                 @if ($e['moi'])<br><span class="texte-carte" data-motif-moi>{{ $v['erreurs']['auto_validation'] }}</span>@endif</td>
                                             <td>{{ $e['par'] ?? '' }}</td>
                                             <td class="whitespace-nowrap">{{ $e['date']?->format('d/m H:i') }}</td>
                                             <td class="whitespace-nowrap">{{ $e['date']?->locale('fr')->diffForHumans() }}</td>
                                             <td class="whitespace-nowrap">
                                                 <span class="inline-flex gap-1">
-                                                    <a href="{{ route('admin.a-valider', ['detail' => $e['cle']]) }}" class="bo-bouton-icone" title="{{ __('admin.a_valider.voir', ['element' => $e['libelle']]) }}"
+                                                    <a href="{{ $page(['detail' => $e['cle']]) }}" class="bo-bouton-icone" title="{{ __('admin.a_valider.voir', ['element' => $e['libelle']]) }}"
                                                        aria-label="{{ __('admin.a_valider.voir', ['element' => $e['libelle']]) }}"><x-icon name="voir" class="h-5 w-5" /></a>
                                                     @unless ($e['moi'])
                                                         <button type="button" class="bo-bouton-icone" title="{{ __('admin.a_valider.valider', ['element' => $e['libelle']]) }}"
@@ -127,6 +149,7 @@
             <form method="POST" action="{{ route('admin.a-valider.decider') }}">
                 @csrf
                 <input type="hidden" name="mode" value="ligne">
+                @if ($slug)<input type="hidden" name="rubrique" value="{{ $slug }}">@endif
                 <input type="hidden" name="elements[]" :value="ligne.cle">
                 <input type="hidden" name="decision" :value="ligne.decision">
                 <h2 id="ligne-titre" class="!text-[1.2rem]" x-text="ligne.libelle"></h2>
@@ -146,7 +169,7 @@
         </dialog>
 
         @if ($detail)
-            @include('admin.a-valider._detail', ['d' => $detail, 'suivant' => $suivant])
+            @include('admin.a-valider._detail', ['d' => $detail, 'suivant' => $suivant, 'slug' => $slug, 'retour' => $page()])
         @endif
     </div>
 </x-admin.layout>

@@ -11,7 +11,8 @@
     use App\Support\MenuBackoffice;
 
     $id = 'sous-menu-'.$cle;
-    $total = collect($entrees)->sum(fn (array $e) => $badges[$e['cle']] ?? 0);
+    // Total du menu : fourni (« menu:{cle} », par exemple le total de « À valider »), sinon la somme des sous-menus.
+    $total = $badges['menu:'.$cle] ?? collect($entrees)->sum(fn (array $e) => $badges[$e['cle']] ?? 0);
 @endphp
 
 <li class="adm-deroulant" x-data="menuDeroulant({ deplie: @js($ouvert), cle: @js($cle), url: @js(route('admin.preferences.menu')) })"
@@ -34,9 +35,12 @@
                 @endphp
                 <li>
                     <a href="{{ MenuBackoffice::url($entree) }}" @class(['bo-lien', 'adm-sous-lien', 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif>
-                        <span class="adm-libelle">{{ __('admin.menu.'.$entree['cle']) }}</span>
+                        <span class="adm-libelle">{{ $entree['libelle'] ?? __('admin.menu.'.$entree['cle']) }}</span>
                         @if ($n)
                             <span class="adm-compteur">{{ $n }}<span class="sr-only"> {{ trans_choice('admin.a_traiter', $n, ['n' => $n]) }}</span></span>
+                        @elseif ($entree['compteur_zero'] ?? false)
+                            {{-- Rubrique vide : compteur affiché en gris. --}}
+                            <span class="adm-compteur adm-compteur-zero">0<span class="sr-only"> {{ trans_choice('admin.a_traiter', 0, ['n' => 0]) }}</span></span>
                         @endif
                     </a>
                 </li>

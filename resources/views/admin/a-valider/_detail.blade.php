@@ -14,7 +14,7 @@
             <p class="texte-carte">{{ $v['elements'][$e['element']] }} · {{ $v['detail']['soumis'] }} {{ $e['par'] ?? '' }}, {{ $e['date']?->format('d/m/Y H:i') }}</p>
             <h2 id="detail-titre" class="!text-[1.2rem]">{{ $e['libelle'] }}</h2>
         </div>
-        <a href="{{ route('admin.a-valider') }}" class="bo-bouton-icone" aria-label="{{ $v['detail']['fermer'] }}" title="{{ $v['detail']['fermer'] }}"><x-icon name="fermer" class="h-5 w-5" /></a>
+        <a href="{{ $retour }}" class="bo-bouton-icone" aria-label="{{ $v['detail']['fermer'] }}" title="{{ $v['detail']['fermer'] }}"><x-icon name="fermer" class="h-5 w-5" /></a>
     </header>
 
     <section class="mt-4" aria-labelledby="detail-infos">
@@ -64,6 +64,7 @@
                 @csrf
                 <input type="hidden" name="mode" value="ligne">
                 <input type="hidden" name="elements[]" value="{{ $e['cle'] }}">
+                @if ($slug)<input type="hidden" name="rubrique" value="{{ $slug }}">@endif
                 @if ($suivant)<input type="hidden" name="suivant" value="{{ $suivant }}">@endif
                 <div x-show="rejet" x-cloak class="w-full">
                     <label for="motif-detail" class="block font-semibold">{{ $v['rejeter_ligne'] }}</label>

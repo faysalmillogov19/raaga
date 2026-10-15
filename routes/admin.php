@@ -93,6 +93,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // File « À valider » du VALIDATEUR : décision sur une ligne ou sur une sélection (rejet : motif commun).
         Route::get('/a-valider', [AValiderController::class, 'index'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider');
         Route::post('/a-valider', [AValiderController::class, 'decider'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.decider');
+        Route::get('/a-valider/{rubrique}', [AValiderController::class, 'index'])->where('rubrique', '[a-z-]+')->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.rubrique');
 
         // Décisions de phase du site public : le SUPER_ADMIN propose, le VALIDATEUR confirme ou rejette.
         Route::controller(PhaseController::class)->prefix('phase')->name('phase')->group(function () {

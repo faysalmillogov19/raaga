@@ -121,6 +121,19 @@ return [
         'cocher' => 'Sélectionner :element',
         'vide' => 'Rien à valider.',
         'une_par_une' => 'Élément sensible : décision une par une, après lecture du détail.',
+        'menus' => [
+            'vue' => 'Vue d’ensemble',
+            'sites' => 'Sites',
+            'finances' => 'Données financières des sites',
+            'grilles' => 'Grilles tarifaires',
+            'referentiels' => 'Référentiels',
+            'campagnes' => 'Campagnes',
+            'demarches' => 'Démarches du site public',
+            'autorisations' => 'Autorisations de modification',
+        ],
+        'vide_rubrique' => 'Rien à valider dans cette rubrique.',
+        'rubrique_suivante' => 'Rubrique suivante : :rubrique (:n)',
+        'liste' => 'Liste',
         'detail' => [
             'soumis' => 'soumis par',
             'fermer' => 'Fermer le détail',
@@ -187,6 +200,7 @@ return [
     'menus_deroulants' => [
         'referentiels' => 'Référentiels',
         'imports' => 'Imports',
+        'a_valider' => 'À valider',
     ],
 
     'menu' => [

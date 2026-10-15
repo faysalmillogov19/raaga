@@ -26,7 +26,7 @@ use App\Models\ZoneSite;
 final class MenuBackoffice
 {
     /** Icône de chaque menu dépliant (barre latérale réduite en icônes). */
-    public const ICONES_MENUS = ['referentiels' => 'referentiels', 'imports' => 'importer'];
+    public const ICONES_MENUS = ['referentiels' => 'referentiels', 'imports' => 'importer', 'a_valider' => 'taches'];
 
     /**
      * « etape » : étape de livraison (back-office métier), ou du module d'administration quand « module » = admin.
@@ -42,7 +42,12 @@ final class MenuBackoffice
         return [
             'pilotage' => [
                 ['cle' => 'tableau', 'route' => 'admin.tableau', 'droit' => Droit::TableauDeBordVoir, 'icone' => 'tableau', 'etape' => 1],
-                ['cle' => 'a_valider', 'route' => 'admin.a-valider', 'droit' => Droit::AValiderVoir, 'icone' => 'taches', 'etape' => 0],
+                // Menu dépliant « À valider » : vue d'ensemble, puis une entrée par rubrique (déclarées dans AValider::rubriques()).
+                ['cle' => 'a_valider', 'route' => 'admin.a-valider', 'droit' => Droit::AValiderVoir, 'icone' => 'taches', 'etape' => 0,
+                    'sous_menu' => 'a_valider', 'exclure' => ['admin.a-valider.rubrique'], 'compteur_zero' => true, 'libelle' => __('admin.a_valider.menus.vue')],
+                ...array_map(fn (string $groupe, array $r) => ['cle' => 'a_valider_'.$groupe, 'route' => 'admin.a-valider.rubrique', 'parametres' => ['rubrique' => $r['slug']],
+                    'droit' => $r['droits'][0], 'icone' => 'taches', 'etape' => 0, 'sous_menu' => 'a_valider', 'compteur_zero' => true,
+                    'libelle' => __('admin.a_valider.menus.'.$groupe)], array_keys(AValider::rubriques()), AValider::rubriques()),
                 ['cle' => 'tranches', 'route' => 'admin.tranches', 'droit' => Droit::TranchesVoir, 'icone' => 'tranches', 'etape' => 3, 'masque_si' => $parametres],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
@@ -196,8 +201,11 @@ final class MenuBackoffice
         $gere = $user->can(Droit::SitesGerer->value);
 
         return array_filter([
-            // VALIDATEUR : total de la file « À valider ».
+            // VALIDATEUR : total de la file « À valider » (entrée et vue d'ensemble), puis une valeur par rubrique.
             'a_valider' => $user->can(Droit::AValiderVoir->value) ? AValider::total($user) : 0,
+            'menu:a_valider' => $user->can(Droit::AValiderVoir->value) ? AValider::total($user) : 0,
+            ...($user->can(Droit::AValiderVoir->value)
+                ? collect(AValider::compteurs($user))->mapWithKeys(fn (int $n, string $g) => ['a_valider_'.$g => $n])->all() : []),
             // VALIDATEUR : sites soumis ; GESTIONNAIRE : sites rejetés à reprendre.
             'sites' => match (true) {
                 $valide => Site::query()->where('statut', StatutSite::Soumis)->count(),

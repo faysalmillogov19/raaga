@@ -27,16 +27,24 @@ use Throwable;
  */
 class AValiderController extends Controller
 {
-    public function index(Request $request): View
+    /** Vue d'ensemble (toutes les rubriques) ou page d'une rubrique (« sites », « finances-sites »…). */
+    public function index(Request $request, ?string $rubrique = null): View
     {
         Gate::authorize(Droit::AValiderVoir->value);
         $user = $request->user();
-        $groupes = array_intersect_key(AValider::pour($user), array_flip(AValider::groupesVisibles($user)));
-        $element = is_string($request->query('detail')) ? AValider::trouver($user, $request->query('detail')) : null;
+        $toutes = AValider::pour($user);
+        $groupe = $rubrique === null ? null : (AValider::groupeDuSlug($rubrique) ?? abort(404));
+        abort_if($groupe !== null && ! array_key_exists($groupe, $toutes), 403);
+        $groupes = $groupe === null ? $toutes : [$groupe => $toutes[$groupe]];
+        $element = is_string($request->query('detail')) ? collect($groupes)->flatten(1)->firstWhere('cle', $request->query('detail')) : null;
 
         return view('admin.a-valider', [
             'groupes' => $groupes,
+            'rubrique' => $groupe,
+            // Rubrique vide : lien vers la rubrique suivante qui a des éléments.
+            'rubriqueSuivante' => $groupe !== null && $toutes[$groupe] === [] ? $this->rubriqueSuivante($toutes, $groupe) : null,
             'detail' => $element ? AValider::detail($user, $element) : null,
+            // Élément suivant : dans la même rubrique (ou dans toute la file sur la vue d'ensemble).
             'suivant' => $element ? $this->suivant($groupes, $element['cle']) : null,
         ]);
     }
@@ -51,12 +59,13 @@ class AValiderController extends Controller
             'motif' => ['nullable', 'required_if:decision,rejeter', 'string', 'min:5', 'max:1000'],
             'mode' => ['nullable', 'in:ligne,lot'],
             'suivant' => ['nullable', 'string', 'max:40'],
+            'rubrique' => ['nullable', 'string', 'max:40'],
         ], ['elements.required' => __('admin.a_valider.erreurs.selection'), 'motif.*' => __('admin.utilisateurs.erreurs.motif')]);
         $elements = array_values(array_unique($donnees['elements']));
 
         // Éléments sensibles : jamais de décision groupée, même par une requête fabriquée.
         $lot = ($donnees['mode'] ?? 'lot') === 'lot' || count($elements) > 1;
-        $sensibles = array_filter($elements, fn (string $cle) => in_array(strtok($cle, ':'), AValider::NON_GROUPABLES, true));
+        $sensibles = array_filter($elements, fn (string $cle) => in_array(strtok($cle, ':'), AValider::nonGroupables(), true));
         abort_if($lot && $sensibles !== [], 422, __('admin.a_valider.erreurs.non_groupable'));
 
         $user = $request->user();
@@ -79,7 +88,10 @@ class AValiderController extends Controller
 
         $message = $this->resultat($donnees['decision'], $reussis, $refus);
         $suivant = isset($donnees['suivant']) && ($s = AValider::trouver($user, $donnees['suivant'])) && ! $s['moi'] ? $s['cle'] : null;
-        $retour = redirect()->route('admin.a-valider', $suivant ? ['detail' => $suivant] : []);
+        // Retour sur la page d'où vient la décision (vue d'ensemble ou rubrique), sur l'élément suivant s'il y en a un.
+        $rubrique = isset($donnees['rubrique']) && AValider::groupeDuSlug($donnees['rubrique']) ? $donnees['rubrique'] : null;
+        $parametres = array_filter(['rubrique' => $rubrique, 'detail' => $suivant]);
+        $retour = redirect()->route($rubrique ? 'admin.a-valider.rubrique' : 'admin.a-valider', $parametres);
 
         return $refus ? $retour->with('erreur', $message) : $retour->with('succes', $message);
     }
@@ -118,6 +130,16 @@ class AValiderController extends Controller
         }
 
         return implode(', ', $parties).'.';
+    }
+
+    /** Première rubrique, après celle-ci (dans l'ordre du menu, en boucle), qui a des éléments à décider. */
+    private function rubriqueSuivante(array $toutes, string $groupe): ?string
+    {
+        $ordre = array_keys($toutes);
+        $i = array_search($groupe, $ordre, true);
+        $suite = [...array_slice($ordre, $i + 1), ...array_slice($ordre, 0, $i)];
+
+        return collect($suite)->first(fn (string $g) => collect($toutes[$g])->where('moi', false)->isNotEmpty());
     }
 
     /** Élément suivant de la file (ordre d'affichage) sur lequel l'utilisateur peut décider. */
