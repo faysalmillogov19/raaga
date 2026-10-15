@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatutTypeBoutique;
+use App\Models\Concerns\ModificationDemandee;
 use App\Services\Backoffice\RegleGestionException;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['code', 'libelle', 'description', 'attribuable', 'actif', 'par_defaut', 'statut', 'ordre'])]
 class TypeBoutique extends Model
 {
+    use ModificationDemandee;
+
     /** Code du type : 2 à 5 lettres majuscules (BOUT, MAG, ETAL, CF). */
     public const FORMAT_CODE = '/^[A-Z]{2,5}$/';
 
@@ -38,6 +41,7 @@ class TypeBoutique extends Model
             'par_defaut' => 'boolean',
             'ordre' => 'integer',
             'version' => 'integer',
+            'modification_demandee' => 'array',
             'demande_le' => 'datetime',
             'valide_le' => 'datetime',
         ];

@@ -50,7 +50,7 @@
                     <li><x-admin.badge-statut :statut="$decision->decision" /> {{ __('admin.a_valider.detail.version', ['n' => $decision->version]) }}, {{ $decision->created_at?->format('d/m/Y H:i') }}, {{ $decision->decideur?->name }}@if ($decision->motif) : « {{ $decision->motif }} »@endif</li>
                 @endforeach
                 @foreach ($d['versions'] as $version)
-                    <li class="texte-carte">{{ __('admin.a_valider.detail.version', ['n' => $version->numero]) }}, {{ $version->created_at?->format('d/m/Y H:i') }}, {{ $version->auteur?->name }}@if ($version->motif) : {{ $version->motif }}@endif</li>
+                    <li class="texte-carte">{{ __('admin.a_valider.detail.version', ['n' => $version->numero]) }}, {{ $version->created_at?->format('d/m/Y H:i') }}, {{ $version->auteur?->name ?? __('admin.types.systeme') }}@if ($version->motif) : {{ $version->motif }}@endif</li>
                 @endforeach
             </ul>
         @endif

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatutTypeBoutique;
+use App\Models\Concerns\ModificationDemandee;
 use App\Models\Concerns\ReferentielGere;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -16,14 +17,14 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable(['code', 'libelle', 'description', 'ordre', 'actif', 'par_defaut', 'statut'])]
 class ZoneSite extends Model
 {
-    use ReferentielGere;
+    use ModificationDemandee, ReferentielGere;
 
     /** Code de zone : 1 à 5 lettres majuscules ou chiffres (A, MAG, BP). */
     public const FORMAT_CODE = '/^[A-Z0-9]{1,5}$/';
 
     protected function casts(): array
     {
-        return ['ordre' => 'integer', 'actif' => 'boolean', 'par_defaut' => 'boolean', 'statut' => StatutTypeBoutique::class, 'valide_le' => 'datetime', 'version' => 'integer'];
+        return ['ordre' => 'integer', 'actif' => 'boolean', 'par_defaut' => 'boolean', 'statut' => StatutTypeBoutique::class, 'valide_le' => 'datetime', 'version' => 'integer', 'modification_demandee' => 'array'];
     }
 
     public static function typeReferentiel(): string

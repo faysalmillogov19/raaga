@@ -14,7 +14,7 @@
                         <tr>
                             <td>{{ $v->numero }}</td>
                             <td class="whitespace-nowrap">{{ $v->created_at?->format('d/m/Y H:i') }}</td>
-                            <td>{{ $v->auteur?->name }}</td>
+                            <td>{{ $v->auteur?->name ?? __('admin.types.systeme') }}</td>
                             <td>{{ $v->motif }}</td>
                         </tr>
                     @endforeach

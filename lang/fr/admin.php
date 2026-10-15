@@ -135,6 +135,7 @@ return [
         'rubrique_suivante' => 'Rubrique suivante : :rubrique (:n)',
         'liste' => 'Liste',
         'detail' => [
+            'actif' => 'Actif',
             'soumis' => 'soumis par',
             'fermer' => 'Fermer le détail',
             'informations' => 'Informations',
@@ -1069,7 +1070,7 @@ return [
         'rejeter_message' => 'L’élément reste inutilisable, avec votre motif.',
         'attributs' => ['code' => 'code', 'libelle' => 'libellé', 'rang' => 'rang', 'description' => 'description', 'ordre' => 'ordre d’affichage'],
         'messages' => [
-            'creee' => 'Ajouté et soumis au VALIDATEUR.', 'renommee' => 'Enregistré.', 'desactivee' => 'Désactivé : plus proposé ni accepté à l’import.',
+            'creee' => 'Ajouté et soumis au VALIDATEUR.', 'renommee' => 'Enregistré.', 'modification_soumise' => 'Modification soumise au VALIDATEUR : elle s’appliquera après sa validation.', 'desactivee' => 'Désactivé : plus proposé ni accepté à l’import.',
             'reactivee' => 'Réactivé.', 'supprimee' => 'Supprimé.', 'confirmee' => 'Validé.', 'rejetee' => 'Rejeté.',
         ],
         'regles' => [
@@ -1077,6 +1078,7 @@ return [
             'defaut' => 'Un élément « par défaut » ne se supprime jamais : désactivez-le.',
             'utilisee' => 'Cet élément est utilisé (boutique, capacité, grille tarifaire ou campagne) : il ne peut pas être supprimé. Désactivez-le.',
             'rien_a_valider' => 'Cet élément n’est pas en attente de validation.',
+            'modification_en_attente' => 'Une modification de cet élément attend déjà la décision du VALIDATEUR.',
             'inutilisable' => 'Zone :code désactivée ou en attente de validation : elle ne peut pas être utilisée.',
             'niveau_inconnu' => 'Niveau :code inconnu.',
             'niveau_desactive' => 'Niveau :code désactivé : il ne peut plus être utilisé.',
@@ -1310,7 +1312,7 @@ return [
         'auteur' => 'Auteur',
         'motif' => 'Motif',
         'etat' => 'État après le changement',
-        'systeme' => 'Plateforme (types par défaut)',
+        'systeme' => 'Système (valeur par défaut)',
         'actions' => [
             'confirmer' => 'Valider',
             'rejeter' => 'Rejeter',
@@ -1331,7 +1333,8 @@ return [
             'attribuable' => 'La demande est soumise au VALIDATEUR ; elle ne s’applique qu’après sa validation.',
         ],
         'motifs' => [
-            'defaut' => 'Type par défaut',
+            'defaut' => 'Valeur par défaut, confirmée d’office',
+            'modification_confirmee' => 'Modification validée',
             'creation' => 'Création, soumise au VALIDATEUR',
             'modification' => 'Modification (libellé, description, ordre ou unité)',
             'attribuable_demande' => 'Demande de changement d’« attribuable par tirage »',

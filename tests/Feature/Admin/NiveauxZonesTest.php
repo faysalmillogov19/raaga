@@ -80,9 +80,11 @@ class NiveauxZonesTest extends TestCase
         $this->assertSame(['A', 'B', 'MAG', 'ETAL', 'BP', 'CF', 'REST'], ZoneSite::query()->orderBy('ordre')->pluck('code')->all());
         $this->assertTrue(Niveau::all()->every->par_defaut && ZoneSite::all()->every->par_defaut);
 
-        // Le GESTIONNAIRE modifie et désactive des éléments par défaut.
+        // Le GESTIONNAIRE modifie et désactive des éléments par défaut ; le VALIDATEUR confirme.
         $this->en($this->gestionnaire)->put(route('admin.referencement.zones.update', ['niveaux', $this->niveau('RC')->id]), ['libelle' => 'RDC', 'rang' => 0])->assertSessionHas('succes');
         $this->en($this->gestionnaire)->post(route('admin.referencement.zones.desactiver', ['zones', $this->zone('BP')->id]))->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['niveaux', $this->niveau('RC')->id]))->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['zones', $this->zone('BP')->id]))->assertSessionHas('succes');
 
         $this->seed([NiveauxSeeder::class, ZonesSeeder::class]);
         $this->seed([NiveauxSeeder::class, ZonesSeeder::class]);
@@ -96,6 +98,7 @@ class NiveauxZonesTest extends TestCase
         $r1 = $this->niveau('R1');
         $this->en($this->gestionnaire)->put(route('admin.referencement.zones.update', ['niveaux', $r1->id]), ['code' => 'R9', 'libelle' => 'Premier étage', 'rang' => 1])
             ->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['niveaux', $r1->id]))->assertSessionHas('succes');
         $this->assertSame(['R1', 'Premier étage'], [$r1->fresh()->code, $r1->fresh()->libelle]);
 
         foreach ([$r1->fresh(), $this->zone('A')] as $element) {
@@ -132,6 +135,8 @@ class NiveauxZonesTest extends TestCase
         $existante = $this->site->boutiques()->create(['niveau' => 'R2', 'bloc' => 'A', 'numero' => '001', 'surface' => 9, 'type_boutique_id' => $this->type->id, 'statut' => StatutBoutique::Disponible]);
         $this->en($this->gestionnaire)->post(route('admin.referencement.zones.desactiver', ['niveaux', $this->niveau('R2')->id]))->assertSessionHas('succes');
         $this->en($this->gestionnaire)->post(route('admin.referencement.zones.desactiver', ['zones', $this->zone('BP')->id]))->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['niveaux', $this->niveau('R2')->id]))->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.referencement.zones.confirmer', ['zones', $this->zone('BP')->id]))->assertSessionHas('succes');
 
         // Boutiques : niveau désactivé ou inconnu refusé.
         $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.deposer'), ['site_id' => $this->site->id, 'fichier' => $this->fichier('Locaux', [

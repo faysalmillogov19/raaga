@@ -46,10 +46,12 @@ class TypesBoutiqueTest extends TestCase
         $this->assertTrue(TypeBoutique::all()->every(fn ($t) => $t->par_defaut && $t->actif && $t->statut === StatutTypeBoutique::Valide));
         $this->assertFalse($this->type('CF')->attribuable);
 
-        // Le GESTIONNAIRE modifie et désactive des types par défaut.
+        // Le GESTIONNAIRE modifie et désactive des types par défaut ; le VALIDATEUR confirme.
         $this->en($this->gestionnaire)->put(route('admin.sites.types.update', $this->type('BOUT')), ['libelle' => 'Boutique standard', 'ordre' => 5])
             ->assertSessionHas('succes');
         $this->en($this->gestionnaire)->post(route('admin.sites.types.desactiver', $this->type('MAG')))->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.sites.types.confirmer', $this->type('BOUT')))->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.sites.types.confirmer', $this->type('MAG')))->assertSessionHas('succes');
 
         // Le seeder rejoué ne crée aucun doublon et n'écrase rien.
         $this->seed(TypesBoutiqueSeeder::class);
@@ -98,6 +100,7 @@ class TypesBoutiqueTest extends TestCase
         Storage::fake('local');
         $site = Site::create(['statut' => StatutSite::Brouillon, 'code' => 'RAA', 'nom' => 'Raaga', 'ville' => 'Ouagadougou', 'cree_par' => $this->gestionnaire->id]);
         $this->en($this->gestionnaire)->post(route('admin.sites.types.desactiver', $this->type('ETAL')))->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.sites.types.confirmer', $this->type('ETAL')))->assertSessionHas('succes');
 
         $classeur = new Spreadsheet;
         $classeur->getActiveSheet()->setTitle('Locaux')->fromArray([

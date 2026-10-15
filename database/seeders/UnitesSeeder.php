@@ -6,7 +6,10 @@ use App\Enums\StatutTypeBoutique;
 use App\Models\Unite;
 use Illuminate\Database\Seeder;
 
-/** Unités de loyer par défaut (validées, « par défaut ») : créées si elles manquent, jamais modifiées si elles existent. */
+/**
+ * Unités de loyer par défaut : confirmées d'office, marquées « par défaut », version 1 au nom du système ; créées si
+ * elles manquent, jamais modifiées si elles existent. Aucun passage par le circuit de validation.
+ */
 class UnitesSeeder extends Seeder
 {
     public const UNITES = [
@@ -18,7 +21,10 @@ class UnitesSeeder extends Seeder
     public function run(): void
     {
         foreach (self::UNITES as $code => $libelle) {
-            Unite::query()->firstOrCreate(['code' => $code], ['libelle' => $libelle, 'actif' => true, 'par_defaut' => true, 'statut' => StatutTypeBoutique::Valide]);
+            $unite = Unite::query()->firstOrCreate(['code' => $code], ['libelle' => $libelle, 'actif' => true, 'par_defaut' => true, 'statut' => StatutTypeBoutique::Valide]);
+            if ($unite->wasRecentlyCreated) {
+                $unite->creerVersion(null, __('admin.types.motifs.defaut'));
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\StatutTypeBoutique;
 use App\Enums\UniteLoyer;
+use App\Models\Concerns\ModificationDemandee;
 use App\Models\Concerns\ReferentielGere;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -20,14 +21,14 @@ use Illuminate\Support\Collection;
 #[Fillable(['code', 'libelle', 'description', 'actif', 'par_defaut', 'statut'])]
 class Unite extends Model
 {
-    use ReferentielGere;
+    use ModificationDemandee, ReferentielGere;
 
     /** Code d'unité : 1 à 10 lettres majuscules ou chiffres (M2, UNITE, REDEVANCE). */
     public const FORMAT_CODE = '/^[A-Z0-9]{1,10}$/';
 
     protected function casts(): array
     {
-        return ['actif' => 'boolean', 'par_defaut' => 'boolean', 'statut' => StatutTypeBoutique::class, 'valide_le' => 'datetime', 'version' => 'integer'];
+        return ['actif' => 'boolean', 'par_defaut' => 'boolean', 'statut' => StatutTypeBoutique::class, 'valide_le' => 'datetime', 'version' => 'integer', 'modification_demandee' => 'array'];
     }
 
     public static function typeReferentiel(): string

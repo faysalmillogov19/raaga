@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Models\ZoneSite;
 use App\Services\Parametrage\WorkflowParametrage;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 /**
@@ -59,17 +60,17 @@ final class AValider
                 'source' => function (\Closure $e, User $user) {
                     $liste = collect();
                     if ($user->can(Droit::SitesConfirmer->value)) {
-                        foreach (TypeBoutique::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('attribuable_demande'))->get() as $t) {
+                        foreach (TypeBoutique::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('attribuable_demande')->orWhereNotNull('modification_demandee'))->get() as $t) {
                             $liste->push($e('type:'.$t->id, 'type', ($t->code ? $t->code.' · ' : '').$t->libelle, $t->demande_par, $t->demande_le ?? $t->updated_at, route('admin.sites.types.show', $t)));
                         }
                         foreach ([Niveau::class => 'niveaux', ZoneSite::class => 'zones'] as $classe => $type) {
-                            foreach ($classe::query()->where('statut', StatutTypeBoutique::AValider)->get() as $r) {
+                            foreach ($classe::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('modification_demandee'))->get() as $r) {
                                 $liste->push($e($type.':'.$r->id, $type, $r->code.' · '.$r->libelle, $r->demande_par, $r->updated_at, route('admin.referencement.zones.show', [$type, $r->id])));
                             }
                         }
                     }
                     if ($user->can(Droit::UnitesConfirmer->value)) {
-                        foreach (Unite::query()->where('statut', StatutTypeBoutique::AValider)->get() as $u) {
+                        foreach (Unite::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('modification_demandee'))->get() as $u) {
                             $liste->push($e('unites:'.$u->id, 'unites', $u->code.' · '.$u->libelle, $u->demande_par, $u->updated_at, route('admin.referencement.zones.show', ['unites', $u->id])));
                         }
                     }
@@ -195,7 +196,7 @@ final class AValider
                 $t = TypeBoutique::query()->findOrFail($id);
                 $versions = $t->versions()->with('auteur')->get();
 
-                return [...self::referentiel($versions, __('admin.types.champs')), 'infos' => [
+                return [...self::referentiel($versions, __('admin.types.champs'), $t), 'infos' => [
                     __('admin.a_valider.detail.code') => $t->code, __('admin.a_valider.detail.libelle') => $t->libelle,
                     __('admin.a_valider.detail.description') => $t->description, __('admin.parametrage.statut') => $t->statut->label(),
                 ]];
@@ -203,7 +204,7 @@ final class AValider
             'niveaux', 'zones', 'unites' => (function () use ($id, $type) {
                 $r = ['niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class][$type]::query()->findOrFail($id);
 
-                return [...self::referentiel($r->versions(), __('admin.zones.colonnes')), 'infos' => [
+                return [...self::referentiel($r->versions(), __('admin.zones.colonnes'), $r), 'infos' => [
                     __('admin.a_valider.detail.code') => $r->code, __('admin.a_valider.detail.libelle') => $r->libelle,
                     __('admin.a_valider.detail.description') => $r->description ?? null, __('admin.parametrage.statut') => $r->statut->label(),
                 ]];
@@ -243,10 +244,18 @@ final class AValider
             'versions' => $versions->reverse()->values(), 'decisions' => $decisions];
     }
 
-    /** Versions figées d'un référentiel : différences entre la version soumise et la précédente. */
-    private static function referentiel(Collection $versions, array $libelles): array
+    /**
+     * Versions figées d'un référentiel : différences entre la version soumise et la précédente ; pour une modification
+     * demandée sur un élément « par défaut », entre les valeurs en vigueur et les valeurs demandées.
+     */
+    private static function referentiel(Collection $versions, array $libelles, ?Model $objet = null): array
     {
         $versions = $versions->sortByDesc('numero')->values();
+        if ($objet?->modification_demandee) {
+            $differentiel = collect($objet->modification_demandee)->map(fn ($v, $k) => [$objet->getAttribute($k), $v])->all();
+
+            return ['differentiel' => $differentiel, 'libelles' => [...$libelles, 'actif' => __('admin.a_valider.detail.actif')], 'premiere' => false, 'versions' => $versions, 'decisions' => collect()];
+        }
         $soumise = $versions->get(0);
         $precedente = $versions->get(1);
         $differentiel = $soumise ? WorkflowParametrage::differentiel((array) ($precedente?->parametres ?? []), (array) $soumise->parametres) : [];

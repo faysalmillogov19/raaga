@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatutTypeBoutique;
+use App\Models\Concerns\ModificationDemandee;
 use App\Models\Concerns\ReferentielGere;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -17,14 +18,14 @@ use Illuminate\Support\Collection;
 #[Fillable(['code', 'libelle', 'rang', 'actif', 'par_defaut', 'statut'])]
 class Niveau extends Model
 {
-    use ReferentielGere;
+    use ModificationDemandee, ReferentielGere;
 
     /** Code : 2 à 3 lettres majuscules ou chiffres (SS, RC, R1, R4). */
     public const FORMAT_CODE = '/^[A-Z0-9]{2,3}$/';
 
     protected function casts(): array
     {
-        return ['rang' => 'integer', 'actif' => 'boolean', 'par_defaut' => 'boolean', 'statut' => StatutTypeBoutique::class, 'valide_le' => 'datetime', 'version' => 'integer'];
+        return ['rang' => 'integer', 'actif' => 'boolean', 'par_defaut' => 'boolean', 'statut' => StatutTypeBoutique::class, 'valide_le' => 'datetime', 'version' => 'integer', 'modification_demandee' => 'array'];
     }
 
     public static function typeReferentiel(): string

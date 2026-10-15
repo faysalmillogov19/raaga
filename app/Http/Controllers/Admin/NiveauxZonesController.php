@@ -139,7 +139,7 @@ class NiveauxZonesController extends Controller
         return redirect()->route('admin.referencement.'.$liste)->with('succes', __('admin.zones.messages.creee'));
     }
 
-    /** Libellé, description, rang ou ordre : à tout moment, sans validation. */
+    /** Libellé, description, rang ou ordre : à tout moment, sans validation, sauf pour un élément « par défaut » (circuit). */
     public function update(Request $request, string $liste, int $id): RedirectResponse
     {
         $this->autoriser($liste, 'gerer');
@@ -152,10 +152,15 @@ class NiveauxZonesController extends Controller
             if (! $element->isDirty()) {
                 return;
             }
+            if ($element->par_defaut) {
+                $this->demander($request, $element, $element->getDirty());
+
+                return;
+            }
             $element->save();
             $element->creerVersion($request->user(), __('admin.types.motifs.modification'));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().'.modifie', class_basename($element), $element->id, $avant, $element->only(array_keys($donnees)));
-        }, 'admin.zones.messages.renommee');
+        }, $element->par_defaut ? 'admin.zones.messages.modification_soumise' : 'admin.zones.messages.renommee');
     }
 
     public function activer(Request $request, string $liste, int $id): RedirectResponse
@@ -196,8 +201,14 @@ class NiveauxZonesController extends Controller
 
         return $this->executer($liste, $element, function () use ($request, $liste, $element) {
             $this->exigerEnAttente($request, $element);
-            $element->forceFill(['statut' => StatutTypeBoutique::Valide, 'valide_par' => $request->user()->id, 'valide_le' => now(), 'motif_rejet' => null])->save();
-            $element->creerVersion($request->user(), __('admin.types.motifs.confirmation'));
+            if ($element->aModificationEnAttente()) {
+                $element->appliquerModification();
+                $element->forceFill(['valide_par' => $request->user()->id, 'valide_le' => now()])->save();
+                $element->creerVersion($request->user(), __('admin.types.motifs.modification_confirmee'));
+            } else {
+                $element->forceFill(['statut' => StatutTypeBoutique::Valide, 'valide_par' => $request->user()->id, 'valide_le' => now(), 'motif_rejet' => null])->save();
+                $element->creerVersion($request->user(), __('admin.types.motifs.confirmation'));
+            }
             $this->journal->ecrire($request->user(), $element::typeReferentiel().'.confirme', class_basename($element), $element->id);
             $this->notifier($liste, $element, 'confirmer', null);
         }, 'admin.zones.messages.confirmee');
@@ -211,7 +222,11 @@ class NiveauxZonesController extends Controller
 
         return $this->executer($liste, $element, function () use ($request, $liste, $element, $motif) {
             $this->exigerEnAttente($request, $element);
-            $element->forceFill(['statut' => StatutTypeBoutique::Rejete, 'motif_rejet' => $motif])->save();
+            if ($element->aModificationEnAttente()) {
+                $element->abandonnerModification($motif);
+            } else {
+                $element->forceFill(['statut' => StatutTypeBoutique::Rejete, 'motif_rejet' => $motif])->save();
+            }
             $element->creerVersion($request->user(), __('admin.types.motifs.rejet', ['motif' => $motif]));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().'.rejete', class_basename($element), $element->id, null, ['motif' => $motif]);
             $this->notifier($liste, $element, 'rejeter', $motif);
@@ -223,10 +238,31 @@ class NiveauxZonesController extends Controller
         $this->autoriser($liste, 'gerer');
 
         return $this->executer($liste, $element, function () use ($request, $element, $actif) {
+            if ($element->par_defaut) {
+                $this->demander($request, $element, ['actif' => $actif]);
+
+                return;
+            }
             $element->forceFill(['actif' => $actif])->save();
             $element->creerVersion($request->user(), __($actif ? 'admin.types.motifs.reactivation' : 'admin.types.motifs.desactivation'));
             $this->journal->ecrire($request->user(), $element::typeReferentiel().($actif ? '.reactive' : '.desactive'), class_basename($element), $element->id);
-        }, $actif ? 'admin.zones.messages.reactivee' : 'admin.zones.messages.desactivee');
+        }, $element->par_defaut ? 'admin.zones.messages.modification_soumise' : ($actif ? 'admin.zones.messages.reactivee' : 'admin.zones.messages.desactivee'));
+    }
+
+    /**
+     * Élément « par défaut » : la modification n'est pas appliquée, elle est soumise au VALIDATEUR (« À valider »).
+     *
+     * @param  array<string, mixed>  $valeurs
+     *
+     * @throws RegleGestionException
+     */
+    private function demander(Request $request, Niveau|ZoneSite|Unite $element, array $valeurs): void
+    {
+        if ($element->aModificationEnAttente()) {
+            throw new RegleGestionException(__('admin.zones.regles.modification_en_attente'));
+        }
+        $element->refresh()->demanderModification($valeurs, $request->user());
+        $this->journal->ecrire($request->user(), $element::typeReferentiel().'.modification_demandee', class_basename($element), $element->id, $element->only(array_keys($valeurs)), $valeurs);
     }
 
     /** Auteur de la demande prévenu, une fois la décision enregistrée. */
@@ -261,7 +297,7 @@ class NiveauxZonesController extends Controller
     /** @throws RegleGestionException */
     private function exigerEnAttente(Request $request, Niveau|ZoneSite|Unite $element): void
     {
-        if ($element->statut !== StatutTypeBoutique::AValider) {
+        if ($element->statut !== StatutTypeBoutique::AValider && ! $element->aModificationEnAttente()) {
             throw new RegleGestionException(__('admin.zones.regles.rien_a_valider'));
         }
         if ($element->demande_par === $request->user()->id) {

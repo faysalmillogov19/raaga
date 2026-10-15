@@ -123,10 +123,18 @@ class TypesBoutiqueController extends Controller
 
         return $this->executer($type, function () use ($request, $type, $donnees) {
             $avant = $type->only(['libelle', 'description', 'ordre']);
+            if ($type->par_defaut) {
+                $type->fill($donnees);
+                if ($type->isDirty()) {
+                    $this->demander($request, $type, $type->getDirty());
+                }
+
+                return;
+            }
             $type->fill($donnees)->save();
             $type->creerVersion($request->user(), __('admin.types.motifs.modification'));
             $this->journal->ecrire($request->user(), 'type_boutique.modifie', 'TypeBoutique', $type->id, $avant, $type->only(array_keys($avant)));
-        }, 'admin.types.messages.modifie');
+        }, $type->par_defaut ? 'admin.types.messages.demande' : 'admin.types.messages.modifie');
     }
 
     /** Demande de changement d'« attribuable par tirage » : effective après validation. */
@@ -187,6 +195,10 @@ class TypesBoutiqueController extends Controller
             if ($type->statut === StatutTypeBoutique::AValider) {
                 $type->forceFill(['statut' => StatutTypeBoutique::Valide, 'valide_par' => $request->user()->id, 'valide_le' => now(), 'motif_rejet' => null])->save();
                 $motif = 'admin.types.motifs.confirmation';
+            } elseif ($type->aModificationEnAttente()) {
+                $type->appliquerModification();
+                $type->forceFill(['valide_par' => $request->user()->id, 'valide_le' => now()])->save();
+                $motif = 'admin.types.motifs.modification_confirmee';
             } elseif ($type->attribuable_demande !== null) {
                 $type->forceFill(['attribuable' => $type->attribuable_demande, 'attribuable_demande' => null, 'valide_par' => $request->user()->id, 'valide_le' => now()])->save();
                 $motif = 'admin.types.motifs.attribuable_confirme';
@@ -208,6 +220,8 @@ class TypesBoutiqueController extends Controller
             $this->exigerAutreAuteur($request, $type);
             if ($type->statut === StatutTypeBoutique::AValider) {
                 $type->forceFill(['statut' => StatutTypeBoutique::Rejete, 'motif_rejet' => $motif])->save();
+            } elseif ($type->aModificationEnAttente()) {
+                $type->abandonnerModification($motif);
             } elseif ($type->attribuable_demande !== null) {
                 $type->forceFill(['attribuable_demande' => null, 'motif_rejet' => $motif])->save();
             } else {
@@ -248,10 +262,33 @@ class TypesBoutiqueController extends Controller
         Gate::authorize(Droit::SitesGerer->value);
 
         return $this->executer($type, function () use ($request, $type, $actif) {
+            if ($type->par_defaut) {
+                $this->demander($request, $type, ['actif' => $actif]);
+
+                return;
+            }
             $type->forceFill(['actif' => $actif])->save();
             $type->creerVersion($request->user(), __($actif ? 'admin.types.motifs.reactivation' : 'admin.types.motifs.desactivation'));
             $this->journal->ecrire($request->user(), $actif ? 'type_boutique.reactive' : 'type_boutique.desactive', 'TypeBoutique', $type->id);
-        }, $actif ? 'admin.types.messages.reactive' : 'admin.types.messages.desactive');
+        }, $type->par_defaut ? 'admin.types.messages.demande' : ($actif ? 'admin.types.messages.reactive' : 'admin.types.messages.desactive'));
+    }
+
+    /**
+     * Type « par défaut » : la modification n'est pas appliquée, elle est soumise au VALIDATEUR (« À valider »).
+     *
+     * @param  array<string, mixed>  $valeurs
+     *
+     * @throws RegleGestionException
+     */
+    private function demander(Request $request, TypeBoutique $type, array $valeurs): void
+    {
+        if ($type->aModificationEnAttente()) {
+            throw new RegleGestionException(__('admin.zones.regles.modification_en_attente'));
+        }
+        $type->refresh();
+        $type->demanderModification($valeurs, $request->user());
+        $type->forceFill(['demande_le' => now()])->save();
+        $this->journal->ecrire($request->user(), 'type_boutique.modification_demandee', 'TypeBoutique', $type->id, $type->only(array_keys($valeurs)), $valeurs);
     }
 
     /** @return array<string, list<mixed>> */
