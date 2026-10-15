@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\GrillesTarifairesController;
 use App\Http\Controllers\Admin\ImportBoutiquesController;
 use App\Http\Controllers\Admin\ImportsController;
 use App\Http\Controllers\Admin\ImportSitesController;
+use App\Http\Controllers\Admin\ImportsValidationController;
 use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
@@ -96,6 +97,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/a-valider', [AValiderController::class, 'index'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider');
         Route::post('/a-valider', [AValiderController::class, 'decider'])->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.decider');
         Route::get('/a-valider/{rubrique}', [AValiderController::class, 'index'])->where('rubrique', '[a-z-]+')->middleware('can:'.Droit::AValiderVoir->value)->name('a-valider.rubrique');
+
+        // Import confirmé : détail, fichier d'origine, décision du VALIDATEUR sur l'import entier (« À valider › Imports »).
+        Route::controller(ImportsValidationController::class)->prefix('imports-validation')->name('imports-validation.')->group(function () {
+            Route::get('/{import}', 'show')->whereNumber('import')->middleware('can:'.Droit::ImportsVoir->value)->name('show');
+            Route::get('/{import}/fichier', 'fichier')->whereNumber('import')->middleware('can:'.Droit::ImportsVoir->value)->name('fichier');
+            Route::post('/{import}/confirmer', 'confirmer')->whereNumber('import')->middleware('can:'.Droit::SitesConfirmer->value)->name('confirmer');
+            Route::post('/{import}/rejeter', 'rejeter')->whereNumber('import')->middleware('can:'.Droit::SitesConfirmer->value)->name('rejeter');
+        });
 
         // « Mes brouillons » : brouillons et rejetés du GESTIONNAIRE ou du RÉGULATEUR, toutes entités confondues.
         Route::get('/brouillons', BrouillonsController::class)->middleware('can:'.Droit::BrouillonsVoir->value)->name('brouillons');

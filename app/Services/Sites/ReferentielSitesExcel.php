@@ -374,13 +374,13 @@ class ReferentielSitesExcel
      *
      * @throws RegleGestionException
      */
-    public function importer(AnalyseImportSites $analyse, User $auteur, string $nomFichier, string $empreinte, ?string $chemin = null): array
+    public function importer(AnalyseImportSites $analyse, User $auteur, string $nomFichier, string $empreinte, ?string $chemin = null, array $journal = []): array
     {
         if (! $analyse->estValide()) {
             throw new RegleGestionException(__('admin.sites.import.erreurs.non_valide'));
         }
 
-        return DB::transaction(function () use ($analyse, $auteur, $nomFichier, $empreinte, $chemin) {
+        return DB::transaction(function () use ($analyse, $auteur, $nomFichier, $empreinte, $chemin, $journal) {
             $compte = ['sites_crees' => 0, 'sites_mis_a_jour' => 0, 'sites_inchanges' => 0, 'capacites' => 0];
             $sites = [];
             foreach ($analyse->sites() as $code => $s) {
@@ -413,7 +413,7 @@ class ReferentielSitesExcel
                 }
             }
 
-            $this->journal->ecrire($auteur, 'sites.importes', 'Site', null, null, ['fichier' => $nomFichier, 'empreinte' => $empreinte, 'chemin' => $chemin, ...$compte]);
+            $this->journal->ecrire($auteur, 'sites.importes', 'Site', null, null, ['fichier' => $nomFichier, 'empreinte' => $empreinte, 'chemin' => $chemin, ...$compte, ...$journal]);
 
             return $compte;
         });

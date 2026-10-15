@@ -70,7 +70,7 @@ class WorkflowParametrage
             $this->decision($objet, $version, DecisionParametrage::Confirme, null, $validateur);
             $this->journal->ecrire($validateur, $objet->typeParametrage().'.confirme', class_basename($objet), $objet->getKey(), null, ['version' => $version]);
             // Auteur prévenu une fois la décision enregistrée, quel que soit l'écran d'où elle vient.
-            DB::afterCommit(fn () => $this->notifications->pourParametrage($objet, 'confirmer', null));
+            NotificationDecision::suspendue() || DB::afterCommit(fn () => $this->notifications->pourParametrage($objet, 'confirmer', null));
         });
     }
 
@@ -83,7 +83,7 @@ class WorkflowParametrage
             $objet->marquerRejete($motif);
             $this->decision($objet, $version, DecisionParametrage::Rejete, $motif, $validateur);
             $this->journal->ecrire($validateur, $objet->typeParametrage().'.rejete', class_basename($objet), $objet->getKey(), null, ['version' => $version, 'motif' => $motif]);
-            DB::afterCommit(fn () => $this->notifications->pourParametrage($objet, 'rejeter', $motif));
+            NotificationDecision::suspendue() || DB::afterCommit(fn () => $this->notifications->pourParametrage($objet, 'rejeter', $motif));
         });
     }
 

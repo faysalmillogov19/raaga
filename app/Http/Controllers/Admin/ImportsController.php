@@ -6,8 +6,10 @@ use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\ImportEnAttente;
+use App\Models\ImportValidation;
 use App\Models\Site;
 use App\Support\BadgeStatut;
+use App\Support\ImportValidationPresentation;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
 use App\Support\Tableau\ResultatTableau;
@@ -62,6 +64,15 @@ class ImportsController extends Controller
             return $e->action === 'boutiques.importees' ? ($codes[$e->entite_id] ?? '—') : trans_choice('admin.imports.n_sites', $e->nouvelle_valeur['sites_crees'] ?? 0
                 + ($e->nouvelle_valeur['sites_mis_a_jour'] ?? 0) + ($e->nouvelle_valeur['sites_inchanges'] ?? 0));
         };
+        // Import enregistré avec sa validation (journal : import_id) ; les imports plus anciens n'en ont pas.
+        $imports = null;
+        $validation = function (AuditLog $e) use (&$imports) {
+            $imports ??= ImportValidation::query()->with('sites.site')->get()->keyBy('id');
+            $import = $imports[$e->nouvelle_valeur['import_id'] ?? 0] ?? null;
+
+            return $import ? new HtmlString('<a href="'.e(route('admin.imports-validation.show', $import)).'" class="no-underline" data-validation="'.$import->statutValidation().'">'
+                .ImportValidationPresentation::statut($import)->toHtml().'</a>') : '';
+        };
         $nombre = fn (string ...$cles) => fn (AuditLog $e) => (int) collect($cles)->sum(fn ($k) => $e->nouvelle_valeur[$k] ?? 0);
 
         return Tableau::pour(AuditLog::query()->whereIn('action', $action ? [$action] : array_keys(self::ACTIONS))->with('acteur'), $id)
@@ -80,6 +91,7 @@ class ImportsController extends Controller
                 Colonne::make('mises_a_jour', $c['mises_a_jour'])->numerique()->valeur($nombre('mises_a_jour', 'sites_mis_a_jour')),
                 Colonne::make('erreurs', $c['erreurs'])->numerique()->valeur(fn () => 0),
                 Colonne::make('statut', $c['statut'])->valeur(fn () => BadgeStatut::html($i['confirme']))->texte(fn () => $i['confirme']),
+                $complet ? Colonne::make('validation', $c['validation'])->valeur($validation)->exportable(false) : null,
             ])
             ->filtres($complet && ! $action ? [Filtre::make('type', $c['type'], $i['types'], 'action')] : [])
             ->triParDefaut('date', 'desc')

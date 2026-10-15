@@ -13,6 +13,7 @@ use App\Models\AuditLog;
 use App\Models\CampagneBoutiques;
 use App\Models\DecisionPhase;
 use App\Models\GrilleTarifaire;
+use App\Models\ImportValidation;
 use App\Models\Niveau;
 use App\Models\ParametrageDecision;
 use App\Models\Site;
@@ -87,6 +88,11 @@ final class AValider
             'autorisations' => ['slug' => 'autorisations-sites', 'droits' => [Droit::SitesConfirmer], 'groupable' => true, 'elements' => ['autorisation'],
                 'source' => fn (\Closure $e) => Site::query()->where('statut', StatutSite::Confirme)->whereNotNull('revision_demandee_le')->get()
                     ->map(fn (Site $s) => $e('autorisation:'.$s->id, 'autorisation', $nomSite($s).' : « '.$s->revision_demande_motif.' »', $s->revision_demandee_par, $s->revision_demandee_le, route('admin.sites.show', $s)))],
+            // Import entier soumis : une ligne par import qui a encore des sites soumis ; jamais plusieurs imports à la fois.
+            'imports' => ['slug' => 'imports', 'droits' => [Droit::SitesConfirmer], 'groupable' => false, 'elements' => ['import'],
+                'source' => fn (\Closure $e) => ImportValidation::query()->enAttente()->with('sites.site')->latest('id')->get()
+                    ->map(fn (ImportValidation $i) => $e('import:'.$i->id, 'import', $i->fichier.' · '.trans_choice('admin.imports.n_sites', $i->sitesEnAttente()->count())
+                        .' ('.$i->sitesEnAttente()->map(fn ($l) => $l->site->code)->implode(', ').')', $i->auteur_id, $i->created_at, route('admin.imports-validation.show', $i)))],
         ];
     }
 
@@ -208,6 +214,18 @@ final class AValider
                 return [...self::referentiel($r->versions(), __('admin.zones.colonnes'), $r), 'infos' => [
                     __('admin.a_valider.detail.code') => $r->code, __('admin.a_valider.detail.libelle') => $r->libelle,
                     __('admin.a_valider.detail.description') => $r->description ?? null, __('admin.parametrage.statut') => $r->statut->label(),
+                ]];
+            })(),
+            'import' => (function () use ($id) {
+                $i = ImportValidation::query()->with(['sites.site', 'auteur'])->findOrFail($id);
+                $x = __('admin.imports_validation');
+
+                return ['infos' => [
+                    $x['infos']['type'] => $x['entites'][$i->entite], $x['infos']['fichier'] => $i->fichier, $x['infos']['contenu'] => ImportValidationPresentation::contenu($i),
+                    $x['infos']['sites'] => $i->sites->map(fn ($l) => $l->site->code)->implode(', '), $x['infos']['statut'] => $x['statuts'][$i->statutValidation()],
+                ], 'pieces' => [
+                    ...($i->chemin ? [['libelle' => $x['telecharger'], 'url' => route('admin.imports-validation.fichier', $i)]] : []),
+                    ...$i->sites->map(fn ($l) => ['libelle' => ($l->site->code ? $l->site->code.' · ' : '').$l->site->nom, 'url' => route('admin.sites.show', $l->site)])->all(),
                 ]];
             })(),
             'phase' => (function () use ($id) {

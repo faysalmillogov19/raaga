@@ -100,10 +100,10 @@ class SoumissionSimplifieeTest extends TestCase
 
         // Case cochée par défaut dans la fenêtre « Confirmer l'import ».
         $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.import', $site))->assertOk()
-            ->assertSee('name="soumettre_site" value="1" checked', false)->assertSee('Soumettre le site au VALIDATEUR après l’import');
+            ->assertSee('name="statut_apres" value="SOUMETTRE"', false)->assertSee('Statut après l’import');
 
-        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $site), ['soumettre_site' => 1])
-            ->assertSessionHas('succes', fn (string $m) => str_contains($m, 'Site SAR soumis au VALIDATEUR.'));
+        $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $site), ['statut_apres' => 'SOUMETTRE'])
+            ->assertSessionHas('succes', fn (string $m) => str_contains($m, '1 site soumis.'));
         $this->assertSame(2, $site->boutiques()->count());
         $this->assertSame(StatutSite::Soumis, $site->refresh()->statut);
     }

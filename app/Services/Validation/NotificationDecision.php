@@ -20,6 +20,26 @@ use App\Notifications\DecisionRendue;
  */
 final class NotificationDecision
 {
+    /** Décision sur un import entier : les sites confirmés ou rejetés un à un ne notifient pas (une seule notification). */
+    private static bool $suspendue = false;
+
+    /** Exécute l'action sans notification par élément ; la notification de l'ensemble est envoyée par l'appelant. */
+    public static function sansNotification(\Closure $action): mixed
+    {
+        $avant = self::$suspendue;
+        self::$suspendue = true;
+        try {
+            return $action();
+        } finally {
+            self::$suspendue = $avant;
+        }
+    }
+
+    public static function suspendue(): bool
+    {
+        return self::$suspendue;
+    }
+
     /** @param  string  $decision  confirmer | rejeter */
     public function envoyer(?int $auteurId, string $element, string $libelle, string $decision, ?string $motif, string $url): void
     {

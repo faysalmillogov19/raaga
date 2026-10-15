@@ -118,7 +118,8 @@ class ImportSitesTest extends TestCase
         $journal = AuditLog::query()->where('action', 'sites.importes')->sole();
         $this->assertSame($this->gestionnaire->id, $journal->acteur_id);
         $this->assertSame(['fichier' => 'Raaga_import_sites.xlsx', 'empreinte' => hash_file('sha256', $fichier->getPathname()),
-            'sites_crees' => 1, 'sites_mis_a_jour' => 1, 'sites_inchanges' => 0, 'capacites' => 4], collect($journal->nouvelle_valeur)->except('chemin')->all());
+            'sites_crees' => 1, 'sites_mis_a_jour' => 1, 'sites_inchanges' => 0, 'capacites' => 4, 'statut_apres' => 'BROUILLON'],
+            collect($journal->nouvelle_valeur)->except(['chemin', 'import_id'])->all());
         $this->assertSame(Storage::disk('local')->allFiles('imports/sites'), [$journal->nouvelle_valeur['chemin']]);
 
         // Fiche : capacité prévue comparée au référentiel (aucune boutique encore : écarts signalés).

@@ -6,6 +6,7 @@ use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Services\Backoffice\RegleGestionException;
+use App\Services\Imports\ValidationImport;
 use App\Services\Sites\ReferentielSitesExcel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -85,13 +86,18 @@ class ImportSitesController extends Controller
 
         // Nouvelle analyse : un site a pu être soumis ou confirmé depuis l'aperçu.
         try {
-            $compte = $this->excel->importer($this->excel->analyser($this->chemin($depot)), $request->user(), $depot['nom'], $depot['empreinte'], $depot['chemin']);
+            $analyse = $this->excel->analyser($this->chemin($depot));
+            // Statut choisi dans la fenêtre « Confirmer l'import » : brouillon, ou sites soumis au VALIDATEUR après l'import.
+            $resultat = app(ValidationImport::class)->importer($request, 'sites', $analyse, $depot,
+                fn (array $journal) => $this->excel->importer($analyse, $request->user(), $depot['nom'], $depot['empreinte'], $depot['chemin'], $journal));
+            $compte = $resultat['compte'];
         } catch (RegleGestionException $e) {
             return redirect()->route('admin.sites.excel.apercu')->with('erreur', $e->getMessage());
         }
         $request->session()->forget(self::CLE_SESSION);
 
-        return redirect()->route('admin.sites')->with('succes', __('admin.sites.import.importe', array_map('format_nombre', $compte)));
+        return redirect()->route('admin.sites')->with('succes', __('admin.sites.import.importe', array_map('format_nombre', $compte))
+            .($resultat['message'] ? ' '.$resultat['message'] : ''));
     }
 
     public function annuler(Request $request): RedirectResponse

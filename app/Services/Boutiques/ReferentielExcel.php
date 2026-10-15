@@ -350,17 +350,18 @@ class ReferentielExcel
      * que si elle est libre, et chaque site concerné doit rester modifiable : c'est vérifié de nouveau dans la transaction.
      * Aucun site n'est jamais créé.
      *
-     * @return array{creees: int, mises_a_jour: int}
+     * @param  array<string, mixed>  $journal  valeurs ajoutées au journal de l'import (import, statut choisi)
+     * @return array{creees: int, mises_a_jour: int, inchangees: int}
      *
      * @throws RegleGestionException
      */
-    public function importer(AnalyseImport $analyse, User $auteur, string $nomFichier, string $empreinte, ?string $chemin = null): array
+    public function importer(AnalyseImport $analyse, User $auteur, string $nomFichier, string $empreinte, ?string $chemin = null, array $journal = []): array
     {
         if (! $analyse->estValide()) {
             throw new RegleGestionException(__('admin.sites.excel.erreurs.non_valide'));
         }
 
-        return DB::transaction(function () use ($analyse, $auteur, $nomFichier, $empreinte, $chemin) {
+        return DB::transaction(function () use ($analyse, $auteur, $nomFichier, $empreinte, $chemin, $journal) {
             $sites = Site::query()->whereIn('id', array_unique(array_column($analyse->lignes(), 'site_id')))->lockForUpdate()->get()->keyBy('id');
             foreach ($sites as $site) {
                 if (! $site->estModifiable()) {
@@ -393,10 +394,11 @@ class ReferentielExcel
             }
 
             foreach ($comptes as $siteId => $compte) {
-                $this->journal->ecrire($auteur, 'boutiques.importees', 'Site', $siteId, null, ['fichier' => $nomFichier, 'empreinte' => $empreinte, 'chemin' => $chemin, ...$compte]);
+                $this->journal->ecrire($auteur, 'boutiques.importees', 'Site', $siteId, null, ['fichier' => $nomFichier, 'empreinte' => $empreinte, 'chemin' => $chemin, ...$compte, ...$journal]);
             }
 
-            return ['creees' => array_sum(array_column($comptes, 'creees')), 'mises_a_jour' => array_sum(array_column($comptes, 'mises_a_jour'))];
+            return ['creees' => array_sum(array_column($comptes, 'creees')), 'mises_a_jour' => array_sum(array_column($comptes, 'mises_a_jour')),
+                'inchangees' => array_sum(array_column($comptes, 'inchangees'))];
         });
     }
 

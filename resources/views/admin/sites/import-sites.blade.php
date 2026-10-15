@@ -39,6 +39,7 @@
                 <x-admin.confirmation id="confirmer-import-sites" :titre="$x['confirmer']" :message="$x['confirmer_message']"
                                       :action="route('admin.sites.excel.confirmer')" :bouton="$x['confirmer']">
                     <x-slot:declencheur>{{ $x['confirmer'] }}</x-slot:declencheur>
+                    <x-admin.statut-apres-import id="statut-sites" />
                 </x-admin.confirmation>
             @else
                 <x-admin.bouton variante="principal" type="button"  disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</x-admin.bouton>

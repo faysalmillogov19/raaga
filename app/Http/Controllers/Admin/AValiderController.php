@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
+use App\Models\ImportValidation;
 use App\Models\Niveau;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -27,6 +28,9 @@ use Throwable;
  */
 class AValiderController extends Controller
 {
+    /** Précisions rendues par l'action d'un élément (résultat site par site d'un import). @var list<string> */
+    private array $complements = [];
+
     /** Vue d'ensemble (toutes les rubriques) ou page d'une rubrique (« sites », « finances-sites »…). */
     public function index(Request $request, ?string $rubrique = null): View
     {
@@ -54,7 +58,7 @@ class AValiderController extends Controller
         Gate::authorize(Droit::AValiderVoir->value);
         $donnees = $request->validate([
             'elements' => ['required', 'array', 'min:1', 'max:200'],
-            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|campagne|phase|autorisation):\d+$/'],
+            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|campagne|phase|autorisation|import):\d+$/'],
             'decision' => ['required', 'in:confirmer,rejeter'],
             'motif' => ['nullable', 'required_if:decision,rejeter', 'string', 'min:5', 'max:1000'],
             'mode' => ['nullable', 'in:ligne,lot'],
@@ -86,7 +90,7 @@ class AValiderController extends Controller
             $reussis++;
         }
 
-        $message = $this->resultat($donnees['decision'], $reussis, $refus);
+        $message = trim($this->resultat($donnees['decision'], $reussis, $refus).' '.implode(' ', $this->complements));
         $suivant = isset($donnees['suivant']) && ($s = AValider::trouver($user, $donnees['suivant'])) && ! $s['moi'] ? $s['cle'] : null;
         // Retour sur la page d'où vient la décision (vue d'ensemble ou rubrique), sur l'élément suivant s'il y en a un.
         $rubrique = isset($donnees['rubrique']) && AValider::groupeDuSlug($donnees['rubrique']) ? $donnees['rubrique'] : null;
@@ -172,6 +176,7 @@ class AValiderController extends Controller
                 'niveaux', 'zones', 'unites' => app(NiveauxZonesController::class)->{$decision}($sousRequete, $type, $id),
                 'campagne' => app(CampagnesBoutiquesController::class)->{$decision}($sousRequete, CampagneBoutiques::query()->findOrFail($id)),
                 'phase' => app(PhaseController::class)->{$decision}($sousRequete, $id),
+                'import' => app(ImportsValidationController::class)->{$decision}($sousRequete, ImportValidation::query()->findOrFail($id)),
                 // Demande d'autorisation de modifier un site validé : acceptée (motif de la demande) ou refusée (motif saisi).
                 'autorisation' => $decision === 'confirmer'
                     ? app(SitesController::class)->reviser($this->avecMotif($sousRequete, (string) Site::query()->findOrFail($id)->revision_demande_motif), Site::query()->findOrFail($id))
@@ -186,6 +191,10 @@ class AValiderController extends Controller
         }
 
         $erreur = $session->get('erreur');
+        // Import entier : le résultat site par site (« 2 confirmés, 1 déjà traité ») complète le message.
+        if ($type === 'import' && $erreur === null && $session->has('succes')) {
+            $this->complements[] = $session->get('succes');
+        }
         $session->forget(['succes', 'erreur']);
 
         return $erreur;

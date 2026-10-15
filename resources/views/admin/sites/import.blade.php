@@ -19,9 +19,7 @@
             <x-admin.confirmation id="confirmer-import-haut" :titre="$x['confirmer']" :message="$x['confirmer_message']"
                                   :action="$routeConfirmer" :bouton="$x['confirmer']" variante="principal">
                 <x-slot:declencheur>{{ $x['confirmer'] }}</x-slot:declencheur>
-                <label class="mt-3 flex items-start gap-2 font-normal">
-                    <input type="checkbox" name="soumettre_site" value="1" checked class="mt-1"> {{ __('admin.soumission.soumettre_site_import') }}
-                </label>
+                <x-admin.statut-apres-import id="statut-1" />
             </x-admin.confirmation>
         @else
             <x-admin.bouton variante="principal" type="button" disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</x-admin.bouton>
@@ -65,9 +63,7 @@
                 <x-admin.confirmation id="confirmer-import" :titre="$x['confirmer']" :message="$x['confirmer_message']"
                                       :action="$routeConfirmer" :bouton="$x['confirmer']" variante="principal">
                     <x-slot:declencheur>{{ $x['confirmer'] }}</x-slot:declencheur>
-                    <label class="mt-3 flex items-start gap-2 font-normal">
-                        <input type="checkbox" name="soumettre_site" value="1" checked class="mt-1"> {{ __('admin.soumission.soumettre_site_import') }}
-                    </label>
+                    <x-admin.statut-apres-import id="statut-2" />
                 </x-admin.confirmation>
             @else
                 <x-admin.bouton variante="principal" type="button"  disabled aria-describedby="erreurs-aide">{{ $x['confirmer'] }}</x-admin.bouton>
