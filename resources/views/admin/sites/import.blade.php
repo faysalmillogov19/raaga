@@ -45,8 +45,9 @@
 
         <div class="mt-5 flex flex-wrap gap-3">
             @if ($erreurs === [])
+                {{-- Action principale de la page : rien n'est enregistré avant ce clic (puis la confirmation). --}}
                 <x-admin.confirmation id="confirmer-import" :titre="$x['confirmer']" :message="$x['confirmer_message']"
-                                      :action="$routeConfirmer" :bouton="$x['confirmer']">
+                                      :action="$routeConfirmer" :bouton="$x['confirmer']" variante="principal">
                     <x-slot:declencheur>{{ $x['confirmer'] }}</x-slot:declencheur>
                 </x-admin.confirmation>
             @else

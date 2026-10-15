@@ -127,7 +127,7 @@ class ImportBoutiquesController extends Controller
         Gate::authorize(Droit::SitesGerer->value);
         $request->session()->forget($this->cle(null));
 
-        return redirect()->route('admin.sites');
+        return redirect()->route('admin.referencement.imports.entite', 'boutiques');
     }
 
     /** Journal des imports de boutiques d'un site (le plus récent d'abord). */
@@ -201,7 +201,8 @@ class ImportBoutiquesController extends Controller
 
     private function retour(?Site $site): RedirectResponse
     {
-        return $site ? redirect()->route('admin.referencement.boutiques', ['site' => $site->id]) : redirect()->route('admin.sites');
+        // Import de plusieurs sites : la liste des boutiques (toutes), où les boutiques importées apparaissent.
+        return $site ? redirect()->route('admin.referencement.boutiques', ['site' => $site->id]) : redirect()->route('admin.referencement.boutiques');
     }
 
     private function siteChoisi(Request $request): Site
