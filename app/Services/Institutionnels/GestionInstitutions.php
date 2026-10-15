@@ -79,7 +79,7 @@ class GestionInstitutions
 
         DB::transaction(function () use ($acteur, $user, $motif) {
             if ($user->codeRole() === RoleEnum::InstitutionSignataire
-                && $user->institution->signatairesActifs()->whereKeyNot($user->id)->lockForUpdate()->count() === 0) {
+                && $user->institution->signatairesActifs()->whereKeyNot($user->id)->compterVerrouille() === 0) {
                 throw new RegleGestionException(__('institutionnel.regles.dernier_signataire'));
             }
 

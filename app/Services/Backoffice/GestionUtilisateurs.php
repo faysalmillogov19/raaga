@@ -191,8 +191,7 @@ class GestionUtilisateurs
             ->where('actif', true)
             ->whereKeyNot($retire->id)
             ->whereHas('role', fn ($q) => $q->where('code', RoleEnum::SuperAdmin->value))
-            ->lockForUpdate()
-            ->count();
+            ->compterVerrouille();
 
         if ($restants < self::SUPER_ADMINS_MINIMUM) {
             throw new RegleGestionException(__('admin.utilisateurs.regles.minimum_super_admins', ['n' => self::SUPER_ADMINS_MINIMUM]));
