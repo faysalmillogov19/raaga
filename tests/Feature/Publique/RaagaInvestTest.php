@@ -179,6 +179,11 @@ class RaagaInvestTest extends TestCase
             $this->en($user)->get(route('admin.tableau'))->assertOk()->assertSee('data-indicateurs-invest', false)->assertSee(format_fcfa(120_000));
         }
 
+        // SUPER_ADMIN : ni liste, ni export, ni indicateurs.
+        $this->en($this->superAdmin)->get(route('admin.interets'))->assertForbidden();
+        $this->en($this->superAdmin)->get(route('admin.interets', ['export' => 'csv']))->assertForbidden();
+        $this->en($this->superAdmin)->get(route('admin.tableau'))->assertOk()->assertDontSee('data-indicateurs-invest', false);
+
         // GESTIONNAIRE : ni liste, ni paramètres, ni indicateurs.
         $gestionnaire = User::factory()->role(Role::GestionnaireSites)->create();
         $this->en($gestionnaire)->get(route('admin.interets'))->assertForbidden();

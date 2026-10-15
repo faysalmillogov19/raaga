@@ -35,15 +35,15 @@
                         <span class="picto-demarche"><x-icon name="piece-pousse" class="h-7 w-7" data-picto="piece-pousse" /></span>
                         <x-public.badge-demarche demarche="investir" />
                         <h3 class="acc-h2">{{ $d['investir']['titre'] }}</h3>
-                        @if ($investir['prix'])
+                        @if ($investir['valeur'])
                             <ul class="acc-demarche-points">
-                                <li>{{ __($investir['indicative'] ? 'public.demarches.investir.valeur_indicative' : 'public.demarches.investir.prix', ['prix' => format_fcfa($investir['prix'])]) }}</li>
+                                <li>{{ __('public.demarches.investir.valeur_indicative', ['prix' => format_fcfa($investir['valeur'])]) }}</li>
                                 <li>{{ $investir['minimum'] > 1
-                                    ? __('public.demarches.investir.minimum', ['n' => format_nombre($investir['minimum']), 'montant' => format_fcfa($investir['minimum'] * $investir['prix'])])
+                                    ? __('public.demarches.investir.minimum', ['n' => format_nombre($investir['minimum']), 'montant' => format_fcfa($investir['minimum'] * $investir['valeur'])])
                                     : $d['investir']['minimum_un'] }}</li>
                             </ul>
                         @else
-                            <p>{{ $d['investir']['prix_a_venir'] }}</p>
+                            <p data-invest-bientot>{{ $d['investir']['bientot_invest'] }}</p>
                         @endif
                         @if ($jauge = $investir['jauge'])
                             {{-- Jauge de collecte : peut dépasser 100 % de l'objectif (la barre s'arrête au bout). --}}

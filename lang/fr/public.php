@@ -815,7 +815,7 @@ return [
             'pourcentage' => ':pourcentage de l’objectif',
             'simuler' => 'Simuler mon investissement',
             'minimum_un' => 'Minimum : 1 action',
-            'prix_a_venir' => 'Le prix de l’action sera publié avec la prochaine tranche.',
+            'bientot_invest' => 'RAAGA Invest : bientôt',
             'dividendes' => 'Droit aux dividendes décidés par l’assemblée générale',
             'risque' => 'Rendement non garanti : la valeur et les dividendes dépendent des résultats du marché.',
             'bouton' => 'Je deviens actionnaire',

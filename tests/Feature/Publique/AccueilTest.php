@@ -17,11 +17,12 @@ use App\Models\Tranche;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Tests\Support\ParametresInvestissementConfirmes;
 use Tests\TestCase;
 
 class AccueilTest extends TestCase
 {
-    use RefreshDatabase;
+    use ParametresInvestissementConfirmes, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -36,7 +37,7 @@ class AccueilTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Le prix de l’action sera publié avec la prochaine tranche.', false)
+            ->assertSee('RAAGA Invest : bientôt')->assertDontSee('Prix de l’action', false)
             ->assertSee('Souscription bientôt ouverte')
             ->assertDontSee('Je deviens actionnaire')
             ->assertDontSee('données fictives');
@@ -73,10 +74,15 @@ class AccueilTest extends TestCase
             ]);
         }
 
-        // Carte « J'investis » : prix de l'action et minimum lus dans la tranche ouverte.
+        // Carte « J'investis » : sans paramètre d'investissement confirmé, aucune valeur d'action (pas le prix de la tranche).
+        $this->get('/')->assertOk()->assertSee('RAAGA Invest : bientôt')->assertDontSee('Prix de l’action', false)->assertDontSee('Valeur indicative', false);
+
+        // Valeur indicative lue dans les paramètres confirmés ; minimum lu dans la tranche ouverte.
+        $this->confirmerParametresInvestissement(5_000);
         $this->get('/')
             ->assertOk()
-            ->assertSee("Prix de l’action : 5\u{00A0}000\u{00A0}FCFA", false)
+            ->assertSee("Valeur indicative de l’action : 5\u{00A0}000\u{00A0}FCFA", false)
+            ->assertDontSee('Prix de l’action', false)->assertDontSee('RAAGA Invest : bientôt')
             ->assertSee('Minimum : 1 action')
             ->assertSee('Je deviens actionnaire')
             ->assertSee(url('/inscription'));

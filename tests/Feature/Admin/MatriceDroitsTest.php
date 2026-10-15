@@ -91,9 +91,11 @@ class MatriceDroitsTest extends TestCase
     {
         $admin = User::factory()->role(Role::Admin)->create();
 
+        // Support, plus la liste des manifestations d'intérêt RAAGA Invest (que le SUPER_ADMIN n'a pas).
         foreach (Droit::cases() as $droit) {
-            $this->assertSame(in_array($droit, Droit::support(), true), $admin->can($droit->value), $droit->value);
+            $this->assertSame(in_array($droit, [...Droit::support(), Droit::InteretsVoir], true), $admin->can($droit->value), $droit->value);
         }
+        $this->assertFalse(User::factory()->role(Role::SuperAdmin)->create()->can(Droit::InteretsVoir->value));
     }
 
     public function test_les_autres_profils_n_ont_aucun_droit_back_office(): void

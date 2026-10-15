@@ -21,12 +21,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\Feature\Compte\CandidatureBoutiqueTest;
 use Tests\Support\ConnexionBackoffice;
+use Tests\Support\ParametresInvestissementConfirmes;
 use Tests\TestCase;
 
 /** Deux démarches sur le site public : investir (actions B) et obtenir une boutique. */
 class DeuxDemarchesTest extends TestCase
 {
-    use ConnexionBackoffice, RefreshDatabase;
+    use ConnexionBackoffice, ParametresInvestissementConfirmes, RefreshDatabase;
 
     private const ACTIONS = 'Acheter des actions ne donne aucun droit ni priorité pour obtenir une boutique.';
 
@@ -105,8 +106,10 @@ class DeuxDemarchesTest extends TestCase
         // Paramètre ouvert ET tranche ouverte : souscription possible.
         Tranche::query()->update(['statut' => StatutTranche::Ouverte]);
         $this->actingAs($citoyen)->get(route('souscrire'))->assertOk()->assertSee('Souscrire · Tranche 1 – 2026');
+        $this->get('/')->assertOk()->assertSee('RAAGA Invest : bientôt')->assertDontSee('Prix de l’action', false);
+        $this->confirmerParametresInvestissement(10_000);
         $accueil = $this->get('/')->assertOk();
-        $accueil->assertSeeInOrder(['Devenez actionnaire de votre marché', "Prix de l’action : 10\u{00A0}000\u{00A0}FCFA", "Minimum : 5 actions, soit 50\u{00A0}000\u{00A0}FCFA",
+        $accueil->assertSeeInOrder(['Devenez actionnaire de votre marché', "Valeur indicative de l’action : 10\u{00A0}000\u{00A0}FCFA", "Minimum : 5 actions, soit 50\u{00A0}000\u{00A0}FCFA",
             'Rendement non garanti', 'Je deviens actionnaire', 'Installez votre commerce dans un marché moderne', 'Attribution par tirage au sort', 'Je candidate'], false)
             ->assertSee('href="'.route('souscrire').'"', false);
 

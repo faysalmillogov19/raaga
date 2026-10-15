@@ -21,12 +21,13 @@ use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Finder\Finder;
 use Tests\Feature\Compte\CandidatureBoutiqueTest;
 use Tests\Support\ConnexionBackoffice;
+use Tests\Support\ParametresInvestissementConfirmes;
 use Tests\TestCase;
 
 /** Branding du site public : deux démarches, « Investir dans Raaga » et « Obtenir une boutique ». */
 class BrandingDemarchesTest extends TestCase
 {
-    use ConnexionBackoffice, RefreshDatabase;
+    use ConnexionBackoffice, ParametresInvestissementConfirmes, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -91,7 +92,10 @@ class BrandingDemarchesTest extends TestCase
             'cree_par' => $tranche->cree_par,
         ]);
 
-        $this->get('/')->assertSee("Prix de l’action : 7\u{00A0}500\u{00A0}FCFA", false)->assertSee("Minimum : 4 actions, soit 30\u{00A0}000\u{00A0}FCFA", false);
+        // La tranche seule ne donne aucune valeur d'action sur l'accueil : il faut des paramètres d'investissement confirmés.
+        $this->get('/')->assertSee('RAAGA Invest : bientôt')->assertDontSee('Prix de l’action', false);
+        $this->confirmerParametresInvestissement(7_500);
+        $this->get('/')->assertSee("Valeur indicative de l’action : 7\u{00A0}500\u{00A0}FCFA", false)->assertSee("Minimum : 4 actions, soit 30\u{00A0}000\u{00A0}FCFA", false);
         $this->get(route('offre'))->assertOk()
             ->assertSee("Choisissez le nombre d’actions : 7\u{00A0}500\u{00A0}FCFA l’action, 4 au minimum.", false)
             ->assertSee('après la retenue de l’IRVM au taux de 10 %.', false)

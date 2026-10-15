@@ -202,8 +202,6 @@ enum Droit: string
             self::TextesLegauxRediger,
             self::PlateformeVoir, self::PlateformeModifier,
             self::InstitutionsGerer,
-            // RAAGA Invest : manifestations d'intérêt, en lecture et export.
-            self::InteretsVoir,
         ];
     }
 
@@ -250,8 +248,9 @@ enum Droit: string
                 self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
                 self::SitesVoir, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir, self::MoyensPaiementVoir,
             ],
-            // Support et assistance uniquement.
-            Role::Admin => self::support(),
+            // Support et assistance, plus la liste des manifestations d'intérêt RAAGA Invest (lecture, export),
+            // que le SUPER_ADMIN n'a pas.
+            Role::Admin => [...self::support(), self::InteretsVoir],
             // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre.
             Role::Validateur => [
                 self::TableauDeBordVoir,
