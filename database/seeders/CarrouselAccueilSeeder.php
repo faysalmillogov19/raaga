@@ -7,16 +7,46 @@ use App\Support\Diapositives;
 use Illuminate\Database\Seeder;
 
 /**
- * Contenu de départ du carrousel d'accueil, pour la recette uniquement : jamais en production, où les diapositives
- * sont saisies par l'ADMIN (Paramètres > Site public > Carrousel). Ne remplace jamais un carrousel déjà saisi.
+ * Contenu par défaut du carrousel d'accueil : les quatre photos retenues (database/seeders/images/carrousel), avec
+ * leurs textes et leur cadrage. Jamais en production, où les diapositives sont saisies par l'ADMIN (Paramètres ›
+ * Site public › Carrousel). Ne remplace jamais un carrousel déjà saisi.
  */
 class CarrouselAccueilSeeder extends Seeder
 {
-    /** [texte alternatif, titre, sous-titre, libellé du bouton, lien du bouton]. */
+    /** Diapositives dans l'ordre d'affichage : fichier, textes, bouton, cadrage et position du texte. */
     private const DIAPOSITIVES = [
-        ['Allées du marché Raaga', 'Votre boutique au marché Raaga', 'Candidatez en ligne ou dans un guichet, payez votre caution, et participez au tirage au sort.', 'Je candidate', '/inscription'],
-        ['Allées du marché Raaga', 'Un tirage au sort public', 'Chaque candidature complète et cautionnée participe au tirage, sans passe-droit.', 'Voir les boutiques', '/boutiques'],
-        ['Allées du marché Raaga', 'Payez uniquement par les canaux officiels', 'Raaga ne vous demandera jamais de payer à une personne.', 'Questions fréquentes', '/faq'],
+        [
+            'fichier' => '1-officier.webp',
+            'alt' => 'Un officier en béret rouge, assis à une table de conférence, montre un document',
+            'titre' => 'Un tirage au sort public',
+            'sousTitre' => 'Chaque candidature complète et cautionnée participe au tirage, sans passe-droit.',
+            'boutonLibelle' => 'Voir les boutiques', 'boutonLien' => '/boutiques',
+            'cadrageX' => 47, 'cadrageY' => 0, 'texte' => 'panneau',
+        ],
+        [
+            'fichier' => '2-galerie-marchande.webp',
+            'alt' => 'Allée d’une galerie marchande couverte, rayons de boissons et de produits',
+            'titre' => 'Votre boutique au marché Raaga',
+            'sousTitre' => 'Candidatez en ligne ou dans un guichet, payez votre caution, et participez au tirage au sort.',
+            'boutonLibelle' => 'Je candidate', 'boutonLien' => '/inscription',
+            'cadrageX' => 50, 'cadrageY' => 50, 'texte' => 'gauche',
+        ],
+        [
+            'fichier' => '3-commercantes.webp',
+            'alt' => 'Deux commerçantes souriantes règlent un achat avec un téléphone et un terminal de paiement',
+            'titre' => 'Payez uniquement par les canaux officiels',
+            'sousTitre' => 'Raaga ne vous demandera jamais de payer à une personne.',
+            'boutonLibelle' => 'Questions fréquentes', 'boutonLien' => '/faq',
+            'cadrageX' => 50, 'cadrageY' => 50, 'texte' => 'gauche',
+        ],
+        [
+            'fichier' => '4-marche-couvert.webp',
+            'alt' => 'Vue d’architecte d’un marché couvert ouvert sur une esplanade, étals de fruits et passants',
+            'titre' => 'Un marché couvert et organisé',
+            'sousTitre' => 'Des espaces de vente abrités, adaptés à chaque activité.',
+            'boutonLibelle' => 'Voir les boutiques', 'boutonLien' => '/boutiques',
+            'cadrageX' => 50, 'cadrageY' => 50, 'texte' => 'gauche',
+        ],
     ];
 
     public function run(): void
@@ -27,10 +57,10 @@ class CarrouselAccueilSeeder extends Seeder
         }
 
         $diapositives = [];
-        foreach (self::DIAPOSITIVES as $i => [$alt, $titre, $sousTitre, $libelle, $lien]) {
+        foreach (self::DIAPOSITIVES as $i => $d) {
             $diapositives[] = [
-                'image' => Diapositives::deposer(public_path('images/accueil/banniere-1920.webp')),
-                'alt' => $alt, 'titre' => $titre, 'sousTitre' => $sousTitre, 'boutonLibelle' => $libelle, 'boutonLien' => $lien,
+                'image' => Diapositives::deposer(database_path('seeders/images/carrousel/'.$d['fichier'])),
+                ...array_diff_key($d, ['fichier' => true]),
                 'active' => true, 'debut' => null, 'fin' => null, 'ordre' => $i + 1,
             ];
         }

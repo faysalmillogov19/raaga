@@ -194,12 +194,12 @@ class CarrouselAccueilTest extends TestCase
         $this->app['env'] = 'testing';
         $this->app->make(CarrouselAccueilSeeder::class)->__invoke();
         $diapos = plateforme('site_public.carrousel');
-        $this->assertCount(3, $diapos);
+        $this->assertCount(4, $diapos);
         $this->assertTrue(collect($diapos)->every(fn ($d) => $d['active'] && Diapositives::existe($d['image']) && $d['alt']));
 
         // Relancé : le carrousel saisi n'est jamais remplacé.
         $this->app->make(CarrouselAccueilSeeder::class)->__invoke();
         $this->assertSame(array_column($diapos, 'image'), array_column(plateforme('site_public.carrousel'), 'image'));
-        $this->get('/')->assertSee('aria-label="3 sur 3"', false);
+        $this->get('/')->assertSee('aria-label="4 sur 4"', false);
     }
 }
