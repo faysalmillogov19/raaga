@@ -55,7 +55,7 @@
                 @foreach ($menu as $groupe => $entrees)
                     <p class="adm-groupe">{{ __('admin.groupes.'.$groupe) }}</p>
                     <ul>
-                        @foreach (MenuBackoffice::regrouper($entrees) as $element)
+                        @foreach (MenuBackoffice::regrouper($entrees, $user) as $element)
                             @if ($element['type'] === 'menu')
                                 {{-- Menu dépliant (par exemple « Référentiels ») : ses sous-menus, ouvert sur l'un d'eux. --}}
                                 <x-admin.menu-deroulant :cle="$element['cle']" :libelle="__('admin.menus_deroulants.'.$element['cle'])" :entrees="$element['entrees']"

@@ -53,6 +53,19 @@ class MenuReferentielsTest extends TestCase
         }
     }
 
+    public function test_referentiels_en_tete_du_groupe_pour_le_gestionnaire(): void
+    {
+        $position = fn (string $html, string $motif) => strpos($html, $motif);
+
+        $this->connecterBackoffice(Role::GestionnaireSites);
+        $html = $this->get(route('admin.tableau'))->assertOk()->getContent();
+        $this->assertLessThan($position($html, 'href="'.route('admin.sites').'"'), $position($html, 'aria-controls="sous-menu-referentiels"'));
+
+        $this->connecterBackoffice(Role::Validateur);
+        $html = $this->get(route('admin.tableau'))->assertOk()->getContent();
+        $this->assertGreaterThan($position($html, 'href="'.route('admin.referencement.imports').'"'), $position($html, 'aria-controls="sous-menu-referentiels"'));
+    }
+
     public function test_entree_absente_sans_aucun_droit(): void
     {
         $this->connecterBackoffice(Role::Admin);

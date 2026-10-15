@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\Droit;
+use App\Enums\Role;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutGrilleTarifaire;
 use App\Enums\StatutSite;
@@ -113,12 +114,13 @@ final class MenuBackoffice
 
     /**
      * Entrées d'un groupe regroupées pour l'affichage : une entrée seule, ou un menu dépliant (« sous_menu ») qui
-     * réunit ses sous-entrées à la place de la première d'entre elles.
+     * réunit ses sous-entrées à la place de la première d'entre elles. Pour le GESTIONNAIRE DES SITES ET BOUTIQUES,
+     * dont c'est le travail principal, les menus dépliants (« Référentiels ») passent en tête de leur groupe.
      *
      * @param  list<array<string, mixed>>  $entrees
      * @return list<array{type: string, entree?: array, cle?: string, entrees?: list<array>}>
      */
-    public static function regrouper(array $entrees): array
+    public static function regrouper(array $entrees, ?User $user = null): array
     {
         $elements = [];
         $positions = [];
@@ -134,6 +136,10 @@ final class MenuBackoffice
                 $elements[] = ['type' => 'menu', 'cle' => $menu, 'entrees' => []];
             }
             $elements[$positions[$menu]]['entrees'][] = $entree;
+        }
+
+        if ($user?->hasRole(Role::GestionnaireSites)) {
+            usort($elements, fn (array $a, array $b) => ($b['type'] === 'menu') <=> ($a['type'] === 'menu'));
         }
 
         return $elements;
