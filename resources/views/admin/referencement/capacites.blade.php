@@ -26,7 +26,6 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h2 class="!text-[1.15rem]">{{ $k['liste_titre'] }}</h2>
-                <p class="texte-carte mt-1 max-w-3xl">{{ $k['liste_aide'] }}</p>
             </div>
             @if ($gerer)
                 <div class="flex flex-wrap gap-3">
@@ -37,7 +36,6 @@
                         @if ($sitesModifiables->isEmpty())
                             <x-admin.message type="avertissement">{{ $k['aucun_site_modifiable'] }}</x-admin.message>
                         @else
-                            <p class="texte-carte mb-4">{{ $k['ajouter_aide'] }}</p>
                             <div class="adm-fenetre-grille">
                                 <x-admin.champ nom="site_id" id="cap-site" :libelle="ucfirst($k['champs']['site_id'])" type="liste" required class="adm-plein"
                                                :options="$sitesModifiables->mapWithKeys(fn ($s) => [$s->id => $libelleSite($s)])->all()" :valeur="$filtreSite?->id" :vide="$k['choisir_option']" />

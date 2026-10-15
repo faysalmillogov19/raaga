@@ -7,12 +7,11 @@
     $titre = $z[$liste.'_titre'];
 @endphp
 
-<x-admin.layout :titre="$titre" :sous-titre="$z[$liste.'_aide']" :fil="[['libelle' => $titre]]">
+<x-admin.layout :titre="$titre" :fil="[['libelle' => $titre]]">
     @if ($gerer)
         <x-slot:actions>
             <x-admin.fenetre :id="'ajouter-'.$liste" :titre="$z[$liste.'_ajouter']" :action="route('admin.referencement.zones.store', $liste)" :bouton="$z['ajouter']" declencheur-icone="plus">
                 <x-slot:declencheur>{{ $z[$liste.'_ajouter'] }}</x-slot:declencheur>
-                <p class="texte-carte mb-4">{{ $z['regles_communes'] }}</p>
                 <div class="adm-fenetre-grille">
                     <x-admin.champ nom="code" :libelle="$z['colonnes']['code']" :maxlength="$niveaux ? 3 : 5" required autocomplete="off" :aide="$z[$liste.'_code_aide']" />
                     <x-admin.champ nom="libelle" :libelle="$z['colonnes']['libelle']" maxlength="100" required />

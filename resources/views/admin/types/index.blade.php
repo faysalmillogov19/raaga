@@ -5,12 +5,11 @@
     $gerer = auth()->user()->can(Droit::SitesGerer->value);
 @endphp
 
-<x-admin.layout :titre="$t['titre']" :sous-titre="$t['intro']" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $t['titre']]]">
+<x-admin.layout :titre="$t['titre']" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $t['titre']]]">
     @if ($gerer)
         <x-slot:actions>
             <x-admin.fenetre id="ajouter-type" :titre="$t['ajouter_titre']" :action="route('admin.sites.types.store')" :bouton="$t['ajouter']" declencheur-icone="plus">
                 <x-slot:declencheur>{{ $t['ajouter_titre'] }}</x-slot:declencheur>
-                <p class="texte-carte mb-4">{{ $t['ajouter_aide'] }}</p>
                 <div class="adm-fenetre-grille">
                     <x-admin.champ nom="code" :libelle="$t['champs']['code']" maxlength="5" required autocomplete="off" :aide="$t['code_aide']" />
                     <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" maxlength="80" required />
