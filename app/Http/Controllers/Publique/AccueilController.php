@@ -38,6 +38,7 @@ class AccueilController extends Controller
                 ? (auth()->check() ? route('boutiques.candidater') : route('inscription'))
                 : (auth()->check() ? route('boutiques') : route('inscription')),
             'investir' => Phase::presentationActions() ? $this->investir() : null,
+            // Présentation des actions désactivée : annonce « Investir dans Raaga — bientôt » (alerte SMS seulement).
         ]);
     }
 

@@ -166,10 +166,10 @@ class CarrouselAccueilTest extends TestCase
         $this->connecterBackoffice(Role::Admin);
 
         // Aperçu : la diapositive programmée est montrée, rien n'est enregistré.
-        $this->post(route('admin.plateforme.apercu', 'site_public'), ['_method' => 'PUT', 'carrousel' => [$this->diapositive(['titre' => 'Bientôt', 'debut' => '2030-01-01'])]])
-            ->assertOk()->assertSee('Bientôt')->assertSee('aria-label="1 sur 1"', false);
+        $this->post(route('admin.plateforme.apercu', 'site_public'), ['_method' => 'PUT', 'carrousel' => [$this->diapositive(['titre' => 'Programmée 2030', 'debut' => '2030-01-01'])]])
+            ->assertOk()->assertSee('Programmée 2030')->assertSee('aria-label="1 sur 1"', false);
         $this->assertSame([], plateforme('site_public.carrousel'));
-        $this->get('/')->assertDontSee('Bientôt');
+        $this->get('/')->assertDontSee('Programmée 2030');
 
         $this->enregistrer([$this->diapositive(['titre' => 'Une']), $this->diapositive(['titre' => 'Deux', 'active' => '0'])])->assertSessionHasNoErrors();
         $this->get(route('admin.plateforme', ['section' => 'site_public', 'onglet' => 'historique']))->assertOk()

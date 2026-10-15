@@ -751,6 +751,11 @@ return [
     'demarches' => [
         'titre' => 'Deux démarches distinctes',
         'promesse' => 'Raaga, le marché que nous bâtissons et possédons ensemble.',
+        'annonce' => [
+            'titre' => 'Investir dans Raaga — bientôt',
+            'texte' => 'Bientôt, devenez actionnaire de votre marché et recevez les dividendes décidés par l’assemblée générale.',
+            'bouton' => 'Être prévenu par SMS',
+        ],
         'badges' => ['investir' => 'Investir', 'boutiques' => 'Boutiques'],
         'origine' => [
             'titre' => 'D’où viennent les dividendes ?',

@@ -68,10 +68,9 @@ Route::controller(PageController::class)->group(function () {
 
 // Souscription d'actions : seulement si elle est ouverte (paramètre confirmé ET tranche ouverte) ; sinon, page
 // « Souscription bientôt ouverte » et inscription à l'alerte SMS.
-Route::middleware('actions.presentation')->controller(AlerteSouscriptionController::class)->prefix('souscription-bientot')->name('souscription.bientot')->group(function () {
-    Route::get('/', 'show');
-    Route::post('/', 'store')->middleware('throttle:10,1')->name('.store');
-});
+Route::get('/souscription-bientot', [AlerteSouscriptionController::class, 'show'])->middleware('actions.presentation')->name('souscription.bientot');
+// Inscription à l'alerte : aussi depuis l'annonce de l'accueil, avant que la présentation des actions soit activée.
+Route::post('/souscription-bientot', [AlerteSouscriptionController::class, 'store'])->middleware('throttle:10,1')->name('souscription.bientot.store');
 Route::middleware('actions.souscription')->controller(SouscriptionController::class)->group(function () {
     Route::get('/souscrire', 'create')->name('souscrire');
     Route::get('/souscrire/reglement', 'reglement')->name('souscrire.reglement');

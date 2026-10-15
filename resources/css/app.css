@@ -2015,6 +2015,11 @@
     .acc-demarche-bouton { margin-top: auto; }
     .acc-demarche { border-top: 6px solid var(--accent, var(--vert-fonce)); }
 
+    /* Annonce « Investir dans Raaga — bientôt » : le bouton déplie le formulaire d'alerte SMS (sans script). */
+    .acc-annonce-alerte { width: 100%; }
+    .acc-annonce-alerte > summary { width: max-content; max-width: 100%; cursor: pointer; list-style: none; }
+    .acc-annonce-alerte > summary::-webkit-details-marker { display: none; }
+
     .site-public .acc-promesse {
         margin-bottom: 20px;
         color: var(--vert-fonce);

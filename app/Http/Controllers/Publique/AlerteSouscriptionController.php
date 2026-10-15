@@ -36,6 +36,7 @@ class AlerteSouscriptionController extends Controller
 
         AlerteSouscription::query()->updateOrCreate(['telephone' => Telephone::normaliser($request->input('telephone'))], ['consentement_le' => now()]);
 
-        return redirect()->route('souscription.bientot')->with('alerte_enregistree', true);
+        // Retour à la page d'où vient l'inscription : la page « Souscription bientôt ouverte » ou l'annonce de l'accueil.
+        return back()->with('alerte_enregistree', true);
     }
 }

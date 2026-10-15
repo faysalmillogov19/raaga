@@ -29,7 +29,7 @@
         <div class="conteneur">
             <p class="acc-promesse">{{ $d['promesse'] }}</p>
             <h2 id="acc-demarches-titre" class="sr-only">{{ $d['titre'] }}</h2>
-            <div @class(['acc-demarches-grille', 'acc-demarches-seule' => ! $investir])>
+            <div class="acc-demarches-grille">
                 @if ($investir)
                     <article class="acc-carte acc-demarche demarche-investir">
                         <span class="picto-demarche"><x-icon name="piece-pousse" class="h-7 w-7" data-picto="piece-pousse" /></span>
@@ -49,6 +49,37 @@
                         <p class="acc-demarche-risque"><x-icon name="danger" class="h-5 w-5 shrink-0" /> <span>{{ $d['investir']['risque'] }}</span></p>
                         <a href="{{ $investir['lien'] }}" class="btn-demarche acc-demarche-bouton">{{ $investir['ouverte'] ? $d['investir']['bouton'] : $d['bientot'] }}</a>
                         <p class="acc-demarche-rappel">{{ $d['actions'] }}</p>
+                    </article>
+                @else
+                    {{-- Annonce permanente : ni prix, ni lien vers les pages des actions ; seulement l'alerte SMS. --}}
+                    @php($n = $d['annonce'])
+                    <article class="acc-carte acc-demarche demarche-investir" data-annonce-investir>
+                        <span class="picto-demarche"><x-icon name="piece-pousse" class="h-7 w-7" data-picto="piece-pousse" /></span>
+                        <x-public.badge-demarche demarche="investir" />
+                        <h3 class="acc-h2">{{ $n['titre'] }}</h3>
+                        <p>{{ $n['texte'] }}</p>
+                        @if (session('alerte_enregistree'))
+                            <p class="acc-demarche-tirage" role="status"><x-icon name="check" class="h-5 w-5 shrink-0" /> <span>{{ __('public.demarches.alerte.enregistree') }}</span></p>
+                        @else
+                            <details class="acc-annonce-alerte acc-demarche-bouton" @if ($errors->hasAny(['telephone', 'consentement'])) open @endif>
+                                <summary class="btn-demarche">{{ $n['bouton'] }}</summary>
+                                <form method="POST" action="{{ route('souscription.bientot.store') }}" class="mt-4 space-y-3" novalidate>
+                                    @csrf
+                                    <div>
+                                        <label for="annonce-telephone" class="font-semibold">{{ __('public.demarches.alerte.telephone') }}</label>
+                                        <input id="annonce-telephone" name="telephone" type="tel" inputmode="tel" autocomplete="tel" value="{{ old('telephone') }}"
+                                               class="champ mt-1" aria-describedby="annonce-telephone-aide">
+                                        <p id="annonce-telephone-aide" class="texte-carte">{{ __('public.demarches.alerte.telephone_aide') }}</p>
+                                        @if ($errors->has('telephone'))<p class="message-erreur" role="alert">{{ $errors->first('telephone') }}</p>@endif
+                                    </div>
+                                    <div>
+                                        <x-public.case nom="consentement" id="annonce-consentement" value="1" :libelle="__('public.demarches.alerte.consentement')" />
+                                        @if ($errors->has('consentement'))<p class="message-erreur" role="alert">{{ $errors->first('consentement') }}</p>@endif
+                                    </div>
+                                    <button type="submit" class="btn-demarche">{{ __('public.demarches.alerte.envoyer') }}</button>
+                                </form>
+                            </details>
+                        @endif
                     </article>
                 @endif
                 <article class="acc-carte acc-demarche demarche-boutiques">
