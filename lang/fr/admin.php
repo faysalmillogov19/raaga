@@ -640,7 +640,7 @@ return [
             'lien_bouton' => 'Le lien doit commencer par https:// ou par / (page du site).',
             'actives_max' => ':max diapositives actives au plus : désactivez-en une avant d’en activer une autre.',
             'diapositives_max' => '10 diapositives au plus : supprimez-en une avant d’en ajouter une autre.',
-            'promesse' => 'Aucun texte ne doit promettre un rendement (« rendement garanti », « 10 % par an »…) : un placement en actions comporte un risque de perte.',
+            'promesse' => 'Mot interdit sur le site public (« garanti » sauf « non garanti », « sans risque », « rendement de », « gagnez », « … % par an ») : un placement en actions comporte un risque de perte.',
             'carrousel_fichiers' => 'Les images choisies n’ont pas été conservées : choisissez-les de nouveau avant d’enregistrer.',
             'non_enregistre' => 'Rien n’a été enregistré : corrigez les champs signalés en rouge ci-dessous.',
             'armoiries_refusees' => 'Les armoiries n’ont pas été remplacées. Choisissez de nouveau le fichier (SVG ou PNG, 500 Ko au plus) avant d’enregistrer.',

@@ -82,7 +82,7 @@ class SouscriptionTest extends TestCase
             ->assertSee('Souscrire — Tranche 1 – 2026')
             ->assertSee("10\u{00A0}000\u{00A0}FCFA")
             ->assertSee('L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique.')
-            ->assertSee('Le rendement n’est pas garanti.')
+            ->assertSee('Rendement non garanti : je peux perdre tout ou partie de mon investissement.')
             ->assertSee('version 3')
             ->assertSee('href="'.route('souscrire.reglement').'"', false)
             ->assertSee('Continuer vers le paiement');

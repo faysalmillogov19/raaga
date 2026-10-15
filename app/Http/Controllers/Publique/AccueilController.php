@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\Publique;
 
-use App\Enums\StatutTranche;
 use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
-use App\Models\Tranche;
 use App\Services\Boutiques\CandidatureBoutiques;
 use App\Services\Publique\AccueilBoutiques;
 use App\Support\Diapositives;
@@ -51,8 +49,7 @@ class AccueilController extends Controller
      */
     private function investir(): array
     {
-        $tranche = Phase::trancheOuverte()
-            ?? Tranche::query()->where('statut', StatutTranche::Confirmee)->orderBy('date_ouverture')->first();
+        $tranche = Phase::trancheAffichee();
 
         return [
             'prix' => $tranche?->valeur_unitaire,

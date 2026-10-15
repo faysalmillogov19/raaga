@@ -33,9 +33,12 @@
             <ul class="grid grid-cols-2 gap-x-1 sm:flex">
                 @foreach ($onglets as $cle)
                     <li>
+                        @php($demarche = ['actions' => 'investir', 'boutiques' => 'boutiques'][$cle] ?? null)
                         <a href="{{ route('espace', ['onglet' => $cle]) }}" @if ($onglet === $cle) aria-current="page" @endif
-                           @class(['flex min-h-[48px] items-center border-b-[3px] px-3 font-semibold no-underline sm:px-4',
-                                   'border-vert-fonce text-vert-fonce' => $onglet === $cle, 'border-transparent text-texte' => $onglet !== $cle])>
+                           @class(['onglet-espace flex min-h-[48px] items-center gap-2 border-b-[3px] px-3 font-semibold no-underline sm:px-4',
+                                   'demarche-'.$demarche => $demarche, 'est-actif' => $onglet === $cle,
+                                   'border-vert-fonce text-vert-fonce' => $onglet === $cle && ! $demarche, 'border-transparent text-texte' => $onglet !== $cle])>
+                            @if ($demarche)<span class="menu-picto !mr-0" aria-hidden="true"><x-icon :name="\App\Support\Demarche::PICTOS[$demarche]" class="h-4 w-4" /></span>@endif
                             {{ __('public.espace.onglets.'.$cle) }}
                         </a>
                     </li>
@@ -43,7 +46,10 @@
             </ul>
         </nav>
 
-        <section class="mt-6" aria-labelledby="onglet-titre">
+        <section @class(['mt-6', 'demarche-investir' => $onglet === 'actions', 'demarche-boutiques' => $onglet === 'boutiques']) aria-labelledby="onglet-titre">
+            @if (in_array($onglet, ['actions', 'boutiques'], true))
+                <x-public.badge-demarche :demarche="$onglet === 'actions' ? 'investir' : 'boutiques'" class="mb-4" />
+            @endif
             <h2 id="onglet-titre" class="sr-only">{{ __('public.espace.onglets.'.$onglet) }}</h2>
             @if ($indicateurs)
                 <dl class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -58,7 +64,7 @@
 
             @switch($onglet)
                 @case('actions')
-                    <h3 class="!text-[1.15rem]">{{ __('public.espace.rubriques.souscriptions') }}</h3>
+                    <h3 class="!text-[1.15rem]">{{ __('public.espace.rubriques.actions') }}</h3>
                     <div class="mt-3">
                     @forelse ($souscriptions as $s)
                         @php($paiementConfirme = $s->paiements->firstWhere('statut', \App\Enums\StatutPaiement::Confirme))
@@ -91,7 +97,7 @@
                     @endforelse
                     </div>
 
-                    <h3 class="mt-8 !text-[1.15rem]">{{ __('public.espace.rubriques.documents') }}</h3>
+                    <h3 class="mt-8 !text-[1.15rem]">{{ __('public.espace.rubriques.attestation') }}</h3>
                     <div class="mt-3">
                     @include('public.espace._documents')
                     </div>
@@ -100,6 +106,12 @@
                     <div class="mt-3">
                     @include('public.espace._dividendes')
                     </div>
+
+                    <h3 class="mt-8 !text-[1.15rem]">{{ __('public.espace.rubriques.compte') }}</h3>
+                    <div class="carte mt-3 max-w-xl p-5"><p class="texte-carte">{{ __('public.espace.compte_versement_vide') }}</p></div>
+
+                    <h3 class="mt-8 !text-[1.15rem]">{{ __('public.espace.rubriques.beneficiaire') }}</h3>
+                    <div class="carte mt-3 max-w-xl p-5"><p class="texte-carte">{{ __('public.espace.profil.beneficiaire_vide') }}</p></div>
                     @break
 
                 @case('boutiques')

@@ -37,10 +37,22 @@ class PageController extends Controller
         }
         unset($etape);
 
+        $tranche = Phase::trancheAffichee();
+        $questions = __('public.faq.groupes');
+
         return view('public.offre', [
             'etat' => $etat,
             'etapes' => $etapes,
-            'documents' => $this->documents(),
+            // Prix, minimum et taux IRVM lus dans la tranche et dans la dernière distribution confirmée.
+            'tranche' => $tranche,
+            'minimum' => $tranche ? max(1, (int) $tranche->min_actions_par_souscription) : null,
+            'irvm' => Phase::tauxIrvm(),
+            'documents' => [
+                ['cle' => 'reglement', 'url' => Phase::souscriptionOuverte() ? route('souscrire.reglement') : $this->urlFichier(config('raaga.documents.reglement'))],
+                ['cle' => 'statuts', 'url' => $this->urlFichier(config('raaga.documents.statuts'))],
+            ],
+            // FAQ dédiée : souscription et droits de l'actionnaire.
+            'questions' => [...$questions['souscrire']['questions'], ...$questions['droits']['questions']],
             'urlSouscrire' => $this->urlSouscrire(),
         ]);
     }
@@ -49,10 +61,10 @@ class PageController extends Controller
     {
         $groupes = __('public.faq.groupes');
 
-        // Phase 1 : boutiques et cautions uniquement ; phase 2 : questions sur les actions.
+        // Deux démarches : toutes les questions ; présentation des actions masquée : boutiques et sécurité seulement.
         return view('public.faq', [
             'groupes' => Phase::presentationActions()
-                ? array_diff_key($groupes, ['boutiques' => true])
+                ? $groupes
                 : array_intersect_key($groupes, array_flip(['boutiques', 'securite'])),
         ]);
     }

@@ -255,7 +255,7 @@ return [
                 ],
                 [
                     'q' => 'Quand vais-je recevoir des dividendes ?',
-                    'r' => 'Après l’ouverture du marché, lorsque Raaga dégagera des bénéfices distribuables et que l’assemblée générale décidera d’en verser une part. Aucune date ni aucun montant ne sont garantis.',
+                    'r' => 'Après l’ouverture du marché, lorsque Raaga dégagera des bénéfices distribuables et que l’assemblée générale décidera d’en verser une part. Aucune date ni aucun montant ne sont promis.',
                 ],
             ],
         ],
@@ -280,6 +280,37 @@ return [
         'note_information' => 'Note d’information',
         'statuts' => 'Statuts de Raaga SA',
         'guide' => 'Guide du souscripteur',
+    ],
+
+    'investir' => [
+        'titre' => 'Investir dans Raaga',
+        'intro' => 'Devenez actionnaire du marché Raaga. Lisez ces informations avant de souscrire : un placement en actions comporte des risques.',
+        'etapes' => [
+            'titre' => 'Comment ça marche',
+            'compte' => 'Créez votre compte et faites vérifier votre identité.',
+            'nombre' => 'Choisissez le nombre d’actions. Le prix et le minimum sont fixés pour chaque tranche.',
+            'nombre_tranche' => 'Choisissez le nombre d’actions : :prix l’action, :n au minimum.',
+            'paiement' => 'Payez par Mobile Money ou dans un guichet agréé, dans le délai indiqué.',
+            'attestation' => 'Recevez votre attestation d’actionnaire après la répartition des actions.',
+        ],
+        'dividendes' => [
+            'titre' => 'Les dividendes',
+            'decision' => 'Les dividendes sont décidés par l’assemblée générale, selon les résultats du marché. Certaines années, il peut n’y en avoir aucun.',
+            'versement' => 'Ils sont versés par Mobile Money, après la retenue de l’IRVM au taux en vigueur, indiqué à chaque distribution.',
+            'versement_taux' => 'Ils sont versés par Mobile Money, après la retenue de l’IRVM au taux de :taux.',
+        ],
+        'risques' => [
+            'titre' => 'Les risques',
+            'alerte' => 'Lisez attentivement',
+            'liste' => [
+                'Valeur non garantie : la valeur de vos actions peut baisser.',
+                'Dividendes non garantis : il peut n’y en avoir aucun certaines années.',
+                'Aucun droit à une boutique : acheter des actions ne donne aucun droit ni priorité pour obtenir une boutique.',
+                'Revente : les conditions de revente des actions sont fixées par le règlement de la tranche.',
+            ],
+        ],
+        'documents' => 'Documents à télécharger',
+        'faq' => 'Questions sur l’investissement',
     ],
 
     'offre' => [
@@ -307,7 +338,7 @@ return [
             'alerte' => 'Lisez attentivement',
             'liste' => [
                 'Aucun droit ni aucune priorité pour obtenir une boutique ou un emplacement dans le marché.',
-                'Aucun rendement garanti : les dividendes dépendent des bénéfices futurs de Raaga.',
+                'Rendement non garanti : les dividendes dépendent des bénéfices futurs de Raaga.',
                 'Aucune cotation à la BRVM : les actions B ne s’achètent ni ne se vendent en bourse.',
             ],
         ],
@@ -378,7 +409,7 @@ return [
                 'titre' => 'Mes droits',
                 'questions' => [
                     ['q' => 'Est-ce que j’obtiens une boutique en achetant des actions ?', 'r' => 'Non. Les actions donnent droit à une part des bénéfices de Raaga SA, jamais à une boutique ni à une priorité d’attribution.'],
-                    ['q' => 'Le rendement est-il garanti ?', 'r' => 'Non. Les dividendes dépendent des bénéfices futurs de Raaga et des décisions de l’assemblée générale. Aucun montant n’est promis.'],
+                    ['q' => 'Le rendement est-il assuré ?', 'r' => 'Non. Les dividendes dépendent des bénéfices futurs de Raaga et des décisions de l’assemblée générale. Aucun montant n’est promis.'],
                     ['q' => 'Quand recevrai-je mon attestation d’actionnaire ?', 'r' => 'Après la clôture de la tranche et la répartition des actions. Elle sera disponible dans votre espace.'],
                     ['q' => 'Puis-je revendre mes actions ?', 'r' => 'Les actions B ne sont pas cotées en bourse. Les modalités de cession seront précisées par Raaga SA ; elles ne sont pas ouvertes pendant la souscription.'],
                 ],
@@ -453,7 +484,7 @@ return [
         'compteur' => ':n/4',
         'engagements' => [
             'AUCUN_DROIT_BOUTIQUE' => 'L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique.',
-            'RENDEMENT_NON_GARANTI' => 'Le rendement n’est pas garanti.',
+            'RENDEMENT_NON_GARANTI' => 'Rendement non garanti : je peux perdre tout ou partie de mon investissement.',
             'REGLEMENT_TRANCHE' => 'J’accepte le règlement de la tranche (version :version).',
             'ORIGINE_LICITE_FONDS' => 'Je certifie que les fonds utilisés pour cette souscription ont une origine licite.',
         ],
@@ -596,7 +627,8 @@ return [
             'attribuees' => 'Boutiques attribuées',
         ],
         'onglets_libelle' => 'Rubriques de mon espace',
-        'rubriques' => ['souscriptions' => 'Mes souscriptions', 'documents' => 'Mes documents', 'dividendes' => 'Mes dividendes'],
+        'rubriques' => ['actions' => 'Mes actions', 'attestation' => 'Mon attestation et mes documents', 'dividendes' => 'Dividendes reçus',
+            'compte' => 'Compte de versement des dividendes', 'beneficiaire' => 'Bénéficiaire désigné'],
         'onglets' => [
             'actions' => 'Mes actions',
             'souscriptions' => 'Mes souscriptions',
@@ -718,24 +750,33 @@ return [
     // Accueil de la phase 1 (boutiques) : bannière, chiffres, étapes, versements, sites, questions, aide.
     'demarches' => [
         'titre' => 'Deux démarches distinctes',
+        'promesse' => 'Raaga, le marché que nous bâtissons et possédons ensemble.',
+        'badges' => ['investir' => 'Investir', 'boutiques' => 'Boutiques'],
+        'origine' => [
+            'titre' => 'D’où viennent les dividendes ?',
+            'sources' => ['loyers' => 'Les loyers des boutiques', 'parkings' => 'Les parkings', 'services' => 'Les services du marché'],
+            'phrase' => 'Les dividendes sont versés quand l’assemblée générale le décide, selon les résultats du marché. Certaines années, il peut n’y en avoir aucun.',
+        ],
         'actions' => 'Acheter des actions ne donne aucun droit ni priorité pour obtenir une boutique.',
         'boutiques' => 'Candidater à une boutique ne fait pas de vous un actionnaire.',
         'souscription_fermee' => 'La souscription d’actions n’est pas ouverte.',
         'bientot' => 'Souscription bientôt ouverte',
         'investir' => [
-            'titre' => 'J’investis dans le marché',
+            'titre' => 'Devenez actionnaire de votre marché',
             'prix' => 'Prix de l’action : :prix',
             'minimum' => 'Minimum : :n actions, soit :montant',
             'minimum_un' => 'Minimum : 1 action',
             'prix_a_venir' => 'Le prix de l’action sera publié avec la prochaine tranche.',
+            'dividendes' => 'Droit aux dividendes décidés par l’assemblée générale',
             'risque' => 'Rendement non garanti : la valeur et les dividendes dépendent des résultats du marché.',
-            'bouton' => 'Devenir actionnaire',
+            'bouton' => 'Je deviens actionnaire',
         ],
         'boutique' => [
-            'titre' => 'Je veux une boutique',
-            'texte' => 'Vous versez une caution (remboursable selon le règlement) et une avance de loyers, déduite de vos premiers loyers.',
+            'titre' => 'Installez votre commerce dans un marché moderne',
+            'caution' => 'Caution : remboursable selon le règlement de la campagne.',
+            'avance' => 'Avance : des loyers payés d’avance, déduits de vos premiers loyers.',
             'tirage' => 'Attribution par tirage au sort',
-            'bouton' => 'Candidater',
+            'bouton' => 'Je candidate',
         ],
         'alerte' => [
             'titre' => 'Souscription bientôt ouverte',
@@ -835,7 +876,7 @@ return [
     ],
 
     'boutiques' => [
-        'titre' => 'Boutiques du marché',
+        'titre' => 'Obtenir une boutique',
         'intro' => 'Candidatez à une boutique du futur marché Raaga. Une caution est demandée ; les boutiques sont attribuées par tirage au sort.',
         'independance_titre' => 'Sans lien avec les actions',
         'independance' => 'L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique. La candidature est ouverte à tout citoyen, actionnaire ou non, et la caution ne donne aucun droit sur les actions.',

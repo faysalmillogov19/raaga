@@ -107,8 +107,8 @@ class DeuxDemarchesTest extends TestCase
         Tranche::query()->update(['statut' => StatutTranche::Ouverte]);
         $this->actingAs($citoyen)->get(route('souscrire'))->assertOk()->assertSee('Souscrire — Tranche 1 – 2026');
         $accueil = $this->get('/')->assertOk();
-        $accueil->assertSeeInOrder(['J’investis dans le marché', "Prix de l’action : 10\u{00A0}000\u{00A0}FCFA", "Minimum : 5 actions, soit 50\u{00A0}000\u{00A0}FCFA",
-            'Rendement non garanti', 'Devenir actionnaire', 'Je veux une boutique', 'Attribution par tirage au sort', 'Candidater'], false)
+        $accueil->assertSeeInOrder(['Devenez actionnaire de votre marché', "Prix de l’action : 10\u{00A0}000\u{00A0}FCFA", "Minimum : 5 actions, soit 50\u{00A0}000\u{00A0}FCFA",
+            'Rendement non garanti', 'Je deviens actionnaire', 'Installez votre commerce dans un marché moderne', 'Attribution par tirage au sort', 'Je candidate'], false)
             ->assertSee('href="'.route('souscrire').'"', false);
 
         $this->assertSame(['phase.proposee', 'phase.proposee', 'phase.confirmee', 'phase.proposee', 'phase.confirmee'],
@@ -175,14 +175,14 @@ class DeuxDemarchesTest extends TestCase
         $this->actingAs($citoyen)->get(route('espace'))->assertOk()->assertSee('Mes boutiques')->assertDontSee('Mes actions');
 
         $this->decider(true, false);
-        $this->assertMatchesRegularExpression('#href="'.preg_quote(route('offre'), '#').'"[^>]*>\s*Investir\s*</a>.*href="'.preg_quote(route('boutiques'), '#').'"[^>]*>\s*Boutiques\s*</a>#s', $menu());
+        $this->assertMatchesRegularExpression('#href="'.preg_quote(route('offre'), '#').'"[^>]*>(?:(?!</a>).)*?Investir\s*</a>.*href="'.preg_quote(route('boutiques'), '#').'"[^>]*>(?:(?!</a>).)*?Boutiques\s*</a>#s', $menu());
 
         $espace = $this->actingAs($citoyen)->get(route('espace'))->assertOk();
         $espace->assertSeeInOrder(['Mes actions', 'Mes boutiques', 'Mon profil'])
             ->assertSee('href="'.route('espace', ['onglet' => 'actions']).'"', false)->assertSee('href="'.route('espace', ['onglet' => 'boutiques']).'"', false)
-            ->assertSeeInOrder(['Mes souscriptions', 'Mes documents', 'Mes dividendes'])->assertSee('Total investi')->assertDontSee('Cautions payées');
+            ->assertSeeInOrder(['Mon attestation et mes documents', 'Dividendes reçus', 'Compte de versement des dividendes', 'Bénéficiaire désigné'])->assertSee('Total investi')->assertDontSee('Cautions payées');
         $this->actingAs($citoyen)->get(route('espace', ['onglet' => 'boutiques']))->assertSee('Cautions payées')->assertDontSee('Total investi')->assertDontSee('Mes souscriptions');
         // Anciennes adresses des rubriques : onglet « Mes actions ».
-        $this->assertMatchesRegularExpression('#aria-current="page"[^>]*>\s*Mes actions#', $this->actingAs($citoyen)->get(route('espace', ['onglet' => 'documents']))->getContent());
+        $this->assertMatchesRegularExpression('#aria-current="page"[^>]*>(?:(?!</a>).)*?Mes actions#s', $this->actingAs($citoyen)->get(route('espace', ['onglet' => 'documents']))->getContent());
     }
 }

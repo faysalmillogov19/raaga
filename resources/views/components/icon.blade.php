@@ -95,6 +95,10 @@
         @case('exporter') <path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/> @break
         @case('taches') <rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/> @break
         @case('pause') <path d="M9 5v14M15 5v14"/> @break
+        @case('piece-pousse') <circle cx="10" cy="15" r="6"/><path d="M10 12.5v5M8.5 14h2.5a1 1 0 0 1 0 2H9"/><path d="M16 9.5c0-3 1.8-5.5 5-5.5 0 3-1.8 5.5-5 5.5z"/><path d="M16 9.5V12"/> @break
+        @case('boutique-auvent') <path d="M3 10 4.5 4h15L21 10"/><path d="M3 10a2.25 2.25 0 0 0 4.5 0 2.25 2.25 0 0 0 4.5 0 2.25 2.25 0 0 0 4.5 0 2.25 2.25 0 0 0 4.5 0"/><path d="M5 12.5V20h14v-7.5M10 20v-5h4v5"/> @break
+        @case('parking') <rect x="4" y="3" width="16" height="18" rx="3"/><path d="M10 17V7h3a3 3 0 0 1 0 6h-3"/> @break
+        @case('services') <rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18M11 13v2h2v-2"/> @break
         @case('lecture') <path d="M7 4.5v15l12-7.5z"/> @break
         @case('poignee') <path d="M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01" stroke-width="3"/> @break
     @endswitch

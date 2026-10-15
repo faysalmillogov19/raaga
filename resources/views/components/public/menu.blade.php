@@ -29,6 +29,9 @@
                        'border-jaune bg-white/10' => $actif,
                        'border-transparent' => ! $actif,
                    ])>
+                    @if (in_array($entree['cle'], ['investir', 'boutiques'], true))
+                        <span class="menu-picto demarche-{{ $entree['cle'] }}" aria-hidden="true"><x-icon :name="\App\Support\Demarche::PICTOS[$entree['cle']]" class="h-4 w-4" /></span>
+                    @endif
                     {{ __('public.menu.'.$entree['cle']) }}
                 </a>
             </li>

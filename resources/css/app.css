@@ -1750,14 +1750,84 @@
 
 /* ==================================================================== Accueil public (phase 1 : boutiques) */
 @layer components {
-    /* Rappel « deux démarches distinctes » en haut des pages des actions et des boutiques. */
-    .encadre-demarche {
-        border-bottom: 1px solid #f0d97a;
-        background: #fff8d9;
-        color: #4d3d00;
+    /*
+     * Code visuel des deux démarches : « Investir » accent or (fond #FCD116, texte #1A1A1A, filets #8A6A00),
+     * « Boutiques » accent vert #00843D (texte blanc, contraste AA). Le rouge reste réservé aux alertes.
+     */
+    .demarche-investir { --accent: #FCD116; --accent-texte: #1A1A1A; --accent-filet: #8A6A00; --accent-pale: #FFF6CC; }
+    .demarche-boutiques { --accent: #00843D; --accent-texte: #FFFFFF; --accent-filet: #006B32; --accent-pale: #E3F4E8; }
+
+    .badge-demarche {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border: 1px solid var(--accent-filet);
+        border-radius: 99px;
+        background: var(--accent);
+        color: var(--accent-texte);
+        font-size: .85rem;
+        font-weight: 700;
+        line-height: 1.4;
     }
 
-    .encadre-demarche svg { color: #8a6d00; }
+    .btn-demarche {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 48px;
+        padding: 0 22px;
+        border: 2px solid var(--accent-filet);
+        border-radius: 10px;
+        background: var(--accent);
+        color: var(--accent-texte);
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .btn-demarche:hover { filter: brightness(.95); }
+
+    .picto-demarche {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border: 1px solid var(--accent-filet);
+        border-radius: 12px;
+        background: var(--accent);
+        color: var(--accent-texte);
+    }
+
+    /* Rappel « deux démarches distinctes » en haut des pages de chaque parcours, avec son badge. */
+    .encadre-demarche {
+        border-bottom: 3px solid var(--accent-filet);
+        background: var(--accent-pale);
+        color: #1A1A1A;
+    }
+
+    /* Mon espace : onglet actif d'une démarche souligné de sa couleur (filet foncé pour l'or, lisible sur fond clair). */
+    .onglet-espace.est-actif.demarche-investir { border-color: var(--accent-filet); color: #1A1A1A; }
+    .onglet-espace.est-actif.demarche-boutiques { border-color: var(--accent); color: var(--accent-filet); }
+
+    /* En-tête des pages d'un parcours : filet de la couleur de la démarche. */
+    .entete-demarche { border-top: 4px solid var(--accent); }
+
+    /* Menu principal : pictogramme de la démarche, sur une pastille de sa couleur. */
+    .menu-picto {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+        border: 1px solid rgba(255, 255, 255, .7);
+        border-radius: 99px;
+        background: var(--accent);
+        color: var(--accent-texte);
+    }
+
 
     /* Carrousel plein écran : hauteur fixe (aucun décalage au chargement), défilement natif au doigt (scroll-snap). */
     .acc-carrousel {
@@ -1943,6 +2013,19 @@
     .acc-demarche-risque svg { color: #8a6d00; margin-top: 2px; }
     .acc-demarche-tirage svg { color: var(--vert-fonce); margin-top: 2px; }
     .acc-demarche-bouton { margin-top: auto; }
+    .acc-demarche { border-top: 6px solid var(--accent, var(--vert-fonce)); }
+
+    .site-public .acc-promesse {
+        margin-bottom: 20px;
+        color: var(--vert-fonce);
+        font-size: clamp(1.25rem, 3vw, 1.6rem);
+        font-weight: 700;
+        line-height: 1.3;
+    }
+
+    .acc-origine { display: grid; gap: 12px; margin-top: 20px; }
+    .acc-origine-item { display: flex; align-items: center; gap: 14px; padding: 16px; }
+    .acc-origine-phrase { max-width: 46rem; margin-top: 16px; color: var(--encre); font-weight: 600; }
     .acc-demarche-rappel { font-size: .9rem; color: var(--gris) !important; }
 
     /* Bandeau de chiffres clés. */
@@ -2160,6 +2243,7 @@
         .acc-chiffres-grille { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .acc-etapes, .acc-versements, .acc-sites { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .acc-demarches-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .acc-origine { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .acc-demarches-seule { grid-template-columns: minmax(0, 1fr); max-width: 40rem; }
     }
 

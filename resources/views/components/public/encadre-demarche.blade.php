@@ -1,19 +1,17 @@
 {{--
     Deux démarches distinctes : rappel visible sur chaque page des actions (et à chaque étape de la souscription et du
-    paiement) et sur chaque page des boutiques (candidature, caution, suivi).
+    paiement) et sur chaque page des boutiques (candidature, caution, suivi), avec le badge et le code couleur du parcours.
 --}}
 @php
-    $demarche = match (true) {
-        request()->routeIs('offre', 'transparence', 'actualites.*', 'souscrire', 'souscrire.*', 'souscription.*', 'paiement', 'paiement.*', 'espace.documents.*') => 'actions',
-        request()->routeIs('boutiques', 'boutiques.*') => 'boutiques',
-        default => null,
-    };
+    $demarche = \App\Support\Demarche::courante();
+    $texte = ['investir' => 'actions', 'boutiques' => 'boutiques'][$demarche] ?? null;
 @endphp
 
 @if ($demarche)
-    <div class="encadre-demarche" role="note" data-demarche="{{ $demarche }}">
-        <p class="conteneur flex items-start gap-2 py-3 font-semibold">
-            <x-icon name="info" class="mt-0.5 h-5 w-5 shrink-0" /> <span>{{ __('public.demarches.'.$demarche) }}</span>
+    <div class="encadre-demarche demarche-{{ $demarche }}" role="note" data-demarche="{{ $texte }}">
+        <p class="conteneur flex flex-wrap items-center gap-x-3 gap-y-2 py-3 font-semibold">
+            <x-public.badge-demarche :demarche="$demarche" />
+            <span>{{ __('public.demarches.'.$texte) }}</span>
         </p>
     </div>
 @endif

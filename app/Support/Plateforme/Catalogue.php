@@ -4,6 +4,7 @@ namespace App\Support\Plateforme;
 
 use App\Enums\Droit;
 use App\Support\Diapositives;
+use App\Support\MotsInterdits;
 use App\Support\Telephone;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
@@ -39,8 +40,8 @@ final class Catalogue
 
     public const TYPES_BANDEAU = ['information', 'alerte', 'maintenance'];
 
-    /** Promesse de rendement interdite dans les textes du carrousel (« rendement garanti », « 10 % par an »…). */
-    public const PROMESSE_RENDEMENT = '/(rendements?|gains?|bénéfices?|profits?|intérêts?|dividendes?|revenus?)\s+(garanti|assuré|certain|sûr)|\d+([,.]\d+)?\s*%\s*(de\s+)?(rendement|gain|bénéfice|intérêt|par\s+an|l[’\x27]an)|(garanti|assuré)s?\s+(de\s+)?(gagner|rendement|bénéfice)/iu';
+    /** Mots interdits sur le site public (App\Support\MotsInterdits) : refusés dans tous les textes saisis. */
+    public const PROMESSE_RENDEMENT = MotsInterdits::MOTIF;
 
     /** Position du texte d'une diapositive du carrousel (sur ordinateur ; à gauche sur mobile). */
     public const POSITIONS_TEXTE = ['gauche', 'droite', 'panneau'];
@@ -184,7 +185,7 @@ final class Catalogue
             [$type, $max] = $definition + [1 => 255];
 
             $regles += match ($type) {
-                'texte', 'texte_long' => [$champ => ['nullable', 'string', "max:{$max}"]],
+                'texte', 'texte_long' => [$champ => ['nullable', 'string', "max:{$max}", 'not_regex:'.self::PROMESSE_RENDEMENT]],
                 'url' => [$champ => ['nullable', 'url:https', $https, 'max:255']],
                 'email' => [$champ => ['nullable', 'email', 'max:255']],
                 'tel_bf' => [$champ => ['nullable', 'regex:/^(\+?226)?\s*(\d\s*){8}$/']],
@@ -261,7 +262,7 @@ final class Catalogue
                     "{$champ}.annee" => ['nullable', 'integer', 'between:2020,2100', "required_with:{$champ}.mois"],
                 ],
                 'bandeau' => [
-                    "{$champ}.texte" => ['nullable', 'string', 'max:200'],
+                    "{$champ}.texte" => ['nullable', 'string', 'max:200', 'not_regex:'.self::PROMESSE_RENDEMENT],
                     "{$champ}.type" => ['required', Rule::in(self::TYPES_BANDEAU)],
                     "{$champ}.debut" => ['nullable', 'date'],
                     "{$champ}.fin" => ['nullable', 'date', 'after:'.$champ.'.debut'],
@@ -269,7 +270,7 @@ final class Catalogue
                 ],
                 'maintenance' => [
                     "{$champ}.actif" => ['boolean'],
-                    "{$champ}.message" => ['nullable', 'string', 'max:300', "required_if_accepted:{$champ}.actif"],
+                    "{$champ}.message" => ['nullable', 'string', 'max:300', "required_if_accepted:{$champ}.actif", 'not_regex:'.self::PROMESSE_RENDEMENT],
                     "{$champ}.finPrevue" => ['nullable', 'date'],
                 ],
                 default => [],

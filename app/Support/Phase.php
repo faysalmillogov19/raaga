@@ -2,8 +2,11 @@
 
 namespace App\Support;
 
+use App\Enums\ClasseActions;
+use App\Enums\StatutDistribution;
 use App\Enums\StatutTranche;
 use App\Models\DecisionPhase;
+use App\Models\DistributionDividende;
 use App\Models\Tranche;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
@@ -41,6 +44,25 @@ final class Phase
     public static function trancheOuverte(): ?Tranche
     {
         return Tranche::query()->where('statut', StatutTranche::Ouverte)->latest('date_ouverture')->first();
+    }
+
+    /** Tranche présentée au public : la tranche ouverte, à défaut la prochaine tranche confirmée. */
+    public static function trancheAffichee(): ?Tranche
+    {
+        return self::trancheOuverte() ?? Tranche::query()->where('statut', StatutTranche::Confirmee)->orderBy('date_ouverture')->first();
+    }
+
+    /**
+     * Taux de la retenue IRVM, lu dans la dernière distribution de dividendes des actions B confirmée (« 12,5 % »),
+     * ou null si aucune distribution n'est encore paramétrée.
+     */
+    public static function tauxIrvm(): ?string
+    {
+        $pb = DistributionDividende::query()->where('classe_actions', ClasseActions::B)
+            ->whereIn('statut', [StatutDistribution::Confirme, StatutDistribution::EnPaiement, StatutDistribution::Paye])
+            ->latest('confirme_le')->value('taux_irvm_pb');
+
+        return $pb === null ? null : rtrim(rtrim(format_nombre($pb / 100, 2), '0'), ',').' %';
     }
 
     /** Lien des boutons « Devenir actionnaire » : souscription si elle est ouverte, sinon alerte SMS. */

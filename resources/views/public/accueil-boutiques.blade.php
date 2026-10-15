@@ -23,15 +23,17 @@
     {{-- 1. Carrousel --}}
     <x-public.carrousel :diapositives="$diapositives" :url-candidater="$urlCandidater" />
 
-    {{-- 2. Deux démarches distinctes : investir (si la présentation des actions est visible) et obtenir une boutique. --}}
+    {{-- 2. Promesse, puis les deux démarches côte à côte (empilées sur mobile), chacune avec son code visuel. --}}
     @php($d = __('public.demarches'))
     <section class="acc-demarches" aria-labelledby="acc-demarches-titre">
         <div class="conteneur">
+            <p class="acc-promesse">{{ $d['promesse'] }}</p>
             <h2 id="acc-demarches-titre" class="sr-only">{{ $d['titre'] }}</h2>
             <div @class(['acc-demarches-grille', 'acc-demarches-seule' => ! $investir])>
                 @if ($investir)
-                    <article class="acc-carte acc-demarche">
-                        <span class="acc-etape-icone" aria-hidden="true"><x-icon name="souscriptions" class="h-6 w-6" /></span>
+                    <article class="acc-carte acc-demarche demarche-investir">
+                        <span class="picto-demarche"><x-icon name="piece-pousse" class="h-7 w-7" data-picto="piece-pousse" /></span>
+                        <x-public.badge-demarche demarche="investir" />
                         <h3 class="acc-h2">{{ $d['investir']['titre'] }}</h3>
                         @if ($investir['prix'])
                             <ul class="acc-demarche-points">
@@ -43,22 +45,46 @@
                         @else
                             <p>{{ $d['investir']['prix_a_venir'] }}</p>
                         @endif
+                        <p class="acc-demarche-tirage"><x-icon name="check" class="h-5 w-5 shrink-0" /> <span>{{ $d['investir']['dividendes'] }}</span></p>
                         <p class="acc-demarche-risque"><x-icon name="danger" class="h-5 w-5 shrink-0" /> <span>{{ $d['investir']['risque'] }}</span></p>
-                        <a href="{{ $investir['lien'] }}" class="acc-btn acc-btn-vert acc-demarche-bouton">{{ $investir['ouverte'] ? $d['investir']['bouton'] : $d['bientot'] }}</a>
+                        <a href="{{ $investir['lien'] }}" class="btn-demarche acc-demarche-bouton">{{ $investir['ouverte'] ? $d['investir']['bouton'] : $d['bientot'] }}</a>
                         <p class="acc-demarche-rappel">{{ $d['actions'] }}</p>
                     </article>
                 @endif
-                <article class="acc-carte acc-demarche">
-                    <span class="acc-etape-icone" aria-hidden="true"><x-icon name="boutiques" class="h-6 w-6" /></span>
+                <article class="acc-carte acc-demarche demarche-boutiques">
+                    <span class="picto-demarche"><x-icon name="boutique-auvent" class="h-7 w-7" data-picto="boutique-auvent" /></span>
+                    <x-public.badge-demarche demarche="boutiques" />
                     <h3 class="acc-h2">{{ $d['boutique']['titre'] }}</h3>
-                    <p>{{ $d['boutique']['texte'] }}</p>
+                    <ul class="acc-demarche-points">
+                        <li>{{ $d['boutique']['caution'] }}</li>
+                        <li>{{ $d['boutique']['avance'] }}</li>
+                    </ul>
                     <p class="acc-demarche-tirage"><x-icon name="check" class="h-5 w-5 shrink-0" /> <span>{{ $d['boutique']['tirage'] }}</span></p>
-                    <a href="{{ $urlCandidater }}" class="acc-btn acc-btn-jaune acc-demarche-bouton">{{ $d['boutique']['bouton'] }}</a>
+                    <a href="{{ $urlCandidater }}" class="btn-demarche acc-demarche-bouton">{{ $d['boutique']['bouton'] }}</a>
                     <p class="acc-demarche-rappel">{{ $d['boutiques'] }}</p>
                 </article>
             </div>
         </div>
     </section>
+
+    @if ($investir)
+        {{-- D'où viennent les dividendes ? (démarche « Investir ») --}}
+        @php($o = __('public.demarches.origine'))
+        <section class="acc-section acc-section-verte demarche-investir" aria-labelledby="acc-origine-titre" data-apparition>
+            <div class="conteneur">
+                <h2 id="acc-origine-titre" class="acc-h2">{{ $o['titre'] }}</h2>
+                <ul class="acc-origine">
+                    @foreach (['loyers' => 'boutique-auvent', 'parkings' => 'parking', 'services' => 'services'] as $cle => $picto)
+                        <li class="acc-carte acc-origine-item">
+                            <span class="picto-demarche"><x-icon :name="$picto" class="h-7 w-7" /></span>
+                            <span class="font-bold text-encre">{{ $o['sources'][$cle] }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+                <p class="acc-origine-phrase">{{ $o['phrase'] }}</p>
+            </div>
+        </section>
+    @endif
 
     {{-- 3. Chiffres clés --}}
     <section class="acc-chiffres" aria-labelledby="acc-chiffres-titre">

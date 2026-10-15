@@ -1,7 +1,8 @@
 @props(['titre', 'intro' => null, 'fil' => []])
 
 {{-- En-tête des pages internes : fil d'Ariane, titre, introduction. $fil = [['libelle' => …, 'url' => …|null], …] --}}
-<div class="border-b border-ligne bg-fond">
+@php($demarche = \App\Support\Demarche::courante())
+<div @class(['border-b border-ligne bg-fond', 'entete-demarche demarche-'.$demarche => $demarche])>
     <div class="conteneur py-6 tab:py-9">
         <nav aria-label="{{ __('public.fil.libelle') }}">
             <ol class="flex flex-wrap items-center gap-1 text-sm text-gris">

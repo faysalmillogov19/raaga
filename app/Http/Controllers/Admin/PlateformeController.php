@@ -130,6 +130,7 @@ class PlateformeController extends Controller
         foreach (Catalogue::champs()[$section] as $champ => [$type]) {
             $messages += match ($type) {
                 'url' => ["{$champ}.url" => $e('https'), "{$champ}.regex" => $e('https')],
+                'texte', 'texte_long' => ["{$champ}.not_regex" => $e('promesse')],
                 'tel_bf' => ["{$champ}.regex" => $e('tel_bf')],
                 'tel_intl' => ["{$champ}.regex" => $e('tel_intl')],
                 'expediteur' => ["{$champ}.regex" => $e('expediteur')],
@@ -141,9 +142,9 @@ class PlateformeController extends Controller
                     "{$champ}.*.titre.not_regex" => $e('promesse'), "{$champ}.*.sousTitre.not_regex" => $e('promesse'), "{$champ}.*.boutonLibelle.not_regex" => $e('promesse'),
                 ],
                 'reseaux', 'liens' => ["{$champ}.*.url.url" => $e('https'), "{$champ}.*.url.regex" => $e('https')],
-                'bandeau' => ["{$champ}.lien.url" => $e('https'), "{$champ}.lien.regex" => $e('https'), "{$champ}.fin.after" => $e('fin_apres_debut')],
+                'bandeau' => ["{$champ}.lien.url" => $e('https'), "{$champ}.lien.regex" => $e('https'), "{$champ}.fin.after" => $e('fin_apres_debut'), "{$champ}.texte.not_regex" => $e('promesse')],
                 'horaires' => ["{$champ}.fin.after" => $e('fin_apres_debut')],
-                'maintenance' => ["{$champ}.message.required_if_accepted" => $e('maintenance_message')],
+                'maintenance' => ["{$champ}.message.required_if_accepted" => $e('maintenance_message'), "{$champ}.message.not_regex" => $e('promesse')],
                 default => [],
             };
         }

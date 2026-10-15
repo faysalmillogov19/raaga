@@ -39,7 +39,7 @@ class AccueilTest extends TestCase
             ->assertOk()
             ->assertSee('Le prix de l’action sera publié avec la prochaine tranche.', false)
             ->assertSee('Souscription bientôt ouverte')
-            ->assertDontSee('Devenir actionnaire')
+            ->assertDontSee('Je deviens actionnaire')
             ->assertDontSee('données fictives');
     }
 
@@ -79,7 +79,7 @@ class AccueilTest extends TestCase
             ->assertOk()
             ->assertSee("Prix de l’action : 5\u{00A0}000\u{00A0}FCFA", false)
             ->assertSee('Minimum : 1 action')
-            ->assertSee('Devenir actionnaire')
+            ->assertSee('Je deviens actionnaire')
             ->assertSee(url('/inscription'));
         // Seules les souscriptions payées comptent : 15 actions × 5 000 = 75 000.
         $this->get('/transparence')->assertOk()->assertSee("75\u{00A0}000\u{00A0}FCFA", false);
