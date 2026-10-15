@@ -95,7 +95,7 @@
                                     {{ $p['parametres']['souscription_actions'] }} : {{ $oui($d->souscription_actions) }}</td>
                                 <td>{{ $d->motif }}</td>
                                 <td><span class="bo-etiquette">{{ $p['statuts'][$d->statut] }}</span></td>
-                                <td>@if ($d->decide_le){{ $d->decideur?->name ?? '—' }}, {{ $d->decide_le->format('d/m/Y H:i') }}@if ($d->motif_rejet)<br>{{ $d->motif_rejet }}@endif @else — @endif</td>
+                                <td>@if ($d->decide_le){{ $d->decideur?->name ?? '—' }}, {{ $d->decide_le->format('d/m/Y H:i') }}@if ($d->motif_rejet)<br>{{ $d->motif_rejet }}@endif @else · @endif</td>
                             </tr>
                         @endforeach
                     </tbody>

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Version figée d'une convention (créée à chaque soumission et avenant) — ajout seul.
+ * Version figée d'une convention (créée à chaque soumission et avenant) · ajout seul.
  */
 #[Table(timestamps: false)]
 #[Fillable(['convention_id', 'numero', 'parametres', 'auteur_id', 'motif', 'created_at'])]

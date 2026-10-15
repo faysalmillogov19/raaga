@@ -196,7 +196,7 @@ class PlateformeController extends Controller
             $libelle = __('admin.plateforme.champs.'.$parties[0]);
             $sous = end($parties);
             if (count($parties) > 1 && $sous !== '*') {
-                $libelle .= ' — '.mb_strtolower(__('admin.plateforme.sous_champs.'.$sous));
+                $libelle .= ' · '.mb_strtolower(__('admin.plateforme.sous_champs.'.$sous));
             }
             $attributs[$cle] = $libelle;
         }

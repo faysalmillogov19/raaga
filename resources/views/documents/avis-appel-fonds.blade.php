@@ -5,7 +5,7 @@
     $institution = $appel->institution;
 @endphp
 
-<x-document-pdf :titre="'Avis d’appel de fonds — '.$appel->reference_virement" :pied="'Convention '.$convention->reference.' · appel n° '.$appel->numero.' · émis le '.now()->format('d/m/Y')">
+<x-document-pdf :titre="'Avis d’appel de fonds · '.$appel->reference_virement" :pied="'Convention '.$convention->reference.' · appel n° '.$appel->numero.' · émis le '.now()->format('d/m/Y')">
     <p class="surtitre">Actions A · convention {{ $convention->reference }}</p>
     <h1>Avis d’appel de fonds n° {{ $appel->numero }}</h1>
 
@@ -16,12 +16,12 @@
         <tr><th>Objet</th><td>{{ $appel->libelle }}</td></tr>
         <tr><th>Montant appelé</th><td><strong>{{ format_fcfa($appel->montant) }}</strong></td></tr>
         @if ($appel->montant_recu > 0)
-            <tr><th>Déjà reçu</th><td>{{ format_fcfa($appel->montant_recu) }} — reste à verser : <strong>{{ format_fcfa($appel->resteAPayer()) }}</strong></td></tr>
+            <tr><th>Déjà reçu</th><td>{{ format_fcfa($appel->montant_recu) }}, reste à verser : <strong>{{ format_fcfa($appel->resteAPayer()) }}</strong></td></tr>
         @endif
         <tr><th>Date limite de réception</th><td><strong>{{ $appel->echeance->translatedFormat('j F Y') }}</strong></td></tr>
         <tr><th>Compte séquestre bénéficiaire</th><td>
             @if ($sequestre)
-                {{ $sequestre['titulaire'] ?? '' }}@if (isset($sequestre['banque'])) — {{ $sequestre['banque'] }}@endif<br>
+                {{ $sequestre['titulaire'] ?? '' }}@if (isset($sequestre['banque'])) · {{ $sequestre['banque'] }}@endif<br>
                 @isset($sequestre['numero'])<strong>{{ $sequestre['numero'] }}</strong>@endisset
             @else
                 Communiqué par votre interlocuteur dédié{{ $institution->interlocuteur_nom ? ' ('.$institution->interlocuteur_nom.')' : '' }}.

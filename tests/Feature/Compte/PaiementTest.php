@@ -83,7 +83,7 @@ class PaiementTest extends TestCase
     {
         $this->actingAs($this->citoyen)->get('/paiement')->assertRedirect($this->url());
         $this->actingAs($this->citoyen)->get($this->url())->assertOk()
-            ->assertSee('Paiement simulé — environnement de recette')
+            ->assertSee('Paiement simulé, environnement de recette')
             ->assertSee("250\u{00A0}000\u{00A0}FCFA")
             ->assertSee('Orange Money')->assertSee('Virement bancaire')->assertSee('Espèces au guichet')
             ->assertDontSee('Moov Money');
@@ -204,10 +204,10 @@ class PaiementTest extends TestCase
 
     public function test_instructions_du_virement_et_des_especes(): void
     {
-        config(['raaga.compte_sequestre' => ['titulaire' => 'Raaga SA — séquestre', 'banque' => 'Banque de test', 'numero' => 'BF00 0000 1111']]);
+        config(['raaga.compte_sequestre' => ['titulaire' => 'Raaga SA · séquestre', 'banque' => 'Banque de test', 'numero' => 'BF00 0000 1111']]);
 
         $this->actingAs($this->citoyen)->get($this->url())->assertOk()
-            ->assertSee('Raaga SA — séquestre')->assertSee('BF00 0000 1111')
+            ->assertSee('Raaga SA · séquestre')->assertSee('BF00 0000 1111')
             ->assertSee('La référence de virement est obligatoire')
             ->assertSee('Présentez ce code de réservation');
 

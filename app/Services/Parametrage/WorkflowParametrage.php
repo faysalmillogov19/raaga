@@ -117,7 +117,7 @@ class WorkflowParametrage
 
         DB::transaction(function () use ($avenant, $objet, $validateur) {
             $objet->appliquerAvenant($avenant->nouvelle_valeur);
-            $version = $objet->creerVersion($avenant->auteur, __('admin.parametrage.motifs.avenant', ['n' => $avenant->id]).' — '.$avenant->motif);
+            $version = $objet->creerVersion($avenant->auteur, __('admin.parametrage.motifs.avenant', ['n' => $avenant->id]).' · '.$avenant->motif);
             $avenant->forceFill(['statut' => StatutAvenant::Approuve, 'decide_par' => $validateur->id, 'decide_le' => now()])->save();
             $this->decision($objet, $version->numero, DecisionParametrage::Confirme, null, $validateur);
             $this->journal->ecrire($validateur, $objet->typeParametrage().'.avenant_confirme', class_basename($objet), $objet->getKey(),

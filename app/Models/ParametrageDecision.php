@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Décision du VALIDATEUR sur une version soumise (confirmation ou rejet) — ajout seul.
+ * Décision du VALIDATEUR sur une version soumise (confirmation ou rejet) · ajout seul.
  */
 #[Table(timestamps: false)]
 #[Fillable(['objet_type', 'objet_id', 'version', 'decision', 'motif', 'decideur_id', 'created_at'])]

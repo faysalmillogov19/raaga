@@ -35,7 +35,7 @@
                                                     @csrf
                                                     <x-admin.bouton variante="contour" type="submit">{{ $k['valider'] }}</x-admin.bouton>
                                                 </form>
-                                                <x-admin.confirmation :id="'rejeter-'.$piece->id" :titre="$k['rejeter'].' — '.$type->label()" :message="$k['rejeter_message']"
+                                                <x-admin.confirmation :id="'rejeter-'.$piece->id" :titre="$k['rejeter'].' · '.$type->label()" :message="$k['rejeter_message']"
                                                                       :action="route('admin.kyb.rejeter', $piece)" :bouton="$k['rejeter']" motif danger>
                                                     <x-slot:declencheur>{{ $k['rejeter'] }}</x-slot:declencheur>
                                                 </x-admin.confirmation>

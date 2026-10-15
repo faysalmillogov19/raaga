@@ -76,7 +76,7 @@ class CandidatureBoutiqueTest extends TestCase
             ->assertSee('tirage au sort')
             ->assertSee('href="'.route('boutiques.candidater').'"', false);
 
-        $this->get('/boutiques/reglement')->assertOk()->assertSee('Règlement — Attribution 2027')->assertSee('Version 2')
+        $this->get('/boutiques/reglement')->assertOk()->assertSee('Règlement · Attribution 2027')->assertSee('Version 2')
             ->assertSee('Les modalités de restitution de la caution des candidats non retenus seront communiquées avant le tirage au sort.');
 
         // Invité : la candidature exige une connexion.

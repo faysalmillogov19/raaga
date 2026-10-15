@@ -5,7 +5,7 @@
     $m = plateforme('mentions');
     $siege = plateforme('siege');
     $l = fn (string $cle) => __('public.legal.mentions.'.$cle);
-    $joindre = fn (array $parties, string $sep = ' — ') => implode($sep, array_filter($parties)) ?: null;
+    $joindre = fn (array $parties, string $sep = ' · ') => implode($sep, array_filter($parties)) ?: null;
 
     $rubriques = $page !== 'mentions' ? [] : array_filter([
         $l('editeur') => array_filter([

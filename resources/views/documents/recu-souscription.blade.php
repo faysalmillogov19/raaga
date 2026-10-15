@@ -8,10 +8,10 @@
 <x-document-pdf :titre="'Reçu '.$numero" :pied="'Reçu n° '.$numero.' · souscription '.$s->reference.' · émis le '.$emis">
     <p class="surtitre">{{ $s->tranche->nom }}</p>
     <h1>Reçu de souscription</h1>
-    <p>Reçu n° <strong>{{ $numero }}</strong> — émis le {{ $emis }}</p>
+    <p>Reçu n° <strong>{{ $numero }}</strong>, émis le {{ $emis }}</p>
 
     <table class="donnees">
-        <tr><th>Souscripteur</th><td>{{ $s->user->name }}@if ($s->user->telephone) — {{ \App\Support\Telephone::masquer($s->user->telephone) }}@endif</td></tr>
+        <tr><th>Souscripteur</th><td>{{ $s->user->name }}@if ($s->user->telephone) · {{ \App\Support\Telephone::masquer($s->user->telephone) }}@endif</td></tr>
         <tr><th>Référence de la souscription</th><td>{{ $s->reference }}</td></tr>
         <tr><th>Nombre d’actions demandées</th><td>{{ format_nombre($s->nb_actions_demandees) }}</td></tr>
         <tr><th>Prix d’une action</th><td>{{ format_fcfa($s->valeur_unitaire) }}</td></tr>

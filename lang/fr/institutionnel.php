@@ -14,15 +14,15 @@ return [
     ],
 
     'mail' => [
-        'sujet' => 'Votre accès à l’espace investisseurs institutionnels — :plateforme',
+        'sujet' => 'Votre accès à l’espace investisseurs institutionnels · :plateforme',
         'intro' => 'Un accès à l’espace investisseurs institutionnels de :plateforme a été ouvert pour vous, avec le profil :role.',
     ],
 
     'mail_appel' => [
-        'sujet_rappel' => 'Appel de fonds n° :numero — échéance le :echeance',
-        'sujet_jour' => 'Appel de fonds n° :numero — échéance aujourd’hui',
+        'sujet_rappel' => 'Appel de fonds n° :numero, échéance le :echeance',
+        'sujet_jour' => 'Appel de fonds n° :numero, échéance aujourd’hui',
         'sujet_relance' => 'Relance : appel de fonds n° :numero en retard',
-        'sujet_alerte' => 'Appel de fonds en retard — :institution',
+        'sujet_alerte' => 'Appel de fonds en retard · :institution',
         'rappel' => 'L’appel de fonds n° :numero de la convention :convention arrive à échéance dans :jours jours (le :echeance). Montant à verser : :montant.',
         'jour' => 'L’appel de fonds n° :numero de la convention :convention arrive à échéance aujourd’hui. Montant à verser : :montant.',
         'relance' => 'L’appel de fonds n° :numero de la convention :convention n’est pas soldé : l’échéance était le :echeance. Montant restant : :montant.',
@@ -248,7 +248,7 @@ return [
             'types' => ['montant' => 'Montant (FCFA)', 'pourcentage' => '% du montant engagé'],
             'ajouter' => 'Ajouter un appel de fonds',
             'retirer' => 'Retirer',
-            'total' => 'Total de l’échéancier : :total — montant engagé : :engage',
+            'total' => 'Total de l’échéancier : :total, montant engagé : :engage',
             'formulaire' => ['creation' => 'Nouvelle convention', 'modification' => 'Modifier la convention', 'avenant' => 'Avenant à la convention'],
             'enregistrer' => 'Enregistrer',
             'creee' => 'Convention créée en brouillon.',

@@ -55,7 +55,7 @@ class SimulationDistribution
     }
 
     /**
-     * Ligne de distribution d'une institution (actions A) : brut, retenue, net — null si elle ne détenait
+     * Ligne de distribution d'une institution (actions A) : brut, retenue, net · null si elle ne détenait
      * aucune action A à la date d'arrêté.
      */
     public function ligneInstitution(DistributionDividende $distribution, int $institutionId): ?LigneDistribution

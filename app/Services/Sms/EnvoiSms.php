@@ -10,7 +10,7 @@ use App\Support\Telephone;
  * Point d'envoi unique des SMS : l'expéditeur et les variables publiques ({numeroVert},
  * {urlSiteOfficiel}, {expediteurSms}, {nomPlateforme}) viennent des paramètres de la plateforme.
  *
- * Modèle : « Code {code}.[ Aide : {numeroVert}] » — un segment entre crochets disparaît
+ * Modèle : « Code {code}.[ Aide : {numeroVert}] » · un segment entre crochets disparaît
  * si l'une de ses variables est vide, pour ne jamais envoyer « Aide :  » ou « null ».
  */
 class EnvoiSms

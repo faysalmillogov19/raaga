@@ -11,7 +11,7 @@
 
 <x-public.layout :titre="__('admin.plateforme.apercu_titre', ['section' => $titreSection])">
     <div class="bandeau-annonce-alerte">
-        <p class="conteneur py-2 text-center font-bold">{{ __('admin.plateforme.apercu_bandeau') }} — {{ $titreSection }}</p>
+        <p class="conteneur py-2 text-center font-bold">{{ __('admin.plateforme.apercu_bandeau') }} · {{ $titreSection }}</p>
     </div>
 
     @switch($section)

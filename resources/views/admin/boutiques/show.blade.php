@@ -126,7 +126,7 @@
             <p class="texte-carte mt-1 max-w-3xl">{{ __('admin.boutiques.tirage.explication') }}</p>
             @foreach ($tirages as $tirage)
                 <div class="mt-5 border-t border-ligne pt-4">
-                    <h3 class="!text-base">{{ $tirage->categorie->intitule() }} — {{ __('admin.boutiques.tirage.participants', ['n' => $tirage->nombre_participants, 'b' => $tirage->nombre_boutiques]) }}</h3>
+                    <h3 class="!text-base">{{ $tirage->categorie->intitule() }} · {{ __('admin.boutiques.tirage.participants', ['n' => $tirage->nombre_participants, 'b' => $tirage->nombre_boutiques]) }}</h3>
                     <p class="texte-carte">{{ __('admin.boutiques.tirage.par', ['date' => $tirage->created_at->format('d/m/Y H:i'), 'nom' => $tirage->tireur->name]) }}</p>
                     <dl class="bo-definitions mt-2">
                         <dt>{{ __('admin.boutiques.tirage.graine') }}</dt><dd class="break-all font-mono text-sm">{{ $tirage->graine }}</dd>

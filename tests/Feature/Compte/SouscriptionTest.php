@@ -79,7 +79,7 @@ class SouscriptionTest extends TestCase
         $this->tranche();
 
         $page = $this->actingAs($this->citoyen())->get('/souscrire')->assertOk()
-            ->assertSee('Souscrire — Tranche 1 – 2026')
+            ->assertSee('Souscrire · Tranche 1 – 2026')
             ->assertSee("10\u{00A0}000\u{00A0}FCFA")
             ->assertSee('L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique.')
             ->assertSee('Rendement non garanti : je peux perdre tout ou partie de mon investissement.')
@@ -90,7 +90,7 @@ class SouscriptionTest extends TestCase
         $this->assertSame(4, substr_count($page->getContent(), 'name="engagements[]"'));
         $this->assertDoesNotMatchRegularExpression('/name="engagements\[\]"[^>]*\bchecked\b/', $page->getContent());
 
-        $this->get('/souscrire/reglement')->assertOk()->assertSee('Règlement de la souscription — Tranche 1 – 2026')->assertSee('Version 3');
+        $this->get('/souscrire/reglement')->assertOk()->assertSee('Règlement de la souscription · Tranche 1 – 2026')->assertSee('Version 3');
     }
 
     public function test_une_souscription_est_reservee_avec_les_quatre_acceptations_horodatees(): void

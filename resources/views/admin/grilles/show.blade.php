@@ -5,7 +5,7 @@
 
     $g = __('admin.grilles');
     $saisir = auth()->user()->can(Droit::BoutiquesSaisir->value);
-    $titre = $g['titre'].' — '.$site->nom;
+    $titre = $g['titre'].' · '.$site->nom;
 @endphp
 
 <x-admin.layout :titre="$titre" :fil="[['libelle' => __('admin.boutiques.titre'), 'url' => route('admin.boutiques')], ['libelle' => $g['titre'], 'url' => route('admin.boutiques.grilles')], ['libelle' => $site->nom]]">

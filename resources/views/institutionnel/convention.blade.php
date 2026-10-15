@@ -71,7 +71,7 @@
                 <h2 id="avenants-titre" class="!text-[1.15rem]">{{ $c('avenants') }}</h2>
                 <ul class="mt-2 space-y-1">
                     @foreach ($avenants as $avenant)
-                        <li>{{ __('admin.parametrage.avenant_numero', ['n' => $loop->remaining + 1]) }} — {{ $avenant->decide_le?->format('d/m/Y') }} — {{ $avenant->motif }}</li>
+                        <li>{{ __('admin.parametrage.avenant_numero', ['n' => $loop->remaining + 1]) }} · {{ $avenant->decide_le?->format('d/m/Y') }} · {{ $avenant->motif }}</li>
                     @endforeach
                 </ul>
             </section>

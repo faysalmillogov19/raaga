@@ -30,7 +30,7 @@ class TranchesWorkflowTest extends TestCase
     /** Formulaire complet des 6 sections, tel que le navigateur l'envoie. */
     private function formulaire(array $surcharges = []): array
     {
-        $valeurs = [...TranchesController::valeursParDefaut(), 'nom' => 'Tranche 1 — 2027'];
+        $valeurs = [...TranchesController::valeursParDefaut(), 'nom' => 'Tranche 1 · 2027'];
         foreach ($valeurs as $champ => $valeur) {
             $valeurs[$champ] = match (true) {
                 $valeur instanceof BackedEnum => $valeur->value,

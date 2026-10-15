@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Sites et capacités prévues en Excel (GESTIONNAIRE DES SITES ET BOUTIQUES) : modèle, export, import en deux temps
- * — aperçu sans écriture, puis confirmation tout ou rien, seulement si le fichier ne contient aucune erreur.
+ * · aperçu sans écriture, puis confirmation tout ou rien, seulement si le fichier ne contient aucune erreur.
  * Les sites importés sont créés en brouillon ; le VALIDATEUR les confirme ensuite, un par un.
  */
 class ImportSitesController extends Controller

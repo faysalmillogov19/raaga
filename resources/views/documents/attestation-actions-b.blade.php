@@ -1,7 +1,7 @@
 {{-- Attestation d'actionnaire (actions B) d'un citoyen, établie à partir de sa ligne du registre après allocation. --}}
 @php($emise = now()->format('d/m/Y'))
 
-<x-document-pdf :titre="'Attestation d’actionnaire — '.$ligne->numero_certificat"
+<x-document-pdf :titre="'Attestation d’actionnaire · '.$ligne->numero_certificat"
                 :pied="'Certificat '.$ligne->numero_certificat.' · registre des actions B · émise le '.$emise">
     <p class="surtitre">Registre des actions B · {{ $ligne->tranche->nom }}</p>
     <h1>Attestation d’actionnaire</h1>

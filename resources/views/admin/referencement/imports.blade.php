@@ -76,6 +76,6 @@
     {{-- Historique des imports de cette entité --}}
     <section class="bo-carte" aria-labelledby="journal-titre">
         <h2 id="journal-titre" class="!text-[1.15rem]">{{ $i['historique'] }}</h2>
-        <x-tableau :t="$tableau" :libelle="$i['historique'].' — '.$titre" class="mt-3" />
+        <x-tableau :t="$tableau" :libelle="$i['historique'].' · '.$titre" class="mt-3" />
     </section>
 </x-admin.layout>

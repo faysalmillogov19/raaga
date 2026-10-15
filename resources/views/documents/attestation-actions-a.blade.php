@@ -1,5 +1,5 @@
 {{-- Attestation d'actionnaire (actions A), générée à chaque inscription au registre A. --}}
-<x-document-pdf :titre="'Attestation d’actionnaire — '.$numero_certificat"
+<x-document-pdf :titre="'Attestation d’actionnaire · '.$numero_certificat"
                 :pied="'Certificat '.$numero_certificat.' · registre des actions A · émis le '.\Carbon\Carbon::parse($date_inscription)->format('d/m/Y')">
     <p class="surtitre">Registre des actions A</p>
     <h1>Attestation d’actionnaire</h1>

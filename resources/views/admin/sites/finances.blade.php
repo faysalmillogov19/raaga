@@ -8,7 +8,7 @@
     $modifiable = $saisir && (! $finances || $finances->estModifiable());
 @endphp
 
-<x-admin.layout :titre="$f['titre'].' — '.$site->nom" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $site->nom, 'url' => route('admin.sites.show', $site)], ['libelle' => $f['titre']]]">
+<x-admin.layout :titre="$f['titre'].' · '.$site->nom" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $site->nom, 'url' => route('admin.sites.show', $site)], ['libelle' => $f['titre']]]">
     <section class="bo-carte !mt-0" aria-labelledby="etat-titre">
         <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} :
             @if ($finances)<x-admin.badge-statut :statut="$finances->statut" />@else{{ $f['aucune'] }}@endif</h2>
@@ -29,7 +29,7 @@
 
         <div class="mt-4 flex flex-wrap gap-3">
             @if ($modifiable)
-                <x-admin.fenetre id="modifier-finances" :titre="$f['titre'].' — '.$site->nom" :action="route('admin.sites.finances.update', $site)" methode="PUT"
+                <x-admin.fenetre id="modifier-finances" :titre="$f['titre'].' · '.$site->nom" :action="route('admin.sites.finances.update', $site)" methode="PUT"
                                  :bouton="__('admin.composants.circuit.brouillon')" declencheur-variante="secondaire">
                     <x-slot:declencheur>{{ __('admin.parametrage.actions.modifier') }}</x-slot:declencheur>
                     <x-admin.champ nom="cout_total" :libelle="ucfirst($libelles['cout_total'])" type="number" min="0" :valeur="$finances?->cout_total" />

@@ -11,7 +11,7 @@
     $horaires = format_horaires($c['horairesCentreAppels']);
     $horairesAccueil = format_horaires($siege['horairesAccueil']);
     $lignes = array_filter([
-        ['horloge', __('public.faq.contact.horaires'), $horaires.($c['messageHorsHoraires'] && $horaires ? ' — '.$c['messageHorsHoraires'] : ($horaires ? '' : $c['messageHorsHoraires'])), null],
+        ['horloge', __('public.faq.contact.horaires'), $horaires.($c['messageHorsHoraires'] && $horaires ? ' · '.$c['messageHorsHoraires'] : ($horaires ? '' : $c['messageHorsHoraires'])), null],
         ['telephone', __('public.contact.international'), $c['telephoneInternational'], $c['telephoneInternational'] ? 'tel:'.$c['telephoneInternational'] : null],
         ['telephone', __('public.contact.whatsapp'), $c['whatsapp'], $c['whatsapp'] ? 'https://wa.me/'.ltrim($c['whatsapp'], '+') : null],
         ['courriel', __('public.faq.contact.courriel'), $c['emailAssistance'], $c['emailAssistance'] ? 'mailto:'.$c['emailAssistance'] : null],

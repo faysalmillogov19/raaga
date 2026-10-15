@@ -1,5 +1,5 @@
 {{-- Avis de distribution de dividendes (actions A) d'une institution : brut, retenue, net, compte de versement. --}}
-<x-document-pdf :titre="'Avis de distribution — exercice '.$distribution->exercice" :pied="'Dividendes des actions A · exercice '.$distribution->exercice.' · émis le '.now()->format('d/m/Y')">
+<x-document-pdf :titre="'Avis de distribution, exercice '.$distribution->exercice" :pied="'Dividendes des actions A · exercice '.$distribution->exercice.' · émis le '.now()->format('d/m/Y')">
     <p class="surtitre">Actions A · exercice {{ $distribution->exercice }}</p>
     <h1>Avis de distribution de dividendes</h1>
 
@@ -16,7 +16,7 @@
         <tr><th>Mode de versement</th><td>Virement sur le compte vérifié de l’institution</td></tr>
         <tr><th>Compte de versement</th><td>
             @if ($institution->rib_numero)
-                {{ $institution->rib_titulaire }} — {{ $institution->rib_banque }}<br><strong>{{ $institution->rib_numero }}</strong>
+                {{ $institution->rib_titulaire }} · {{ $institution->rib_banque }}<br><strong>{{ $institution->rib_numero }}</strong>
             @else
                 RIB à compléter dans l’espace investisseur (rubrique « Mon organisation »).
             @endif

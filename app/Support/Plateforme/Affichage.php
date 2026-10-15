@@ -6,7 +6,7 @@ use App\Support\Telephone;
 use Carbon\Carbon;
 
 /**
- * Valeur lisible d'un paramètre de la plateforme (lecture seule, historique). Vide → « — ».
+ * Valeur lisible d'un paramètre de la plateforme (lecture seule, historique). Vide → « · ».
  */
 final class Affichage
 {
@@ -32,9 +32,9 @@ final class Affichage
             'financement' => self::joindre(array_map(fn ($r) => $r['libelle'].' : '.($r['approximatif'] ? '≈ ' : '').format_fcfa($r['montant']), $valeur ?? []), ' ; '),
             'mois_annee' => format_mois_annee($valeur) ?? $vide,
             'bandeau' => ($valeur['texte'] ?? null)
-                ? $l('types_bandeau.'.$valeur['type']).' — '.$valeur['texte'].self::periode($valeur['debut'] ?? null, $valeur['fin'] ?? null)
+                ? $l('types_bandeau.'.$valeur['type']).' · '.$valeur['texte'].self::periode($valeur['debut'] ?? null, $valeur['fin'] ?? null)
                 : $vide,
-            'maintenance' => ($valeur['actif'] ?? false) ? $l('oui').' — '.$valeur['message'] : $l('non'),
+            'maintenance' => ($valeur['actif'] ?? false) ? $l('oui').' · '.$valeur['message'] : $l('non'),
             default => $valeur === null || $valeur === '' ? $vide : (string) $valeur,
         };
     }

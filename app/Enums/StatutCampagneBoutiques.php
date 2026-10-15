@@ -20,7 +20,7 @@ enum StatutCampagneBoutiques: string
             self::Confirmee => 'Confirmée',
             self::Ouverte => 'Ouverte aux candidatures',
             self::Cloturee => 'Clôturée',
-            self::Tiree => 'Candidats tirés au sort — boutiques à affecter',
+            self::Tiree => 'Candidats tirés au sort, boutiques à affecter',
             self::Attribuee => 'Boutiques attribuées',
         };
     }

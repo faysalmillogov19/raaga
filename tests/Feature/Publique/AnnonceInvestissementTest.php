@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
-/** Annonce permanente « Investir dans Raaga — bientôt » tant que la présentation des actions n'est pas activée. */
+/** Annonce permanente « Investir dans Raaga : bientôt » tant que la présentation des actions n'est pas activée. */
 class AnnonceInvestissementTest extends TestCase
 {
     use RefreshDatabase;
@@ -25,9 +25,9 @@ class AnnonceInvestissementTest extends TestCase
     public function test_annonce_visible_quand_la_presentation_est_desactivee(): void
     {
         $page = $this->get('/')->assertOk();
-        $page->assertSee('data-annonce-investir', false)->assertSee('Investir dans Raaga — bientôt')->assertSee(self::TEXTE, false)
+        $page->assertSee('data-annonce-investir', false)->assertSee('Investir dans Raaga : bientôt')->assertSee(self::TEXTE, false)
             ->assertSee('Être prévenu par SMS')->assertSee('action="'.route('souscription.bientot.store').'"', false)
-            ->assertSeeInOrder(['Investir dans Raaga — bientôt', 'Installez votre commerce dans un marché moderne']);
+            ->assertSeeInOrder(['Investir dans Raaga : bientôt', 'Installez votre commerce dans un marché moderne']);
 
         // Ni prix, ni lien vers les pages des actions, ni menu Investir.
         $html = $page->getContent();
@@ -48,7 +48,7 @@ class AnnonceInvestissementTest extends TestCase
     {
         config(['raaga.phase.presentation_actions' => true]);
 
-        $this->get('/')->assertOk()->assertDontSee('data-annonce-investir', false)->assertDontSee('Investir dans Raaga — bientôt')
+        $this->get('/')->assertOk()->assertDontSee('data-annonce-investir', false)->assertDontSee('Investir dans Raaga : bientôt')
             ->assertSee('Devenez actionnaire de votre marché')->assertSee('class="menu-picto demarche-investir"', false);
     }
 

@@ -88,7 +88,7 @@
                             $unitaire = $surface($cap->surface_unitaire !== null ? (float) $cap->surface_unitaire : null);
                             $retenue = $surface($cap->surfaceRetenue());
                             $modifiable = $cap->site->estModifiable();
-                            $nom = $libelleSite($cap->site).' — '.$niveau.' — '.$type;
+                            $nom = $libelleSite($cap->site).' · '.$niveau.' · '.$type;
                         @endphp
                         <tr x-show="voit($el)" data-ligne
                             data-site="{{ $libelleSite($cap->site) }}" data-niveau="{{ $niveau }}" data-zone="{{ $cap->zone ?? '' }}" data-type="{{ $type }}"

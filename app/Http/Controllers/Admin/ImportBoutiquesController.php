@@ -19,7 +19,7 @@ use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Boutiques en Excel (GESTIONNAIRE DES SITES ET BOUTIQUES) : modèle, export et import en deux temps — aperçu sans
+ * Boutiques en Excel (GESTIONNAIRE DES SITES ET BOUTIQUES) : modèle, export et import en deux temps · aperçu sans
  * écriture, puis confirmation tout ou rien, seulement si le fichier ne contient aucune erreur (les avertissements
  * ne bloquent pas). Import pour un site choisi dans la liste (onglet Boutiques ou Imports), ou combiné (plusieurs sites
  * existants) : le site choisi tient lieu de site de référence (colonne Site vide → son code ; autre site → erreur).

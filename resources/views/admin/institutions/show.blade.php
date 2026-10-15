@@ -98,7 +98,7 @@
             <h2 id="conventions-titre" class="!text-[1.15rem]">{{ __('admin.menu.conventions') }}</h2>
             <ul class="mt-2 space-y-1">
                 @foreach ($conventions as $c)
-                    <li>{{ $c->reference }} — {{ $c->statut->label() }}{{ $c->estSignee() ? ' — signée le '.$c->signee_le->format('d/m/Y') : '' }}</li>
+                    <li>{{ $c->reference }} · {{ $c->statut->label() }}{{ $c->estSignee() ? ', signée le '.$c->signee_le->format('d/m/Y') : '' }}</li>
                 @endforeach
             </ul>
         </section>

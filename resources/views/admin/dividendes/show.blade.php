@@ -73,7 +73,7 @@
 
         @can(Droit::DividendesPayer->value)
             @if ($d->statut === StatutDistribution::Confirme)
-                <p class="texte-carte mt-4"><strong>{{ __('admin.dividendes.actions.paiement') }}</strong> — {{ __('admin.dividendes.actions.paiement_bientot') }}</p>
+                <p class="texte-carte mt-4"><strong>{{ __('admin.dividendes.actions.paiement') }}</strong> · {{ __('admin.dividendes.actions.paiement_bientot') }}</p>
             @endif
         @endcan
         @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror

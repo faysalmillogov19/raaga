@@ -11,7 +11,7 @@
     {{-- Statut et actions --}}
     <section class="bo-carte !mt-0" aria-labelledby="etat-titre">
         <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} : <x-admin.badge-statut :statut="$site->statut" /></h2>
-        <p class="texte-carte mt-1">@if ($site->code)<span class="font-mono font-bold text-encre">{{ $site->code }}</span> · @endif{{ $site->localite() }}@if ($site->arrondissement) · {{ $site->arrondissement }}@endif @if ($site->adresse)— {{ $site->adresse }}@endif</p>
+        <p class="texte-carte mt-1">@if ($site->code)<span class="font-mono font-bold text-encre">{{ $site->code }}</span> · @endif{{ $site->localite() }}@if ($site->arrondissement) · {{ $site->arrondissement }}@endif @if ($site->adresse)· {{ $site->adresse }}@endif</p>
         <p class="texte-carte">{{ $site->version ? __('admin.parametrage.version', ['n' => $site->version]) : __('admin.parametrage.aucune_version') }}</p>
         @if ($site->description)<p class="mt-2 max-w-3xl whitespace-pre-line">{{ $site->description }}</p>@endif
 

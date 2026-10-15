@@ -64,7 +64,7 @@ class CampagnesBoutiquesTest extends TestCase
     private function formulaire(array $surcharges = []): array
     {
         return [
-            'nom' => 'Attribution 2027 — marché central',
+            'nom' => 'Attribution 2027 · marché central',
             'description' => 'Boutiques du nouveau marché, attribuées par tirage au sort.',
             'date_ouverture' => now()->addDay()->format('Y-m-d\TH:i'),
             'date_cloture' => now()->addMonth()->format('Y-m-d\TH:i'),
@@ -97,7 +97,7 @@ class CampagnesBoutiquesTest extends TestCase
         // Lots homogènes, nombres comptés dans le référentiel ; montants calculés à l'ouverture, jamais saisis.
         $this->assertSame([['Grande boutique · Rez-de-chaussée · 24 m²', $this->site->id, 3, null], ['Petite boutique · R+1 · 9 m²', $this->site->id, 12, null]],
             $campagne->categories->sortBy('libelle')->map(fn ($c) => [$c->libelle, $c->site_id, $c->nombre_boutiques, $c->caution])->values()->all());
-        $this->assertStringContainsString('Petite boutique · R+1 · 9 m² — Marché central : 12 boutique(s)', $campagne->versions()->first()->parametres['categories']);
+        $this->assertStringContainsString('Petite boutique · R+1 · 9 m² · Marché central : 12 boutique(s)', $campagne->versions()->first()->parametres['categories']);
 
         $this->en($this->regulateur)->post(route('admin.boutiques.confirmer', $campagne))->assertForbidden();
         $this->en($this->validateur)->get(route('admin.boutiques.show', $campagne))->assertOk()->assertSee('Marché central')->assertSee('Pas de ligne de grille confirmée');

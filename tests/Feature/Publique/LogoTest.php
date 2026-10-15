@@ -26,7 +26,7 @@ class LogoTest extends TestCase
         $accueil = $this->get('/')->assertOk();
         preg_match('/<header.*?<\/header>/s', $accueil->getContent(), $entete);
         $this->assertStringContainsString(e(ImagesPlateforme::url('armoiries')), $entete[0]);
-        $this->assertStringContainsString('aria-label="Accueil — '.e(plateforme('identite.nomPlateforme')).'"', $entete[0]);
+        $this->assertStringContainsString('aria-label="Accueil · '.e(plateforme('identite.nomPlateforme')).'"', $entete[0]);
         foreach ([$logo, e(ImagesPlateforme::url('logoSymbole')), 'BURKINA FASO', e((string) plateforme('identite.deviseNationale'))] as $absent) {
             $this->assertStringNotContainsString($absent, $entete[0]);
         }

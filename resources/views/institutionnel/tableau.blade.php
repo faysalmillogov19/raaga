@@ -37,7 +37,7 @@
         <section class="bo-carte !mt-0" aria-labelledby="prochain-titre">
             <h2 id="prochain-titre" class="!text-[1.15rem]">{{ $t('prochain') }}</h2>
             @if ($prochain)
-                <p class="mt-2"><a href="{{ route('institutionnel.appels.show', $prochain) }}" class="font-bold text-vert-fonce underline underline-offset-2">n° {{ $prochain->numero }} — {{ $prochain->libelle }}</a></p>
+                <p class="mt-2"><a href="{{ route('institutionnel.appels.show', $prochain) }}" class="font-bold text-vert-fonce underline underline-offset-2">n° {{ $prochain->numero }} · {{ $prochain->libelle }}</a></p>
                 <p class="mt-1">{{ format_fcfa($prochain->resteAPayer()) }} · {{ $prochain->echeance->translatedFormat('j F Y') }} · <x-institutionnel.statut :statut="$prochain->statut" /></p>
             @else
                 <p class="texte-carte mt-2">{{ $t('aucun_appel') }}</p>

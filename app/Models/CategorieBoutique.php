@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Lot d'une campagne : boutiques identiques en prix — même site, type, niveau et surface. Le nombre de boutiques
+ * Lot d'une campagne : boutiques identiques en prix · même site, type, niveau et surface. Le nombre de boutiques
  * est compté dans le référentiel ; loyer, caution et avance sont figés à l'ouverture depuis la grille confirmée.
  * (Les lots antérieurs aux grilles n'ont ni niveau ni surface : leur caution a été saisie.)
  */
@@ -89,9 +89,9 @@ class CategorieBoutique extends Model
         return $this->belongsTo(TypeBoutique::class, 'type_boutique_id');
     }
 
-    /** « Boutique · R+1 · 9 m² — Marché central » (le site est omis pour un lot sans site). */
+    /** « Boutique · R+1 · 9 m² · Marché central » (le site est omis pour un lot sans site). */
     public function intitule(): string
     {
-        return $this->libelle.($this->site ? ' — '.$this->site->nom : '');
+        return $this->libelle.($this->site ? ' · '.$this->site->nom : '');
     }
 }

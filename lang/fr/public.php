@@ -83,7 +83,7 @@ return [
 
     'erreurs' => [
         'code' => 'Erreur :code',
-        'accueil_alt' => ':nom — retour à l’accueil',
+        'accueil_alt' => ':nom · retour à l’accueil',
         'retour_accueil' => 'Retour à l’accueil',
         'aide' => 'Aide & FAQ',
         '404' => [
@@ -114,7 +114,7 @@ return [
     ],
 
     'entete' => [
-        'accueil' => 'Accueil — :nom',
+        'accueil' => 'Accueil · :nom',
         'aide' => 'Aide & FAQ',
         'mon_espace' => 'Mon espace',
         'se_deconnecter' => 'Se déconnecter',
@@ -468,7 +468,7 @@ return [
     ],
 
     'souscription' => [
-        'titre' => 'Souscrire — :tranche',
+        'titre' => 'Souscrire · :tranche',
         'intro' => 'Choisissez le nombre d’actions, lisez et acceptez les quatre engagements, puis passez au paiement.',
         'prix' => 'Prix d’une action : :prix',
         'minimum' => 'Minimum : :n action(s) par souscription.',
@@ -528,7 +528,7 @@ return [
 
     'paiement' => [
         'titre' => 'Paiement',
-        'simule' => 'Paiement simulé — environnement de recette',
+        'simule' => 'Paiement simulé, environnement de recette',
         'reservation' => 'Votre réservation',
         'reference' => 'Code de réservation',
         'reference_paiement' => 'Référence du paiement',
@@ -651,10 +651,10 @@ return [
         'payer' => 'Payer maintenant',
         'voir_candidature' => 'Voir la candidature',
         'documents' => [
-            'attestation' => 'Attestation d’actionnaire — :n actions B',
+            'attestation' => 'Attestation d’actionnaire · :n actions B',
             'certificat' => 'certificat :numero',
             'recu' => 'Reçu n° :numero',
-            'reglement' => 'Règlement accepté — :tranche (version :version)',
+            'reglement' => 'Règlement accepté · :tranche (version :version)',
             'accepte_le' => 'Accepté le :date',
             'telecharger' => 'Télécharger (PDF)',
             'consulter' => 'Consulter',
@@ -707,8 +707,8 @@ return [
             'PASSEPORT' => 'Passeport',
         ],
         'pieces' => [
-            'recto' => ['CNIB' => 'CNIB — recto', 'PASSEPORT' => 'Passeport — page d’identité'],
-            'verso' => ['CNIB' => 'CNIB — verso', 'PASSEPORT' => 'Passeport — verso'],
+            'recto' => ['CNIB' => 'CNIB · recto', 'PASSEPORT' => 'Passeport · page d’identité'],
+            'verso' => ['CNIB' => 'CNIB · verso', 'PASSEPORT' => 'Passeport · verso'],
             'selfie' => ['SELFIE' => 'Selfie'],
         ],
         'aides' => [
@@ -752,7 +752,7 @@ return [
         'titre' => 'Deux démarches distinctes',
         'promesse' => 'Raaga, le marché que nous bâtissons et possédons ensemble.',
         'annonce' => [
-            'titre' => 'Investir dans Raaga — bientôt',
+            'titre' => 'Investir dans Raaga : bientôt',
             'texte' => 'Bientôt, devenez actionnaire de votre marché et recevez les dividendes décidés par l’assemblée générale.',
             'bouton' => 'Être prévenu par SMS',
         ],
@@ -909,7 +909,7 @@ return [
         'vide_titre' => 'Aucune campagne d’attribution ouverte',
         'vide' => 'Les campagnes d’attribution des boutiques sont annoncées sur cette page et dans les actualités.',
         'formulaire' => [
-            'titre' => 'Candidater — :campagne',
+            'titre' => 'Candidater · :campagne',
             'intro' => 'Choisissez une catégorie, lisez et acceptez les quatre engagements, puis payez la caution.',
             'categorie' => 'Catégorie de boutique',
             'engagements' => 'Vos engagements',

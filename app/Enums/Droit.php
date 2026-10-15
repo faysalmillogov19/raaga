@@ -153,7 +153,7 @@ enum Droit: string
     }
 
     /**
-     * Droits de saisie de paramètres (RÉGULATEUR) — jamais cumulables avec la confirmation.
+     * Droits de saisie de paramètres (RÉGULATEUR) · jamais cumulables avec la confirmation.
      *
      * @return list<self>
      */

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Ligne du registre des actions A (investisseurs institutionnels) — ajout seul, chaînée :
+ * Ligne du registre des actions A (investisseurs institutionnels) · ajout seul, chaînée :
  * chaque ligne contient l'empreinte de la précédente. Jamais mélangée au registre des actions B.
  */
 #[Table(name: 'lignes_registre_a', timestamps: false)]

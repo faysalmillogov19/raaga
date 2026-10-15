@@ -62,7 +62,7 @@
         @else
             <ul class="mt-2 space-y-1">
                 @foreach ($acceptations as $acceptation)
-                    <li>{{ \App\Enums\DocumentAccepte::tryFrom($acceptation->document)?->label() ?? $acceptation->document }} — version {{ $acceptation->version_document }} — {{ \Carbon\Carbon::parse($acceptation->accepte_le)->format('d/m/Y H:i') }}</li>
+                    <li>{{ \App\Enums\DocumentAccepte::tryFrom($acceptation->document)?->label() ?? $acceptation->document }} · version {{ $acceptation->version_document }} · {{ \Carbon\Carbon::parse($acceptation->accepte_le)->format('d/m/Y H:i') }}</li>
                 @endforeach
             </ul>
         @endif

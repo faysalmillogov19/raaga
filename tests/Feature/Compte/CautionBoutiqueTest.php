@@ -51,7 +51,7 @@ class CautionBoutiqueTest extends TestCase
     {
         $this->actingAs($this->citoyen)->get($this->url())->assertOk()
             ->assertSee('Paiement de la caution')
-            ->assertSee('Paiement simulé — environnement de recette')
+            ->assertSee('Paiement simulé, environnement de recette')
             ->assertSee('Grande boutique')->assertSee("500\u{00A0}000\u{00A0}FCFA")
             ->assertSee('Orange Money')->assertSee('Virement bancaire')->assertDontSee('Moov Money');
 
@@ -76,7 +76,7 @@ class CautionBoutiqueTest extends TestCase
         // Payée : l'écran de paiement renvoie au suivi, qui propose le reçu.
         $this->actingAs($this->citoyen)->get($this->url())->assertRedirect(route('boutiques.candidature', $this->candidature->reference));
         $this->actingAs($this->citoyen)->get(route('boutiques.candidature', $this->candidature->reference))->assertOk()
-            ->assertSee('Caution payée — en attente du tirage')->assertSee('Télécharger le reçu de caution (PDF)');
+            ->assertSee('Caution payée, en attente du tirage')->assertSee('Télécharger le reçu de caution (PDF)');
 
         $html = view('documents.recu-caution', ['candidature' => $this->candidature->fresh()->load(['campagne', 'categorie', 'user']),
             'paiement' => $paiement->fresh(), 'numero' => Recu::numero($paiement->fresh()), 'pdf' => true])->render();

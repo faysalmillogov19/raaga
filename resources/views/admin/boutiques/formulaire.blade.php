@@ -41,7 +41,7 @@
 
             @forelse ($sites as $site)
                 <fieldset class="mt-4 rounded-charte border border-ligne p-3">
-                    <legend class="px-1 font-bold text-encre">{{ $site->nom }} <span class="texte-carte font-normal">— {{ $site->localite() }}@if ($site->arrondissement) · {{ $site->arrondissement }}@endif</span></legend>
+                    <legend class="px-1 font-bold text-encre">{{ $site->nom }} <span class="texte-carte font-normal">· {{ $site->localite() }}@if ($site->arrondissement) · {{ $site->arrondissement }}@endif</span></legend>
                     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         @foreach ($disponibilites[$site->id] as $typeId => $nombre)
                             @php($id = 'lot-'.$site->id.'-'.$typeId)

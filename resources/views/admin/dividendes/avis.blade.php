@@ -12,7 +12,7 @@
         @include('documents._entete')
         <header>
             <p class="surtitre">Actions B</p>
-            <h2>Avis de distribution de dividendes — exercice {{ $d->exercice }}</h2>
+            <h2>Avis de distribution de dividendes, exercice {{ $d->exercice }}</h2>
             <p class="texte-carte">{{ $d->version ? 'Version '.$d->version : 'Brouillon non soumis' }} · {{ $d->statut->label() }}</p>
         </header>
 
