@@ -157,7 +157,7 @@
                     @unless ($kyc)
                         <p class="mt-2 text-sm text-gris">{{ __('public.souscription.kyc.bouton') }}</p>
                     @endunless
-                    <p class="mt-2 hidden text-sm text-gris lg:block">{{ __('public.souscription.delai', ['heures' => $t->delai_paiement_heures]) }}</p>
+                    <p class="mt-2 hidden text-sm text-gris lg:block">{{ __('public.souscription.delai', ['delai' => $t->libelleDelaiPaiement()]) }}</p>
                 </aside>
             </form>
         @endif

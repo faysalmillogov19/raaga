@@ -16,6 +16,7 @@ use App\Enums\StatutPaiement;
 use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
 use App\Enums\TypeFraisSouscription;
+use App\Models\Duree;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\Souscription;
@@ -54,7 +55,7 @@ class RecuTest extends TestCase
             'regle_si_echec' => RegleSiEchec::RemboursementIntegral, 'delai_remboursement_jours' => 30,
             'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Fixe,
             'frais_souscription_valeur' => 500, 'canaux_actifs' => ['ORANGE_MONEY'],
-            'delai_paiement_heures' => 48, 'version' => 2, 'cree_par' => User::factory()->create()->id,
+            'delai_paiement_valeur' => 48, 'delai_paiement_duree_id' => Duree::parCode('HEURE')->id, 'delai_paiement_secondes' => 172_800, 'version' => 2, 'cree_par' => User::factory()->create()->id,
         ]);
 
         $this->citoyen = User::factory()->role(Role::Citoyen)->create([

@@ -129,7 +129,14 @@
                 <h2 id="s-paiement" class="!text-[1.15rem]">{{ __('admin.tranches.sections.paiement') }}</h2>
                 <div class="mt-3 grid gap-4 lg:grid-cols-2">
                     <x-admin.cases nom="canaux_actifs" :libelle="ucfirst($c['canaux_actifs'])" :options="MoyenPaiement::proposables()->pluck('libelle', 'code')->all()" :valeurs="$t->canaux_actifs ?? []" class="lg:col-span-2" />
-                    <x-admin.champ nom="delai_paiement_heures" :libelle="ucfirst($c['delai_paiement_heures'])" type="number" min="1" max="720" :valeur="$t->delai_paiement_heures" required />
+                    {{-- Délai de paiement : valeur + durée obligatoires ; la valeur en secondes est calculée. --}}
+                    <fieldset class="adm-fenetre-grille" data-delai-paiement>
+                        <legend class="adm-plein adm-libelle">{{ ucfirst($c['delai_paiement']) }}</legend>
+                        <x-admin.champ nom="delai_paiement_valeur" :libelle="__('admin.delais.valeur')" type="number" min="1" max="999999" :valeur="$t->delai_paiement_valeur" required />
+                        <x-admin.champ nom="delai_paiement_duree" :libelle="__('admin.delais.duree')" type="liste" required :vide="__('admin.delais.choisir_duree')"
+                                       :options="App\Models\Duree::toutes()->mapWithKeys(fn ($d) => [$d->code => ucfirst($d->libelle_pluriel)])->all()"
+                                       :valeur="App\Models\Duree::parId($t->delai_paiement_duree_id)?->code ?? 'HEURE'" />
+                    </fieldset>
                     <x-admin.champ nom="seuil_kyc_renforce" :libelle="ucfirst($c['seuil_kyc_renforce'])" type="number" min="0" :valeur="$t->seuil_kyc_renforce" />
                     <x-admin.champ nom="seuil_revue_conformite" :libelle="ucfirst($c['seuil_revue_conformite'])" type="number" min="0" :valeur="$t->seuil_revue_conformite" />
                 </div>

@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Services\Paiement\ServicePaiement;
 use Illuminate\Console\Command;
 
-/** Expiration des souscriptions RÉSERVÉES non payées dans le délai de la tranche (delai_paiement_heures). */
+/** Expiration des souscriptions RÉSERVÉES non payées dans le délai de la tranche (valeur + durée, en secondes). */
 class ExpirerReservations extends Command
 {
     protected $signature = 'raaga:expirer-reservations';

@@ -15,6 +15,7 @@ use App\Enums\TypeFraisSouscription;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TrancheParametresRequest;
 use App\Models\Avenant;
+use App\Models\Duree;
 use App\Models\MoyenPaiement;
 use App\Models\ParametrageDecision;
 use App\Models\Tranche;
@@ -278,7 +279,7 @@ class TranchesController extends Controller
             'frais_souscription_type' => TypeFraisSouscription::Aucun,
             'frais_souscription_valeur' => 0,
             'canaux_actifs' => MoyenPaiement::proposables()->pluck('code')->all(),
-            'delai_paiement_heures' => 48,
+            'delai_paiement_valeur' => 48, 'delai_paiement_duree_id' => Duree::parCode('HEURE')?->id, 'delai_paiement_secondes' => 48 * 3_600,
         ];
     }
 

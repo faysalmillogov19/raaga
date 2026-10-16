@@ -131,7 +131,7 @@ class ControlePaiements
                 }
                 $paiement->forceFill(['statut' => StatutPaiement::Annule,
                     'metadonnees' => [...(array) $paiement->metadonnees, 'correction' => $correction->id]])->save();
-                $secondes = $objet instanceof Souscription ? (int) $objet->tranche->delai_paiement_heures * 3_600 : $objet->campagne->delaiPaiementSecondes();
+                $secondes = $objet instanceof Souscription ? $objet->tranche->delaiPaiementSecondes() : $objet->campagne->delaiPaiementSecondes();
                 $objet->forceFill(['statut' => $objet instanceof Souscription ? StatutSouscription::Reservee : StatutReservationBoutique::PreReservee,
                     'payee_le' => null, 'expire_le' => now()->addSeconds(max(3_600, $secondes)),
                     ...($objet instanceof ReservationBoutique ? ['avance_due_le' => null] : [])])->save();

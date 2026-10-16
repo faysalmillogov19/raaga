@@ -9,9 +9,12 @@ use App\Enums\PublicAutorise;
 use App\Enums\RegleArret;
 use App\Enums\RegleSiEchec;
 use App\Enums\TypeFraisSouscription;
+use App\Models\Duree;
 use App\Models\MoyenPaiement;
+use App\Models\ParametresPaiements;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Paramètres de souscription d'une tranche (6 sections). Le droit est vérifié par le contrôleur.
@@ -73,7 +76,9 @@ class TrancheParametresRequest extends FormRequest
             // Paiement & conformité
             'canaux_actifs' => ['required', 'array', 'min:1'],
             'canaux_actifs.*' => [Rule::in(MoyenPaiement::proposables()->pluck('code')->all())],
-            'delai_paiement_heures' => ['required', 'integer', 'min:1', 'max:720'],
+            // Délai de paiement : valeur + durée obligatoires (seconde, minute, heure, jour), un an au plus.
+            'delai_paiement_valeur' => ['required', 'integer', 'min:1', 'max:999999'],
+            'delai_paiement_duree' => ['required', 'string', Rule::in(Duree::toutes()->pluck('code')->all())],
             'seuil_kyc_renforce' => ['nullable', 'integer', 'min:0'],
             'seuil_revue_conformite' => ['nullable', 'integer', 'min:0'],
         ];
@@ -100,6 +105,15 @@ class TrancheParametresRequest extends FormRequest
         if ($v['frais_souscription_type'] === TypeFraisSouscription::Aucun->value) {
             $v['frais_souscription_valeur'] = 0;
         }
+
+        // Délai : durée enregistrée par son identifiant, valeur convertie en secondes calculée et stockée.
+        $duree = Duree::parCode($v['delai_paiement_duree']);
+        $secondes = $duree->enSecondes((int) $v['delai_paiement_valeur']);
+        if ($secondes > ParametresPaiements::SECONDES_MAX) {
+            throw ValidationException::withMessages(['delai_paiement_valeur' => __('admin.delais.erreurs.trop_long')]);
+        }
+        unset($v['delai_paiement_duree']);
+        $v = [...$v, 'delai_paiement_valeur' => (int) $v['delai_paiement_valeur'], 'delai_paiement_duree_id' => $duree->id, 'delai_paiement_secondes' => $secondes];
 
         $v['publics_autorises'] = array_values(array_unique($v['publics_autorises']));
         $v['canaux_actifs'] = array_values(array_unique($v['canaux_actifs']));

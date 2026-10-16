@@ -22,6 +22,7 @@ use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
 use App\Models\Boutique;
 use App\Models\CorrectionPaiement;
+use App\Models\Duree;
 use App\Models\KycDocument;
 use App\Models\Paiement;
 use App\Models\Relance;
@@ -70,7 +71,7 @@ class ControlePaiementsKycTest extends TestCase
             'publics_autorises' => [PublicAutorise::ResidentBf->value], 'mode_saisie' => ModeSaisie::NbActions, 'souscriptions_multiples' => true,
             'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata, 'regle_si_echec' => RegleSiEchec::RemboursementIntegral,
             'delai_remboursement_jours' => 30, 'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Aucun,
-            'frais_souscription_valeur' => 0, 'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'], 'delai_paiement_heures' => 48, 'version' => 1,
+            'frais_souscription_valeur' => 0, 'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'], 'delai_paiement_valeur' => 48, 'delai_paiement_duree_id' => Duree::parCode('HEURE')->id, 'delai_paiement_secondes' => 172_800, 'version' => 1,
             'cree_par' => $this->regulateur->id,
         ]);
     }

@@ -10,7 +10,7 @@
         'sursouscription' => ['regle_arret', 'pourcentage_depassement_max', 'methode_allocation', 'seuil_garanti_petits', 'plafond_concentration_pct'],
         'echec' => ['seuil_reussite_montant', 'regle_si_echec', 'jours_prolongation', 'delai_remboursement_jours'],
         'frais' => ['frais_paiement_supportes_par', 'frais_souscription_type', 'frais_souscription_valeur'],
-        'paiement' => ['canaux_actifs', 'delai_paiement_heures', 'seuil_kyc_renforce', 'seuil_revue_conformite'],
+        'paiement' => ['canaux_actifs', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes', 'seuil_kyc_renforce', 'seuil_revue_conformite'],
     ];
     $snapshot = $tranche->snapshotParametres();
 @endphp

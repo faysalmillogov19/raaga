@@ -31,7 +31,7 @@
         {{ $t->souscriptions_multiples ? 'Plusieurs souscriptions d’une même personne s’additionnent.' : 'Une seule souscription par personne est acceptée.' }}</p></section>
 
 <section><h3>Article 3 : Période</h3>
-    <p>La souscription est ouverte du {{ A::valeur('date_ouverture', $t->date_ouverture) }} au {{ A::valeur('date_cloture', $t->date_cloture) }} (heure de Ouagadougou). Une souscription non payée dans les {{ $t->delai_paiement_heures }} heures expire automatiquement.</p></section>
+    <p>La souscription est ouverte du {{ A::valeur('date_ouverture', $t->date_ouverture) }} au {{ A::valeur('date_cloture', $t->date_cloture) }} (heure de Ouagadougou). Une souscription non payée dans un délai de {{ $t->libelleDelaiPaiement() }} expire automatiquement.</p></section>
 
 <section><h3>Article 4 : Si la demande dépasse l’offre</h3>
     <p>{{ $t->regle_arret === RegleArret::DepassementAutorise ? 'L’objectif peut être dépassé de '.$t->pourcentage_depassement_max.' % au plus.' : 'La collecte s’arrête à l’objectif.' }}

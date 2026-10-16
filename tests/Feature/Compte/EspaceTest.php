@@ -17,6 +17,7 @@ use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
 use App\Enums\TypeFraisSouscription;
 use App\Models\Acceptation;
+use App\Models\Duree;
 use App\Models\LigneRegistre;
 use App\Models\Souscription;
 use App\Models\Tranche;
@@ -42,7 +43,7 @@ class EspaceTest extends TestCase
             'souscriptions_multiples' => true, 'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata,
             'regle_si_echec' => RegleSiEchec::RemboursementIntegral, 'delai_remboursement_jours' => 30,
             'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Aucun,
-            'canaux_actifs' => ['ORANGE_MONEY'], 'delai_paiement_heures' => 48, 'version' => 2,
+            'canaux_actifs' => ['ORANGE_MONEY'], 'delai_paiement_valeur' => 48, 'delai_paiement_duree_id' => Duree::parCode('HEURE')->id, 'delai_paiement_secondes' => 172_800, 'version' => 2,
             'cree_par' => User::factory()->create()->id,
         ]);
     }

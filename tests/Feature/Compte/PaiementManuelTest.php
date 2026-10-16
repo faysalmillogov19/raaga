@@ -16,6 +16,7 @@ use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
+use App\Models\Duree;
 use App\Models\Paiement;
 use App\Models\Relance;
 use App\Models\ReservationBoutique;
@@ -67,7 +68,7 @@ class PaiementManuelTest extends TestCase
             'publics_autorises' => [PublicAutorise::ResidentBf->value], 'mode_saisie' => ModeSaisie::NbActions, 'souscriptions_multiples' => true,
             'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata, 'regle_si_echec' => RegleSiEchec::RemboursementIntegral,
             'delai_remboursement_jours' => 30, 'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Aucun,
-            'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT', 'ESPECES'], 'delai_paiement_heures' => 48, 'version' => 1, 'cree_par' => $this->regulateur->id,
+            'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT', 'ESPECES'], 'delai_paiement_valeur' => 48, 'delai_paiement_duree_id' => Duree::parCode('HEURE')->id, 'delai_paiement_secondes' => 172_800, 'version' => 1, 'cree_par' => $this->regulateur->id,
         ]);
         $this->citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'pays_residence' => 'BF', 'telephone' => '+22670123456']);
         $this->souscription = Souscription::create([

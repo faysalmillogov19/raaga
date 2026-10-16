@@ -13,6 +13,7 @@ use App\Enums\StatutTranche;
 use App\Enums\TypeFraisSouscription;
 use App\Http\Controllers\Admin\DividendesController;
 use App\Models\DistributionDividende;
+use App\Models\Duree;
 use App\Models\Tranche;
 use App\Models\User;
 use App\Support\MotsInterdits;
@@ -45,7 +46,7 @@ class BrandingDemarchesTest extends TestCase
             'publics_autorises' => [PublicAutorise::ResidentBf->value], 'mode_saisie' => ModeSaisie::NbActions, 'souscriptions_multiples' => true,
             'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata, 'regle_si_echec' => RegleSiEchec::RemboursementIntegral,
             'delai_remboursement_jours' => 30, 'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Pourcentage,
-            'frais_souscription_valeur' => 150, 'canaux_actifs' => ['ORANGE_MONEY'], 'delai_paiement_heures' => 48, 'seuil_kyc_renforce' => 1_000_000,
+            'frais_souscription_valeur' => 150, 'canaux_actifs' => ['ORANGE_MONEY'], 'delai_paiement_valeur' => 48, 'delai_paiement_duree_id' => Duree::parCode('HEURE')->id, 'delai_paiement_secondes' => 172_800, 'seuil_kyc_renforce' => 1_000_000,
             'version' => 1, 'cree_par' => User::factory()->create()->id,
         ]);
     }

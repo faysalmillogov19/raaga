@@ -7,6 +7,7 @@ use App\Enums\StatutTranche;
 use App\Http\Controllers\Admin\TranchesController;
 use App\Models\AuditLog;
 use App\Models\Avenant;
+use App\Models\Duree;
 use App\Models\ParametrageDecision;
 use App\Models\Tranche;
 use App\Models\User;
@@ -42,6 +43,9 @@ class TranchesWorkflowTest extends TestCase
                 default => $valeur,
             };
         }
+
+        // Délai de paiement : le formulaire envoie la valeur et le code de la durée.
+        $valeurs['delai_paiement_duree'] = Duree::parId($valeurs['delai_paiement_duree_id'])->code;
 
         return [...$valeurs, ...$surcharges];
     }
@@ -237,14 +241,14 @@ class TranchesWorkflowTest extends TestCase
         $tranche = $this->trancheConfirmee();
 
         $this->en($this->regulateur)->post(route('admin.tranches.avenant.store', $tranche), [
-            ...$this->formulaire(['delai_paiement_heures' => 24]), 'motif' => 'Délai plus court',
+            ...$this->formulaire(['delai_paiement_valeur' => 24]), 'motif' => 'Délai plus court',
         ]);
         $avenant = Avenant::query()->firstOrFail();
 
         $this->en($this->validateur)->post(route('admin.tranches.avenant.rejeter', [$tranche, $avenant]), ['motif' => 'Délai trop court'])->assertSessionHas('succes');
 
         $this->assertSame(StatutAvenant::Rejete, $avenant->refresh()->statut);
-        $this->assertSame(48, $tranche->refresh()->delai_paiement_heures);
+        $this->assertSame([48, 172_800], [$tranche->refresh()->delai_paiement_valeur, $tranche->delai_paiement_secondes]);
         $this->assertSame(1, $tranche->version);
     }
 

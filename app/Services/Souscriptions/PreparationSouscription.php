@@ -107,7 +107,7 @@ class PreparationSouscription
                 'canal' => CanalSouscription::Web,
                 'statut' => StatutSouscription::Reservee,
                 'revue_statut' => $tranche->seuil_revue_conformite && $cumul > $tranche->seuil_revue_conformite ? StatutRevue::EnAttente : null,
-                'expire_le' => now()->addHours((int) $tranche->delai_paiement_heures),
+                'expire_le' => now()->addSeconds($tranche->delaiPaiementSecondes()),
             ]);
 
             foreach (self::ENGAGEMENTS as $document) {

@@ -19,6 +19,7 @@ use App\Enums\StatutTypeBoutique;
 use App\Enums\TypeFraisSouscription;
 use App\Enums\UsageMoyenPaiement;
 use App\Models\AuditLog;
+use App\Models\Duree;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\ParametrageDecision;
@@ -244,7 +245,7 @@ class MoyensPaiementTest extends TestCase
             'publics_autorises' => [PublicAutorise::ResidentBf->value], 'mode_saisie' => ModeSaisie::NbActions, 'souscriptions_multiples' => true,
             'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata, 'regle_si_echec' => RegleSiEchec::RemboursementIntegral,
             'delai_remboursement_jours' => 30, 'frais_paiement_supportes_par' => PayeurFrais::Raaga, 'frais_souscription_type' => TypeFraisSouscription::Aucun,
-            'canaux_actifs' => $canaux, 'delai_paiement_heures' => 48, 'version' => 1, 'cree_par' => $this->regulateur->id,
+            'canaux_actifs' => $canaux, 'delai_paiement_valeur' => 48, 'delai_paiement_duree_id' => Duree::parCode('HEURE')->id, 'delai_paiement_secondes' => 172_800, 'version' => 1, 'cree_par' => $this->regulateur->id,
         ]);
         $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'pays_residence' => 'BF', 'telephone' => '+22670999999']);
 

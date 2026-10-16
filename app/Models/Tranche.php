@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'souscriptions_multiples', 'regle_arret', 'pourcentage_depassement_max', 'methode_allocation',
     'seuil_garanti_petits', 'plafond_concentration_pct', 'seuil_reussite_montant', 'regle_si_echec',
     'jours_prolongation', 'delai_remboursement_jours', 'frais_paiement_supportes_par',
-    'frais_souscription_type', 'frais_souscription_valeur', 'canaux_actifs', 'delai_paiement_heures',
+    'frais_souscription_type', 'frais_souscription_valeur', 'canaux_actifs', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes',
     'seuil_kyc_renforce', 'seuil_revue_conformite', 'version', 'cree_par', 'soumis_par', 'soumise_le',
     'valide_par', 'validee_le', 'motif_rejet', 'ouverte_le', 'cloturee_le', 'allouee_le', 'annulee_le',
 ])]
@@ -41,7 +41,7 @@ class Tranche extends Model implements Parametrable
         'souscriptions_multiples', 'regle_arret', 'pourcentage_depassement_max', 'methode_allocation',
         'seuil_garanti_petits', 'plafond_concentration_pct', 'seuil_reussite_montant', 'regle_si_echec',
         'jours_prolongation', 'delai_remboursement_jours', 'frais_paiement_supportes_par',
-        'frais_souscription_type', 'frais_souscription_valeur', 'canaux_actifs', 'delai_paiement_heures',
+        'frais_souscription_type', 'frais_souscription_valeur', 'canaux_actifs', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes',
         'seuil_kyc_renforce', 'seuil_revue_conformite',
     ];
 
@@ -71,7 +71,9 @@ class Tranche extends Model implements Parametrable
             'frais_souscription_type' => TypeFraisSouscription::class,
             'frais_souscription_valeur' => 'integer',
             'canaux_actifs' => 'array',
-            'delai_paiement_heures' => 'integer',
+            'delai_paiement_valeur' => 'integer',
+            'delai_paiement_duree_id' => 'integer',
+            'delai_paiement_secondes' => 'integer',
             'seuil_kyc_renforce' => 'integer',
             'seuil_revue_conformite' => 'integer',
             'version' => 'integer',
@@ -124,6 +126,18 @@ class Tranche extends Model implements Parametrable
      */
     /** Prix et minimum, figés dès la confirmation de la tranche par le VALIDATEUR (aucun avenant ne les change). */
     public const FIGES = ['valeur_unitaire', 'min_actions_par_souscription'];
+
+    /** Délai de paiement d'une souscription réservée, en secondes (48 heures si la tranche n'en a pas). */
+    public function delaiPaiementSecondes(): int
+    {
+        return $this->delai_paiement_secondes ?: 48 * 3_600;
+    }
+
+    /** Délai de paiement lisible (« 48 heures », « 2 jours »). */
+    public function libelleDelaiPaiement(): string
+    {
+        return Duree::parId($this->delai_paiement_duree_id)?->libelle((int) $this->delai_paiement_valeur) ?? Duree::formater(intdiv($this->delaiPaiementSecondes(), 3_600), 'HEURE');
+    }
 
     public function champsAvenantAutorises(): ?array
     {

@@ -13,6 +13,7 @@ use App\Enums\Role;
 use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
 use App\Enums\TypeFraisSouscription;
+use App\Models\Duree;
 use App\Models\ManifestationInteret;
 use App\Models\Paiement;
 use App\Models\ParametresInvestissement;
@@ -207,7 +208,7 @@ class RaagaInvestTest extends TestCase
             'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata, 'regle_si_echec' => RegleSiEchec::RemboursementIntegral,
             'delai_remboursement_jours' => 30, 'frais_paiement_supportes_par' => PayeurFrais::Raaga,
             'frais_souscription_type' => TypeFraisSouscription::Pourcentage, 'frais_souscription_valeur' => 150,
-            'canaux_actifs' => ['ORANGE_MONEY'], 'delai_paiement_heures' => 48, 'seuil_kyc_renforce' => 1_000_000,
+            'canaux_actifs' => ['ORANGE_MONEY'], 'delai_paiement_valeur' => 48, 'delai_paiement_duree_id' => Duree::parCode('HEURE')->id, 'delai_paiement_secondes' => 172_800, 'seuil_kyc_renforce' => 1_000_000,
             'version' => 1, 'cree_par' => $this->superAdmin->id,
         ]);
     }

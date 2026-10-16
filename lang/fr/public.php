@@ -497,7 +497,7 @@ return [
         'recap_frais' => 'Frais de souscription',
         'recap_total' => 'Total à payer',
         'continuer' => 'Continuer vers le paiement',
-        'delai' => 'Votre réservation sera conservée :heures heures : passé ce délai sans paiement, elle expire.',
+        'delai' => 'Votre réservation sera conservée :delai : passé ce délai sans paiement, elle expire.',
         'kyc' => [
             'titre' => 'Votre identité n’est pas encore vérifiée',
             'NON_SOUMIS' => 'Vous pouvez préparer votre souscription, mais le paiement sera possible seulement après la vérification de votre pièce d’identité.',

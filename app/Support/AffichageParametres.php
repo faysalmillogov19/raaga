@@ -15,6 +15,7 @@ use App\Enums\RegleSiEchec;
 use App\Enums\TraitementNonReclames;
 use App\Enums\TypeFraisSouscription;
 use App\Enums\UsageMoyenPaiement;
+use App\Models\Duree;
 use App\Models\MoyenPaiement;
 use Carbon\CarbonImmutable;
 
@@ -67,6 +68,19 @@ final class AffichageParametres
         if ($champ === 'echeancier' && is_array($valeur)) {
             return implode(' ; ', array_map(fn (array $l) => $l['libelle'].' ('.CarbonImmutable::parse($l['echeance'])->format('d/m/Y').') : '
                 .format_fcfa((int) $l['montant']), $valeur));
+        }
+
+        // Délais : durée (par identifiant ou par code) en toutes lettres, valeur en secondes, ancien format en heures.
+        if (str_ends_with($champ, '_duree_id') || str_ends_with($champ, '_duree')) {
+            $duree = is_numeric($valeur) ? Duree::parId((int) $valeur) : Duree::parCode((string) $valeur);
+
+            return $duree ? ucfirst($duree->libelle_pluriel) : (string) $valeur;
+        }
+        if (str_starts_with($champ, 'delai_') && str_ends_with($champ, '_secondes')) {
+            return format_nombre((int) $valeur).' s';
+        }
+        if ($champ === 'delai_paiement_heures') {
+            return Duree::formater((int) $valeur, 'HEURE');
         }
 
         if ($champ === 'nb_actions') {

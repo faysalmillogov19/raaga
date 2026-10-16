@@ -17,6 +17,7 @@ use App\Enums\StatutTranche;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
 use App\Models\Acceptation;
+use App\Models\Duree;
 use App\Models\Souscription;
 use App\Models\Tranche;
 use App\Models\User;
@@ -60,7 +61,7 @@ class SouscriptionTest extends TestCase
             'frais_souscription_type' => TypeFraisSouscription::Pourcentage,
             'frais_souscription_valeur' => 150, // 1,5 %
             'canaux_actifs' => ['ORANGE_MONEY'],
-            'delai_paiement_heures' => 48,
+            'delai_paiement_valeur' => 48, 'delai_paiement_duree_id' => Duree::parCode('HEURE')->id, 'delai_paiement_secondes' => 172_800,
             'seuil_kyc_renforce' => 1_000_000,
             'version' => 3,
             'cree_par' => User::factory()->create()->id,
