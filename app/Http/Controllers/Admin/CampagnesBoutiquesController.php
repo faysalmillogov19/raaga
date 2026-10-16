@@ -121,7 +121,12 @@ class CampagnesBoutiquesController extends Controller
                     ->valeur(fn (ReservationBoutique $r) => $r->boutique?->code)->classe('font-mono'),
                 Colonne::make('citoyen', $c['citoyen'])->recherchable(fn ($q, $t) => $q->whereHas('user', fn ($u) => $u->whereContient('name', $t)))
                     ->valeur(fn (ReservationBoutique $r) => $r->user?->name),
-                Colonne::make('statut', $c['statut'])->triable()->valeur(fn (ReservationBoutique $r) => $r->statut->label()),
+                Colonne::make('statut', $c['statut'])->triable()->valeur(fn (ReservationBoutique $r) => $r->libelleStatut()),
+                Colonne::make('avance', $c['avance'])->valeur(fn (ReservationBoutique $r) => match (true) {
+                    $r->avance_payee_le !== null => __('admin.boutiques.reservations.avance_payee', ['date' => $r->avance_payee_le->format('d/m/Y')]),
+                    $r->avance_due_le !== null && $r->statut === StatutReservationBoutique::Reservee => __('admin.boutiques.reservations.avance_due', ['date' => $r->avance_due_le->format('d/m/Y')]),
+                    default => '',
+                }),
                 Colonne::make('caution', $c['caution'])->numerique()->triable()->valeur(fn (ReservationBoutique $r) => format_fcfa($r->caution))->texte(fn (ReservationBoutique $r) => $r->caution),
                 Colonne::make('date', $c['date'])->triable('created_at')->classe('whitespace-nowrap')->valeur(fn (ReservationBoutique $r) => $r->created_at->format('d/m/Y H:i')),
                 Colonne::make('actions', $c['actions'])->vue('admin.boutiques._reservation-actions', 'reservation')->exportable(false),
@@ -244,10 +249,9 @@ class CampagnesBoutiquesController extends Controller
         Gate::authorize(Droit::BoutiquesPiloter->value);
         abort_unless($reservation->campagne_boutiques_id === $campagne->id, 404);
         $donnees = $request->validate([
-            'reference_avance' => ['required', 'string', 'max:100'],
             'contrat_signe_le' => ['required', 'date', 'before_or_equal:today'],
         ], [], __('admin.boutiques.reservations.champs'));
-        $this->reservations->attribuer($reservation, $donnees['reference_avance'], $donnees['contrat_signe_le'], $request->user());
+        $this->reservations->attribuer($reservation, $donnees['contrat_signe_le'], $request->user());
 
         return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.attribuee'));
     }

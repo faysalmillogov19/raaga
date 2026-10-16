@@ -159,7 +159,7 @@
                         <li class="carte p-4 tab:p-5">
                             <div class="flex flex-wrap items-start justify-between gap-2">
                                 <p class="whitespace-nowrap font-bold tracking-wide text-encre">{{ $c->reference }}</p>
-                                <span class="rounded-full px-3 py-1 text-sm font-bold {{ ['PRE_RESERVEE' => 'bg-jaune-pale text-encre', 'RESERVEE' => 'bg-vert-pale text-vert-fonce', 'ATTRIBUEE' => 'bg-vert-fonce text-white'][$c->statut->value] ?? 'bg-fond text-gris' }}">{{ $c->statut->label() }}</span>
+                                <span class="rounded-full px-3 py-1 text-sm font-bold {{ ['PRE_RESERVEE' => 'bg-jaune-pale text-encre', 'RESERVEE' => 'bg-vert-pale text-vert-fonce', 'ATTRIBUEE' => 'bg-vert-fonce text-white'][$c->statut->value] ?? 'bg-fond text-gris' }}">{{ $c->libelleStatut() }}</span>
                             </div>
                             <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.95rem] tab:grid-cols-3">
                                 <div><dt class="text-sm text-gris">{{ __('public.boutiques.reservation.campagne') }}</dt><dd class="font-semibold">{{ $c->campagne->nom }}</dd></div>

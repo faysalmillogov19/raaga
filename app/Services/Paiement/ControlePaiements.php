@@ -64,8 +64,11 @@ class ControlePaiements
             ...($controle === Paiement::INCOMPLET ? ['controle_montant_recu' => $montantRecu] : [])])->save();
         // Incomplet : délai de complément (48 heures par défaut, paramétré par le RÉGULATEUR), à partir de cette décision,
         // même si le délai initial est dépassé.
+        // Avance : le complément repousse la date limite de l'avance (le dossier sort du retard le temps du complément).
         if ($controle === Paiement::INCOMPLET) {
-            $paiement->objet()->forceFill(['expire_le' => now()->addSeconds(ParametresPaiements::delaiSecondes('complement'))])->save();
+            $echeance = now()->addSeconds(ParametresPaiements::delaiSecondes('complement'));
+            $paiement->objet()->forceFill($paiement->nature === Paiement::AVANCE
+                ? ['avance_due_le' => $echeance, 'avance_retard_le' => null] : ['expire_le' => $echeance])->save();
         }
         $this->journal->ecrire($controleur, 'paiement.controle', 'Paiement', $paiement->id, $avant,
             ['statut' => $paiement->statut->value, 'controle' => $controle, 'motif' => $motif, 'reference' => $reference, 'montant_recu' => $montantRecu]);
@@ -84,7 +87,7 @@ class ControlePaiements
         if ($paiement->statut !== StatutPaiement::Confirme) {
             throw ValidationException::withMessages(['motif' => __('admin.paiements.erreurs.correction_non_confirme')]);
         }
-        if (! $this->objetPaye($paiement->objet())) {
+        if (! $this->objetPaye($paiement->objet(), $paiement)) {
             throw ValidationException::withMessages(['motif' => __('admin.paiements.erreurs.correction_trop_tard')]);
         }
         if ($paiement->corrections()->where('statut', CorrectionPaiement::PROPOSEE)->exists()) {
@@ -126,11 +129,17 @@ class ControlePaiements
             $paiement = Paiement::query()->lockForUpdate()->findOrFail($correction->paiement_id);
             if ($confirmee) {
                 $objet = $paiement->objet();
-                if (! $this->objetPaye($objet)) {
+                if (! $this->objetPaye($objet, $paiement)) {
                     throw ValidationException::withMessages(['motif' => __('admin.paiements.erreurs.correction_trop_tard')]);
                 }
                 $paiement->forceFill(['statut' => StatutPaiement::Annule,
                     'metadonnees' => [...(array) $paiement->metadonnees, 'correction' => $correction->id]])->save();
+            }
+            // Avance finalement non reçue : de nouveau attendue, avec un nouveau délai pour la payer ; la boutique reste réservée.
+            if ($confirmee && $paiement->nature === Paiement::AVANCE) {
+                $objet->forceFill(['avance_payee_le' => null, 'reference_avance' => null, 'avance_retard_le' => null,
+                    'avance_due_le' => now()->addSeconds(ParametresPaiements::delaiSecondes('avance'))])->save();
+            } elseif ($confirmee) {
                 $secondes = $objet instanceof Souscription ? $objet->tranche->delaiPaiementSecondes() : $objet->campagne->delaiPaiementSecondes();
                 $objet->forceFill(['statut' => $objet instanceof Souscription ? StatutSouscription::Reservee : StatutReservationBoutique::PreReservee,
                     'payee_le' => null, 'expire_le' => now()->addSeconds(max(3_600, $secondes)),
@@ -151,9 +160,19 @@ class ControlePaiements
         });
     }
 
-    /** Objet encore au stade « payé » (ni alloué, ni retenu au tirage, ni annulé) : seul cas corrigeable. */
-    private function objetPaye(Souscription|ReservationBoutique $objet): bool
+    /**
+     * Objet encore au stade « payé » pour ce paiement (ni alloué, ni attribué, ni annulé) : seul cas corrigeable. Caution :
+     * boutique réservée dont l'avance n'est pas encore payée ; avance : avance payée, boutique pas encore attribuée.
+     */
+    private function objetPaye(Souscription|ReservationBoutique $objet, Paiement $paiement): bool
     {
-        return $objet instanceof Souscription ? $objet->statut === StatutSouscription::Payee : $objet->statut === StatutReservationBoutique::Reservee;
+        if ($objet instanceof Souscription) {
+            return $objet->statut === StatutSouscription::Payee;
+        }
+        if ($objet->statut !== StatutReservationBoutique::Reservee) {
+            return false;
+        }
+
+        return $paiement->nature === Paiement::AVANCE ? $objet->avance_payee_le !== null : $objet->avance_payee_le === null;
     }
 }

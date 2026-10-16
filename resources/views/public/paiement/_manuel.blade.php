@@ -19,9 +19,9 @@
         </x-public.alerte>
     @elseif ($paiement->controle === \App\Models\Paiement::INCOMPLET)
         <x-public.alerte variante="attention" class="mt-3" role="alert" data-incomplet>
-            {{ __('public.paiement.manuel.incomplet', ['motif' => $paiement->controle_motif, 'recu' => format_fcfa((int) $paiement->controle_montant_recu),
+            {{ __($paiement->nature === \App\Models\Paiement::AVANCE ? 'public.paiement.manuel.incomplet_avance' : 'public.paiement.manuel.incomplet', ['motif' => $paiement->controle_motif, 'recu' => format_fcfa((int) $paiement->controle_montant_recu),
                 'reste' => format_fcfa(max(0, $paiement->montant + $paiement->frais - (int) $paiement->controle_montant_recu)),
-                'echeance' => $s->expire_le->translatedFormat('j F Y à H\hi')]) }}
+                'echeance' => $s->echeancePaiement()->translatedFormat('j F Y à H\hi')]) }}
         </x-public.alerte>
     @endif
 
@@ -38,7 +38,7 @@
             <dd class="text-2xl font-extrabold tracking-widest text-vert-fonce" data-reference-versement>{{ $paiement->reference_versement }}</dd></div>
         @if ($etat !== 'controle')
             <div class="flex flex-wrap justify-between gap-x-3"><dt>{{ $m['delai'] }}</dt>
-                <dd class="font-semibold text-encre" data-delai>{{ $s->expire_le->isFuture() ? $s->expire_le->diffForHumans(['parts' => 2, 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]) : $m['delai_depasse'] }}</dd></div>
+                <dd class="font-semibold text-encre" data-delai>{{ $s->echeancePaiement()->isFuture() ? $s->echeancePaiement()->diffForHumans(['parts' => 2, 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]) : $m['delai_depasse'] }}</dd></div>
         @endif
     </dl>
     <p class="mt-2 font-semibold text-encre">{{ $m['reference_obligatoire'] }}</p>

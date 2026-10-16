@@ -27,6 +27,11 @@ class Relance extends Model
     /** 24 h avant la fin du délai de complément d'un paiement incomplet. */
     public const COMPLEMENT = 'COMPLEMENT';
 
+    /** Avance d'une boutique réservée : 7 jours puis 24 heures avant sa date limite. */
+    public const AVANCE_7J = 'AVANCE_7J';
+
+    public const AVANCE_24H = 'AVANCE_24H';
+
     protected function casts(): array
     {
         return ['canaux' => 'array', 'created_at' => 'datetime'];

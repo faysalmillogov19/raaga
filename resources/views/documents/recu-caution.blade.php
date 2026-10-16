@@ -1,12 +1,14 @@
-{{-- Reçu de caution d'une réservation de boutique. En-tête commun : armoiries, logo, mentions légales (paramètres). --}}
+{{-- Reçu de caution, ou d'avance ($avance), d'une réservation de boutique. En-tête commun : armoiries, logo, mentions légales (paramètres). --}}
 @php
     $c = $candidature;
     $emis = $paiement->date_confirmation->format('d/m/Y');
+    $avance = $avance ?? false;
+    $intitule = $avance ? 'Reçu d’avance' : 'Reçu de caution';
 @endphp
 
-<x-document-pdf :titre="'Reçu de caution '.$numero" :pied="'Reçu n° '.$numero.' · réservation '.$c->reference.' · émis le '.$emis">
+<x-document-pdf :titre="$intitule.' '.$numero" :pied="'Reçu n° '.$numero.' · réservation '.$c->reference.' · émis le '.$emis">
     <p class="surtitre">Réservation des boutiques · {{ $c->campagne->nom }}</p>
-    <h1>Reçu de caution</h1>
+    <h1>{{ $intitule }}</h1>
     <p>Reçu n° <strong>{{ $numero }}</strong>, émis le {{ $emis }}</p>
 
     <table class="donnees">
@@ -22,10 +24,15 @@
         <tr><th>{{ __('public.paiement.compte_credite') }}</th><td>{{ $paiement->compte_destination->label() }}</td></tr>
         <tr><th>Référence du paiement</th><td>{{ $paiement->reference }}</td></tr>
         <tr><th>Date du paiement</th><td>{{ $paiement->date_confirmation->format('d/m/Y à H\hi') }}</td></tr>
-        <tr><th>Statut</th><td>{{ $c->statut->label() }}</td></tr>
+        <tr><th>Paiement réglé</th><td><strong>{{ $avance ? 'Avance' : 'Caution' }}</strong></td></tr>
+        <tr><th>Statut</th><td>{{ $c->libelleStatut() }}</td></tr>
     </table>
 
-    <p>La caution payée réserve la boutique au nom du titulaire ; elle est attribuée après le paiement de l’avance et la signature du contrat.</p>
+    @if ($avance)
+        <p>L’avance payée est imputée sur les premiers loyers ; la boutique est attribuée au titulaire après la signature du contrat.</p>
+    @else
+        <p>La caution payée réserve la boutique au nom du titulaire ; elle est attribuée après le paiement de l’avance et la signature du contrat.</p>
+    @endif
 
     <div class="encadre">
         <strong>L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique.</strong><br>

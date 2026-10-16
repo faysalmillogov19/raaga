@@ -152,7 +152,8 @@ trait GerePaiements
         if ($paiement === null || ! $paiement->estManuel() || $paiement->enControle()) {
             throw ValidationException::withMessages(['preuve' => __('public.paiement.manuel.erreurs.aucun_paiement')]);
         }
-        if (! $objet->attendPaiement() || $objet->expire_le->isPast()) {
+        // Après la date limite, seule une avance en retard (aucune annulation confirmée) accepte encore une preuve.
+        if (! $objet->attendPaiement() || ($objet->echeancePaiement()?->isPast() && ! $objet->paiementTardifAccepte())) {
             throw ValidationException::withMessages(['preuve' => __('public.paiement.manuel.erreurs.delai')]);
         }
 

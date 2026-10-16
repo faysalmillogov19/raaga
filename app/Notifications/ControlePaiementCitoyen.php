@@ -50,17 +50,23 @@ class ControlePaiementCitoyen extends Notification
     private function message(): string
     {
         $cle = $this->libere ? 'libere' : strtolower((string) $this->paiement->controle);
+        // Avance incomplète : pas de clôture automatique à l'échéance (traitement au cas par cas).
+        if ($cle === 'incomplet' && $this->paiement->nature === Paiement::AVANCE) {
+            $cle = 'incomplet_avance';
+        }
 
         return __('public.paiement.manuel.notification.'.$cle, [
             'reference' => $this->objet->reference, 'versement' => $this->paiement->reference_versement,
-            'echeance' => $this->objet->expire_le?->translatedFormat('j F Y à H\hi') ?? '',
+            'echeance' => $this->objet->echeancePaiement()?->translatedFormat('j F Y à H\hi') ?? '',
         ]);
     }
 
     private function url(): string
     {
-        return $this->objet instanceof Souscription
-            ? route('paiement.show', $this->objet->reference)
-            : route('boutiques.reservation.show', $this->objet->reference);
+        return match (true) {
+            $this->objet instanceof Souscription => route('paiement.show', $this->objet->reference),
+            $this->paiement->nature === Paiement::AVANCE => route('boutiques.avance.show', $this->objet->reference),
+            default => route('boutiques.reservation.show', $this->objet->reference),
+        };
     }
 }

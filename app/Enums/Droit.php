@@ -100,6 +100,12 @@ enum Droit: string
     case BoutiquesConfirmer = 'boutiques.confirmer';
     case BoutiquesPiloter = 'boutiques.piloter';
 
+    // Avances des boutiques en retard, au cas par cas : liste (statuts ; montants seulement avec BoutiquesVoir),
+    // proposition par le RÉGULATEUR, décision par le VALIDATEUR (quatre yeux).
+    case AvancesVoir = 'avances.voir';
+    case AvancesProposer = 'avances.proposer';
+    case AvancesDecider = 'avances.decider';
+
     case DividendesVoir = 'dividendes.voir';
     case DividendesSaisir = 'dividendes.saisir';
     case DividendesConfirmer = 'dividendes.confirmer';
@@ -170,7 +176,7 @@ enum Droit: string
             self::ConventionsSaisir, self::ConventionsConfirmer, self::AppelsFondsRapprocher,
             self::UtilisateursGerer, self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
-            self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
+            self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::AvancesProposer, self::AvancesDecider,
             self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer, self::MoyensPaiementGerer, self::MoyensPaiementConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
@@ -188,7 +194,7 @@ enum Droit: string
      */
     public static function saisies(): array
     {
-        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir, self::BoutiquesSaisir, self::SitesGerer, self::UnitesGerer, self::MoyensPaiementGerer];
+        return [self::TranchesSaisir, self::DividendesSaisir, self::ConventionsSaisir, self::BoutiquesSaisir, self::SitesGerer, self::UnitesGerer, self::MoyensPaiementGerer, self::AvancesProposer];
     }
 
     /**
@@ -200,7 +206,7 @@ enum Droit: string
     {
         return [self::TranchesConfirmer, self::TranchesPiloter, self::DividendesConfirmer, self::DividendesPayer, self::AllocationExecuter,
             self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::SitesConfirmer, self::UnitesConfirmer, self::MoyensPaiementConfirmer,
-            self::PaiementsCorrectionsConfirmer, self::RemboursementsApprouver, self::KycAnnulationConfirmer];
+            self::PaiementsCorrectionsConfirmer, self::RemboursementsApprouver, self::KycAnnulationConfirmer, self::AvancesDecider];
     }
 
     /**
@@ -213,7 +219,7 @@ enum Droit: string
         return [
             [self::TranchesSaisir, self::TranchesConfirmer], [self::DividendesSaisir, self::DividendesConfirmer],
             [self::SouscriptionsRapprocher, self::PaiementsCorrectionsConfirmer], [self::RemboursementsSuivre, self::RemboursementsApprouver],
-            [self::KycTraiter, self::KycAnnulationConfirmer],
+            [self::KycTraiter, self::KycAnnulationConfirmer], [self::AvancesProposer, self::AvancesDecider],
         ];
     }
 
@@ -245,7 +251,7 @@ enum Droit: string
         return [
             self::ReferentielsGerer,
             self::TranchesSaisir, self::TranchesConfirmer, self::TranchesPiloter,
-            self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
+            self::BoutiquesSaisir, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::AvancesProposer, self::AvancesDecider,
             self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer, self::MoyensPaiementGerer, self::MoyensPaiementConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
@@ -291,7 +297,7 @@ enum Droit: string
                 self::PhaseVoir, self::PhaseConfirmer, self::AValiderVoir,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
-                self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
+                self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::AvancesVoir, self::AvancesDecider,
                 // Référentiels, unités, moyens et délais de paiement : décidés depuis « À valider » (détail et différences), sans les onglets.
                 self::SitesVoir, self::SitesConfirmer, self::GrilleVoir, self::ImportsVoir, self::UnitesConfirmer,
                 self::MoyensPaiementVoir, self::MoyensPaiementConfirmer,
@@ -315,6 +321,8 @@ enum Droit: string
             Role::GestionnaireSites => [
                 self::TableauDeBordVoir, self::BrouillonsVoir,
                 self::SitesVoir, self::SitesGerer, self::ImportsVoir, self::ReferentielsBoutiquesVoir,
+                // Avances en retard : statuts seulement, aucun montant.
+                self::AvancesVoir,
             ],
             // Rapproche, marque les paiements manuels, relance, suit les remboursements ; aucune grille, aucun montant,
             // aucun moyen de paiement ; ses corrections et remboursements sont confirmés par le VALIDATEUR.
@@ -328,7 +336,7 @@ enum Droit: string
                 self::PhaseVoir, self::PhaseProposer,
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
-                self::BoutiquesVoir, self::BoutiquesSaisir,
+                self::BoutiquesVoir, self::BoutiquesSaisir, self::AvancesVoir, self::AvancesProposer,
                 self::SitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer, self::MoyensPaiementVoir, self::MoyensPaiementGerer, self::ModalitesPaiementVoir,
                 self::DividendesVoir, self::DividendesSaisir,
                 self::SimulationsVoir, self::SimulationsLancer,

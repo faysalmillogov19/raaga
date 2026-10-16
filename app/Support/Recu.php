@@ -20,10 +20,10 @@ final class Recu
         return 'REC-'.$paiement->date_confirmation->format('Y').'-'.str_pad((string) $paiement->id, 6, '0', STR_PAD_LEFT);
     }
 
-    /** Paiement confirmé d'une souscription ou d'une caution de candidature. */
-    public static function paiement(Payable $objet): ?Paiement
+    /** Paiement confirmé d'une souscription, ou de la caution ou de l'avance d'une réservation de boutique. */
+    public static function paiement(Payable $objet, ?string $nature = null): ?Paiement
     {
-        return $objet->paiements()->where('statut', StatutPaiement::Confirme)->latest('id')->first();
+        return $objet->paiements()->where('statut', StatutPaiement::Confirme)->when($nature, fn ($q) => $q->where('nature', $nature))->latest('id')->first();
     }
 
     public static function disponible(Souscription $souscription): bool

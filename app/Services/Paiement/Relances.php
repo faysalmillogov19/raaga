@@ -50,7 +50,7 @@ class Relances
      * Tâche planifiée : relance « échéance » des réservations qui expirent dans les 24 h, relance « expiration » de
      * celles qui viennent d'expirer ; une seule de chaque type par dossier.
      *
-     * @return array{echeance: int, expiration: int, complement: int}
+     * @return array{echeance: int, expiration: int, complement: int, avance: int}
      */
     public function automatiques(): array
     {
@@ -90,6 +90,38 @@ class Relances
                     $compteurs['complement']++;
                 });
         }
+
+        // Avance d'une boutique réservée : 7 jours puis 24 heures avant la date limite (pas pendant le contrôle d'une preuve,
+        // ni pendant un complément) ; une prolongation relance de nouveau avant la nouvelle date.
+        $compteurs['avance'] = 0;
+        foreach ([Relance::AVANCE_7J => now()->addDays(7), Relance::AVANCE_24H => now()->addDay()] as $type => $horizon) {
+            ReservationBoutique::query()->where('statut', StatutReservationBoutique::Reservee)->whereNull('avance_payee_le')->where('avance', '>', 0)
+                ->whereBetween('avance_due_le', [now(), $horizon])
+                ->whereDoesntHave('paiements', fn ($p) => $p->enControle())->whereDoesntHave('paiements', fn ($p) => $p->incomplet())
+                ->with('user')->orderBy('id')
+                ->each(function (ReservationBoutique $r) use ($type, &$compteurs) {
+                    $fenetre = $r->avance_due_le->copy()->subDays($type === Relance::AVANCE_7J ? 8 : 2);
+                    if ($r->relances()->where('type', $type)->where('created_at', '>=', $fenetre)->exists()
+                        || ($type === Relance::AVANCE_7J && $r->avance_due_le->lessThan(now()->addDay()))) {
+                        return;
+                    }
+                    $this->relancer($r, $type);
+                    $compteurs['avance']++;
+                });
+        }
+
+        // Avance incomplète : relance 24 h avant la fin du délai de complément.
+        ReservationBoutique::query()->where('statut', StatutReservationBoutique::Reservee)->whereNull('avance_payee_le')
+            ->whereBetween('avance_due_le', [now(), now()->addDay()])
+            ->whereHas('paiements', fn ($p) => $p->incomplet()->where('nature', 'AVANCE'))->with(['user', 'paiements'])->orderBy('id')
+            ->each(function (ReservationBoutique $r) use (&$compteurs) {
+                $paiement = $r->paiements->sortByDesc('id')->first(fn ($p) => $p->aCompleter());
+                if ($paiement === null || $r->relances()->where('type', Relance::COMPLEMENT)->where('created_at', '>=', $paiement->controle_le)->exists()) {
+                    return;
+                }
+                $this->relancer($r, Relance::COMPLEMENT);
+                $compteurs['complement']++;
+            });
 
         return $compteurs;
     }

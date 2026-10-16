@@ -33,9 +33,9 @@
             <div><dt class="texte-carte">{{ $d['objet'] }}</dt><dd class="font-bold">{{ $d['objets'][$type] }}</dd></div>
             <div><dt class="texte-carte">{{ $d['citoyen'] }}</dt><dd class="font-bold">{{ $objet->user?->name }}</dd></div>
             <div><dt class="texte-carte">{{ $d['telephone'] }}</dt><dd>{{ $objet->user?->telephone }}</dd></div>
-            <div><dt class="texte-carte">{{ $d['statut'] }}</dt><dd class="font-bold">{{ $objet->statut->label() }}</dd></div>
+            <div><dt class="texte-carte">{{ $d['statut'] }}</dt><dd class="font-bold">{{ method_exists($objet, 'libelleStatut') ? $objet->libelleStatut() : $objet->statut->label() }}</dd></div>
             <div><dt class="texte-carte">{{ $d['montant'] }}</dt><dd class="font-bold">{{ format_fcfa($objet->montantAPayer() + $objet->fraisAPayer()) }}</dd></div>
-            <div><dt class="texte-carte">{{ $d['echeance'] }}</dt><dd>{{ $objet->expire_le?->format('d/m/Y H:i') }}</dd></div>
+            <div><dt class="texte-carte">{{ $d['echeance'] }}</dt><dd>{{ $objet->echeancePaiement()?->format('d/m/Y H:i') }}</dd></div>
         </dl>
     </section>
 
@@ -52,6 +52,7 @@
                             @php($correction = $paiement->corrections->firstWhere('statut', CorrectionPaiement::PROPOSEE))
                             <tr data-paiement="{{ $paiement->reference }}">
                                 <td class="font-mono font-semibold">{{ $paiement->reference }}
+                                    @if ($paiement->nature)<span class="texte-carte block font-sans" data-nature="{{ $paiement->nature }}">{{ $d['natures'][$paiement->nature] }}</span>@endif
                                     @if ($paiement->reference_versement)<span class="texte-carte block" data-reference-versement>{{ __('admin.paiements.dossier.reference_versement', ['reference' => $paiement->reference_versement]) }}</span>@endif
                                     @if ($paiement->preuve_chemin)<a href="{{ route('admin.paiements.preuve', $paiement) }}" class="lien block" target="_blank" rel="noopener" data-preuve>{{ $d['preuve'] }}</a>@endif</td>
                                 <td class="whitespace-nowrap">{{ $paiement->created_at->format('d/m/Y H:i') }}</td>

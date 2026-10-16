@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Role;
+use App\Http\Controllers\Compte\AvanceController;
 use App\Http\Controllers\Compte\BoutiquesController;
 use App\Http\Controllers\Compte\CautionController;
 use App\Http\Controllers\Compte\ConnexionController;
@@ -92,6 +93,17 @@ Route::controller(BoutiquesController::class)->prefix('boutiques')->name('boutiq
 
 // Caution d'une candidature : même module de paiement que les souscriptions (titulaire uniquement).
 Route::middleware(['auth', 'role:citoyen'])->controller(CautionController::class)->prefix('boutiques/reservations/{reference}/caution')->name('boutiques.reservation.')->group(function () {
+    Route::get('/', 'show')->name('show');
+    Route::post('/', 'payer')->middleware('throttle:10,1')->name('payer');
+    Route::get('/statut', 'statut')->middleware('throttle:60,1')->name('statut');
+    Route::post('/simuler', 'simuler')->middleware('throttle:10,1')->name('simuler');
+    Route::post('/changer', 'changer')->name('changer');
+    Route::post('/preuve', 'preuve')->middleware('throttle:10,1')->name('preuve');
+    Route::get('/recu', 'recu')->name('recu');
+});
+
+// Avance d'une boutique réservée : même circuit que la caution (titulaire uniquement), payable encore en retard.
+Route::middleware(['auth', 'role:citoyen'])->controller(AvanceController::class)->prefix('boutiques/reservations/{reference}/avance')->name('boutiques.avance.')->group(function () {
     Route::get('/', 'show')->name('show');
     Route::post('/', 'payer')->middleware('throttle:10,1')->name('payer');
     Route::get('/statut', 'statut')->middleware('throttle:60,1')->name('statut');

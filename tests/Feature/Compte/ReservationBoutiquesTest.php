@@ -223,17 +223,21 @@ class ReservationBoutiquesTest extends TestCase
         $r = ReservationBoutique::sole();
 
         // Attribution impossible tant que la caution n'est pas payée.
-        $attribuer = fn () => $this->en($this->validateur)->post(route('admin.boutiques.attribuer', [$this->campagne, $r]),
-            ['reference_avance' => 'AV-2027-001', 'contrat_signe_le' => now()->toDateString()]);
-        $attribuer()->assertSessionHasErrors('reference_avance');
+        $attribuer = fn () => $this->en($this->validateur)->post(route('admin.boutiques.attribuer', [$this->campagne, $r]), ['contrat_signe_le' => now()->toDateString()]);
+        $attribuer()->assertSessionHasErrors('contrat_signe_le');
 
         $this->actingAs($citoyen)->post(route('boutiques.reservation.payer', $r->reference), ['canal' => 'ORANGE_MONEY', 'telephone' => '70 12 34 56']);
         app(ServicePaiement::class)->confirmer(Paiement::sole()->reference, true);
         $this->assertSame([StatutReservationBoutique::Reservee, StatutBoutique::Reservee], [$r->fresh()->statut, $boutique->fresh()->statut]);
         $this->assertSame(540_000, Paiement::sole()->montant);
 
-        // Le RÉGULATEUR n'attribue pas ; le VALIDATEUR attribue (avance payée, contrat signé).
-        $this->en($this->regulateur)->post(route('admin.boutiques.attribuer', [$this->campagne, $r]), ['reference_avance' => 'AV-2027-001', 'contrat_signe_le' => now()->toDateString()])
+        // Avance pas encore confirmée : attribution toujours refusée.
+        $attribuer()->assertSessionHasErrors(['contrat_signe_le' => 'Attribution impossible : l’avance n’est pas encore confirmée.']);
+        $this->actingAs($citoyen)->post(route('boutiques.avance.payer', $r->reference), ['canal' => 'ORANGE_MONEY', 'telephone' => '70 12 34 56']);
+        app(ServicePaiement::class)->confirmer(Paiement::query()->where('nature', Paiement::AVANCE)->sole()->reference, true);
+
+        // Le RÉGULATEUR n'attribue pas ; le VALIDATEUR attribue (avance confirmée, contrat signé).
+        $this->en($this->regulateur)->post(route('admin.boutiques.attribuer', [$this->campagne, $r]), ['contrat_signe_le' => now()->toDateString()])
             ->assertForbidden();
         $attribuer()->assertSessionHas('succes');
         $this->assertSame([StatutReservationBoutique::Attribuee, StatutBoutique::Attribuee], [$r->fresh()->statut, $boutique->fresh()->statut]);

@@ -9,6 +9,7 @@ use App\Enums\StatutRevue;
 use App\Enums\StatutSouscription;
 use App\Enums\UsageMoyenPaiement;
 use App\Support\Recu;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -121,6 +122,21 @@ class Souscription extends Model implements Payable
     public function estExpire(): bool
     {
         return $this->statut === StatutSouscription::Expiree;
+    }
+
+    public function echeancePaiement(): ?CarbonInterface
+    {
+        return $this->expire_le;
+    }
+
+    public function paiementTardifAccepte(): bool
+    {
+        return false;
+    }
+
+    public function naturePaiementAttendue(): ?string
+    {
+        return null;
     }
 
     /** @return list<MoyenPaiement> moyens retenus par la tranche, autorisés pour les actions et dont les plafonds couvrent le montant */

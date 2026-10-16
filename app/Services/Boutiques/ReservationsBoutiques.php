@@ -205,19 +205,24 @@ class ReservationsBoutiques
         }
     }
 
-    /** Avance payée et contrat signé : la réservation et la boutique passent « attribuées » (VALIDATEUR). */
-    public function attribuer(ReservationBoutique $reservation, string $referenceAvance, string $contratSigneLe, User $validateur): void
+    /**
+     * Avance confirmée (par le circuit de paiement) et date du contrat renseignée : la réservation et la boutique passent
+     * « attribuées » (VALIDATEUR). La référence de l'avance est celle du paiement confirmé, jamais saisie à la main.
+     */
+    public function attribuer(ReservationBoutique $reservation, string $contratSigneLe, User $validateur): void
     {
-        DB::transaction(function () use ($reservation, $referenceAvance, $contratSigneLe, $validateur) {
+        DB::transaction(function () use ($reservation, $contratSigneLe, $validateur) {
             $reservation = ReservationBoutique::query()->lockForUpdate()->findOrFail($reservation->id);
             if ($reservation->statut !== StatutReservationBoutique::Reservee) {
-                throw ValidationException::withMessages(['reference_avance' => __('admin.boutiques.erreurs.attribution')]);
+                throw ValidationException::withMessages(['contrat_signe_le' => __('admin.boutiques.erreurs.attribution')]);
             }
-            $reservation->forceFill(['statut' => StatutReservationBoutique::Attribuee, 'attribuee_le' => now(),
-                'reference_avance' => $referenceAvance, 'contrat_signe_le' => $contratSigneLe])->save();
+            if (! $reservation->avanceReglee()) {
+                throw ValidationException::withMessages(['contrat_signe_le' => __('admin.boutiques.erreurs.avance_non_confirmee')]);
+            }
+            $reservation->forceFill(['statut' => StatutReservationBoutique::Attribuee, 'attribuee_le' => now(), 'contrat_signe_le' => $contratSigneLe])->save();
             $reservation->boutique->changerStatut(StatutBoutique::Attribuee, 'attribution', $reservation, $validateur);
             $this->journal->ecrire($validateur, 'reservation_boutique.attribuee', 'ReservationBoutique', $reservation->id, null,
-                ['reference_avance' => $referenceAvance, 'contrat_signe_le' => $contratSigneLe]);
+                ['reference_avance' => $reservation->reference_avance, 'contrat_signe_le' => $contratSigneLe]);
         });
     }
 

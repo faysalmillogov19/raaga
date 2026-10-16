@@ -5,12 +5,13 @@ namespace App\Contracts;
 use App\Enums\CompteDestination;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Objet réglé par le module de paiement : souscription d'actions (réservée → payée) ou caution d'une
- * candidature aux boutiques (réservée → payée). Le service de paiement ne connaît que ce contrat.
+ * Objet réglé par le module de paiement : souscription d'actions (réservée → payée) ou réservation d'une boutique
+ * (caution, puis avance). Le service de paiement ne connaît que ce contrat.
  */
 interface Payable
 {
@@ -32,6 +33,15 @@ interface Payable
 
     /** Expiré faute de paiement dans le délai. */
     public function estExpire(): bool;
+
+    /** Date limite du paiement attendu (délai de paiement, ou date limite de l'avance). */
+    public function echeancePaiement(): ?CarbonInterface;
+
+    /** Paiement encore accepté après la date limite (avance en retard, tant qu'aucune annulation n'est confirmée). */
+    public function paiementTardifAccepte(): bool;
+
+    /** Nature du paiement attendu, enregistrée sur chaque paiement (CAUTION, AVANCE) ; null pour une souscription. */
+    public function naturePaiementAttendue(): ?string;
 
     /** Compte qui reçoit le paiement : investissement (actions) ou location (caution, avance, loyers). */
     public function compteDestination(): CompteDestination;

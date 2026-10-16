@@ -586,6 +586,7 @@ return [
             'preuve_envoyee' => 'Preuve reçue : votre paiement est en attente de contrôle. Votre délai est suspendu pendant le contrôle.',
             'en_controle' => 'Preuve reçue le :date : votre paiement est en attente de contrôle. Votre délai est suspendu pendant le contrôle ; vous serez notifié de la décision.',
             'incomplet' => 'Paiement incomplet : :motif. Reçu : :recu ; reste à payer : :reste, avant le :echeance. Joignez ensuite la preuve du complément. Sans complément à cette date, le dossier sera clos et la somme reçue vous sera remboursée.',
+            'incomplet_avance' => 'Paiement incomplet : :motif. Reçu : :recu ; reste à payer : :reste, avant le :echeance. Joignez ensuite la preuve du complément.',
             'rejete' => 'Votre preuve de paiement a été rejetée : :motif. Vous pouvez payer de nouveau dans le délai restant.',
             'erreurs' => [
                 'taille' => 'La preuve dépasse 5 Mo.',
@@ -597,6 +598,7 @@ return [
                 'sujet' => 'Votre paiement :reference',
                 'recu' => 'Votre paiement :versement est reçu : votre dossier :reference est payé.',
                 'incomplet' => 'Votre paiement :versement est incomplet (dossier :reference) : complétez-le et joignez la preuve du complément avant le :echeance. Sans complément, le dossier sera clos et la somme reçue remboursée.',
+                'incomplet_avance' => 'Votre paiement de l’avance :versement est incomplet (réservation :reference) : complétez-le et joignez la preuve du complément avant le :echeance.',
                 'rejete' => 'Votre preuve de paiement :versement est rejetée (dossier :reference) : vous pouvez payer de nouveau avant le :echeance.',
                 'libere' => 'Votre preuve de paiement :versement est rejetée et le délai est dépassé : le dossier :reference est clos.',
                 'motif' => 'Motif : :motif',
@@ -795,7 +797,10 @@ return [
         'expiration' => 'Le délai de paiement de votre :objet :reference est expiré : la réservation est close.',
         'manuelle' => 'Votre :objet :reference attend toujours votre paiement (fin du délai : :echeance).',
         'complement' => 'Rappel : votre paiement de la :objet :reference est incomplet. Complétez-le avant le :echeance, sinon le dossier sera clos et la somme déjà reçue vous sera remboursée.',
-        'objets' => ['souscription' => 'souscription d’actions', 'caution' => 'caution de réservation de boutique'],
+        'objets' => ['souscription' => 'souscription d’actions', 'caution' => 'caution de réservation de boutique', 'avance' => 'avance de boutique'],
+        'avance_7j' => 'Rappel : l’avance de votre réservation :reference est à payer avant le :echeance (dans 7 jours).',
+        'avance_24h' => 'Rappel : l’avance de votre réservation :reference est à payer avant le :echeance (dans 24 heures).',
+        'complement_avance' => 'Rappel : votre paiement de l’avance de la réservation :reference est incomplet. Complétez-le avant le :echeance.',
         'bouton' => 'Voir mon dossier',
     ],
 
@@ -1058,6 +1063,10 @@ return [
             'expiree' => 'Le délai de paiement est dépassé : la boutique est redevenue disponible.',
             'annulee' => 'Cette réservation est annulée.',
             'recu' => 'Télécharger le reçu de caution (PDF)',
+            'payer_avance' => 'Payer l’avance',
+            'recu_avance' => 'Télécharger le reçu de l’avance (PDF)',
+            'avance_payee' => 'Avance payée le :date : la boutique vous sera attribuée à la signature du contrat.',
+            'avance_retard' => 'La date limite de paiement de l’avance (:date) est dépassée : votre dossier est examiné au cas par cas. Vous pouvez encore payer l’avance tant qu’aucune annulation n’est décidée.',
             'attributs' => ['type_piece' => 'type de pièce', 'numero_piece' => 'numéro de la pièce', 'piece' => 'pièce d’identité', 'rccm' => 'RCCM'],
         ],
         'engagements' => [
@@ -1067,6 +1076,21 @@ return [
             'ORIGINE_LICITE_FONDS' => 'Je certifie que les fonds utilisés pour la caution ont une origine licite.',
         ],
         'paiement_caution' => 'Paiement de la caution',
+        'paiement_avance' => 'Paiement de l’avance',
+        'statuts' => ['avance_retard' => 'Réservée : avance en retard', 'avance_payee' => 'Réservée : avance payée'],
+        'avance' => [
+            'montant' => 'Avance à payer',
+            'caution_payee' => 'Caution (déjà payée)',
+            'avant' => 'À payer avant le :date. Passé ce délai, la boutique reste réservée et votre dossier est examiné au cas par cas.',
+            'avant_contrat' => 'L’avance est due avant la signature du contrat ; la boutique vous est attribuée une fois l’avance confirmée et le contrat signé.',
+            'retard' => 'La date limite de paiement de l’avance (:date) est dépassée. Vous pouvez encore payer tant qu’aucune annulation n’est décidée ; votre dossier est examiné au cas par cas.',
+            'notifications' => [
+                'sujet' => 'Avance de votre boutique : :reference',
+                'retard' => 'La date limite de paiement de l’avance de votre réservation :reference (boutique :boutique) est dépassée : :date. La boutique reste réservée et vous pouvez encore payer ; votre dossier sera examiné au cas par cas.',
+                'prolongee' => 'Le délai de paiement de l’avance de votre réservation :reference (boutique :boutique) est prolongé jusqu’au :date.',
+                'annulee' => 'Votre réservation :reference (boutique :boutique) est annulée faute d’avance. La caution vous sera remboursée : :montant (retenue de :pct %).',
+            ],
+        ],
         // Caution et avance : deux montants distincts, toujours affichés sur deux lignes avec leur mention.
         'montants' => [
             'caution' => 'Caution',
@@ -1077,6 +1101,7 @@ return [
             'mention_avance' => 'Avance : loyers payés d’avance, imputés sur le premier mois.|Avance : loyers payés d’avance, imputés sur les :mois premiers mois.',
         ],
         'sms' => [
+            'avance_payee' => '{nomPlateforme} : avance reçue. Reçu n° {recu}, réservation {reference}, boutique {boutique}, {montant}. La boutique vous sera attribuée à la signature du contrat.',
             'caution_payee' => '{nomPlateforme} : caution reçue. Reçu n° {recu}, réservation {reference}, boutique {boutique}, {montant}. La boutique est réservée à votre nom ; l’avance sera due avant la signature du contrat.',
         ],
         'reglement' => [

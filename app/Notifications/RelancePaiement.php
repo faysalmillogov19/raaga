@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\Paiement;
 use App\Models\Relance;
 use App\Models\ReservationBoutique;
 use App\Models\Souscription;
@@ -48,6 +49,13 @@ class RelancePaiement extends Notification
 
     private function message(): string
     {
+        // Avance d'une boutique réservée (relance avant la date limite, ou complément d'une avance incomplète).
+        if ($this->estAvance()) {
+            return __('public.relances.'.($this->type === Relance::COMPLEMENT ? 'complement_avance' : strtolower($this->type)), [
+                'objet' => __('public.relances.objets.avance'), 'reference' => $this->objet->reference,
+                'echeance' => $this->objet->avance_due_le?->translatedFormat('j F Y à H\hi') ?? '',
+            ]);
+        }
         $objet = $this->objet instanceof Souscription ? __('public.relances.objets.souscription') : __('public.relances.objets.caution');
 
         return __('public.relances.'.strtolower($this->type), [
@@ -62,8 +70,17 @@ class RelancePaiement extends Notification
             return route('espace');
         }
 
-        return $this->objet instanceof Souscription
-            ? route('paiement.show', $this->objet->reference)
-            : route('boutiques.reservation.show', $this->objet->reference);
+        return match (true) {
+            $this->objet instanceof Souscription => route('paiement.show', $this->objet->reference),
+            $this->estAvance() => route('boutiques.avance.show', $this->objet->reference),
+            default => route('boutiques.reservation.show', $this->objet->reference),
+        };
+    }
+
+    /** Relance qui porte sur l'avance (et non sur la caution) d'une réservation de boutique. */
+    private function estAvance(): bool
+    {
+        return $this->objet instanceof ReservationBoutique
+            && (in_array($this->type, [Relance::AVANCE_7J, Relance::AVANCE_24H], true) || $this->objet->naturePaiementAttendue() === Paiement::AVANCE);
     }
 }

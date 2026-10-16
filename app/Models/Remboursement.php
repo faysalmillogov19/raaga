@@ -28,6 +28,9 @@ class Remboursement extends Model
 
     public const COMPLEMENT_NON_RECU = 'COMPLEMENT_NON_RECU';
 
+    /** Réservation annulée faute d'avance (décision confirmée) : caution remboursée moins la retenue. */
+    public const ANNULATION_AVANCE = 'ANNULATION_AVANCE';
+
     protected function casts(): array
     {
         return ['montant' => 'integer', 'propose_le' => 'datetime', 'valide_le' => 'datetime'];

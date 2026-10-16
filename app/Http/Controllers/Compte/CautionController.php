@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Compte;
 use App\Enums\StatutReservationBoutique;
 use App\Http\Controllers\Compte\Concerns\GerePaiements;
 use App\Http\Controllers\Controller;
+use App\Models\Paiement;
 use App\Models\ReservationBoutique;
 use App\Services\Documents\GenerateurPdf;
 use App\Services\Paiement\ServicePaiement;
@@ -62,6 +63,8 @@ class CautionController extends Controller
     public function payer(Request $request, string $reference): RedirectResponse
     {
         $reservation = $this->reservation($request, $reference);
+        // Caution déjà payée : l'avance se paie depuis son propre écran.
+        abort_if($reservation->naturePaiementAttendue() === Paiement::AVANCE, 409);
         $this->demanderPaiement($request, $reservation->load('campagne'));
 
         return redirect()->route('boutiques.reservation.show', $reservation->reference);
@@ -104,7 +107,7 @@ class CautionController extends Controller
     {
         $reservation = $this->reservation($request, $reference);
         abort_unless(in_array($reservation->statut, self::PAYEES, true), 404);
-        $paiement = Recu::paiement($reservation) ?? abort(404);
+        $paiement = Recu::paiement($reservation, Paiement::CAUTION) ?? abort(404);
         $numero = Recu::numero($paiement);
 
         return response($pdf->rendre('documents.recu-caution', [

@@ -8,8 +8,10 @@ use App\Enums\StatutBoutique;
 use App\Enums\StatutGrilleTarifaire;
 use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
+use App\Http\Controllers\Admin\AvancesRetardController;
 use App\Models\Boutique;
 use App\Models\CapaciteSite;
+use App\Models\DecisionAvance;
 use App\Models\GrilleTarifaire;
 use App\Models\ImportEnAttente;
 use App\Models\MoyenPaiement;
@@ -59,6 +61,8 @@ final class MenuBackoffice
                     'liste' => 'moyens', 'sous_menu' => 'modalites'],
                 ['cle' => 'delais', 'route' => 'admin.parametres-paiements', 'droit' => Droit::ModalitesPaiementVoir, 'icone' => 'taches', 'etape' => 0, 'sous_menu' => 'modalites'],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
+                // Avances en retard (RÉGULATEUR propose ; VALIDATEUR et GESTIONNAIRE consultent, ce dernier sans montant).
+                ['cle' => 'avances', 'route' => 'admin.avances', 'droit' => Droit::AvancesVoir, 'icone' => 'taches', 'etape' => 0],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
                 // RAAGA Invest : paramètres d'investissement, manifestations d'intérêt.
                 ['cle' => 'investissement', 'route' => 'admin.investissement', 'droit' => Droit::TranchesVoir, 'icone' => 'tranches', 'etape' => 0, 'masque_si' => $parametres],
@@ -258,6 +262,9 @@ final class MenuBackoffice
                 $user->can(Droit::MoyensPaiementGerer->value) => MoyenPaiement::query()->where('statut', StatutTypeBoutique::Rejete)->count(),
                 default => 0,
             },
+            // RÉGULATEUR : avances en retard sans décision en attente du VALIDATEUR.
+            'avances' => $user->can(Droit::AvancesProposer->value)
+                ? AvancesRetardController::requete()->whereDoesntHave('decisionsAvance', fn ($q) => $q->where('statut', DecisionAvance::PROPOSEE))->count() : 0,
             // GESTIONNAIRE : imports de boutiques déposés mais pas encore confirmés (moins de 24 h).
             'imports_boutiques' => $gere ? ImportEnAttente::query()->actifs()->where('entite', 'boutiques')->count() : 0,
             // GESTIONNAIRE : boutiques sans niveau (à compléter avant soumission) et capacités incomplètes.

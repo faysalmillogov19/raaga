@@ -71,6 +71,8 @@ class ServicePaiement
                 'statut' => StatutPaiement::EnAttente,
                 'metadonnees' => array_filter(['telephone' => $telephone]),
                 'reference_versement' => $referenceVersement,
+                // Réservation de boutique : caution ou avance (l'objet sait ce qu'il attend).
+                'nature' => $objet->naturePaiementAttendue(),
             ]);
 
             $this->journal->ecrire($acteur, 'paiement.initie', 'Paiement', $paiement->id, null, [
@@ -98,8 +100,9 @@ class ServicePaiement
             /** @var Payable&Model $objet */
             $objet = $classe::query()->lockForUpdate()->findOrFail($paiement->souscription_id ?? $paiement->reservation_boutique_id);
 
-            // Réservation expirée ou déjà payée par un autre paiement : la demande est close sans effet.
-            if ($succes && ! $objet->attendPaiement()) {
+            // Réservation expirée ou déjà payée par un autre paiement (ou paiement d'une autre étape : caution / avance) :
+            // la demande est close sans effet.
+            if ($succes && (! $objet->attendPaiement() || $paiement->nature !== $objet->naturePaiementAttendue())) {
                 $paiement->forceFill(['statut' => StatutPaiement::Annule, 'metadonnees' => [...(array) $paiement->metadonnees, 'motif' => 'objet_'.strtolower($objet->statut->value)]])->save();
 
                 return $paiement;

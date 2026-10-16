@@ -18,7 +18,8 @@ class RequetesAValiderTest extends TestCase
 
     /** Une requête par table consultée (file « À valider », « À traiter », notifications), jamais une par élément. */
     // Rubriques « Paiements » (corrections, remboursements) et « Identités » : trois requêtes de plus pour le VALIDATEUR.
-    private const PLAFONDS = ['a_valider' => 28, 'tableau' => 38];
+    // Une requête par rubrique de la file (la rubrique « Avances en retard » en ajoute une), jamais une par élément.
+    private const PLAFONDS = ['a_valider' => 29, 'tableau' => 38];
 
     protected function setUp(): void
     {

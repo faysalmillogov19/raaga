@@ -22,21 +22,34 @@
                 <div class="flex justify-between gap-3"><dt>{{ $r['reference'] }}</dt><dd class="font-bold tracking-wide text-encre">{{ $c->reference }}</dd></div>
                 <div class="flex justify-between gap-3"><dt>{{ $r['boutique'] }}</dt><dd class="font-bold text-vert-fonce">{{ $c->boutique?->code }}</dd></div>
                 <div class="flex justify-between gap-3"><dt>{{ $r['campagne'] }}</dt><dd class="text-right font-semibold">{{ $c->campagne->nom }}</dd></div>
-                <div class="flex justify-between gap-3"><dt>{{ $r['statut'] }}</dt><dd class="font-semibold">{{ $c->statut->label() }}</dd></div>
+                <div class="flex justify-between gap-3"><dt>{{ $r['statut'] }}</dt><dd class="font-semibold">{{ $c->libelleStatut() }}</dd></div>
                 @foreach ($c->lignesMontants() as $ligne)
                     <div class="flex justify-between gap-3"><dt>{{ $ligne['libelle'] }}</dt><dd class="font-semibold">{{ format_fcfa($ligne['montant']) }}</dd></div>
                 @endforeach
             </dl>
             @if ($message)<p class="mt-4 font-semibold text-encre">{{ $message }}</p>@endif
-            @if ($c->attendPaiement())
+            @if ($c->naturePaiementAttendue() === \App\Models\Paiement::CAUTION)
                 <p class="mt-4 texte-carte">{{ __('public.boutiques.reservation.payer_avant', ['date' => $c->expire_le->translatedFormat('j F Y à H\hi')]) }}</p>
                 <a href="{{ route('boutiques.reservation.show', $c->reference) }}" class="btn-primaire mt-3">{{ $r['payer'] }}</a>
             @elseif (in_array($c->statut, [StatutReservationBoutique::Reservee, StatutReservationBoutique::Attribuee], true))
-                {{-- Réservée : date limite de paiement de l'avance (figée au passage en « réservée »). --}}
-                @if ($c->statut === StatutReservationBoutique::Reservee && $c->avance_due_le)
-                    <p class="mt-4 font-semibold text-encre" data-avance-due>{{ __($c->avance_due_le->isPast() ? 'public.boutiques.reservation.avance_depassee' : 'public.boutiques.reservation.avance_avant', ['date' => $c->avance_due_le->translatedFormat('j F Y à H\hi')]) }}</p>
+                {{-- Avance : à payer avant sa date limite (figée au passage en « réservée »), encore payable en retard. --}}
+                @if ($c->naturePaiementAttendue() === \App\Models\Paiement::AVANCE)
+                    @php($date = $c->avance_due_le?->translatedFormat('j F Y à H\hi'))
+                    @if ($c->avance_due_le?->isPast())
+                        <x-public.alerte variante="attention" class="mt-4" data-avance-retard>{{ __('public.boutiques.reservation.avance_retard', ['date' => $date]) }}</x-public.alerte>
+                    @elseif ($c->avance_due_le)
+                        <p class="mt-4 font-semibold text-encre" data-avance-due>{{ __('public.boutiques.reservation.avance_avant', ['date' => $date]) }}</p>
+                    @endif
+                    <a href="{{ route('boutiques.avance.show', $c->reference) }}" class="btn-primaire mt-3" data-payer-avance>{{ $r['payer_avance'] }}</a>
+                @elseif ($c->avance_payee_le)
+                    <p class="mt-4 font-semibold text-encre" data-avance-payee>{{ __('public.boutiques.reservation.avance_payee', ['date' => $c->avance_payee_le->translatedFormat('j F Y')]) }}</p>
                 @endif
-                <a href="{{ route('boutiques.reservation.recu', $c->reference) }}" class="btn-secondaire mt-4">{{ $r['recu'] }}</a>
+                <div class="mt-4 flex flex-wrap gap-3">
+                    <a href="{{ route('boutiques.reservation.recu', $c->reference) }}" class="btn-secondaire">{{ $r['recu'] }}</a>
+                    @if ($c->avance_payee_le && $c->reference_avance)
+                        <a href="{{ route('boutiques.avance.recu', $c->reference) }}" class="btn-secondaire">{{ $r['recu_avance'] }}</a>
+                    @endif
+                </div>
             @endif
         </section>
     </div>

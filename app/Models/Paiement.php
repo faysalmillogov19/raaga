@@ -17,11 +17,16 @@ use LogicException;
     'souscription_id', 'reservation_boutique_id', 'canal', 'compte_destination', 'montant', 'frais', 'reference', 'reference_fournisseur',
     'statut', 'date_confirmation', 'agent_id', 'cloture_caisse_id', 'metadonnees',
     'controle', 'controle_motif', 'controle_reference', 'controle_par', 'controle_le',
-    'reference_versement', 'preuve_chemin', 'preuve_nom', 'preuve_mime', 'preuve_deposee_le', 'controle_montant_recu',
+    'reference_versement', 'preuve_chemin', 'preuve_nom', 'preuve_mime', 'preuve_deposee_le', 'controle_montant_recu', 'nature',
 ])]
 #[Hidden(['preuve_chemin'])]
 class Paiement extends Model
 {
+    /** Nature d'un paiement de réservation de boutique : caution (confirme la réservation), avance (avant le contrat). */
+    public const CAUTION = 'CAUTION';
+
+    public const AVANCE = 'AVANCE';
+
     /**
      * Compte de destination : déduit de l'objet réglé (actions : investissement ; caution : location) et jamais
      * contradictoire avec lui (contrôlé ici, et par une contrainte en base).
