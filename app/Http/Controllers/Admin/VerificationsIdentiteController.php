@@ -6,7 +6,7 @@ use App\Enums\Droit;
 use App\Enums\Role;
 use App\Enums\StatutKyc;
 use App\Http\Controllers\Controller;
-use App\Models\CandidatureBoutique;
+use App\Models\ReservationBoutique;
 use App\Models\User;
 use App\Models\VerificationKyc;
 use App\Services\Kyc\DossiersIdentite;
@@ -69,7 +69,7 @@ class VerificationsIdentiteController extends Controller
             'proposition' => DossiersIdentite::propositionEnAttente($citoyen),
             // Références et statuts seulement : aucun montant pour l'ADMIN.
             'souscriptions' => $citoyen->souscriptions()->latest('id')->get(['id', 'reference', 'statut']),
-            'candidatures' => CandidatureBoutique::query()->where('user_id', $citoyen->id)->latest('id')->get(['id', 'reference', 'statut']),
+            'candidatures' => ReservationBoutique::query()->where('user_id', $citoyen->id)->latest('id')->get(['id', 'reference', 'statut']),
         ]);
     }
 

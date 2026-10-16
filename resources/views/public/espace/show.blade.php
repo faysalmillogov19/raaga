@@ -159,20 +159,17 @@
                         <li class="carte p-4 tab:p-5">
                             <div class="flex flex-wrap items-start justify-between gap-2">
                                 <p class="whitespace-nowrap font-bold tracking-wide text-encre">{{ $c->reference }}</p>
-                                <span class="rounded-full px-3 py-1 text-sm font-bold {{ ['RESERVEE' => 'bg-jaune-pale text-encre', 'PAYEE' => 'bg-vert-pale text-vert-fonce', 'RETENUE' => 'bg-vert-fonce text-white', 'NON_RETENUE' => 'bg-fond text-encre', 'EXPIREE' => 'bg-fond text-gris', 'ANNULEE' => 'bg-fond text-gris'][$c->statut->value] }}">{{ $c->statut->label() }}</span>
+                                <span class="rounded-full px-3 py-1 text-sm font-bold {{ ['PRE_RESERVEE' => 'bg-jaune-pale text-encre', 'RESERVEE' => 'bg-vert-pale text-vert-fonce', 'ATTRIBUEE' => 'bg-vert-fonce text-white'][$c->statut->value] ?? 'bg-fond text-gris' }}">{{ $c->statut->label() }}</span>
                             </div>
                             <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.95rem] tab:grid-cols-3">
-                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.campagne') }}</dt><dd class="font-semibold">{{ $c->campagne->nom }}</dd></div>
-                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.categorie') }}</dt><dd class="font-semibold">{{ $c->categorie->intitule() }}</dd></div>
+                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.reservation.campagne') }}</dt><dd class="font-semibold">{{ $c->campagne->nom }}</dd></div>
+                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.reservation.boutique') }}</dt><dd class="whitespace-nowrap font-extrabold text-vert-fonce">{{ $c->boutique?->code }}</dd></div>
                                 @foreach ($c->lignesMontants() as $ligne)
                                     <div><dt class="text-sm text-gris">{{ $ligne['libelle'] }}</dt><dd class="font-semibold">{{ format_fcfa($ligne['montant']) }}</dd>
                                         <dd class="text-sm text-gris">{{ $ligne['mention'] }}</dd></div>
                                 @endforeach
-                                @if ($c->boutique)
-                                    <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.boutique') }}</dt><dd class="whitespace-nowrap font-extrabold text-vert-fonce">{{ $c->boutique->reference() }}</dd></div>
-                                @endif
                             </dl>
-                            <a href="{{ route('boutiques.candidature', $c->reference) }}" class="btn-secondaire mt-3">{{ __('public.espace.voir_candidature') }}</a>
+                            <a href="{{ route('boutiques.suivi', $c->reference) }}" class="btn-secondaire mt-3">{{ __('public.espace.voir_candidature') }}</a>
                         </li>
                         @if ($loop->last)</ul>@endif
                     @empty

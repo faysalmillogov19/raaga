@@ -18,8 +18,8 @@ class CarrouselAccueilSeeder extends Seeder
         [
             'fichier' => '1-officier.webp',
             'alt' => 'Un officier en béret rouge, assis à une table de conférence, montre un document',
-            'titre' => 'Un tirage au sort public',
-            'sousTitre' => 'Chaque candidature complète et cautionnée participe au tirage, sans passe-droit.',
+            'titre' => 'Au premier arrivé, premier servi',
+            'sousTitre' => 'Chacun choisit sa boutique sur le plan, sans priorité ni passe-droit.',
             'boutonLibelle' => 'Voir les boutiques', 'boutonLien' => '/boutiques',
             'cadrageX' => 47, 'cadrageY' => 0, 'texte' => 'panneau',
         ],
@@ -27,8 +27,8 @@ class CarrouselAccueilSeeder extends Seeder
             'fichier' => '2-galerie-marchande.webp',
             'alt' => 'Allée d’une galerie marchande couverte, rayons de boissons et de produits',
             'titre' => 'Votre boutique au marché Raaga',
-            'sousTitre' => 'Candidatez en ligne ou dans un guichet, payez votre caution, et participez au tirage au sort.',
-            'boutonLibelle' => 'Je candidate', 'boutonLien' => '/inscription',
+            'sousTitre' => 'Réservez en ligne votre boutique sur le plan, puis payez la caution dans le délai.',
+            'boutonLibelle' => 'Je réserve', 'boutonLien' => '/inscription',
             'cadrageX' => 50, 'cadrageY' => 50, 'texte' => 'gauche',
         ],
         [

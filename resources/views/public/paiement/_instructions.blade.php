@@ -1,6 +1,6 @@
 {{--
     Instructions selon la famille du moyen de paiement, puis celles saisies par le RÉGULATEUR (numéro marchand,
-    référence, RIB…). Variables : $canal (MoyenPaiement), $s (objet réglé : souscription ou candidature), $sequestre.
+    référence, RIB…). Variables : $canal (MoyenPaiement), $s (objet réglé : souscription ou réservation), $sequestre.
 --}}
 @php($c = $canal->famille?->value)
 

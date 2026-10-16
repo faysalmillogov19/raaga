@@ -11,6 +11,7 @@ enum DocumentAccepte: string
     case OrigineLiciteFonds = 'ORIGINE_LICITE_FONDS';
     // Candidature aux boutiques.
     case ReglementCampagneBoutiques = 'REGLEMENT_CAMPAGNE_BOUTIQUES';
+    // Historique de l'ancien tirage au sort (acceptations déjà enregistrées) : plus jamais demandé.
     case TirageSansGarantie = 'TIRAGE_SANS_GARANTIE';
     case CautionSansLienActions = 'CAUTION_SANS_LIEN_ACTIONS';
 

@@ -2,13 +2,14 @@
 
 namespace App\Services\Paiement;
 
-use App\Enums\StatutCandidatureBoutique;
+use App\Enums\StatutBoutique;
 use App\Enums\StatutPaiement;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
-use App\Models\CandidatureBoutique;
 use App\Models\CorrectionPaiement;
 use App\Models\Paiement;
 use App\Models\ParametresPaiements;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Models\User;
 use App\Notifications\ControlePaiementCitoyen;
@@ -131,8 +132,12 @@ class ControlePaiements
                 $paiement->forceFill(['statut' => StatutPaiement::Annule,
                     'metadonnees' => [...(array) $paiement->metadonnees, 'correction' => $correction->id]])->save();
                 $delai = $objet instanceof Souscription ? (int) $objet->tranche->delai_paiement_heures : (int) $objet->campagne->delai_paiement_heures;
-                $objet->forceFill(['statut' => $objet instanceof Souscription ? StatutSouscription::Reservee : StatutCandidatureBoutique::Reservee,
+                $objet->forceFill(['statut' => $objet instanceof Souscription ? StatutSouscription::Reservee : StatutReservationBoutique::PreReservee,
                     'payee_le' => null, 'expire_le' => now()->addHours(max(1, $delai))])->save();
+                // Caution finalement non reçue : la boutique redevient pré-réservée le temps du nouveau délai.
+                if ($objet instanceof ReservationBoutique) {
+                    $objet->boutique?->changerStatut(StatutBoutique::PreReservee, 'correction_paiement', $objet, $validateur);
+                }
             }
 
             $correction->forceFill(['statut' => $confirmee ? CorrectionPaiement::CONFIRMEE : CorrectionPaiement::REJETEE,
@@ -146,8 +151,8 @@ class ControlePaiements
     }
 
     /** Objet encore au stade « payé » (ni alloué, ni retenu au tirage, ni annulé) : seul cas corrigeable. */
-    private function objetPaye(Souscription|CandidatureBoutique $objet): bool
+    private function objetPaye(Souscription|ReservationBoutique $objet): bool
     {
-        return $objet instanceof Souscription ? $objet->statut === StatutSouscription::Payee : $objet->statut === StatutCandidatureBoutique::Payee;
+        return $objet instanceof Souscription ? $objet->statut === StatutSouscription::Payee : $objet->statut === StatutReservationBoutique::Reservee;
     }
 }

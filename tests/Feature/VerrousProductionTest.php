@@ -7,10 +7,10 @@ use App\Enums\Role;
 use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutKyc;
 use App\Models\AuditLog;
-use App\Models\CandidatureBoutique;
 use App\Models\MoyenPaiement;
 use App\Models\Niveau;
 use App\Models\Paiement;
+use App\Models\ReservationBoutique;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
 use App\Models\User;
@@ -22,8 +22,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PragmaRX\Google2FA\Google2FA;
 use RuntimeException;
-use Tests\Feature\Compte\CandidatureBoutiqueTest;
 use Tests\Support\ActeursParametrage;
+use Tests\Support\Boutiques;
 use Tests\TestCase;
 
 /**
@@ -122,9 +122,9 @@ class VerrousProductionTest extends TestCase
         $this->app['env'] = 'production';
         $this->withoutMiddleware(PreventRequestForgery::class); // en « production », le jeton CSRF n'est plus ignoré par les tests
         config(['raaga.paiement.fournisseur' => null, ...self::COMPTES]);
-        $mobile = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Mobile 2027', 'canaux_actifs' => ['ORANGE_MONEY']]);
-        $virement = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Virement 2027', 'canaux_actifs' => ['VIREMENT']]);
-        $confirmee = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Confirmee, 'nom' => 'Confirmée 2027', 'canaux_actifs' => ['ORANGE_MONEY']]);
+        $mobile = Boutiques::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Mobile 2027', 'canaux_actifs' => ['ORANGE_MONEY']]);
+        $virement = Boutiques::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Virement 2027', 'canaux_actifs' => ['VIREMENT']]);
+        $confirmee = Boutiques::campagneOuverte(['statut' => StatutCampagneBoutiques::Confirmee, 'nom' => 'Confirmée 2027', 'canaux_actifs' => ['ORANGE_MONEY']]);
         $google2fa = new Google2FA;
         $this->validateur->forceFill(['totp_secret' => $google2fa->generateSecretKey(32), 'totp_active_le' => now()])->save();
         $code = fn () => $google2fa->oathTotp($this->validateur->fresh()->totp_secret, $google2fa->getTimestamp());
@@ -146,13 +146,10 @@ class VerrousProductionTest extends TestCase
 
         // Citoyen, sans opérateur : le virement se paie (aucun opérateur), le mobile money est refusé.
         $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670123456']);
-        $ouverte = CandidatureBoutiqueTest::campagneOuverte(['nom' => 'Ouverte 2027']);
-        $this->actingAs($citoyen)->post('/boutiques/candidater', [
-            'categorie' => $ouverte->categories()->where('libelle', 'Grande boutique')->value('id'),
-            'engagements' => ['TIRAGE_SANS_GARANTIE', 'CAUTION_SANS_LIEN_ACTIONS', 'REGLEMENT_CAMPAGNE_BOUTIQUES', 'ORIGINE_LICITE_FONDS'],
-        ]);
-        $candidature = CandidatureBoutique::query()->sole();
-        $url = '/boutiques/candidatures/'.$candidature->reference.'/caution';
+        $ouverte = Boutiques::campagneOuverte(['nom' => 'Ouverte 2027']);
+        Boutiques::reserver($this, $citoyen, Boutiques::boutique('B'));
+        $candidature = ReservationBoutique::query()->sole();
+        $url = '/boutiques/reservations/'.$candidature->reference.'/caution';
         $this->actingAs($citoyen)->get($url)->assertOk()->assertSee('value="VIREMENT"', false)->assertDontSee('value="ORANGE_MONEY"', false);
         $this->actingAs($citoyen)->post($url, ['canal' => 'ORANGE_MONEY', 'telephone' => '70123456'])->assertSessionHasErrors(['canal' => 'Moyen de paiement indisponible']);
         $this->assertSame(0, Paiement::query()->count());

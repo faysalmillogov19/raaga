@@ -7,7 +7,7 @@ use App\Enums\StatutKyc;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Tests\Feature\Compte\CandidatureBoutiqueTest;
+use Tests\Support\Boutiques;
 use Tests\Support\ConnexionBackoffice;
 use Tests\TestCase;
 
@@ -22,14 +22,14 @@ class Phase1BoutiquesTest extends TestCase
 
         config(['raaga.phase.presentation_actions' => false]);
         Cache::flush();
-        CandidatureBoutiqueTest::campagneOuverte();
+        Boutiques::campagneOuverte();
     }
 
     public function test_l_accueil_est_centre_sur_les_boutiques(): void
     {
         $page = $this->get('/')->assertOk()
-            ->assertSee('Votre boutique au marché Raaga')->assertSee('Candidatures ouvertes jusqu’au', false)
-            ->assertSee('Je candidate')->assertSee('boutiques référencées')
+            ->assertSee('Votre boutique au marché Raaga')->assertSee('Réservations ouvertes jusqu’au', false)
+            ->assertSee('Je réserve')->assertSee('boutiques référencées')
             ->assertSee('L’achat d’actions ne donne aucun droit ni priorité pour obtenir une boutique.')
             ->assertDontSee('J’investis');
 
@@ -67,7 +67,7 @@ class Phase1BoutiquesTest extends TestCase
         $this->actingAs($citoyen)->get('/espace')->assertOk()
             ->assertSee('Mes boutiques')->assertSee('Mon profil')->assertSee('Cautions payées')->assertSee('Boutiques attribuées')
             ->assertDontSee('Mes souscriptions')->assertDontSee('Mes dividendes')->assertDontSee('Total investi');
-        $this->actingAs($citoyen)->get('/espace?onglet=dividendes')->assertOk()->assertSee('Aucune candidature à une boutique');
+        $this->actingAs($citoyen)->get('/espace?onglet=dividendes')->assertOk()->assertSee('Aucune réservation de boutique');
         $this->actingAs($citoyen)->get('/espace/verification')->assertOk();
     }
 

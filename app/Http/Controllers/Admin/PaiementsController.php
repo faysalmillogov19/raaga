@@ -4,15 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\FamilleMoyenPaiement;
-use App\Enums\StatutCandidatureBoutique;
 use App\Enums\StatutPaiement;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
 use App\Http\Controllers\Controller;
-use App\Models\CandidatureBoutique;
 use App\Models\CorrectionPaiement;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\Relance;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Services\Audit\Journal;
 use App\Services\Kyc\VerificationIdentite;
@@ -38,7 +38,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class PaiementsController extends Controller
 {
-    public const VUES = ['souscriptions' => Souscription::class, 'cautions' => CandidatureBoutique::class];
+    public const VUES = ['souscriptions' => Souscription::class, 'cautions' => ReservationBoutique::class];
 
     public function __construct(private readonly ControlePaiements $controle, private readonly Relances $relances) {}
 
@@ -48,7 +48,7 @@ class PaiementsController extends Controller
         $vue = array_key_exists((string) $request->query('vue'), self::VUES) ? (string) $request->query('vue') : 'souscriptions';
         $classe = self::VUES[$vue];
         $c = __('admin.paiements.colonnes');
-        $statuts = $vue === 'souscriptions' ? StatutSouscription::cases() : StatutCandidatureBoutique::cases();
+        $statuts = $vue === 'souscriptions' ? StatutSouscription::cases() : StatutReservationBoutique::cases();
         $manuels = MoyenPaiement::query()->whereIn('famille', [FamilleMoyenPaiement::Banque, FamilleMoyenPaiement::Guichet])->pluck('code')->all();
         $dernier = fn ($o) => $o->paiements->sortByDesc('id')->first();
 
@@ -86,7 +86,7 @@ class PaiementsController extends Controller
 
         return view('admin.paiements.dossier', [
             'objet' => $objet, 'type' => $type,
-            'relances' => Relance::query()->where($type === 'souscription' ? 'souscription_id' : 'candidature_boutique_id', $objet->id)->with('auteur')->latest('id')->get(),
+            'relances' => Relance::query()->where($type === 'souscription' ? 'souscription_id' : 'reservation_boutique_id', $objet->id)->with('auteur')->latest('id')->get(),
             'remboursements' => $objet->remboursements()->latest('id')->get(),
         ]);
     }
@@ -158,18 +158,18 @@ class PaiementsController extends Controller
         return redirect()->route('admin.a-valider.rubrique', 'paiements')->with('succes', __('admin.paiements.messages.correction_rejetee'));
     }
 
-    private function objet(string $type, int $id): Souscription|CandidatureBoutique
+    private function objet(string $type, int $id): Souscription|ReservationBoutique
     {
         return match ($type) {
             'souscription' => Souscription::query()->findOrFail($id),
-            'caution' => CandidatureBoutique::query()->findOrFail($id),
+            'caution' => ReservationBoutique::query()->findOrFail($id),
             default => abort(404),
         };
     }
 
     private function retour(Paiement $paiement, string $message): RedirectResponse
     {
-        return redirect()->route('admin.paiements.dossier', $paiement->souscription_id ? ['souscription', $paiement->souscription_id] : ['caution', $paiement->candidature_boutique_id])
+        return redirect()->route('admin.paiements.dossier', $paiement->souscription_id ? ['souscription', $paiement->souscription_id] : ['caution', $paiement->reservation_boutique_id])
             ->with('succes', __($message));
     }
 }

@@ -323,7 +323,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{site}/rejeter', 'rejeter')->whereNumber('site')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.rejeter');
         });
 
-        // Boutiques : RÉGULATEUR saisit et soumet les campagnes (catégories, cautions), VALIDATEUR confirme, ouvre, clôture, tire au sort.
+        // Boutiques : RÉGULATEUR saisit et soumet les campagnes de réservation (premier arrivé), VALIDATEUR confirme, ouvre, clôture, attribue.
         Route::controller(CampagnesBoutiquesController::class)->prefix('boutiques')->name('boutiques')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::BoutiquesVoir->value);
             Route::get('/creer', 'create')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.create');
@@ -336,8 +336,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{campagne}/rejeter', 'rejeter')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.rejeter');
             Route::post('/{campagne}/ouvrir', 'ouvrir')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.ouvrir');
             Route::post('/{campagne}/cloturer', 'cloturer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.cloturer');
-            Route::post('/{campagne}/tirage', 'tirer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.tirer');
-            Route::post('/{campagne}/affectation', 'affecter')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.affecter');
+            Route::post('/{campagne}/reservations/{reservation}/attribuer', 'attribuer')->whereNumber(['campagne', 'reservation'])->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.attribuer');
         });
 
         // Tranches : RÉGULATEUR saisit et soumet, VALIDATEUR confirme puis ouvre, prolonge, clôture.

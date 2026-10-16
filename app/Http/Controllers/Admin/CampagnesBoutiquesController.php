@@ -4,24 +4,24 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\StatutCampagneBoutiques;
+use App\Enums\StatutReservationBoutique;
 use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CampagneBoutiquesRequest;
 use App\Models\CampagneBoutiques;
-use App\Models\CandidatureBoutique;
+use App\Models\GrilleTarifaire;
 use App\Models\MoyenPaiement;
 use App\Models\ParametrageDecision;
+use App\Models\ReservationBoutique;
 use App\Models\Site;
-use App\Models\TirageBoutiques;
-use App\Models\TypeBoutique;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
-use App\Services\Boutiques\LotsCampagne;
-use App\Services\Boutiques\TirageAuSort;
+use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Parametrage\WorkflowParametrage;
 use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
+use App\Support\Tableau\Filtre;
 use App\Support\Tableau\ResultatTableau;
 use App\Support\Tableau\Tableau;
 use Closure;
@@ -35,8 +35,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Campagnes d'attribution des boutiques : le RÉGULATEUR saisit et soumet (sites et types proposés ; montants issus de la grille),
- * le VALIDATEUR confirme ou rejette, puis ouvre et clôture les candidatures.
+ * Campagnes de réservation des boutiques, au premier arrivé : le RÉGULATEUR saisit et soumet (période, sites, nombre
+ * maximum par personne, délai de paiement de la caution, moyens de paiement), le VALIDATEUR confirme ou rejette, puis
+ * ouvre et clôture ; il attribue ensuite les boutiques réservées (avance payée, contrat signé). Montants : grille tarifaire.
  */
 class CampagnesBoutiquesController extends Controller
 {
@@ -46,7 +47,7 @@ class CampagnesBoutiquesController extends Controller
         private readonly WorkflowParametrage $workflow,
         private readonly Journal $journal,
         private readonly ConfirmationRenforcee $confirmation,
-        private readonly LotsCampagne $lots,
+        private readonly ReservationsBoutiques $reservations,
     ) {}
 
     /** Campagnes, les plus récentes d'abord ; le RÉGULATEUR coche les brouillons et rejetées pour les soumettre ensemble. */
@@ -55,15 +56,15 @@ class CampagnesBoutiquesController extends Controller
         Gate::authorize(Droit::BoutiquesVoir->value);
         $c = __('admin.boutiques.colonnes');
 
-        return Tableau::pour(CampagneBoutiques::query()->withSum('categories', 'nombre_boutiques'), 'campagnes')
+        return Tableau::pour(CampagneBoutiques::query()->withCount(['reservations' => fn ($q) => $q->whereIn('statut', StatutReservationBoutique::actifs())]), 'campagnes')
             ->colonnes([
                 Colonne::make('nom', $c['nom'])->triable()->recherchable()
                     ->valeur(fn (CampagneBoutiques $x) => new HtmlString('<a href="'.e(route('admin.boutiques.show', $x)).'" class="font-bold text-vert-fonce underline underline-offset-2">'.e($x->nom).'</a>'))
                     ->texte(fn (CampagneBoutiques $x) => $x->nom),
                 Colonne::make('statut', $c['statut'])->triable()->valeur(fn (CampagneBoutiques $x) => BadgeStatut::html($x->statut))->texte(fn (CampagneBoutiques $x) => $x->statut->label()),
                 Colonne::make('periode', $c['periode'])->triable('date_ouverture')->classe('whitespace-nowrap')
-                    ->valeur(fn (CampagneBoutiques $x) => $x->date_ouverture?->format('d/m/Y').' → '.$x->date_cloture?->format('d/m/Y')),
-                Colonne::make('boutiques', $c['boutiques'])->numerique()->valeur(fn (CampagneBoutiques $x) => format_nombre((int) $x->categories_sum_nombre_boutiques)),
+                    ->valeur(fn (CampagneBoutiques $x) => $x->date_ouverture?->format('d/m/Y H:i').' → '.$x->date_cloture?->format('d/m/Y H:i')),
+                Colonne::make('boutiques', $c['reservations'])->numerique()->valeur(fn (CampagneBoutiques $x) => format_nombre((int) $x->reservations_count)),
                 Colonne::make('version', $c['version'])->numerique()->valeur(fn (CampagneBoutiques $x) => $x->version ?: ''),
             ])
             ->selection('campagne', $request->user())
@@ -80,10 +81,12 @@ class CampagnesBoutiquesController extends Controller
             'campagne' => new CampagneBoutiques([
                 'date_ouverture' => now()->addMonth()->startOfDay()->setTime(8, 0),
                 'date_cloture' => now()->addMonths(2)->setTime(23, 59),
-                'delai_paiement_heures' => 72,
+                'max_boutiques_par_personne' => CampagneBoutiques::MAX_PAR_PERSONNE,
+                'delai_paiement_heures' => CampagneBoutiques::DELAI_PAIEMENT_HEURES,
                 'canaux_actifs' => MoyenPaiement::proposables()->pluck('code')->all(),
+                'sites' => [],
             ]),
-            ...$this->donneesFormulaire(null),
+            'sitesDisponibles' => $this->sitesDisponibles(),
             'mode' => 'creation',
         ]);
     }
@@ -92,48 +95,57 @@ class CampagnesBoutiquesController extends Controller
     {
         Gate::authorize(Droit::BoutiquesSaisir->value);
 
-        try {
-            $campagne = DB::transaction(function () use ($request) {
-                $campagne = CampagneBoutiques::create([...$request->parametres(), 'statut' => StatutCampagneBoutiques::Brouillon, 'cree_par' => $request->user()->id]);
-                $this->lots->definir($campagne, $request->selection());
-                $this->journal->ecrire($request->user(), 'campagne_boutiques.creee', 'CampagneBoutiques', $campagne->id, null, ['nom' => $campagne->nom]);
+        $campagne = DB::transaction(function () use ($request) {
+            $campagne = CampagneBoutiques::create([...$request->parametres(), 'statut' => StatutCampagneBoutiques::Brouillon, 'cree_par' => $request->user()->id]);
+            $this->journal->ecrire($request->user(), 'campagne_boutiques.creee', 'CampagneBoutiques', $campagne->id, null, ['nom' => $campagne->nom]);
 
-                return $campagne;
-            });
-        } catch (RegleGestionException $e) {
-            return back()->withInput()->withErrors(['lots' => $e->getMessage()]);
-        }
+            return $campagne;
+        });
 
         return $this->puisSoumettre($request, redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree')),
             'campagne', $campagne, route('admin.boutiques.edit', $campagne));
     }
 
-    public function show(Request $request, CampagneBoutiques $campagne): View
+    public function show(Request $request, CampagneBoutiques $campagne): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::BoutiquesVoir->value);
 
         $versions = $campagne->versions()->with('auteur')->get();
         $soumise = $versions->last();
         $precedente = $versions->count() > 1 ? $versions->get($versions->count() - 2) : null;
+        $c = __('admin.boutiques.reservations.colonnes');
 
-        return view('admin.boutiques.show', [
-            'campagne' => $campagne->load('categories.site'),
-            'versions' => $versions->reverse()->values(),
-            'decisions' => ParametrageDecision::query()->where('objet_type', $campagne->typeParametrage())->where('objet_id', $campagne->id)
-                ->with('decideur')->orderByDesc('id')->get(),
-            'differentiel' => $campagne->estSoumis() && $soumise
-                ? WorkflowParametrage::differentiel($precedente?->parametres ?? [], $soumise->parametres)
-                : [],
-            'premiereVersion' => $precedente === null,
-            'totpExige' => ConfirmationRenforcee::totpExige($request->user()),
-            // Candidatures par catégorie et par statut, résultats des tirages.
-            'compteurs' => CandidatureBoutique::query()->where('campagne_boutiques_id', $campagne->id)
-                ->selectRaw('categorie_boutique_id, statut, count(*) as nombre')->groupBy('categorie_boutique_id', 'statut')->toBase()->get()
-                ->groupBy('categorie_boutique_id')->map(fn ($lignes) => $lignes->pluck('nombre', 'statut')),
-            // Montants de chaque lot : figés à l'ouverture, sinon calculés depuis la grille confirmée (null : ligne absente).
-            'tarifs' => $campagne->categories->mapWithKeys(fn ($lot) => [$lot->id => $lot->estTarife() ? null : $this->lots->tarifer($lot)]),
-            'tirages' => TirageBoutiques::query()->where('campagne_boutiques_id', $campagne->id)->with(['categorie.site', 'tireur', 'affectation'])->get(),
-        ]);
+        return Tableau::pour(ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)->with(['boutique', 'user']), 'reservations')
+            ->colonnes([
+                Colonne::make('reference', $c['reference'])->triable()->recherchable()->classe('font-mono font-semibold'),
+                Colonne::make('boutique', $c['boutique'])->recherchable(fn ($q, $t) => $q->whereHas('boutique', fn ($b) => $b->whereContient('code', $t)))
+                    ->valeur(fn (ReservationBoutique $r) => $r->boutique?->code)->classe('font-mono'),
+                Colonne::make('citoyen', $c['citoyen'])->recherchable(fn ($q, $t) => $q->whereHas('user', fn ($u) => $u->whereContient('name', $t)))
+                    ->valeur(fn (ReservationBoutique $r) => $r->user?->name),
+                Colonne::make('statut', $c['statut'])->triable()->valeur(fn (ReservationBoutique $r) => $r->statut->label()),
+                Colonne::make('caution', $c['caution'])->numerique()->triable()->valeur(fn (ReservationBoutique $r) => format_fcfa($r->caution))->texte(fn (ReservationBoutique $r) => $r->caution),
+                Colonne::make('date', $c['date'])->triable('created_at')->classe('whitespace-nowrap')->valeur(fn (ReservationBoutique $r) => $r->created_at->format('d/m/Y H:i')),
+                Colonne::make('actions', $c['actions'])->vue('admin.boutiques._reservation-actions', 'reservation')->exportable(false),
+            ])
+            ->filtres([Filtre::make('statut', $c['statut'], collect(StatutReservationBoutique::actifs())->merge([StatutReservationBoutique::Expiree, StatutReservationBoutique::Annulee])
+                ->mapWithKeys(fn ($s) => [$s->value => $s->label()])->all(), 'statut')])
+            ->triParDefaut('date', 'desc')
+            ->unite(__('admin.boutiques.reservations.unite'))
+            ->export('Raaga_reservations-boutiques-'.$campagne->id)
+            ->repondre($request, fn (ResultatTableau $t) => view('admin.boutiques.show', [
+                'campagne' => $campagne,
+                'tableau' => $t,
+                'compteurs' => $campagne->compteurs(),
+                'versions' => $versions->reverse()->values(),
+                'decisions' => ParametrageDecision::query()->where('objet_type', $campagne->typeParametrage())->where('objet_id', $campagne->id)
+                    ->with('decideur')->orderByDesc('id')->get(),
+                'differentiel' => $campagne->estSoumis() && $soumise ? WorkflowParametrage::differentiel($precedente?->parametres ?? [], $soumise->parametres) : [],
+                'premiereVersion' => $precedente === null,
+                'totpExige' => ConfirmationRenforcee::totpExige($request->user()),
+                'sitesSansGrille' => $this->sitesSansGrille($campagne),
+                // Ancien tirage au sort : conservé en lecture seule (tables en ajout seul).
+                'historiqueTirages' => DB::table('tirages_boutiques')->where('campagne_boutiques_id', $campagne->id)->orderBy('id')->get(),
+            ]));
     }
 
     public function edit(CampagneBoutiques $campagne): View|RedirectResponse
@@ -144,11 +156,7 @@ class CampagnesBoutiquesController extends Controller
             return redirect()->route('admin.boutiques.show', $campagne)->with('erreur', __('admin.parametrage.regles.non_modifiable'));
         }
 
-        return view('admin.boutiques.formulaire', [
-            'campagne' => $campagne,
-            ...$this->donneesFormulaire($campagne),
-            'mode' => 'modification',
-        ]);
+        return view('admin.boutiques.formulaire', ['campagne' => $campagne, 'sitesDisponibles' => $this->sitesDisponibles(), 'mode' => 'modification']);
     }
 
     public function update(CampagneBoutiquesRequest $request, CampagneBoutiques $campagne): RedirectResponse
@@ -159,15 +167,8 @@ class CampagnesBoutiquesController extends Controller
             return redirect()->route('admin.boutiques.show', $campagne)->with('erreur', __('admin.parametrage.regles.non_modifiable'));
         }
 
-        try {
-            DB::transaction(function () use ($request, $campagne) {
-                $campagne->fill($request->parametres())->save();
-                $this->lots->definir($campagne, $request->selection());
-                $this->journal->ecrire($request->user(), 'campagne_boutiques.modifiee', 'CampagneBoutiques', $campagne->id);
-            });
-        } catch (RegleGestionException $e) {
-            return back()->withInput()->withErrors(['lots' => $e->getMessage()]);
-        }
+        $campagne->fill($request->parametres())->save();
+        $this->journal->ecrire($request->user(), 'campagne_boutiques.modifiee', 'CampagneBoutiques', $campagne->id);
 
         return $this->puisSoumettre($request, redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree')),
             'campagne', $campagne, route('admin.boutiques.edit', $campagne));
@@ -178,13 +179,9 @@ class CampagnesBoutiquesController extends Controller
         Gate::authorize(Droit::BoutiquesSaisir->value);
 
         return $this->executer($campagne, function () use ($request, $campagne) {
-            // Paiements fermés (aucun opérateur réel, ou compte des fonds de location non renseigné) : rien à proposer.
+            // Aucun moyen de paiement de la caution ouvert : rien à proposer.
             $this->exigerPaiementsOuverts($campagne);
-            // Nombres de boutiques recomptés dans le référentiel au moment de la soumission.
-            DB::transaction(function () use ($request, $campagne) {
-                $this->lots->definir($campagne, $this->selectionActuelle($campagne));
-                $this->workflow->soumettre($campagne, $request->user());
-            });
+            $this->workflow->soumettre($campagne, $request->user());
         }, 'admin.parametrage.messages.soumis');
     }
 
@@ -214,14 +211,14 @@ class CampagnesBoutiquesController extends Controller
                 throw new RegleGestionException(__('admin.boutiques.regles.ouverture_confirmee'));
             }
             $this->exigerPaiementsOuverts($campagne);
+            if ($sans = $this->sitesSansGrille($campagne)) {
+                throw new RegleGestionException(__('admin.boutiques.regles.sans_grille', ['lots' => implode(', ', $sans)]));
+            }
             if (CampagneBoutiques::query()->where('statut', StatutCampagneBoutiques::Ouverte)->exists()) {
                 throw new RegleGestionException(__('admin.boutiques.regles.une_seule_ouverte'));
             }
 
-            DB::transaction(function () use ($campagne) {
-                $this->lots->engager($campagne);
-                $campagne->forceFill(['statut' => StatutCampagneBoutiques::Ouverte, 'ouverte_le' => now()])->save();
-            });
+            $campagne->forceFill(['statut' => StatutCampagneBoutiques::Ouverte, 'ouverte_le' => now()])->save();
             $this->journal->ecrire($request->user(), 'campagne_boutiques.ouverte', 'CampagneBoutiques', $campagne->id, ['statut' => 'CONFIRMEE'], ['statut' => 'OUVERTE']);
         }, 'admin.boutiques.messages.ouverte');
     }
@@ -242,54 +239,32 @@ class CampagnesBoutiquesController extends Controller
         }, 'admin.boutiques.messages.cloturee');
     }
 
-    /** Tirage au sort, catégorie par catégorie (VALIDATEUR, confirmation renforcée). */
-    public function tirer(Request $request, CampagneBoutiques $campagne, TirageAuSort $tirage): RedirectResponse
+    /** Avance payée et contrat signé : boutique attribuée (VALIDATEUR). */
+    public function attribuer(Request $request, CampagneBoutiques $campagne, ReservationBoutique $reservation): RedirectResponse
     {
         Gate::authorize(Droit::BoutiquesPiloter->value);
+        abort_unless($reservation->campagne_boutiques_id === $campagne->id, 404);
+        $donnees = $request->validate([
+            'reference_avance' => ['required', 'string', 'max:100'],
+            'contrat_signe_le' => ['required', 'date', 'before_or_equal:today'],
+        ], [], __('admin.boutiques.reservations.champs'));
+        $this->reservations->attribuer($reservation, $donnees['reference_avance'], $donnees['contrat_signe_le'], $request->user());
 
-        return $this->executer($campagne, function () use ($request, $campagne, $tirage) {
-            $this->confirmation->verifier($request, $request->user());
-            $tirage->tirer($campagne, $request->user());
-        }, 'admin.boutiques.messages.tiree');
+        return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.attribuee'));
     }
 
-    /** Second tirage : boutique précise de chaque retenu (VALIDATEUR, confirmation renforcée). */
-    public function affecter(Request $request, CampagneBoutiques $campagne, TirageAuSort $tirage): RedirectResponse
+    /** Sites confirmés qui ont des boutiques réservables. */
+    private function sitesDisponibles()
     {
-        Gate::authorize(Droit::BoutiquesPiloter->value);
-
-        return $this->executer($campagne, function () use ($request, $campagne, $tirage) {
-            $this->confirmation->verifier($request, $request->user());
-            $tirage->affecter($campagne, $request->user());
-        }, 'admin.boutiques.messages.affectee');
+        return Site::query()->confirmes()->whereHas('boutiques', fn ($q) => $q->whereHas('type', fn ($t) => $t->utilisables()->where('attribuable', true)))
+            ->orderBy('nom')->get();
     }
 
-    /**
-     * Sites confirmés, types disponibles par site et types déjà retenus (formulaire).
-     *
-     * @return array<string, mixed>
-     */
-    private function donneesFormulaire(?CampagneBoutiques $campagne): array
+    /** Sites de la campagne sans grille tarifaire confirmée : aucune boutique n'y serait réservable. @return list<string> */
+    private function sitesSansGrille(CampagneBoutiques $campagne): array
     {
-        $disponibilites = LotsCampagne::disponibilites();
-
-        return [
-            'sites' => Site::query()->confirmes()->whereIn('id', $disponibilites->keys())->orderBy('nom')->get(),
-            'types' => TypeBoutique::query()->orderBy('ordre')->orderBy('libelle')->get()->keyBy('id'),
-            'disponibilites' => $disponibilites,
-            'selection' => $campagne ? $this->selectionActuelle($campagne) : [],
-        ];
-    }
-
-    /** @return array<int, array<int, bool>> */
-    private function selectionActuelle(CampagneBoutiques $campagne): array
-    {
-        $selection = [];
-        foreach ($campagne->categories()->whereNotNull('site_id')->get() as $lot) {
-            $selection[$lot->site_id][$lot->type_boutique_id] = true;
-        }
-
-        return $selection;
+        return $campagne->sitesConcernes()->filter(fn (Site $s) => GrilleTarifaire::query()->where('site_id', $s->id)->first()?->confirmee() === null)
+            ->map(fn (Site $s) => $s->nom)->values()->all();
     }
 
     private function executer(CampagneBoutiques $campagne, Closure $action, string $message): RedirectResponse

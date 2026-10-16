@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * (ECHEANCE), à l'expiration (EXPIRATION) ou par le CONTRÔLEUR DES PAIEMENTS (MANUELLE). Auteur null : automatique.
  */
 #[Table(name: 'relances', timestamps: false)]
-#[Fillable(['souscription_id', 'candidature_boutique_id', 'user_id', 'type', 'canaux', 'auteur_id', 'message', 'created_at'])]
+#[Fillable(['souscription_id', 'reservation_boutique_id', 'user_id', 'type', 'canaux', 'auteur_id', 'message', 'created_at'])]
 class Relance extends Model
 {
     use AppendOnly;

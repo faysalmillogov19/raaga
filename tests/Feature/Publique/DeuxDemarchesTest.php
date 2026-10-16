@@ -19,7 +19,7 @@ use App\Models\Tranche;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Tests\Feature\Compte\CandidatureBoutiqueTest;
+use Tests\Support\Boutiques;
 use Tests\Support\ConnexionBackoffice;
 use Tests\Support\ParametresInvestissementConfirmes;
 use Tests\TestCase;
@@ -31,7 +31,7 @@ class DeuxDemarchesTest extends TestCase
 
     private const ACTIONS = 'Acheter des actions ne donne aucun droit ni priorité pour obtenir une boutique.';
 
-    private const BOUTIQUES = 'Candidater à une boutique ne fait pas de vous un actionnaire.';
+    private const BOUTIQUES = 'Réserver une boutique ne fait pas de vous un actionnaire.';
 
     protected function setUp(): void
     {
@@ -110,7 +110,7 @@ class DeuxDemarchesTest extends TestCase
         $this->confirmerParametresInvestissement(10_000, minimum: 1);
         $accueil = $this->get('/')->assertOk();
         $accueil->assertSeeInOrder(['Devenez actionnaire de votre marché', "Valeur indicative de l’action : 10\u{00A0}000\u{00A0}FCFA", 'Minimum : 1 action',
-            'Rendement non garanti', 'Je deviens actionnaire', 'Installez votre commerce dans un marché moderne', 'Attribution par tirage au sort', 'Je candidate'], false)
+            'Rendement non garanti', 'Je deviens actionnaire', 'Installez votre commerce dans un marché moderne', 'Au premier arrivé, premier servi', 'Je réserve'], false)
             ->assertSee('href="'.route('souscrire').'"', false);
 
         $this->assertSame(['phase.proposee', 'phase.proposee', 'phase.confirmee', 'phase.proposee', 'phase.confirmee'],
@@ -160,8 +160,8 @@ class DeuxDemarchesTest extends TestCase
         $this->actingAs($citoyen)->get(route('souscrire'))->assertOk()->assertSee('data-demarche="actions"', false)->assertSee(self::ACTIONS, false);
         $this->actingAs($citoyen)->get(route('paiement'))->assertOk()->assertSee(self::ACTIONS, false);
 
-        CandidatureBoutiqueTest::campagneOuverte();
-        foreach ([route('boutiques'), route('boutiques.reglement'), route('boutiques.candidater')] as $url) {
+        Boutiques::campagneOuverte();
+        foreach ([route('boutiques'), route('boutiques.reglement'), route('boutiques.boutique', Boutiques::boutique()->code)] as $url) {
             $this->actingAs($citoyen)->get($url)->assertOk()->assertSee('data-demarche="boutiques"', false)->assertSee(self::BOUTIQUES, false)->assertDontSee('data-demarche="actions"', false);
         }
     }

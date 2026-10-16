@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
 #[Fillable([
-    'souscription_id', 'candidature_boutique_id', 'canal', 'compte_destination', 'montant', 'frais', 'reference', 'reference_fournisseur',
+    'souscription_id', 'reservation_boutique_id', 'canal', 'compte_destination', 'montant', 'frais', 'reference', 'reference_fournisseur',
     'statut', 'date_confirmation', 'agent_id', 'cloture_caisse_id', 'metadonnees',
     'controle', 'controle_motif', 'controle_reference', 'controle_par', 'controle_le',
     'reference_versement', 'preuve_chemin', 'preuve_nom', 'preuve_mime', 'preuve_deposee_le', 'controle_montant_recu',
@@ -29,7 +29,7 @@ class Paiement extends Model
     protected static function booted(): void
     {
         static::saving(function (Paiement $p) {
-            $attendu = $p->souscription_id !== null ? CompteDestination::Investissement : ($p->candidature_boutique_id !== null ? CompteDestination::Location : null);
+            $attendu = $p->souscription_id !== null ? CompteDestination::Investissement : ($p->reservation_boutique_id !== null ? CompteDestination::Location : null);
             $p->compte_destination ??= $attendu;
             if ($attendu === null || $p->compte_destination !== $attendu) {
                 throw new LogicException(__('public.paiement.erreurs_compte'));
@@ -130,17 +130,17 @@ class Paiement extends Model
     }
 
     /**
-     * @return BelongsTo<CandidatureBoutique, $this>
+     * @return BelongsTo<ReservationBoutique, $this>
      */
-    public function candidature(): BelongsTo
+    public function reservation(): BelongsTo
     {
-        return $this->belongsTo(CandidatureBoutique::class, 'candidature_boutique_id');
+        return $this->belongsTo(ReservationBoutique::class, 'reservation_boutique_id');
     }
 
     /** Objet réglé par ce paiement (souscription d'actions ou caution d'une candidature). */
-    public function objet(): Souscription|CandidatureBoutique
+    public function objet(): Souscription|ReservationBoutique
     {
-        return $this->souscription_id ? $this->souscription : $this->candidature;
+        return $this->souscription_id ? $this->souscription : $this->reservation;
     }
 
     /**

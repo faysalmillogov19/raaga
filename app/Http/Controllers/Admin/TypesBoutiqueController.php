@@ -29,7 +29,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Types de boutiques. GESTIONNAIRE DES SITES ET BOUTIQUES : ajoute un type (soumis au VALIDATEUR), modifie libellé,
- * description et ordre à tout moment, demande un changement d'« attribuable par tirage » (soumis au VALIDATEUR), désactive ou réactive, supprime un type jamais
+ * description et ordre à tout moment, demande un changement d'« réservable » (soumis au VALIDATEUR), désactive ou réactive, supprime un type jamais
  * utilisé et non « par défaut ». VALIDATEUR : confirme ou rejette. Autres profils : lecture seule.
  */
 class TypesBoutiqueController extends Controller
@@ -142,7 +142,7 @@ class TypesBoutiqueController extends Controller
         }, $type->par_defaut ? 'admin.types.messages.demande' : 'admin.types.messages.modifie'), 'type', $type, route('admin.sites.types.show', $type), 'modifier-type');
     }
 
-    /** Demande de changement d'« attribuable par tirage » : effective après validation. */
+    /** Demande de changement d'« réservable » : effective après validation. */
     public function demanderAttribuable(Request $request, TypeBoutique $type): RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
@@ -190,7 +190,7 @@ class TypesBoutiqueController extends Controller
 
     // ------------------------------------------------------------------ VALIDATEUR
 
-    /** Confirme le nouveau type, ou le changement d'« attribuable par tirage » demandé. */
+    /** Confirme le nouveau type, ou le changement d'« réservable » demandé. */
     public function confirmer(Request $request, TypeBoutique $type): RedirectResponse
     {
         Gate::authorize(Droit::SitesConfirmer->value);

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Type de local (boutique, magasin, étal…) commun à tous les sites. Le code ne change jamais et n'est jamais
@@ -84,7 +85,7 @@ class TypeBoutique extends Model
             || CapaciteSite::query()->where('type_boutique_id', $this->id)->exists()
             || GrilleTarifaireLigne::query()->where('type_boutique_id', $this->id)->exists()
             || GrilleTarifaireVersion::query()->where('parametres', 'like', '%|'.$this->id.'"%')->exists()
-            || CategorieBoutique::query()->where('type_boutique_id', $this->id)->exists();
+            || DB::table('categories_boutiques')->where('type_boutique_id', $this->id)->exists();
     }
 
     public function creerVersion(?User $auteur, string $motif): TypeBoutiqueVersion

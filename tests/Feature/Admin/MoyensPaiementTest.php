@@ -19,10 +19,10 @@ use App\Enums\StatutTypeBoutique;
 use App\Enums\TypeFraisSouscription;
 use App\Enums\UsageMoyenPaiement;
 use App\Models\AuditLog;
-use App\Models\CandidatureBoutique;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\ParametrageDecision;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Models\Tranche;
 use App\Models\User;
@@ -31,8 +31,8 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use LogicException;
-use Tests\Feature\Compte\CandidatureBoutiqueTest;
 use Tests\Support\ActeursParametrage;
+use Tests\Support\Boutiques;
 use Tests\TestCase;
 
 /**
@@ -61,17 +61,14 @@ class MoyensPaiementTest extends TestCase
         ], $surcharges);
     }
 
-    /** Candidature à une boutique dont la caution à payer vaut ce montant. */
-    private function caution(int $montant, array $canaux): CandidatureBoutique
+    /** Réservation d'une boutique dont la caution à payer vaut ce montant. */
+    private function caution(int $montant, array $canaux): ReservationBoutique
     {
-        $campagne = CandidatureBoutiqueTest::campagneOuverte();
+        $campagne = Boutiques::campagneOuverte();
         $campagne->forceFill(['canaux_actifs' => $canaux])->save();
         $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670123456']);
-        $this->actingAs($citoyen)->post('/boutiques/candidater', [
-            'categorie' => $campagne->categories()->where('libelle', 'Grande boutique')->value('id'),
-            'engagements' => ['TIRAGE_SANS_GARANTIE', 'CAUTION_SANS_LIEN_ACTIONS', 'REGLEMENT_CAMPAGNE_BOUTIQUES', 'ORIGINE_LICITE_FONDS'],
-        ])->assertRedirect();
-        $candidature = CandidatureBoutique::sole();
+        Boutiques::reserver($this, $citoyen, Boutiques::boutique('B'))->assertSessionHasNoErrors()->assertRedirect();
+        $candidature = ReservationBoutique::sole();
         $candidature->forceFill(['caution' => $montant, 'avance' => 0])->save();
 
         return $candidature->fresh();
@@ -156,10 +153,10 @@ class MoyensPaiementTest extends TestCase
         // Caution de 2 139 744 FCFA : Orange Money plafonné à 1 000 000 et Telecel (non autorisé) ne sont pas proposés.
         $c = $this->caution(2_139_744, ['ORANGE_MONEY', 'TELECEL_MONEY', 'FASO_ARZEKA', 'VIREMENT', 'VERSEMENT']);
         $this->assertSame(['FASO_ARZEKA', 'VIREMENT'], array_map(fn ($m) => $m->code, $c->canauxPaiement()));
-        $page = $this->actingAs($c->user)->get('/boutiques/candidatures/'.$c->reference.'/caution')->assertOk();
+        $page = $this->actingAs($c->user)->get('/boutiques/reservations/'.$c->reference.'/caution')->assertOk();
         $page->assertSee("2\u{00A0}139\u{00A0}744\u{00A0}FCFA")->assertSee('Faso Arzeka')->assertSee('Virement bancaire')
             ->assertDontSee('Orange Money')->assertDontSee('Telecel Money')->assertDontSee('Versement bancaire');
-        $this->actingAs($c->user)->post('/boutiques/candidatures/'.$c->reference.'/caution', ['canal' => 'ORANGE_MONEY', 'telephone' => '70 12 34 56'])
+        $this->actingAs($c->user)->post('/boutiques/reservations/'.$c->reference.'/caution', ['canal' => 'ORANGE_MONEY', 'telephone' => '70 12 34 56'])
             ->assertSessionHasErrors('canal');
 
         // Petite caution : Orange Money redevient proposé.
@@ -170,7 +167,7 @@ class MoyensPaiementTest extends TestCase
     public function test_desactivation_sans_suppression(): void
     {
         $c = $this->caution(500_000, ['ORANGE_MONEY', 'MOOV_MONEY', 'VIREMENT']);
-        $this->actingAs($c->user)->post('/boutiques/candidatures/'.$c->reference.'/caution', ['canal' => 'MOOV_MONEY', 'telephone' => '70 12 34 56'])->assertSessionHasNoErrors();
+        $this->actingAs($c->user)->post('/boutiques/reservations/'.$c->reference.'/caution', ['canal' => 'MOOV_MONEY', 'telephone' => '70 12 34 56'])->assertSessionHasNoErrors();
         $paiement = Paiement::query()->sole();
         $moov = MoyenPaiement::parCode('MOOV_MONEY');
 
@@ -198,8 +195,8 @@ class MoyensPaiementTest extends TestCase
 
         // Caution : compte des fonds de location, partout (paiement, instructions de virement, reçu).
         $c = $this->caution(500_000, ['ORANGE_MONEY', 'VIREMENT']);
-        $this->actingAs($c->user)->get('/boutiques/candidatures/'.$c->reference.'/caution')->assertSee('BF00 LOCATION')->assertDontSee('BF00 INVEST');
-        $this->actingAs($c->user)->post('/boutiques/candidatures/'.$c->reference.'/caution', ['canal' => 'VIREMENT'])->assertSessionHasNoErrors();
+        $this->actingAs($c->user)->get('/boutiques/reservations/'.$c->reference.'/caution')->assertSee('BF00 LOCATION')->assertDontSee('BF00 INVEST');
+        $this->actingAs($c->user)->post('/boutiques/reservations/'.$c->reference.'/caution', ['canal' => 'VIREMENT'])->assertSessionHasNoErrors();
         $caution = Paiement::query()->sole();
         $this->assertSame(CompteDestination::Location, $caution->compte_destination);
         $this->assertSame('LOCATION', AuditLog::query()->where('action', 'paiement.initie')->sole()->nouvelle_valeur['compte']);

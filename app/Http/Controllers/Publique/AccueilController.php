@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Publique;
 
 use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
-use App\Services\Boutiques\CandidatureBoutiques;
 use App\Services\Invest\RaagaInvest;
 use App\Services\Publique\AccueilBoutiques;
 use App\Support\Diapositives;
@@ -23,7 +22,7 @@ class AccueilController extends Controller
     public function __invoke(AccueilBoutiques $accueil): View
     {
         $campagne = CampagneBoutiques::ouverte();
-        $ouverte = $campagne && CandidatureBoutiques::accepteCandidatures($campagne);
+        $ouverte = $campagne && $campagne->accepteReservations();
         $questions = __('public.faq.groupes.boutiques.questions');
 
         return view('public.accueil-boutiques', [
@@ -34,10 +33,8 @@ class AccueilController extends Controller
             'sites' => $accueil->sites(),
             'diapositives' => Diapositives::affichees(),
             'questions' => array_values(array_filter(array_map(fn (int $i) => $questions[$i] ?? null, self::QUESTIONS_ACCUEIL))),
-            // Campagne ouverte : candidature (après connexion) ; sinon, la page des boutiques ou la création de compte.
-            'urlCandidater' => $ouverte
-                ? (auth()->check() ? route('boutiques.candidater') : route('inscription'))
-                : (auth()->check() ? route('boutiques') : route('inscription')),
+            // Campagne ouverte : le plan des boutiques (réservation après connexion) ; sinon, la page des boutiques ou la création de compte.
+            'urlCandidater' => $ouverte || auth()->check() ? route('boutiques') : route('inscription'),
             'investir' => Phase::presentationActions() ? $this->investir() : null,
             // Présentation des actions désactivée : annonce « Investir dans Raaga : bientôt » (alerte SMS seulement).
         ]);

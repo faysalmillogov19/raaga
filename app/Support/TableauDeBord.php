@@ -5,13 +5,13 @@ namespace App\Support;
 use App\Enums\Droit;
 use App\Enums\Role;
 use App\Enums\StatutBoutique;
-use App\Enums\StatutCandidatureBoutique;
 use App\Enums\StatutKyc;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSite;
 use App\Models\Boutique;
-use App\Models\CandidatureBoutique;
 use App\Models\CapaciteSite;
 use App\Models\Institution;
+use App\Models\ReservationBoutique;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\Institutionnels\RegistreA;
@@ -42,7 +42,7 @@ final class TableauDeBord
             'kyc' => $user->can(Droit::KycVoir->value) ? fn () => [User::query()->where('statut_kyc', StatutKyc::EnAttente)->count(), [$k['kyc_delai'], 'info'], route('admin.kyc')] : null,
             // Financier : cautions des candidatures en attente de paiement (virements et espèces à rapprocher).
             'cautions' => $user->can(Droit::BoutiquesVoir->value)
-                ? fn () => [CandidatureBoutique::query()->where('statut', StatutCandidatureBoutique::Reservee)->count(), [$k['cautions_aide'], 'avertissement'], route('admin.boutiques')] : null,
+                ? fn () => [ReservationBoutique::query()->where('statut', StatutReservationBoutique::PreReservee)->count(), [$k['cautions_aide'], 'avertissement'], route('admin.boutiques')] : null,
             'boutiques' => $user->can(Droit::SitesVoir->value)
                 ? fn () => [Boutique::query()->where('statut', '!=', StatutBoutique::Retiree)->count(), [trans_choice('admin.tableau.cartes.sites_n', $s = Site::query()->count(), ['n' => $s]), 'ok'], route('admin.referencement.boutiques')] : null,
             'sites' => $user->can(Droit::SitesGerer->value)

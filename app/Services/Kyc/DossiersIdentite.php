@@ -2,16 +2,15 @@
 
 namespace App\Services\Kyc;
 
-use App\Enums\StatutBoutique;
-use App\Enums\StatutCandidatureBoutique;
 use App\Enums\StatutDocumentKyc;
 use App\Enums\StatutKyc;
 use App\Enums\StatutPaiement;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
 use App\Models\Boutique;
-use App\Models\CandidatureBoutique;
 use App\Models\KycDocument;
 use App\Models\Remboursement;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Models\User;
 use App\Models\VerificationKyc;
@@ -131,14 +130,14 @@ class DossiersIdentite
             $bilan['souscriptions'][] = $s->reference;
         }
 
-        $candidatures = CandidatureBoutique::query()->where('user_id', $citoyen->id)
-            ->whereIn('statut', [StatutCandidatureBoutique::Reservee, StatutCandidatureBoutique::Payee, StatutCandidatureBoutique::Retenue])->lockForUpdate()->get();
+        $candidatures = ReservationBoutique::query()->where('user_id', $citoyen->id)
+            ->whereIn('statut', [StatutReservationBoutique::PreReservee, StatutReservationBoutique::Reservee, StatutReservationBoutique::Attribuee])->lockForUpdate()->get();
         foreach ($candidatures as $c) {
             $bilan['remboursements'] += $this->clore($c, $validateur);
-            if ($c->boutique_id && Boutique::query()->whereKey($c->boutique_id)->where('statut', StatutBoutique::Attribuee)->update(['statut' => StatutBoutique::Disponible])) {
+            if ($c->libererBoutique('annulation_identite', $validateur)) {
                 $bilan['boutiques']++;
             }
-            $c->forceFill(['statut' => StatutCandidatureBoutique::Annulee])->save();
+            $c->forceFill(['statut' => StatutReservationBoutique::Annulee])->save();
             $bilan['candidatures'][] = $c->reference;
         }
 
@@ -146,7 +145,7 @@ class DossiersIdentite
     }
 
     /** Paiements en attente annulés ; remboursement ouvert pour le paiement confirmé. Rend le nombre de remboursements ouverts. */
-    private function clore(Souscription|CandidatureBoutique $objet, User $validateur): int
+    private function clore(Souscription|ReservationBoutique $objet, User $validateur): int
     {
         $objet->paiements()->where('statut', StatutPaiement::EnAttente)->update(['statut' => StatutPaiement::Annule]);
         $confirme = $objet->paiements()->where('statut', StatutPaiement::Confirme)->latest('id')->first();

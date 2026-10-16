@@ -12,21 +12,21 @@ use App\Enums\RegleArret;
 use App\Enums\RegleSiEchec;
 use App\Enums\Role;
 use App\Enums\StatutBoutique;
-use App\Enums\StatutCandidatureBoutique;
 use App\Enums\StatutDocumentKyc;
 use App\Enums\StatutKyc;
 use App\Enums\StatutPaiement;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
 use App\Models\Boutique;
-use App\Models\CandidatureBoutique;
 use App\Models\CorrectionPaiement;
 use App\Models\KycDocument;
 use App\Models\Paiement;
 use App\Models\Relance;
 use App\Models\Remboursement;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Models\Tranche;
 use App\Models\User;
@@ -38,8 +38,8 @@ use Database\Seeders\ComptesDemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
-use Tests\Feature\Compte\CandidatureBoutiqueTest;
 use Tests\Support\ActeursParametrage;
+use Tests\Support\Boutiques;
 use Tests\TestCase;
 
 /**
@@ -93,7 +93,7 @@ class ControlePaiementsKycTest extends TestCase
         ]);
     }
 
-    private function paiement(Souscription|CandidatureBoutique $objet, string $canal, StatutPaiement $statut = StatutPaiement::EnAttente): Paiement
+    private function paiement(Souscription|ReservationBoutique $objet, string $canal, StatutPaiement $statut = StatutPaiement::EnAttente): Paiement
     {
         $this->n++;
 
@@ -232,12 +232,11 @@ class ControlePaiementsKycTest extends TestCase
         $enAttente = $this->souscription($citoyen);
         $this->paiement($enAttente, 'VIREMENT');
 
-        $campagne = CandidatureBoutiqueTest::campagneOuverte();
+        $campagne = Boutiques::campagneOuverte();
         $boutique = Boutique::query()->firstOrFail();
-        $boutique->forceFill(['statut' => StatutBoutique::Attribuee])->save();
-        $c = CandidatureBoutique::create(['reference' => 'BTQ-DOUTE01', 'user_id' => $citoyen->id, 'campagne_boutiques_id' => $campagne->id,
-            'categorie_boutique_id' => $campagne->categories()->value('id'), 'boutique_id' => $boutique->id, 'caution' => 150_000,
-            'statut' => StatutCandidatureBoutique::Retenue, 'expire_le' => now()->subDay()]);
+        $boutique->forceFill(['statut' => StatutBoutique::Reservee])->save();
+        $c = ReservationBoutique::create(['reference' => 'BTQ-DOUTE01', 'user_id' => $citoyen->id, 'campagne_boutiques_id' => $campagne->id,
+            'boutique_id' => $boutique->id, 'caution' => 150_000, 'statut' => StatutReservationBoutique::Reservee, 'expire_le' => now()->subDay()]);
         $this->paiement($c, 'ORANGE_MONEY', StatutPaiement::Confirme);
 
         // L'ADMIN voit la pièce, sans aucun montant, et marque le dossier douteux (motif obligatoire).
@@ -261,7 +260,7 @@ class ControlePaiementsKycTest extends TestCase
         $this->assertSame(StatutKyc::Rejete, $citoyen->fresh()->statut_kyc);
         $this->assertSame([StatutSouscription::Annulee, StatutSouscription::Annulee], [$s->fresh()->statut, $enAttente->fresh()->statut]);
         $this->assertSame(StatutPaiement::Annule, $enAttente->paiements()->sole()->statut);
-        $this->assertSame(StatutCandidatureBoutique::Annulee, $c->fresh()->statut);
+        $this->assertSame(StatutReservationBoutique::Annulee, $c->fresh()->statut);
         $this->assertSame(StatutBoutique::Disponible, $boutique->fresh()->statut);
         $this->assertSame(2, Remboursement::query()->where('statut', Remboursement::A_EFFECTUER)->count());
         $this->assertSame(50_000, (int) Remboursement::query()->where('souscription_id', $s->id)->value('montant'));

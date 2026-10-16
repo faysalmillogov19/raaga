@@ -66,14 +66,14 @@ class CampagnesBoutiquesTest extends TestCase
     private function formulaire(array $surcharges = []): array
     {
         return [
-            'nom' => 'Attribution 2027 · marché central',
-            'description' => 'Boutiques du nouveau marché, attribuées par tirage au sort.',
+            'nom' => 'Réservation 2027 · marché central',
+            'description' => 'Boutiques du nouveau marché, réservées au premier arrivé.',
             'date_ouverture' => now()->addDay()->format('Y-m-d\TH:i'),
             'date_cloture' => now()->addMonth()->format('Y-m-d\TH:i'),
             'delai_paiement_heures' => 72,
             'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'],
             'max_boutiques_par_personne' => 2,
-            'lots' => [$this->site->id => [$this->petite->id => 1, $this->grande->id => 1]],
+            'sites' => [$this->site->id],
             ...$surcharges,
         ];
     }
@@ -87,31 +87,33 @@ class CampagnesBoutiquesTest extends TestCase
         return $campagne->refresh();
     }
 
-    public function test_le_regulateur_choisit_les_sites_et_les_types_proposes(): void
+    public function test_le_regulateur_choisit_les_sites_et_les_parametres(): void
     {
-        $this->en($this->regulateur)->get(route('admin.boutiques.create'))->assertOk()
-            ->assertSee('Marché central')->assertSee('12 disponibles')->assertSee('3 disponibles');
+        // Valeurs par défaut : une boutique par personne, caution à payer sous 72 h.
+        $creation = $this->en($this->regulateur)->get(route('admin.boutiques.create'))->assertOk()->assertSee('Marché central')->getContent();
+        $this->assertMatchesRegularExpression('/name="max_boutiques_par_personne"[^>]*value="1"/', $creation);
+        $this->assertMatchesRegularExpression('/name="delai_paiement_heures"[^>]*value="72"/', $creation);
 
         $campagne = $this->campagneSoumise();
 
         $this->assertSame(StatutCampagneBoutiques::Soumise, $campagne->statut);
         $this->assertSame(2, $campagne->max_boutiques_par_personne);
-        // Lots homogènes, nombres comptés dans le référentiel ; montants calculés à l'ouverture, jamais saisis.
-        $this->assertSame([['Grande boutique · Rez-de-chaussée · 24 m²', $this->site->id, 3, null], ['Petite boutique · R+1 · 9 m²', $this->site->id, 12, null]],
-            $campagne->categories->sortBy('libelle')->map(fn ($c) => [$c->libelle, $c->site_id, $c->nombre_boutiques, $c->caution])->values()->all());
-        $this->assertStringContainsString('Petite boutique · R+1 · 9 m² · Marché central : 12 boutique(s)', $campagne->versions()->first()->parametres['categories']);
+        $this->assertSame([$this->site->id], $campagne->sites);
+        $this->assertSame('Marché central', $campagne->versions()->first()->parametres['sites']);
 
+        // Aucune grille confirmée : l'ouverture sera refusée, la fiche le signale.
         $this->en($this->regulateur)->post(route('admin.boutiques.confirmer', $campagne))->assertForbidden();
-        $this->en($this->validateur)->get(route('admin.boutiques.show', $campagne))->assertOk()->assertSee('Marché central')->assertSee('Pas de ligne de grille confirmée');
+        $this->en($this->validateur)->get(route('admin.boutiques.show', $campagne))->assertOk()->assertSee('Marché central')
+            ->assertSee('ces sites n’ont pas de grille tarifaire confirmée');
     }
 
-    public function test_une_campagne_sans_lot_ou_sur_un_site_non_confirme_est_refusee(): void
+    public function test_une_campagne_sans_site_ou_sur_un_site_non_confirme_est_refusee(): void
     {
-        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire(['lots' => [$this->site->id => [$this->petite->id => 0, $this->grande->id => 0]]]))
-            ->assertSessionHasErrors(['lots' => 'Ajoutez au moins une catégorie de boutiques.']);
+        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire(['sites' => []]))
+            ->assertSessionHasErrors(['sites' => 'Choisissez au moins un site confirmé.']);
 
         $this->site->forceFill(['statut' => StatutSite::Brouillon])->save();
-        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire())->assertSessionHasErrors('lots');
+        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire())->assertSessionHasErrors('sites.0');
 
         $this->assertSame(0, CampagneBoutiques::count());
     }
@@ -120,28 +122,31 @@ class CampagnesBoutiquesTest extends TestCase
     {
         $campagne = $this->campagneSoumise();
 
-        $this->en($this->validateur)->post(route('admin.boutiques.rejeter', $campagne), ['motif' => 'Caution trop élevée'])->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.boutiques.rejeter', $campagne), ['motif' => 'Délai trop court'])->assertSessionHas('succes');
         $this->assertSame(StatutCampagneBoutiques::Brouillon, $campagne->refresh()->statut);
 
-        // Seules les petites boutiques sont finalement proposées.
-        $this->en($this->regulateur)->put(route('admin.boutiques.update', $campagne), $this->formulaire([
-            'lots' => [$this->site->id => [$this->petite->id => 1, $this->grande->id => 0]],
-        ]))->assertSessionHasNoErrors();
-        $this->assertSame(['Petite boutique · R+1 · 9 m²'], $campagne->categories()->pluck('libelle')->all());
+        $this->en($this->regulateur)->put(route('admin.boutiques.update', $campagne), $this->formulaire(['max_boutiques_par_personne' => 1]))->assertSessionHasNoErrors();
+        $this->assertSame(1, $campagne->refresh()->max_boutiques_par_personne);
         $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $campagne));
         $this->en($this->validateur)->post(route('admin.boutiques.confirmer', $campagne))->assertSessionHas('succes');
 
-        $this->grilleConfirmee($this->site, ['R1' => [$this->petite->id => [2000, 12, 36]]]);
+        // Sans grille confirmée sur le site, l'ouverture est refusée.
         $code = $this->activerTotp($this->validateur);
+        $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $code])
+            ->assertSessionHas('erreur', fn ($m) => str_contains($m, 'grille tarifaire confirmée'));
+
+        $this->grilleConfirmee($this->site, ['R1' => [$this->petite->id => [2000, 12, 36]], 'RC' => [$this->grande->id => [2000, 12, 60]]]);
         $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => '000000'])->assertSessionHas('erreur');
-        $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $code])->assertSessionHas('succes');
+        $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $this->codeTotp($this->validateur, 1)])->assertSessionHas('succes');
         $this->assertSame(StatutCampagneBoutiques::Ouverte, $campagne->refresh()->statut);
 
-        // Les boutiques du lot sont engagées ; les grandes, non proposées, restent disponibles.
-        $this->assertSame(12, Boutique::query()->where('type_boutique_id', $this->petite->id)->where('statut', StatutBoutique::EnCampagne)->count());
-        $this->assertSame(3, Boutique::query()->where('type_boutique_id', $this->grande->id)->where('statut', StatutBoutique::Disponible)->count());
+        // Aucune boutique n'est engagée en bloc : elles restent disponibles jusqu'à leur réservation.
+        $this->assertSame(15, Boutique::query()->where('statut', StatutBoutique::Disponible)->count());
+        $this->assertSame(['disponible' => 15, 'pre_reservee' => 0, 'reservee' => 0, 'attribuee' => 0], $campagne->compteurs());
 
-        $this->en($this->validateur)->post(route('admin.boutiques.cloturer', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $this->codeTotp($this->validateur, 1)])->assertSessionHas('succes');
+        // Nouvelle saisie du code pour la clôture (l'anti-rejeu est remis à zéro pour rester dans la fenêtre tolérée).
+        $this->validateur->forceFill(['totp_dernier_pas' => null])->save();
+        $this->en($this->validateur)->post(route('admin.boutiques.cloturer', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $this->codeTotp($this->validateur)])->assertSessionHas('succes');
         $this->assertSame(StatutCampagneBoutiques::Cloturee, $campagne->refresh()->statut);
         $this->assertDatabaseHas('audit_logs', ['action' => 'campagne_boutiques.ouverte', 'entite_id' => $campagne->id]);
     }

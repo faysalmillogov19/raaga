@@ -140,14 +140,14 @@ class ImportBoutiquesTest extends TestCase
     {
         $type = TypeBoutique::query()->where('code', 'BOUT')->value('id');
         $libre = $this->site->boutiques()->create(['niveau' => 'R1', 'bloc' => 'A', 'numero' => '001', 'surface' => 9, 'type_boutique_id' => $type, 'statut' => StatutBoutique::Disponible]);
-        $engagee = $this->site->boutiques()->create(['niveau' => 'R1', 'bloc' => 'A', 'numero' => '002', 'surface' => 9, 'type_boutique_id' => $type, 'statut' => StatutBoutique::EnCampagne]);
+        $engagee = $this->site->boutiques()->create(['niveau' => 'R1', 'bloc' => 'A', 'numero' => '002', 'surface' => 9, 'type_boutique_id' => $type, 'statut' => StatutBoutique::PreReservee]);
 
         $this->deposer($this->fichier([
             ['RAA', 'R1', 'A', 1, 'BOUT', 15, null, null],
             ['RAA', 'R1', 'A', 2, 'BOUT', 15, null, null],
         ]));
         $this->en($this->gestionnaire)->get(route('admin.referencement.boutiques.excel.import', $this->site))->assertOk()
-            ->assertSee('La boutique RAA-R1-A-002 est dans une campagne : elle ne peut pas être modifiée.');
+            ->assertSee('La boutique RAA-R1-A-002 est pré-réservée : elle ne peut pas être modifiée.');
         $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.excel.import.confirmer', $this->site))->assertSessionHas('erreur');
         $this->assertSame('9.00', $engagee->fresh()->surface);
         $this->assertSame('9.00', $libre->fresh()->surface);

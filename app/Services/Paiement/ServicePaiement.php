@@ -4,13 +4,13 @@ namespace App\Services\Paiement;
 
 use App\Contracts\Payable;
 use App\Contracts\PaymentProvider;
-use App\Enums\StatutCandidatureBoutique;
 use App\Enums\StatutPaiement;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
-use App\Models\CandidatureBoutique;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\Remboursement;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Models\User;
 use App\Services\Audit\Journal;
@@ -94,9 +94,9 @@ class ServicePaiement
                 return $paiement;
             }
 
-            $classe = $paiement->souscription_id ? Souscription::class : CandidatureBoutique::class;
+            $classe = $paiement->souscription_id ? Souscription::class : ReservationBoutique::class;
             /** @var Payable&Model $objet */
-            $objet = $classe::query()->lockForUpdate()->findOrFail($paiement->souscription_id ?? $paiement->candidature_boutique_id);
+            $objet = $classe::query()->lockForUpdate()->findOrFail($paiement->souscription_id ?? $paiement->reservation_boutique_id);
 
             // Réservation expirée ou déjà payée par un autre paiement : la demande est close sans effet.
             if ($succes && ! $objet->attendPaiement()) {
@@ -138,18 +138,18 @@ class ServicePaiement
     public function expirerReservations(): int
     {
         return $this->expirer(Souscription::class, StatutSouscription::Reservee, StatutSouscription::Expiree, 'souscription.expiree')
-            + $this->expirer(CandidatureBoutique::class, StatutCandidatureBoutique::Reservee, StatutCandidatureBoutique::Expiree, 'candidature_boutique.expiree');
+            + $this->expirer(ReservationBoutique::class, StatutReservationBoutique::PreReservee, StatutReservationBoutique::Expiree, 'reservation_boutique.expiree');
     }
 
     /**
      * Expire un objet précis si son délai est dépassé et qu'aucune preuve n'attend de contrôle (après le rejet d'une
      * preuve déposée trop tard : la boutique ou la souscription est libérée).
      */
-    public function expirerSiEchu(Souscription|CandidatureBoutique $objet): bool
+    public function expirerSiEchu(Souscription|ReservationBoutique $objet): bool
     {
         [$reservee, $expiree, $action] = $objet instanceof Souscription
             ? [StatutSouscription::Reservee, StatutSouscription::Expiree, 'souscription.expiree']
-            : [StatutCandidatureBoutique::Reservee, StatutCandidatureBoutique::Expiree, 'candidature_boutique.expiree'];
+            : [StatutReservationBoutique::PreReservee, StatutReservationBoutique::Expiree, 'reservation_boutique.expiree'];
 
         return $this->expirerUn($objet::class, $objet->id, $reservee, $expiree, $action);
     }
@@ -188,6 +188,10 @@ class ServicePaiement
                 ->latest('id')->first();
 
             $objet->forceFill(['statut' => $expiree])->save();
+            // Pré-réservation expirée : la boutique redevient disponible (historique conservé).
+            if ($objet instanceof ReservationBoutique) {
+                $objet->libererBoutique('expiration');
+            }
             $objet->paiements()->where('statut', StatutPaiement::EnAttente)->update(['statut' => StatutPaiement::Annule]);
             if ($incomplet) {
                 $this->remboursements->ouvrir($objet, $incomplet, Remboursement::COMPLEMENT_NON_RECU, null, $incomplet->controle_montant_recu);

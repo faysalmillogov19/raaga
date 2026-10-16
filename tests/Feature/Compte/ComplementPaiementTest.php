@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\ActeursParametrage;
+use Tests\Support\Boutiques;
 use Tests\TestCase;
 
 /**
@@ -114,8 +115,8 @@ class ComplementPaiementTest extends TestCase
         $this->actingAs($this->citoyen)->post(route('paiement.payer', $ref), ['canal' => 'VIREMENT'])->assertSessionHasErrors('canal');
 
         // Campagne qui n'accepte que le virement : ouvrable sans opérateur ; mobile money seul : fermée.
-        $virement = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Virement seul', 'canaux_actifs' => ['VIREMENT']]);
-        $mobile = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Mobile seul', 'canaux_actifs' => ['ORANGE_MONEY']]);
+        $virement = Boutiques::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Virement seul', 'canaux_actifs' => ['VIREMENT']]);
+        $mobile = Boutiques::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Mobile seul', 'canaux_actifs' => ['ORANGE_MONEY']]);
         $this->assertNull($virement->raisonPaiementsFermes());
         $this->assertSame('aucun opérateur de paiement réel n’est configuré', $mobile->raisonPaiementsFermes());
 

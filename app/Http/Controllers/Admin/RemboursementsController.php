@@ -30,7 +30,7 @@ class RemboursementsController extends Controller
         Gate::authorize(Droit::RemboursementsVoir->value);
         $c = __('admin.remboursements.colonnes');
 
-        return Tableau::pour(Remboursement::query()->with(['user', 'souscription', 'candidature']), 'remboursements')
+        return Tableau::pour(Remboursement::query()->with(['user', 'souscription', 'reservation']), 'remboursements')
             ->colonnes([
                 Colonne::make('reference', $c['reference'])->triable()->recherchable()->classe('font-mono font-semibold'),
                 Colonne::make('date', $c['date'])->triable('created_at')->classe('whitespace-nowrap')->valeur(fn (Remboursement $r) => $r->created_at->format('d/m/Y')),

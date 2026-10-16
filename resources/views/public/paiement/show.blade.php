@@ -1,5 +1,5 @@
 {{--
-    Paiement d'un objet réservé : souscription d'actions ou caution d'une candidature aux boutiques.
+    Paiement d'un objet réservé : souscription d'actions ou caution d'une réservation de boutique.
     États : choix du canal, attente de confirmation (reprise après rechargement), échec (nouvel essai),
     délai dépassé, paiement indisponible. Contexte fourni par le contrôleur : $titre, $fil, $alerte,
     $lignes (récapitulatif), $total, $routes (show, payer, statut, simuler, changer), $nouvelle, $objet.
@@ -40,6 +40,17 @@
             @endforeach
             @if ($etat !== 'expiree')
                 <p class="mt-3 texte-carte">{{ __('public.paiement.avant', ['date' => $s->expire_le->translatedFormat('j F Y \à H\hi')]) }}</p>
+                @if (($compteRebours ?? false) && $etat !== 'controle')
+                    {{-- Compte à rebours du délai de paiement (pré-réservation d'une boutique) ; texte calculé au serveur si JavaScript manque. --}}
+                    <p class="compte-rebours mt-2" role="timer" aria-live="off" data-compte-rebours
+                       x-data="{ fin: {{ $s->expire_le->getTimestampMs() }}, maintenant: Date.now(), init() { setInterval(() => this.maintenant = Date.now(), 1000) },
+                                 get texte() { const r = Math.max(0, Math.floor((this.fin - this.maintenant) / 1000)); const h = Math.floor(r / 3600), m = Math.floor(r % 3600 / 60), s = r % 60;
+                                 return h + ' h ' + String(m).padStart(2, '0') + ' min ' + String(s).padStart(2, '0') + ' s' } }">
+                        <span>{{ __('public.paiement.compte_rebours') }}</span>
+                        @php($minutes = max(0, (int) now()->diffInMinutes($s->expire_le, false)))
+                        <strong x-text="texte">{{ intdiv($minutes, 60) }} h {{ str_pad((string) ($minutes % 60), 2, '0', STR_PAD_LEFT) }} min</strong>
+                    </p>
+                @endif
             @endif
         </section>
 

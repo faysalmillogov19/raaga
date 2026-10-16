@@ -25,3 +25,122 @@
     display: grid;
     gap: 6px;
 }
+
+/* Plan schématique des boutiques (public) : choix site / niveau / bloc, légende, cases colorées avec le statut écrit. */
+.plan-choix {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.plan-choix-libelle {
+    min-width: 56px;
+    font-weight: 700;
+    color: var(--encre);
+}
+
+.plan-choix-option {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 2px solid var(--ligne);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--encre);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.plan-choix-option.est-actif {
+    border-color: var(--vert-fonce);
+    background: var(--vert-pale);
+    color: var(--vert-fonce);
+}
+
+.plan-legende {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    list-style: none;
+    padding: 0;
+    font-size: 0.95rem;
+}
+
+.plan-legende li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.plan-pastille {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid transparent;
+}
+
+.plan-boutiques {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    list-style: none;
+    padding: 0;
+}
+
+.plan-case {
+    display: grid;
+    gap: 2px;
+    min-height: 64px;
+    padding: 8px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    text-decoration: none;
+    line-height: 1.2;
+}
+
+.plan-code {
+    font-weight: 800;
+    font-size: 0.85rem;
+    /* Code complet sur une ligne (deux colonnes à 360 px) ; coupure seulement si un code dépasse la case. */
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+.plan-etat,
+.plan-surface {
+    font-size: 0.75rem;
+}
+
+/* Couleurs : disponible (vert), pré-réservée (jaune), réservée (orange), attribuée (gris foncé) ; le statut est toujours écrit. */
+.plan-disponible { background: var(--vert-pale); border-color: var(--vert); color: var(--vert-fonce); }
+.plan-pre_reservee { background: var(--jaune-pale); border-color: #C9A400; color: var(--encre); }
+.plan-reservee { background: #FDE7D3; border-color: #C25E00; color: #6B3300; }
+.plan-attribuee { background: #4A5550; border-color: #4A5550; color: #fff; }
+.plan-retiree { background: var(--fond); border-color: var(--ligne); color: var(--gris); }
+
+a.plan-case.plan-disponible:hover,
+a.plan-case.plan-disponible:focus-visible {
+    background: var(--vert);
+    color: #fff;
+    outline: 3px solid var(--jaune);
+    outline-offset: 2px;
+}
+
+/* Compte à rebours du délai de paiement de la caution. */
+.compte-rebours {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: baseline;
+    font-weight: 600;
+    color: var(--encre);
+}
+
+.compte-rebours strong {
+    font-size: 1.15rem;
+    color: var(--vert-fonce);
+    font-variant-numeric: tabular-nums;
+}

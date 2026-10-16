@@ -2,8 +2,8 @@
 
 namespace App\Notifications;
 
-use App\Models\CandidatureBoutique;
 use App\Models\Paiement;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -16,7 +16,7 @@ class ControlePaiementCitoyen extends Notification
 {
     public function __construct(
         private readonly Paiement $paiement,
-        private readonly Souscription|CandidatureBoutique $objet,
+        private readonly Souscription|ReservationBoutique $objet,
         private readonly bool $libere,
     ) {}
 
@@ -61,6 +61,6 @@ class ControlePaiementCitoyen extends Notification
     {
         return $this->objet instanceof Souscription
             ? route('paiement.show', $this->objet->reference)
-            : route('boutiques.caution.show', $this->objet->reference);
+            : route('boutiques.reservation.show', $this->objet->reference);
     }
 }

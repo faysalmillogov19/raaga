@@ -8,22 +8,24 @@ use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutGrilleTarifaire;
 use App\Enums\StatutKyc;
 use App\Enums\StatutSite;
+use App\Enums\StatutTypeBoutique;
+use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
 use App\Models\GrilleTarifaire;
 use App\Models\GrilleTarifaireLigne;
+use App\Models\ReservationBoutique;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
 use App\Models\User;
 use App\Notifications\DecisionRendue;
-use App\Services\Backoffice\RegleGestionException;
-use App\Services\Boutiques\CandidatureBoutiques;
-use App\Services\Boutiques\LotsCampagne;
+use App\Services\Boutiques\ReservationsBoutiques;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Tests\Support\ActeursParametrage;
+use Tests\Support\Boutiques;
 use Tests\Support\GrillesTarifaires;
 use Tests\TestCase;
 
@@ -53,16 +55,24 @@ class GrilleTarifaireTest extends TestCase
         }
     }
 
-    /** Campagne confirmée proposant les boutiques et les magasins du site (lots construits dans le référentiel). */
-    private function campagneConfirmee(): CampagneBoutiques
+    /** Campagne ouverte sur le site, types rendus réservables (attribuables et validés). */
+    private function campagneOuverte(): CampagneBoutiques
     {
-        $campagne = CampagneBoutiques::create([
-            'statut' => StatutCampagneBoutiques::Confirmee, 'nom' => 'Attribution 2027', 'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addMonth(),
-            'delai_paiement_heures' => 72, 'canaux_actifs' => ['ORANGE_MONEY'], 'version' => 1, 'cree_par' => $this->regulateur->id,
-        ]);
-        app(LotsCampagne::class)->definir($campagne, [$this->site->id => [$this->boutique->id => true, $this->magasin->id => true]]);
+        foreach ([$this->boutique, $this->magasin] as $type) {
+            $type->forceFill(['statut' => StatutTypeBoutique::Valide, 'actif' => true, 'attribuable' => true])->save();
+        }
 
-        return $campagne;
+        return CampagneBoutiques::create([
+            'statut' => StatutCampagneBoutiques::Ouverte, 'nom' => 'Réservation 2027', 'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addMonth(),
+            'delai_paiement_heures' => 72, 'canaux_actifs' => ['ORANGE_MONEY'], 'max_boutiques_par_personne' => 1, 'sites' => [$this->site->id],
+            'version' => 1, 'cree_par' => $this->regulateur->id,
+        ]);
+    }
+
+    /** Boutique du site par niveau et bloc. */
+    private function boutiqueDu(string $niveau, string $bloc): Boutique
+    {
+        return $this->site->boutiques()->where('niveau', $niveau)->where('bloc', $bloc)->orderBy('numero')->firstOrFail();
     }
 
     public function test_calculs_par_niveau(): void
@@ -89,70 +99,48 @@ class GrilleTarifaireTest extends TestCase
             'RC' => [$this->boutique->id => [2000, 12, 60], $this->magasin->id => [1500, 12, 12]],
             'R1' => [$this->boutique->id => [2500, 12, 36]],
         ]);
-        $lots = $this->campagneConfirmee()->categories()->get()->keyBy('libelle');
-        $tarif = fn (string $lot) => array_intersect_key(app(LotsCampagne::class)->tarifer($lots[$lot]), array_flip(['loyer_mensuel', 'caution', 'avance']));
-        $this->assertSame(['loyer_mensuel' => 18000, 'caution' => 216000, 'avance' => 1080000], $tarif('Boutique · Rez-de-chaussée · 9 m²'));
-        $this->assertSame(['loyer_mensuel' => 31250, 'caution' => 375000, 'avance' => 1125000], $tarif('Boutique · R+1 · 12,50 m²'));
-        $this->assertSame(['loyer_mensuel' => 60000, 'caution' => 720000, 'avance' => 720000], $tarif('Magasin · Rez-de-chaussée · 40 m²'));
+        $tarif = fn (Boutique $b) => array_intersect_key(ReservationsBoutiques::tarifer($b), array_flip(['loyer_mensuel', 'caution', 'avance']));
+        $this->assertSame(['loyer_mensuel' => 18000, 'caution' => 216000, 'avance' => 1080000], $tarif($this->boutiqueDu('RC', 'A')));
+        $this->assertSame(['loyer_mensuel' => 31250, 'caution' => 375000, 'avance' => 1125000], $tarif($this->boutiqueDu('R1', 'B')));
+        $this->assertSame(['loyer_mensuel' => 60000, 'caution' => 720000, 'avance' => 720000], $tarif($this->boutiqueDu('RC', 'M')));
     }
 
-    public function test_les_montants_sont_figes_apres_la_candidature(): void
+    public function test_les_montants_sont_figes_a_la_reservation(): void
     {
         $this->grilleConfirmee($this->site, ['RC' => [$this->boutique->id => [2000, 12, 60], $this->magasin->id => [1500, 12, 12]], 'R1' => [$this->boutique->id => [2500, 12, 36]]]);
-        $campagne = $this->campagneConfirmee();
-        app(LotsCampagne::class)->engager($campagne);
-        $campagne->forceFill(['statut' => StatutCampagneBoutiques::Ouverte])->save();
-        $lot = $campagne->categories()->where('libelle', 'Boutique · Rez-de-chaussée · 9 m²')->sole();
+        $this->campagneOuverte();
+        $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670123456']);
+        Boutiques::reserver($this, $citoyen, $this->boutiqueDu('RC', 'A'))->assertSessionHasNoErrors();
+        $reservation = ReservationBoutique::sole();
+        $this->assertSame([216000, 1080000, 18000, 12, 60], [$reservation->caution, $reservation->avance, $reservation->loyer_mensuel, $reservation->mois_caution, $reservation->mois_avance]);
+        // Seule la caution confirme la réservation ; l'avance est due avant la signature du contrat.
+        $this->assertSame(216000, $reservation->montantAPayer());
 
-        $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide]);
-        $candidature = app(CandidatureBoutiques::class)->candidater($campagne, $citoyen, $lot->id,
-            array_map(fn ($d) => $d->value, CandidatureBoutiques::ENGAGEMENTS), '127.0.0.1', 'test');
-        $this->assertSame([216000, 1080000, 18000, 12, 60], [$candidature->caution, $candidature->avance, $candidature->loyer_mensuel, $candidature->mois_caution, $candidature->mois_avance]);
-        $this->assertSame(1296000, $candidature->montantAPayer());
-
-        // Nouvelle grille confirmée : ni le lot ouvert ni la candidature ne changent.
+        // Nouvelle grille confirmée : la réservation ne change pas.
         $this->grilleConfirmee($this->site, ['RC' => [$this->boutique->id => [3000, 6, 24]]]);
-        $this->assertSame([216000, 1080000], [$candidature->fresh()->caution, $candidature->fresh()->avance]);
-        $this->assertSame([216000, 1080000], [$lot->fresh()->caution, $lot->fresh()->avance]);
+        $this->assertSame([216000, 1080000], [$reservation->fresh()->caution, $reservation->fresh()->avance]);
 
         // Caution et avance sur deux lignes, avec leur mention.
-        $this->actingAs($citoyen)->get(route('boutiques.candidature', $candidature->reference))->assertOk()
-            ->assertSeeInOrder(['Caution', "216\u{00A0}000\u{00A0}FCFA", 'Caution : remboursable selon le règlement.',
-                'Avance', "1\u{00A0}080\u{00A0}000\u{00A0}FCFA", 'Avance : loyers payés d’avance, imputés sur les 60 premiers mois.'], false);
+        $this->actingAs($citoyen)->get(route('boutiques.suivi', $reservation->reference))->assertOk()
+            ->assertSeeInOrder(['Caution', "216\u{00A0}000\u{00A0}FCFA", 'Avance', "1\u{00A0}080\u{00A0}000\u{00A0}FCFA"], false);
     }
 
-    public function test_une_campagne_ne_s_ouvre_pas_sans_grille_confirmee(): void
+    public function test_une_boutique_sans_tarif_confirme_n_est_pas_reservable(): void
     {
-        $campagne = $this->campagneConfirmee();
-        $ouvrir = function () use ($campagne) {
-            try {
-                app(LotsCampagne::class)->engager($campagne);
-                $this->fail('La campagne s’est ouverte sans grille confirmée.');
-            } catch (RegleGestionException $e) {
-                $this->assertStringContainsString('grille tarifaire', $e->getMessage());
-            }
-            $this->assertSame(0, $this->site->boutiques()->where('statut', StatutBoutique::EnCampagne)->count());
-        };
+        $this->campagneOuverte();
+        $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670123456']);
 
-        // Aucune grille, puis grille seulement soumise.
-        $ouvrir();
-        $this->en($this->regulateur)->put(route('admin.boutiques.grilles.update', $this->site), ['lignes' => [
-            'RC' => [$this->boutique->id => ['unite_id' => Unite::idDuCode('M2'), 'loyer_m2' => 2000, 'mois_caution' => 12, 'mois_avance' => 60], $this->magasin->id => ['unite_id' => Unite::idDuCode('M2'), 'loyer_m2' => 1500, 'mois_caution' => 12, 'mois_avance' => 12]],
-            'R1' => [$this->boutique->id => ['unite_id' => Unite::idDuCode('M2'), 'loyer_m2' => 2500, 'mois_caution' => 12, 'mois_avance' => 36]],
-        ]]);
-        $this->en($this->regulateur)->post(route('admin.boutiques.grilles.soumettre', $this->site))->assertSessionHas('succes');
-        $ouvrir();
-        $this->en($this->validateur)->post(route('admin.boutiques.grilles.rejeter', $this->site), ['motif' => 'Loyers à revoir'])->assertSessionHas('succes');
+        // Aucune grille confirmée : pas de tarif, réservation refusée.
+        $this->assertNull(ReservationsBoutiques::tarifer($this->boutiqueDu('RC', 'A')));
+        Boutiques::reserver($this, $citoyen, $this->boutiqueDu('RC', 'A'))->assertSessionHasErrors('boutique');
 
-        // Grille confirmée, mais sans ligne pour les boutiques du R+1.
+        // Grille confirmée sans ligne pour le R+1 : seule la boutique du R+1 reste sans tarif.
         $this->grilleConfirmee($this->site, ['RC' => [$this->boutique->id => [2000, 12, 60], $this->magasin->id => [1500, 12, 12]]]);
-        $ouvrir();
-
-        // Toutes les boutiques couvertes : ouverture possible, montants figés dans les lots.
-        $this->grilleConfirmee($this->site, ['RC' => [$this->boutique->id => [2000, 12, 60], $this->magasin->id => [1500, 12, 12]], 'R1' => [$this->boutique->id => [2500, 12, 36]]]);
-        app(LotsCampagne::class)->engager($campagne);
-        $this->assertSame(4, $this->site->boutiques()->where('statut', StatutBoutique::EnCampagne)->count());
-        $this->assertTrue($campagne->categories()->get()->every(fn ($lot) => $lot->caution > 0 && $lot->grille_version === 3));
+        $this->assertNull(ReservationsBoutiques::tarifer($this->boutiqueDu('R1', 'B')));
+        Boutiques::reserver($this, $citoyen, $this->boutiqueDu('R1', 'B'))->assertSessionHasErrors('boutique');
+        $this->assertSame(0, ReservationBoutique::count());
+        Boutiques::reserver($this, $citoyen, $this->boutiqueDu('RC', 'A'))->assertSessionHasNoErrors();
+        $this->assertSame(StatutBoutique::PreReservee, $this->boutiqueDu('RC', 'A')->statut);
     }
 
     public function test_circuit_regulateur_puis_validateur(): void

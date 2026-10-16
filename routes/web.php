@@ -78,19 +78,20 @@ Route::middleware('actions.souscription')->controller(SouscriptionController::cl
     Route::post('/souscrire', 'store')->middleware(['auth', 'role:citoyen', 'throttle:10,1'])->name('souscrire.store');
 });
 
-// Boutiques du marché : présentation et règlement publics, candidature et suivi (citoyen connecté).
+// Boutiques du marché, au premier arrivé : plan public et règlement ; récapitulatif, réservation et suivi (citoyen connecté).
 Route::controller(BoutiquesController::class)->prefix('boutiques')->name('boutiques')->group(function () {
     Route::get('/', 'index');
     Route::get('/reglement', 'reglement')->name('.reglement');
     Route::middleware(['auth', 'role:citoyen'])->group(function () {
-        Route::get('/candidater', 'create')->name('.candidater');
-        Route::post('/candidater', 'store')->middleware('throttle:10,1')->name('.candidater.store');
-        Route::get('/candidatures/{reference}', 'candidature')->name('.candidature');
+        Route::get('/plan/{code}', 'boutique')->name('.boutique');
+        // Tentatives limitées par utilisateur (5 par minute) sur l'action de réservation.
+        Route::post('/plan/{code}/reserver', 'reserver')->middleware('throttle:5,1')->name('.reserver');
+        Route::get('/reservations/{reference}', 'suivi')->name('.suivi');
     });
 });
 
 // Caution d'une candidature : même module de paiement que les souscriptions (titulaire uniquement).
-Route::middleware(['auth', 'role:citoyen'])->controller(CautionController::class)->prefix('boutiques/candidatures/{reference}/caution')->name('boutiques.caution.')->group(function () {
+Route::middleware(['auth', 'role:citoyen'])->controller(CautionController::class)->prefix('boutiques/reservations/{reference}/caution')->name('boutiques.reservation.')->group(function () {
     Route::get('/', 'show')->name('show');
     Route::post('/', 'payer')->middleware('throttle:10,1')->name('payer');
     Route::get('/statut', 'statut')->middleware('throttle:60,1')->name('statut');

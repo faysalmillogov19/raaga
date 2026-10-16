@@ -65,6 +65,18 @@ class Boutique extends Model
         });
     }
 
+    /** Change le statut commercial et le garde dans l'historique (boutique_statuts, ajout seul). */
+    public function changerStatut(StatutBoutique $nouveau, string $motif, ?ReservationBoutique $reservation = null, ?User $auteur = null): void
+    {
+        $ancien = $this->statut;
+        if ($ancien === $nouveau) {
+            return;
+        }
+        $this->forceFill(['statut' => $nouveau])->save();
+        BoutiqueStatut::create(['boutique_id' => $this->id, 'ancien' => $ancien?->value, 'nouveau' => $nouveau->value,
+            'reservation_boutique_id' => $reservation?->id, 'auteur_id' => $auteur?->id, 'motif' => $motif, 'created_at' => now()]);
+    }
+
     /** Recode la boutique avec le nouveau code de son site ; l'ancien code est conservé dans l'historique. */
     public function recoder(string $codeSite, ?User $auteur): void
     {

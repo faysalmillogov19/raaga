@@ -19,7 +19,7 @@ use App\Support\MotsInterdits;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Finder\Finder;
-use Tests\Feature\Compte\CandidatureBoutiqueTest;
+use Tests\Support\Boutiques;
 use Tests\Support\ConnexionBackoffice;
 use Tests\Support\ParametresInvestissementConfirmes;
 use Tests\TestCase;
@@ -58,7 +58,7 @@ class BrandingDemarchesTest extends TestCase
             ->assertSee('data-picto="piece-pousse"', false)->assertSee('data-picto="boutique-auvent"', false)
             ->assertSee('data-badge-demarche="investir"', false)->assertSee('data-badge-demarche="boutiques"', false)
             ->assertSee('class="menu-picto demarche-investir"', false)->assertSee('class="menu-picto demarche-boutiques"', false)
-            ->assertSeeInOrder(['Devenez actionnaire de votre marché', 'Droit aux dividendes décidés par l’assemblée générale', 'Rendement non garanti', 'Installez votre commerce dans un marché moderne', 'Je candidate'], false)
+            ->assertSeeInOrder(['Devenez actionnaire de votre marché', 'Droit aux dividendes décidés par l’assemblée générale', 'Rendement non garanti', 'Installez votre commerce dans un marché moderne', 'Je réserve'], false)
             ->assertSeeInOrder(['D’où viennent les dividendes ?', 'Les loyers des boutiques', 'Les parkings', 'Les services du marché',
                 'Certaines années, il peut n’y en avoir aucun.'], false);
 
@@ -137,18 +137,18 @@ class BrandingDemarchesTest extends TestCase
     public function test_encadres_toujours_presents(): void
     {
         $this->tranche();
-        CandidatureBoutiqueTest::campagneOuverte();
+        Boutiques::campagneOuverte();
         $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => 'VALIDE', 'pays_residence' => 'BF']);
 
         foreach ([route('offre'), route('transparence'), route('souscrire.reglement')] as $url) {
             $this->get($url)->assertSee('Acheter des actions ne donne aucun droit ni priorité pour obtenir une boutique.', false);
         }
         $this->actingAs($citoyen)->get(route('souscrire'))->assertSee('Acheter des actions ne donne aucun droit ni priorité pour obtenir une boutique.', false);
-        foreach ([route('boutiques'), route('boutiques.reglement'), route('boutiques.candidater')] as $url) {
-            $this->actingAs($citoyen)->get($url)->assertOk()->assertSee('Candidater à une boutique ne fait pas de vous un actionnaire.', false);
+        foreach ([route('boutiques'), route('boutiques.reglement'), route('boutiques.boutique', Boutiques::boutique()->code)] as $url) {
+            $this->actingAs($citoyen)->get($url)->assertOk()->assertSee('Réserver une boutique ne fait pas de vous un actionnaire.', false);
         }
         // Les deux cartes de l'accueil portent aussi leur rappel.
         $this->get('/')->assertSee('Acheter des actions ne donne aucun droit ni priorité pour obtenir une boutique.', false)
-            ->assertSee('Candidater à une boutique ne fait pas de vous un actionnaire.', false);
+            ->assertSee('Réserver une boutique ne fait pas de vous un actionnaire.', false);
     }
 }

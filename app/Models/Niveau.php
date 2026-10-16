@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Niveau d'un site (SS, RC, R1…), trié par rang (-1 sous-sol, 0 rez-de-chaussée, 1, 2…). Son code entre dans le code
@@ -63,6 +64,6 @@ class Niveau extends Model
             + CapaciteSite::query()->where('niveau', $this->code)->count()
             + GrilleTarifaireLigne::query()->where('niveau', $this->code)->count()
             + GrilleTarifaireVersion::query()->where('parametres', 'like', '%"'.$this->code.'|%')->count()
-            + CategorieBoutique::query()->where('niveau', $this->code)->count();
+            + DB::table('categories_boutiques')->where('niveau', $this->code)->count();
     }
 }

@@ -102,7 +102,7 @@ class Site extends Model implements Parametrable
         $statut = $statut instanceof StatutSite ? $statut : StatutSite::tryFrom((string) $statut);
 
         return $statut !== StatutSite::Brouillon
-            || $this->boutiques()->whereIn('statut', [StatutBoutique::EnCampagne, StatutBoutique::Attribuee])->exists();
+            || $this->boutiques()->whereIn('statut', array_filter(StatutBoutique::cases(), fn (StatutBoutique $s) => $s->verrouillee()))->exists();
     }
 
     /**

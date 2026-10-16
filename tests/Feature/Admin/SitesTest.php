@@ -96,7 +96,7 @@ class SitesTest extends TestCase
 
         // Site validé : plus modifiable, sauf si le VALIDATEUR l'autorise (motif obligatoire) ; une boutique engagée reste verrouillée.
         $engagee = $site->boutiques()->first();
-        $engagee->forceFill(['statut' => StatutBoutique::EnCampagne])->save();
+        $engagee->forceFill(['statut' => StatutBoutique::PreReservee])->save();
         $this->en($this->gestionnaire)->get(route('admin.sites.show', $site))->assertOk()
             ->assertSee('Seul le VALIDATEUR peut en autoriser la modification.')->assertDontSee('Autoriser la modification');
         $this->en($this->gestionnaire)->post(route('admin.sites.reviser', $site), ['motif' => 'Ajout de boutiques'])->assertForbidden();

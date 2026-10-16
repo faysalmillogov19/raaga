@@ -3,9 +3,9 @@
 namespace App\Services\Paiement;
 
 use App\Enums\StatutSouscription;
-use App\Models\CandidatureBoutique;
 use App\Models\Paiement;
 use App\Models\Remboursement;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Models\User;
 use App\Services\Audit\Journal;
@@ -26,10 +26,10 @@ class Remboursements
      * Ouvre le remboursement d'un paiement : montant réellement payé (frais compris) pour un objet annulé, ou la somme
      * déjà reçue d'un paiement incomplet jamais complété.
      */
-    public function ouvrir(Souscription|CandidatureBoutique $objet, Paiement $paiement, string $origine, ?User $acteur, ?int $montant = null): Remboursement
+    public function ouvrir(Souscription|ReservationBoutique $objet, Paiement $paiement, string $origine, ?User $acteur, ?int $montant = null): Remboursement
     {
         $remboursement = Remboursement::create([
-            ...($objet instanceof Souscription ? ['souscription_id' => $objet->id] : ['candidature_boutique_id' => $objet->id]),
+            ...($objet instanceof Souscription ? ['souscription_id' => $objet->id] : ['reservation_boutique_id' => $objet->id]),
             'paiement_id' => $paiement->id, 'user_id' => $objet->user_id, 'montant' => $montant ?? $paiement->montant + $paiement->frais,
             'origine' => $origine, 'statut' => Remboursement::A_EFFECTUER,
         ]);

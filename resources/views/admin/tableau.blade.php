@@ -48,6 +48,29 @@
         </section>
     @endcan
 
+    {{-- Réservation des boutiques (RÉGULATEUR, VALIDATEUR) : par campagne, boutiques disponibles, pré-réservées, réservées et attribuées. --}}
+    @can(Droit::BoutiquesVoir->value)
+        @php($campagnesBoutiques = \App\Models\CampagneBoutiques::query()->whereIn('statut', ['OUVERTE', 'CONFIRMEE', 'CLOTUREE'])->latest('date_ouverture')->limit(3)->get())
+        @if ($campagnesBoutiques->isNotEmpty())
+            <section class="bo-carte mb-4" aria-labelledby="campagnes-boutiques-titre" data-campagnes-boutiques>
+                <h2 id="campagnes-boutiques-titre" class="!text-[1.05rem]">{{ __('admin.tableau.campagnes_boutiques') }}</h2>
+                <div class="mt-3 overflow-x-auto">
+                    <table class="bo-tableau">
+                        <thead><tr><th scope="col">{{ __('admin.boutiques.colonnes.nom') }}</th>
+                            @foreach (['disponible', 'pre_reservee', 'reservee', 'attribuee'] as $statut)<th scope="col" class="text-right">{{ __('public.boutiques.plan.statuts.'.$statut) }}</th>@endforeach</tr></thead>
+                        <tbody>
+                            @foreach ($campagnesBoutiques as $campagne)
+                                @php($n = $campagne->compteurs())
+                                <tr><td><a href="{{ route('admin.boutiques.show', $campagne) }}" class="font-semibold">{{ $campagne->nom }}</a> <span class="texte-carte">· {{ $campagne->statut->label() }}</span></td>
+                                    @foreach (['disponible', 'pre_reservee', 'reservee', 'attribuee'] as $statut)<td class="text-right" data-compteur="{{ $statut }}">{{ format_nombre($n[$statut]) }}</td>@endforeach</tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
+    @endcan
+
     {{-- À traiter --}}
     <section class="bo-carte adm-carte-tableau" id="a-traiter" aria-labelledby="a-traiter-titre">
         <div class="adm-carte-entete">

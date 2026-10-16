@@ -16,19 +16,25 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 
 /**
- * Campagne d'attribution des boutiques du marché. Indépendante des actions : tout citoyen peut
- * candidater, sans avantage lié aux actions détenues. Caution et avance par lot (grille tarifaire) ; attribution par
- * tirage au sort. Paramétrage soumis au workflow commun (RÉGULATEUR saisit, VALIDATEUR confirme).
+ * Campagne de réservation des boutiques, au premier arrivé, premier servi (aucune priorité, aucun tirage). Indépendante
+ * des actions. Paramètres : période d'ouverture (date et heure), site(s) concerné(s), nombre maximum de boutiques par
+ * personne (1 par défaut), délai de paiement de la caution (72 h par défaut), moyens de paiement. Caution et avance de
+ * chaque boutique : grille tarifaire confirmée de son site. Workflow commun (RÉGULATEUR saisit, VALIDATEUR confirme).
  */
 #[Table(name: 'campagnes_boutiques')]
 #[Fillable([
-    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne',
+    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne', 'sites',
     'version', 'cree_par', 'soumis_par', 'soumise_le', 'valide_par', 'validee_le', 'motif_rejet',
     'ouverte_le', 'cloturee_le', 'attribuee_le',
 ])]
 class CampagneBoutiques extends Model implements Parametrable
 {
-    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne'];
+    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'max_boutiques_par_personne', 'delai_paiement_heures', 'canaux_actifs'];
+
+    /** Valeurs par défaut d'une nouvelle campagne. */
+    public const MAX_PAR_PERSONNE = 1;
+
+    public const DELAI_PAIEMENT_HEURES = 72;
 
     protected function casts(): array
     {
@@ -39,6 +45,7 @@ class CampagneBoutiques extends Model implements Parametrable
             'delai_paiement_heures' => 'integer',
             'max_boutiques_par_personne' => 'integer',
             'canaux_actifs' => 'array',
+            'sites' => 'array',
             'version' => 'integer',
             'soumise_le' => 'datetime',
             'validee_le' => 'datetime',
@@ -143,7 +150,7 @@ class CampagneBoutiques extends Model implements Parametrable
     }
 
     /**
-     * Paramètres figés : champs de la campagne et résumé lisible des catégories (pour le différentiel).
+     * Paramètres figés : champs de la campagne, sites en clair (pour le différentiel).
      *
      * @return array<string, mixed>
      */
@@ -154,21 +161,43 @@ class CampagneBoutiques extends Model implements Parametrable
             $valeur = $this->getAttribute($champ);
             $snapshot[$champ] = $valeur instanceof \DateTimeInterface ? $valeur->format(DATE_ATOM) : $valeur;
         }
-
-        $snapshot['categories'] = $this->categories()->with('site')->get()
-            ->map(fn (CategorieBoutique $c) => $c->intitule().' : '.format_nombre($c->nombre_boutiques).' boutique(s)'
-                .($c->estTarife() ? ', caution '.format_fcfa($c->caution).($c->avance ? ', avance '.format_fcfa($c->avance) : '') : ''))
-            ->implode(' ; ');
+        $snapshot['sites'] = $this->sitesConcernes()->map(fn (Site $s) => ($s->code ? $s->code.' · ' : '').$s->nom)->implode(', ');
 
         return $snapshot;
     }
 
-    /**
-     * @return HasMany<CategorieBoutique, $this>
-     */
-    public function categories(): HasMany
+    /** @return \Illuminate\Database\Eloquent\Collection<int, Site> sites concernés par la campagne */
+    public function sitesConcernes(): \Illuminate\Database\Eloquent\Collection
     {
-        return $this->hasMany(CategorieBoutique::class, 'campagne_boutiques_id')->orderBy('ordre');
+        return Site::query()->whereIn('id', (array) $this->sites)->orderBy('nom')->get();
+    }
+
+    /**
+     * @return HasMany<ReservationBoutique, $this>
+     */
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(ReservationBoutique::class, 'campagne_boutiques_id');
+    }
+
+    /** Réservations ouvertes : campagne au statut OUVERTE et dans sa période (date et heure). */
+    public function accepteReservations(): bool
+    {
+        return $this->statut === StatutCampagneBoutiques::Ouverte && now()->between($this->date_ouverture, $this->date_cloture);
+    }
+
+    /**
+     * Boutiques par statut sur les sites de la campagne (tableau de bord) : disponibles, pré-réservées, réservées, attribuées.
+     *
+     * @return array{disponible: int, pre_reservee: int, reservee: int, attribuee: int}
+     */
+    public function compteurs(): array
+    {
+        $parStatut = Boutique::query()->whereIn('site_id', (array) $this->sites)->whereHas('type', fn ($q) => $q->where('attribuable', true))
+            ->selectRaw('statut, count(*) as n')->groupBy('statut')->pluck('n', 'statut');
+        $n = fn (array $statuts) => (int) collect($statuts)->sum(fn ($s) => $parStatut[$s] ?? 0);
+
+        return ['disponible' => $n(['DISPONIBLE', 'EN_CAMPAGNE']), 'pre_reservee' => $n(['PRE_RESERVEE']), 'reservee' => $n(['RESERVEE']), 'attribuee' => $n(['ATTRIBUEE'])];
     }
 
     /**

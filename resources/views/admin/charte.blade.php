@@ -84,7 +84,7 @@
             <x-admin.champ nom="observations" libelle="Observations" type="zone" valeur="Boutique d’angle, donne sur l’allée principale." class="md:col-span-2" />
             <x-admin.champ nom="position" libelle="Position" type="radio" :options="['ANGLE' => 'Angle', 'FACADE' => 'Façade', 'ALLEE' => 'Allée intérieure']" valeur="ANGLE" />
             <div class="grid content-start gap-2">
-                <x-admin.champ nom="attribuable" libelle="Attribuable par tirage" type="case" :valeur="true" />
+                <x-admin.champ nom="attribuable" libelle="Réservable" type="case" :valeur="true" />
                 <x-admin.champ nom="actif" libelle="Type actif" type="interrupteur" :valeur="true" />
             </div>
             <x-admin.depot-fichier nom="fichier_demo" libelle="Fichier Excel" class="md:col-span-2" />

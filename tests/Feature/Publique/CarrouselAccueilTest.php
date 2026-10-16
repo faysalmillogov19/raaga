@@ -34,7 +34,7 @@ class CarrouselAccueilTest extends TestCase
             'alt' => 'Allée du marché',
             'titre' => 'Votre boutique',
             'sousTitre' => 'Candidatez en ligne.',
-            'boutonLibelle' => 'Je candidate',
+            'boutonLibelle' => 'Je réserve',
             'boutonLien' => '/inscription',
             'active' => '1',
             ...$surcharges,
@@ -51,7 +51,7 @@ class CarrouselAccueilTest extends TestCase
         $page = $this->get('/')->assertOk();
 
         $page->assertSee('class="acc-diapo acc-diapo-defaut"', false)->assertSee('aria-label="1 sur 1"', false)
-            ->assertSeeInOrder(['Votre boutique au marché Raaga', 'Je candidate', 'Comment ça marche'])
+            ->assertSeeInOrder(['Votre boutique au marché Raaga', 'Je réserve', 'Comment ça marche'])
             // Une seule diapositive : ni lecture automatique, ni commandes, ni image à précharger.
             ->assertDontSee('data-carrousel', false)->assertDontSee('data-lecture', false)->assertDontSee('rel="preload" as="image"', false);
     }

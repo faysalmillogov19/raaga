@@ -7,8 +7,9 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Paramètres d'une campagne d'attribution : période, paiement, plafond par personne, et types de boutiques
- * proposés sur chaque site confirmé. Les montants ne se saisissent pas : ils viennent de la grille tarifaire.
+ * Paramètres d'une campagne de réservation (premier arrivé) : période (date et heure), site(s) concerné(s), nombre
+ * maximum de boutiques par personne, délai de paiement de la caution, moyens de paiement. Les montants ne se saisissent
+ * pas : ils viennent de la grille tarifaire confirmée de chaque site.
  */
 class CampagneBoutiquesRequest extends FormRequest
 {
@@ -27,17 +28,17 @@ class CampagneBoutiquesRequest extends FormRequest
             'delai_paiement_heures' => ['required', 'integer', 'min:1', 'max:720'],
             'canaux_actifs' => ['required', 'array', 'min:1'],
             'canaux_actifs.*' => [Rule::in(MoyenPaiement::proposables()->pluck('code')->all())],
-            'max_boutiques_par_personne' => ['nullable', 'integer', 'min:1', 'max:1000'],
-            'lots' => ['required', 'array'],
-            'lots.*' => ['array'],
-            'lots.*.*' => ['boolean'],
+            'max_boutiques_par_personne' => ['required', 'integer', 'min:1', 'max:1000'],
+            'sites' => ['required', 'array', 'min:1'],
+            'sites.*' => ['integer', Rule::exists('sites', 'id')->where('statut', 'CONFIRME')],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'lots.required' => __('admin.boutiques.erreurs.categories'),
+            'sites.required' => __('admin.boutiques.erreurs.sites'),
+            'sites.*.exists' => __('admin.boutiques.erreurs.sites'),
         ];
     }
 
@@ -49,12 +50,8 @@ class CampagneBoutiquesRequest extends FormRequest
     /** @return array<string, mixed> */
     public function parametres(): array
     {
-        return $this->safe()->only(['nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne']);
-    }
-
-    /** Types retenus par site : [site_id][type_id] => coché. @return array<int|string, array<int|string, mixed>> */
-    public function selection(): array
-    {
-        return (array) $this->validated('lots');
+        return [...$this->safe()->only(['nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne']),
+            'sites' => array_values(array_unique(array_map('intval', (array) $this->validated('sites')))),
+        ];
     }
 }

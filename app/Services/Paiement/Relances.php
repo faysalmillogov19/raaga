@@ -2,10 +2,10 @@
 
 namespace App\Services\Paiement;
 
-use App\Enums\StatutCandidatureBoutique;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
-use App\Models\CandidatureBoutique;
 use App\Models\Relance;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Models\User;
 use App\Notifications\RelancePaiement;
@@ -25,7 +25,7 @@ class Relances
 
     public function __construct(private readonly Journal $journal) {}
 
-    public function relancer(Souscription|CandidatureBoutique $objet, string $type, ?User $auteur = null, ?string $message = null): Relance
+    public function relancer(Souscription|ReservationBoutique $objet, string $type, ?User $auteur = null, ?string $message = null): Relance
     {
         if ($type === Relance::MANUELLE && ! $objet->attendPaiement()) {
             throw ValidationException::withMessages(['relance' => __('admin.paiements.erreurs.relance_impossible')]);
@@ -36,7 +36,7 @@ class Relances
         $destinataire->notify(new RelancePaiement($objet, $type, $message));
 
         $relance = Relance::create([
-            ...($objet instanceof Souscription ? ['souscription_id' => $objet->id] : ['candidature_boutique_id' => $objet->id]),
+            ...($objet instanceof Souscription ? ['souscription_id' => $objet->id] : ['reservation_boutique_id' => $objet->id]),
             'user_id' => $destinataire->id, 'type' => $type, 'canaux' => $canaux, 'auteur_id' => $auteur?->id,
             'message' => $message, 'created_at' => now(),
         ]);
@@ -56,7 +56,7 @@ class Relances
     {
         $compteurs = ['echeance' => 0, 'expiration' => 0];
         foreach ([[Souscription::class, StatutSouscription::Reservee, StatutSouscription::Expiree, 'souscription_id'],
-            [CandidatureBoutique::class, StatutCandidatureBoutique::Reservee, StatutCandidatureBoutique::Expiree, 'candidature_boutique_id']] as [$classe, $reservee, $expiree, $cle]) {
+            [ReservationBoutique::class, StatutReservationBoutique::PreReservee, StatutReservationBoutique::Expiree, 'reservation_boutique_id']] as [$classe, $reservee, $expiree, $cle]) {
             $sans = fn (string $type) => fn ($q) => $q->whereNotIn('id', Relance::query()->where('type', $type)->whereNotNull($cle)->select($cle));
 
             $classe::query()->where('statut', $reservee)->whereBetween('expire_le', [now(), now()->addDay()])
@@ -77,8 +77,8 @@ class Relances
 
         // Paiement incomplet : relance 24 h avant la fin du délai de complément (une par décision du contrôleur).
         $compteurs['complement'] = 0;
-        foreach ([Souscription::class => 'souscription_id', CandidatureBoutique::class => 'candidature_boutique_id'] as $classe => $cle) {
-            $classe::query()->whereIn('statut', ['RESERVEE'])->whereBetween('expire_le', [now(), now()->addDay()])
+        foreach ([Souscription::class => ['souscription_id', StatutSouscription::Reservee], ReservationBoutique::class => ['reservation_boutique_id', StatutReservationBoutique::PreReservee]] as $classe => [$cle, $attente]) {
+            $classe::query()->where('statut', $attente)->whereBetween('expire_le', [now(), now()->addDay()])
                 ->whereHas('paiements', fn ($p) => $p->incomplet())->with(['user', 'paiements'])->orderBy('id')
                 ->each(function ($objet) use ($cle, &$compteurs) {
                     $paiement = $objet->paiements->sortByDesc('id')->first(fn ($p) => $p->aCompleter());

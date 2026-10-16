@@ -10,8 +10,8 @@ use App\Models\User;
 use Database\Seeders\ReferentielsSitesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Tests\Feature\Compte\CandidatureBoutiqueTest;
 use Tests\Support\ActeursParametrage;
+use Tests\Support\Boutiques;
 use Tests\Support\GrillesTarifaires;
 use Tests\TestCase;
 
@@ -52,7 +52,7 @@ class AccueilRaagaTest extends TestCase
         $page = $this->get('/')->assertOk();
         $page->assertSeeInOrder(['Votre boutique au marché Raaga', 'boutiques référencées', 'Comment ça marche', 'Ce que vous versez', 'Les sites',
             'Questions fréquentes', 'Besoin d’aide ?'], false)
-            ->assertSee('Je candidate')->assertSee('href="#comment"', false)
+            ->assertSee('Je réserve')->assertSee('href="#comment"', false)
             ->assertSee('Raaga ne vous demandera jamais de payer à une personne. Payez uniquement par les canaux officiels.', false);
     }
 
@@ -66,9 +66,9 @@ class AccueilRaagaTest extends TestCase
             ->assertSee('Marché Raaga')->assertSee('Marché de Sarfalao')->assertDontSee('Arrondissement 4')->assertSee('5 boutiques')->assertSee('1 boutique');
 
         // Campagne ouverte : sa date de clôture.
-        $campagne = CandidatureBoutiqueTest::campagneOuverte();
+        $campagne = Boutiques::campagneOuverte();
         Cache::flush();
-        $this->get('/')->assertSee('Candidatures ouvertes jusqu’au '.$campagne->date_cloture->translatedFormat('j F Y'), false);
+        $this->get('/')->assertSee('Réservations ouvertes jusqu’au '.$campagne->date_cloture->translatedFormat('j F Y'), false);
     }
 
     public function test_message_si_aucune_grille_confirmee_puis_durees_de_la_grille(): void
@@ -100,7 +100,7 @@ class AccueilRaagaTest extends TestCase
         preg_match('#<section[^>]*aria-labelledby="acc-faq-titre".*?</section>#s', $page->getContent(), $faq);
         $this->assertSame(5, substr_count($faq[0], '<details class="faq-item">'));
         $this->assertSame(5, substr_count($faq[0], '<summary>'));
-        $this->assertStringContainsString('Qui peut candidater à une boutique ?', $faq[0]);
+        $this->assertStringContainsString('Qui peut réserver une boutique ?', $faq[0]);
         $this->assertStringContainsString('href="'.route('faq').'"', $faq[0]);
     }
 }

@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Compte;
 
 use App\Enums\DocumentAccepte;
 use App\Enums\Role;
-use App\Enums\StatutCandidatureBoutique;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
 use App\Http\Controllers\Controller;
 use App\Models\Acceptation;
-use App\Models\CandidatureBoutique;
 use App\Models\LigneRegistre;
 use App\Models\ManifestationInteret;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Services\Documents\GenerateurPdf;
 use App\Services\Paiement\ServicePaiement;
@@ -49,8 +49,8 @@ class EspaceController extends Controller
         $onglets = $actions ? self::ONGLETS : ['boutiques', 'profil'];
         $demande = in_array($request->query('onglet'), self::RUBRIQUES_ACTIONS, true) ? 'actions' : $request->query('onglet');
         $onglet = in_array($demande, $onglets, true) ? $demande : $onglets[0];
-        $candidatures = CandidatureBoutique::query()->where('user_id', $user->id)->with(['campagne', 'categorie.site', 'boutique'])->latest('id')->get();
-        $cautionsPayees = $candidatures->whereIn('statut', [StatutCandidatureBoutique::Payee, StatutCandidatureBoutique::Retenue, StatutCandidatureBoutique::NonRetenue]);
+        $candidatures = ReservationBoutique::query()->where('user_id', $user->id)->with(['campagne', 'boutique.type'])->latest('id')->get();
+        $cautionsPayees = $candidatures->whereIn('statut', [StatutReservationBoutique::Reservee, StatutReservationBoutique::Attribuee]);
 
         $payees = $souscriptions->where('statut', StatutSouscription::Payee);
         $allouees = $souscriptions->where('statut', StatutSouscription::Allouee);
@@ -72,10 +72,10 @@ class EspaceController extends Controller
                 // Aucun versement de dividende aux actions B n'est encore enregistré par la plateforme.
                 'dividendes' => format_fcfa(0),
             ] : ($onglet === 'boutiques' ? [
-                'candidatures' => format_nombre($candidatures->whereIn('statut', StatutCandidatureBoutique::actifs())->count()),
+                'pre_reservees' => format_nombre($candidatures->where('statut', StatutReservationBoutique::PreReservee)->count()),
                 'cautions' => format_fcfa($cautionsPayees->sum('caution')),
-                'en_attente_tirage' => format_nombre($candidatures->where('statut', StatutCandidatureBoutique::Payee)->count()),
-                'attribuees' => format_nombre($candidatures->where('statut', StatutCandidatureBoutique::Retenue)->count()),
+                'reservees' => format_nombre($candidatures->where('statut', StatutReservationBoutique::Reservee)->count()),
+                'attribuees' => format_nombre($candidatures->where('statut', StatutReservationBoutique::Attribuee)->count()),
             ] : []),
             'recus' => $souscriptions->filter(fn (Souscription $s) => Recu::disponible($s))
                 ->map(fn (Souscription $s) => ['souscription' => $s, 'paiement' => Recu::paiement($s)])

@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
  * A_EFFECTUER → PROPOSE → EFFECTUE ; un rejet le renvoie à A_EFFECTUER avec le motif.
  */
 #[Fillable([
-    'reference', 'souscription_id', 'candidature_boutique_id', 'paiement_id', 'user_id', 'montant', 'origine', 'statut',
+    'reference', 'souscription_id', 'reservation_boutique_id', 'paiement_id', 'user_id', 'montant', 'origine', 'statut',
     'mode', 'reference_operation', 'propose_par', 'propose_le', 'valide_par', 'valide_le', 'motif_rejet',
 ])]
 class Remboursement extends Model
@@ -55,9 +55,9 @@ class Remboursement extends Model
     }
 
     /** Objet remboursé : souscription d'actions ou candidature aux boutiques (caution). */
-    public function objet(): Souscription|CandidatureBoutique|null
+    public function objet(): Souscription|ReservationBoutique|null
     {
-        return $this->souscription_id ? $this->souscription : $this->candidature;
+        return $this->souscription_id ? $this->souscription : $this->reservation;
     }
 
     /**
@@ -69,11 +69,11 @@ class Remboursement extends Model
     }
 
     /**
-     * @return BelongsTo<CandidatureBoutique, $this>
+     * @return BelongsTo<ReservationBoutique, $this>
      */
-    public function candidature(): BelongsTo
+    public function reservation(): BelongsTo
     {
-        return $this->belongsTo(CandidatureBoutique::class, 'candidature_boutique_id');
+        return $this->belongsTo(ReservationBoutique::class, 'reservation_boutique_id');
     }
 
     /**

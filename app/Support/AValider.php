@@ -7,11 +7,11 @@ use App\Enums\DecisionParametrage;
 use App\Enums\Droit;
 use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutGrilleTarifaire;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
 use App\Models\AuditLog;
 use App\Models\CampagneBoutiques;
-use App\Models\CandidatureBoutique;
 use App\Models\CorrectionPaiement;
 use App\Models\DecisionPhase;
 use App\Models\GrilleTarifaire;
@@ -22,6 +22,7 @@ use App\Models\ParametrageDecision;
 use App\Models\ParametresInvestissement;
 use App\Models\ParametresPaiements;
 use App\Models\Remboursement;
+use App\Models\ReservationBoutique;
 use App\Models\Site;
 use App\Models\SiteFinance;
 use App\Models\TypeBoutique;
@@ -133,7 +134,7 @@ final class AValider
                         foreach (CorrectionPaiement::query()->where('statut', CorrectionPaiement::PROPOSEE)->with('paiement')->get() as $c) {
                             $p = $c->paiement;
                             $liste->push($e('correction:'.$c->id, 'correction', $p->reference.' · '.$p->objet()->reference, $c->propose_par, $c->propose_le,
-                                route('admin.paiements.dossier', $p->souscription_id ? ['souscription', $p->souscription_id] : ['caution', $p->candidature_boutique_id])));
+                                route('admin.paiements.dossier', $p->souscription_id ? ['souscription', $p->souscription_id] : ['caution', $p->reservation_boutique_id])));
                         }
                     }
                     if ($user->can(Droit::RemboursementsApprouver->value)) {
@@ -346,7 +347,7 @@ final class AValider
                 return ['infos' => [
                     $x['citoyen'] => $citoyen->name, $x['telephone'] => $citoyen->telephone, $x['motif'] => $v->motif,
                     $x['souscriptions'] => format_nombre($citoyen->souscriptions()->whereIn('statut', ['RESERVEE', 'PAYEE'])->count()),
-                    $x['candidatures'] => format_nombre(CandidatureBoutique::query()->where('user_id', $citoyen->id)->whereIn('statut', ['RESERVEE', 'PAYEE', 'RETENUE'])->count()),
+                    $x['candidatures'] => format_nombre(ReservationBoutique::query()->where('user_id', $citoyen->id)->whereIn('statut', StatutReservationBoutique::valeursActives())->count()),
                     $x['effet'] => $x['effet_annulation'],
                 ], 'pieces' => app(VerificationIdentite::class)->dossier($citoyen)->filter()
                     ->map(fn ($d) => ['libelle' => __('admin.kyc.pieces.'.strtolower($d->type->value)).($d->face ? ' · '.$d->face->value : ''), 'url' => route('admin.kyc.piece', $d)])->values()->all()];

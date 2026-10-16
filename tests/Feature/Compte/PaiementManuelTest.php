@@ -16,9 +16,9 @@ use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
-use App\Models\CandidatureBoutique;
 use App\Models\Paiement;
 use App\Models\Relance;
+use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Models\Tranche;
 use App\Models\User;
@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\ActeursParametrage;
+use Tests\Support\Boutiques;
 use Tests\TestCase;
 
 /**
@@ -113,15 +114,12 @@ class PaiementManuelTest extends TestCase
 
     public function test_caution_vers_le_compte_de_location(): void
     {
-        $campagne = CandidatureBoutiqueTest::campagneOuverte();
-        $this->actingAs($this->citoyen)->post('/boutiques/candidater', [
-            'categorie' => $campagne->categories()->value('id'),
-            'engagements' => ['TIRAGE_SANS_GARANTIE', 'CAUTION_SANS_LIEN_ACTIONS', 'REGLEMENT_CAMPAGNE_BOUTIQUES', 'ORIGINE_LICITE_FONDS'],
-        ])->assertRedirect();
-        $c = CandidatureBoutique::query()->sole();
+        $campagne = Boutiques::campagneOuverte();
+        Boutiques::reserver($this, $this->citoyen, Boutiques::boutique())->assertSessionHasNoErrors()->assertRedirect();
+        $c = ReservationBoutique::query()->sole();
 
-        $this->actingAs($this->citoyen)->post(route('boutiques.caution.payer', $c->reference), ['canal' => 'VIREMENT'])->assertSessionHasNoErrors();
-        $this->actingAs($this->citoyen)->get(route('boutiques.caution.show', $c->reference))->assertOk()
+        $this->actingAs($this->citoyen)->post(route('boutiques.reservation.payer', $c->reference), ['canal' => 'VIREMENT'])->assertSessionHasNoErrors();
+        $this->actingAs($this->citoyen)->get(route('boutiques.reservation.show', $c->reference))->assertOk()
             ->assertSee('data-compte="LOCATION"', false)->assertSee('BF043-LOCATION-0002')->assertDontSee('BF042-INVEST-0001')
             ->assertSee($c->paiements()->sole()->reference_versement);
     }

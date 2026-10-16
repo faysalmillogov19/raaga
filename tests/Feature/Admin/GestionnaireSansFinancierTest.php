@@ -4,14 +4,12 @@ namespace Tests\Feature\Admin;
 
 use App\Enums\Role;
 use App\Enums\StatutBoutique;
-use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutGrilleTarifaire;
 use App\Enums\StatutSite;
-use App\Models\CampagneBoutiques;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\User;
-use App\Services\Boutiques\LotsCampagne;
+use App\Services\Boutiques\ReservationsBoutiques;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\Support\ActeursParametrage;
@@ -48,16 +46,9 @@ class GestionnaireSansFinancierTest extends TestCase
     {
         // Même type, deux unités : forfait par local au rez-de-chaussée, au m² au R+1.
         $this->grilleConfirmee($this->site, ['RC' => [$this->boutique->id => [20000, 12, 60, 'UNITE']], 'R1' => [$this->boutique->id => [2000, 12, 36, 'M2']]]);
-        $campagne = CampagneBoutiques::create([
-            'statut' => StatutCampagneBoutiques::Confirmee, 'nom' => 'Attribution 2027', 'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addMonth(),
-            'delai_paiement_heures' => 72, 'canaux_actifs' => ['ORANGE_MONEY'], 'version' => 1, 'cree_par' => $this->regulateur->id,
-        ]);
-        app(LotsCampagne::class)->definir($campagne, [$this->site->id => [$this->boutique->id => true]]);
-        app(LotsCampagne::class)->engager($campagne);
-
-        $lots = $campagne->categories()->get()->keyBy('niveau');
-        $this->assertSame(20000, (int) $lots['RC']->loyer_mensuel);
-        $this->assertSame(25000, (int) $lots['R1']->loyer_mensuel);
+        $tarif = fn (string $niveau) => ReservationsBoutiques::tarifer($this->site->boutiques()->where('niveau', $niveau)->sole());
+        $this->assertSame(20000, $tarif('RC')['loyer_mensuel']);
+        $this->assertSame(25000, $tarif('R1')['loyer_mensuel']);
     }
 
     public function test_le_gestionnaire_ne_voit_ni_ne_saisit_aucune_donnee_financiere(): void
