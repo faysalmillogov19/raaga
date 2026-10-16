@@ -6,6 +6,8 @@ use App\Casts\AsMoyenPaiement;
 use App\Enums\CompteDestination;
 use App\Enums\StatutPaiement;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +17,9 @@ use LogicException;
     'souscription_id', 'candidature_boutique_id', 'canal', 'compte_destination', 'montant', 'frais', 'reference', 'reference_fournisseur',
     'statut', 'date_confirmation', 'agent_id', 'cloture_caisse_id', 'metadonnees',
     'controle', 'controle_motif', 'controle_reference', 'controle_par', 'controle_le',
+    'reference_versement', 'preuve_chemin', 'preuve_nom', 'preuve_mime', 'preuve_deposee_le',
 ])]
+#[Hidden(['preuve_chemin'])]
 class Paiement extends Model
 {
     /**
@@ -44,7 +48,35 @@ class Paiement extends Model
             'date_confirmation' => 'datetime',
             'metadonnees' => 'array',
             'controle_le' => 'datetime',
+            'preuve_deposee_le' => 'datetime',
         ];
+    }
+
+    /**
+     * Preuve déposée (paiement manuel) qui attend la décision du CONTRÔLEUR DES PAIEMENTS : délai de paiement gelé,
+     * ni expiration ni libération tant qu'il n'a pas tranché.
+     */
+    public function enControle(): bool
+    {
+        return $this->statut === StatutPaiement::EnAttente && $this->preuve_deposee_le !== null
+            && ($this->controle_le === null || $this->preuve_deposee_le->greaterThan($this->controle_le));
+    }
+
+    /** @param  Builder<Paiement>  $requete */
+    public function scopeEnControle(Builder $requete): void
+    {
+        $requete->where('statut', StatutPaiement::EnAttente)->whereNotNull('preuve_deposee_le')
+            ->where(fn (Builder $q) => $q->whereNull('controle_le')->orWhereColumn('preuve_deposee_le', '>', 'controle_le'));
+    }
+
+    /** Référence de paiement unique à reporter sur le virement ou le bordereau (« RG-7K3Q9X »). */
+    public static function nouvelleReferenceVersement(): string
+    {
+        do {
+            $reference = 'RG-'.substr(str_shuffle(str_repeat('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 3)), 0, 6);
+        } while (static::query()->where('reference_versement', $reference)->exists());
+
+        return $reference;
     }
 
     /** Contrôles d'un paiement manuel par le CONTRÔLEUR DES PAIEMENTS. */

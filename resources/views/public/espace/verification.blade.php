@@ -71,7 +71,7 @@
                     <fieldset class="mt-5">
                         <legend class="font-semibold text-encre">{{ __('public.verification.type_piece') }}</legend>
                         <div class="mt-2 grid gap-3 sm:grid-cols-2">
-                            @foreach (['CNIB', 'PASSEPORT'] as $type)
+                            @foreach (['CNIB', 'PASSEPORT', 'NIF'] as $type)
                                 <label class="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-charte border-2 p-3"
                                        :class="piece === '{{ $type }}' ? 'border-vert-fonce bg-vert-pale' : 'border-ligne'">
                                     <input type="radio" name="type_piece" value="{{ $type }}" x-model="piece" class="h-5 w-5 text-vert focus:ring-0">
@@ -84,22 +84,28 @@
                 @endif
 
                 <div class="mt-5 space-y-5">
-                    @foreach (['recto', 'verso', 'selfie'] as $cle)
+                    @foreach (['recto', 'verso', 'rccm', 'selfie'] as $cle)
                         @if ($premierDepot || in_array($cle, $aFournir, true))
-                            <div x-data="pieceKyc(@js($options))" @if ($cle === 'verso' && $premierDepot) x-show="piece === 'CNIB'" @endif>
+                            <div x-data="pieceKyc(@js($options))" @if ($cle === 'verso' && $premierDepot) x-show="piece === 'CNIB'" @endif
+                                 @if ($cle === 'rccm' && $premierDepot) x-show="piece === 'NIF'" @endif>
                                 <label for="{{ $cle }}" class="block font-semibold text-encre">
                                     @if ($cle === 'selfie')
                                         {{ __('public.verification.pieces.selfie.SELFIE') }}
+                                    @elseif ($cle === 'rccm')
+                                        {{ __('public.verification.pieces.rccm.NIF') }}
                                     @elseif ($premierDepot)
-                                        <span x-text="piece === 'CNIB' ? @js(__('public.verification.pieces.'.$cle.'.CNIB')) : @js(__('public.verification.pieces.'.$cle.'.PASSEPORT'))">{{ __('public.verification.pieces.'.$cle.'.CNIB') }}</span>
+                                        <span x-text="@js(__('public.verification.pieces.'.$cle))[piece] ?? @js(__('public.verification.pieces.'.$cle.'.CNIB'))">{{ __('public.verification.pieces.'.$cle.'.CNIB') }}</span>
                                     @else
                                         {{ __('public.verification.pieces.'.$cle.'.'.$typePiece->value) }}
                                     @endif
                                 </label>
                                 <p id="{{ $cle }}-aide" class="texte-carte">{{ __('public.verification.aides.'.$cle) }}</p>
-                                <input id="{{ $cle }}" name="{{ $cle }}" type="file" accept="image/jpeg,image/png" capture="{{ $cle === 'selfie' ? 'user' : 'environment' }}"
+                                <input id="{{ $cle }}" name="{{ $cle }}" type="file" capture="{{ $cle === 'selfie' ? 'user' : 'environment' }}"
+                                       @if (in_array($cle, ['recto', 'rccm'], true)) :accept="piece === 'NIF' || @js($cle === 'rccm') ? 'image/jpeg,image/png,application/pdf' : 'image/jpeg,image/png'" accept="image/jpeg,image/png"
+                                       @else accept="image/jpeg,image/png" @endif
                                        @change="choisir($event)" aria-describedby="{{ $cle }}-aide {{ $cle }}-erreur"
                                        @if ($cle === 'verso' && $premierDepot) :disabled="piece !== 'CNIB'" @endif
+                                       @if ($cle === 'rccm' && $premierDepot) :disabled="piece !== 'NIF'" @endif
                                        @error($cle) aria-invalid="true" @enderror
                                        class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
                                 <p x-show="erreur" x-text="erreur" x-cloak class="mt-1.5 font-semibold text-rouge" role="alert"></p>

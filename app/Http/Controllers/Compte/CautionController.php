@@ -50,7 +50,7 @@ class CautionController extends Controller
             ],
             'mentions' => array_column($c->lignesMontants(), 'mention'),
             'total' => $c->montantAPayer(),
-            'routes' => collect(['show', 'payer', 'statut', 'simuler', 'changer'])
+            'routes' => collect(['show', 'payer', 'statut', 'simuler', 'changer', 'preuve'])
                 ->mapWithKeys(fn (string $r) => [$r => route('boutiques.caution.'.$r, $c->reference)])->all(),
             'nouvelle' => ['url' => route('boutiques'), 'libelle' => __('public.boutiques.titre')],
         ]);
@@ -77,6 +77,15 @@ class CautionController extends Controller
         $this->simulerPaiement($request, $candidature);
 
         return redirect()->route('boutiques.caution.show', $candidature->reference);
+    }
+
+    /** Preuve d'un paiement manuel (virement, versement, espèces) : le paiement passe en attente de contrôle. */
+    public function preuve(Request $request, string $reference): RedirectResponse
+    {
+        $candidature = $this->candidature($request, $reference);
+        $this->deposerPreuve($request, $candidature);
+
+        return redirect()->route('boutiques.caution.show', $candidature->reference)->with('succes', __('public.paiement.manuel.preuve_envoyee'));
     }
 
     public function changer(Request $request, string $reference): RedirectResponse

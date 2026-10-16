@@ -260,7 +260,9 @@ composant('pieceKyc', ({ maxOctets, messages }) => ({
         this.apercu = null;
         this.erreur = '';
         if (!fichier) return;
-        if (!['image/jpeg', 'image/png'].includes(fichier.type)) {
+        // Types acceptés : ceux du champ (le PDF est permis pour l'attestation NIF et le RCCM).
+        const acceptes = (evenement.target.getAttribute('accept') || 'image/jpeg,image/png').split(',');
+        if (!acceptes.includes(fichier.type)) {
             this.erreur = messages.format;
         } else if (fichier.size > maxOctets) {
             this.erreur = messages.taille;
@@ -269,7 +271,10 @@ composant('pieceKyc', ({ maxOctets, messages }) => ({
             evenement.target.value = '';
             return;
         }
-        this.apercu = URL.createObjectURL(fichier);
+        // Aperçu des seules images (pas des PDF).
+        if (fichier.type.startsWith('image/')) {
+            this.apercu = URL.createObjectURL(fichier);
+        }
     },
 }));
 

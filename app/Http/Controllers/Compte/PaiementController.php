@@ -90,6 +90,15 @@ class PaiementController extends Controller
         return redirect()->route('paiement.show', $souscription->reference);
     }
 
+    /** Preuve d'un paiement manuel (virement, versement, espèces) : le paiement passe en attente de contrôle. */
+    public function preuve(Request $request, string $reference): RedirectResponse
+    {
+        $souscription = $this->souscription($request, $reference);
+        $this->deposerPreuve($request, $souscription);
+
+        return redirect()->route('paiement.show', $souscription->reference)->with('succes', __('public.paiement.manuel.preuve_envoyee'));
+    }
+
     public function changer(Request $request, string $reference): RedirectResponse
     {
         $souscription = $this->souscription($request, $reference);
@@ -135,7 +144,7 @@ class PaiementController extends Controller
     /** @return array<string, string> */
     private function routes(Souscription $s): array
     {
-        return collect(['show', 'payer', 'statut', 'simuler', 'changer'])
+        return collect(['show', 'payer', 'statut', 'simuler', 'changer', 'preuve'])
             ->mapWithKeys(fn (string $r) => [$r => route('paiement.'.$r, $s->reference)])->all();
     }
 

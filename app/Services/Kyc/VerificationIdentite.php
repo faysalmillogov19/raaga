@@ -32,12 +32,19 @@ class VerificationIdentite
 
     public function __construct(private readonly Journal $journal, private readonly EnvoiSms $sms) {}
 
+    /** Pièces d'identité acceptées : CNIB, passeport, ou NIF (avec le RCCM pour une entreprise). */
+    public const PIECES = [TypeDocumentKyc::Cnib, TypeDocumentKyc::Passeport, TypeDocumentKyc::Nif];
+
+    /** Emplacements facultatifs (jamais exigés) : le RCCM d'une entreprise. */
+    public const FACULTATIFS = ['rccm'];
+
     /** Emplacements attendus pour un type de pièce : clé de formulaire => [type, face]. */
     public static function emplacements(TypeDocumentKyc $piece): array
     {
         return array_filter([
             'recto' => [$piece, FaceDocument::Recto],
             'verso' => $piece === TypeDocumentKyc::Cnib ? [$piece, FaceDocument::Verso] : null,
+            'rccm' => $piece === TypeDocumentKyc::Nif ? [TypeDocumentKyc::Rccm, null] : null,
             'selfie' => [TypeDocumentKyc::Selfie, null],
         ]);
     }
@@ -49,7 +56,7 @@ class VerificationIdentite
      */
     public function dossier(User $user): Collection
     {
-        $documents = $user->kycDocuments()->whereIn('type', [TypeDocumentKyc::Cnib, TypeDocumentKyc::Passeport, TypeDocumentKyc::Selfie])
+        $documents = $user->kycDocuments()->whereIn('type', [...self::PIECES, TypeDocumentKyc::Rccm, TypeDocumentKyc::Selfie])
             ->orderByDesc('id')->get();
 
         $piece = $this->typePiece($user);
@@ -62,10 +69,10 @@ class VerificationIdentite
             ->filter();
     }
 
-    /** Type de pièce d'identité du dossier en cours (CNIB ou passeport), ou null si rien n'a été déposé. */
+    /** Type de pièce d'identité du dossier en cours (CNIB, passeport ou NIF), ou null si rien n'a été déposé. */
     public function typePiece(User $user): ?TypeDocumentKyc
     {
-        return $user->kycDocuments()->whereIn('type', [TypeDocumentKyc::Cnib, TypeDocumentKyc::Passeport])->latest('id')->first()?->type;
+        return $user->kycDocuments()->whereIn('type', self::PIECES)->latest('id')->first()?->type;
     }
 
     /**
@@ -76,7 +83,7 @@ class VerificationIdentite
     public function aFournir(User $user, ?TypeDocumentKyc $choix = null): array
     {
         return match ($user->statut_kyc) {
-            StatutKyc::NonSoumis, null => array_keys(self::emplacements($choix ?? TypeDocumentKyc::Cnib)),
+            StatutKyc::NonSoumis, null => array_values(array_diff(array_keys(self::emplacements($choix ?? TypeDocumentKyc::Cnib)), self::FACULTATIFS)),
             StatutKyc::Rejete => $this->dossier($user)->filter(fn (KycDocument $d) => $d->statut === StatutDocumentKyc::Rejete)->keys()->values()->all(),
             default => [],
         };
@@ -102,6 +109,12 @@ class VerificationIdentite
         }
 
         $emplacements = self::emplacements($piece);
+        // Emplacements facultatifs (RCCM) : déposés seulement s'ils sont joints, au premier dépôt.
+        foreach (self::FACULTATIFS as $cle) {
+            if ($premierDepot && isset($emplacements[$cle], $fichiers[$cle])) {
+                $attendus[] = $cle;
+            }
+        }
         $chemins = [];
 
         try {

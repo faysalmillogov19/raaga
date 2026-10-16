@@ -14,6 +14,8 @@ use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\Relance;
 use App\Models\Souscription;
+use App\Services\Audit\Journal;
+use App\Services\Kyc\VerificationIdentite;
 use App\Services\Paiement\ControlePaiements;
 use App\Services\Paiement\Relances;
 use App\Support\Tableau\Colonne;
@@ -24,6 +26,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -85,6 +88,21 @@ class PaiementsController extends Controller
             'objet' => $objet, 'type' => $type,
             'relances' => Relance::query()->where($type === 'souscription' ? 'souscription_id' : 'candidature_boutique_id', $objet->id)->with('auteur')->latest('id')->get(),
             'remboursements' => $objet->remboursements()->latest('id')->get(),
+        ]);
+    }
+
+    /** Preuve d'un paiement manuel (avis de virement, bordereau, reçu de caisse) : consultation journalisée. */
+    public function preuve(Request $request, Paiement $paiement, Journal $journal): StreamedResponse
+    {
+        Gate::authorize(Droit::PaiementsVoir->value);
+        abort_unless($paiement->preuve_chemin && Storage::disk(VerificationIdentite::DISQUE)->exists($paiement->preuve_chemin), 404);
+        $journal->ecrire($request->user(), 'paiement.preuve_consultee', 'Paiement', $paiement->id);
+
+        return Storage::disk(VerificationIdentite::DISQUE)->response($paiement->preuve_chemin, $paiement->preuve_nom, [
+            'Content-Type' => $paiement->preuve_mime,
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; img-src 'self'; sandbox",
         ]);
     }
 

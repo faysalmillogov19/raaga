@@ -60,7 +60,7 @@ class Relances
             $sans = fn (string $type) => fn ($q) => $q->whereNotIn('id', Relance::query()->where('type', $type)->whereNotNull($cle)->select($cle));
 
             $classe::query()->where('statut', $reservee)->whereBetween('expire_le', [now(), now()->addDay()])
-                ->where($sans(Relance::ECHEANCE))->with('user')->orderBy('id')
+                ->where($sans(Relance::ECHEANCE))->whereDoesntHave('paiements', fn ($p) => $p->enControle())->with('user')->orderBy('id')
                 ->each(function ($objet) use (&$compteurs) {
                     $this->relancer($objet, Relance::ECHEANCE);
                     $compteurs['echeance']++;

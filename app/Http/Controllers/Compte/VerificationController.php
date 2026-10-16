@@ -33,18 +33,21 @@ class VerificationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $fichier = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'mimetypes:image/jpeg,image/png', 'max:5120'];
+        // Attestation NIF et RCCM : souvent des PDF.
+        $document = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
 
         $donnees = $request->validate([
-            'type_piece' => ['nullable', Rule::in([TypeDocumentKyc::Cnib->value, TypeDocumentKyc::Passeport->value])],
-            'recto' => $fichier,
+            'type_piece' => ['nullable', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, VerificationIdentite::PIECES))],
+            'recto' => $request->input('type_piece') === TypeDocumentKyc::Nif->value ? $document : $fichier,
             'verso' => $fichier,
+            'rccm' => $document,
             'selfie' => $fichier,
         ], __('public.verification.erreurs.fichiers'), __('public.verification.attributs'));
 
         $this->verification->deposer(
             $request->user(),
             isset($donnees['type_piece']) ? TypeDocumentKyc::from($donnees['type_piece']) : null,
-            array_filter($request->only(['recto', 'verso', 'selfie'])),
+            array_filter($request->only(['recto', 'verso', 'rccm', 'selfie'])),
         );
 
         return redirect()->route('espace.verification')->with('succes', __('public.verification.envoye'));

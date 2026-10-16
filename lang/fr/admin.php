@@ -374,6 +374,9 @@ return [
             'manuel' => 'Paiement manuel',
             'operateur' => 'Confirmé par l’opérateur',
             'correction_en_attente' => 'Correction proposée, en attente du VALIDATEUR',
+            'reference_versement' => 'Référence de paiement : :reference',
+            'preuve' => 'Voir la preuve',
+            'en_controle' => 'Preuve déposée le :date : à contrôler (délai gelé)',
         ],
         'colonnes_paiements' => ['reference' => 'Référence', 'date' => 'Date', 'canal' => 'Moyen', 'montant' => 'Montant', 'statut' => 'Statut', 'controle' => 'Contrôle', 'actions' => 'Actions'],
         'colonnes_relances' => ['date' => 'Date', 'type' => 'Type', 'canaux' => 'Canal', 'auteur' => 'Auteur'],
@@ -458,7 +461,7 @@ return [
         'proposition_en_attente' => 'Proposée, en attente du VALIDATEUR',
         'examiner' => 'Examiner',
         'examiner_dossier' => 'Examiner le dossier de :nom',
-        'pieces' => ['cnib' => 'CNIB', 'passeport' => 'Passeport', 'selfie' => 'Selfie', 'justif_fonds' => 'Justificatif'],
+        'pieces' => ['cnib' => 'CNIB', 'passeport' => 'Passeport', 'nif' => 'NIF', 'rccm' => 'RCCM', 'selfie' => 'Selfie', 'justif_fonds' => 'Justificatif'],
         'dossier' => [
             'titre' => 'Identité de :nom',
             'identite' => 'Identité déclarée',

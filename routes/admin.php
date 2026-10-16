@@ -119,6 +119,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::PaiementsVoir->value);
             Route::get('/{type}/{id}', 'dossier')->where('type', 'souscription|caution')->whereNumber('id')->middleware('can:'.Droit::PaiementsVoir->value)->name('.dossier');
             Route::post('/{type}/{id}/relance', 'relancer')->where('type', 'souscription|caution')->whereNumber('id')->middleware('can:'.Droit::RelancesEnvoyer->value)->name('.relance');
+            Route::get('/preuve/{paiement}', 'preuve')->whereNumber('paiement')->middleware('can:'.Droit::PaiementsVoir->value)->name('.preuve');
             Route::post('/controle/{paiement}', 'marquer')->whereNumber('paiement')->middleware('can:'.Droit::SouscriptionsRapprocher->value)->name('.controle');
             Route::post('/correction/{paiement}', 'proposerCorrection')->whereNumber('paiement')->middleware('can:'.Droit::SouscriptionsRapprocher->value)->name('.correction');
             Route::post('/corrections/{correction}/confirmer', 'confirmerCorrection')->whereNumber('correction')->middleware('can:'.Droit::PaiementsCorrectionsConfirmer->value)->name('.corrections.confirmer');

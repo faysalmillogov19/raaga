@@ -96,6 +96,7 @@ Route::middleware(['auth', 'role:citoyen'])->controller(CautionController::class
     Route::get('/statut', 'statut')->middleware('throttle:60,1')->name('statut');
     Route::post('/simuler', 'simuler')->middleware('throttle:10,1')->name('simuler');
     Route::post('/changer', 'changer')->name('changer');
+    Route::post('/preuve', 'preuve')->middleware('throttle:10,1')->name('preuve');
     Route::get('/recu', 'recu')->name('recu');
 });
 
@@ -107,6 +108,7 @@ Route::middleware(['actions.presentation', 'auth', 'role:citoyen'])->controller(
     Route::get('/statut', 'statut')->middleware('throttle:60,1')->name('statut');
     Route::post('/simuler', 'simuler')->middleware('throttle:10,1')->name('simuler');
     Route::post('/changer', 'changer')->name('changer');
+    Route::post('/preuve', 'preuve')->middleware('throttle:10,1')->name('preuve');
     Route::get('/confirmation', 'confirmation')->name('confirmation');
     Route::get('/recu', 'recu')->name('recu');
 });

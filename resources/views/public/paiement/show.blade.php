@@ -57,6 +57,11 @@
                     </x-etat-vide>
                     @break
 
+                @case('manuel')
+                @case('controle')
+                    @include('public.paiement._manuel')
+                    @break
+
                 @case('attente')
                     <section class="carte p-5" aria-labelledby="attente-titre" role="status"
                              x-data="{ url: @js($routes['statut']), init() { this.minuteur = setInterval(() => this.verifier(), 4000) }, async verifier() { try { const r = await (await fetch(this.url, { headers: { Accept: 'application/json' } })).json(); if (r.paiement !== 'EN_ATTENTE' || r.objet !== 'RESERVEE') { clearInterval(this.minuteur); window.location.reload() } } catch { /* Connexion coupée : nouvel essai au prochain passage. */ } } }">
@@ -99,7 +104,9 @@
 
                 @default
                     @if ($etat === 'echec')
-                        <x-public.alerte variante="danger" :titre="__('public.paiement.echec_titre')" class="mb-6" role="alert">{{ __('public.paiement.echec') }}</x-public.alerte>
+                        <x-public.alerte variante="danger" :titre="__('public.paiement.echec_titre')" class="mb-6" role="alert">
+                            {{ $dernier?->controle === \App\Models\Paiement::REJETE ? __('public.paiement.manuel.rejete', ['motif' => $dernier->controle_motif]) : __('public.paiement.echec') }}
+                        </x-public.alerte>
                     @endif
 
                     <form method="POST" action="{{ $routes['payer'] }}" class="carte p-5" novalidate

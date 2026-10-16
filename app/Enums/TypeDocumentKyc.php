@@ -6,6 +6,9 @@ enum TypeDocumentKyc: string
 {
     case Cnib = 'CNIB';
     case Passeport = 'PASSEPORT';
+    // Numéro d'identification fiscale (attestation), et registre du commerce pour les entreprises (facultatif).
+    case Nif = 'NIF';
+    case Rccm = 'RCCM';
     case Selfie = 'SELFIE';
     case JustifFonds = 'JUSTIF_FONDS';
 

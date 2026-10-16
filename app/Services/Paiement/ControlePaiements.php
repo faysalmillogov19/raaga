@@ -10,6 +10,7 @@ use App\Models\CorrectionPaiement;
 use App\Models\Paiement;
 use App\Models\Souscription;
 use App\Models\User;
+use App\Notifications\ControlePaiementCitoyen;
 use App\Services\Audit\Journal;
 use App\Services\Validation\NotificationDecision;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +55,11 @@ class ControlePaiements
             'controle_par' => $controleur->id, 'controle_le' => now()])->save();
         $this->journal->ecrire($controleur, 'paiement.controle', 'Paiement', $paiement->id, $avant,
             ['statut' => $paiement->statut->value, 'controle' => $controle, 'motif' => $motif, 'reference' => $reference]);
+
+        // Preuve rejetée : le délai restant reprend ; s'il est déjà dépassé, la boutique ou la souscription est libérée.
+        $objet = $paiement->objet()->refresh();
+        $libere = $controle === Paiement::REJETE && $this->paiements->expirerSiEchu($objet);
+        $objet->user->notify(new ControlePaiementCitoyen($paiement, $objet->refresh(), $libere));
 
         return $paiement;
     }

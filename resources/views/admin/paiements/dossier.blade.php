@@ -51,7 +51,9 @@
                         @foreach ($objet->paiements->sortByDesc('id') as $paiement)
                             @php($correction = $paiement->corrections->firstWhere('statut', CorrectionPaiement::PROPOSEE))
                             <tr data-paiement="{{ $paiement->reference }}">
-                                <td class="font-mono font-semibold">{{ $paiement->reference }}</td>
+                                <td class="font-mono font-semibold">{{ $paiement->reference }}
+                                    @if ($paiement->reference_versement)<span class="texte-carte block" data-reference-versement>{{ __('admin.paiements.dossier.reference_versement', ['reference' => $paiement->reference_versement]) }}</span>@endif
+                                    @if ($paiement->preuve_chemin)<a href="{{ route('admin.paiements.preuve', $paiement) }}" class="lien block" target="_blank" rel="noopener" data-preuve>{{ $d['preuve'] }}</a>@endif</td>
                                 <td class="whitespace-nowrap">{{ $paiement->created_at->format('d/m/Y H:i') }}</td>
                                 <td>{{ $paiement->canal?->libelle }}<span class="texte-carte block">{{ $paiement->estManuel() ? $d['manuel'] : $d['operateur'] }}</span></td>
                                 <td class="whitespace-nowrap">{{ format_fcfa($paiement->montant + $paiement->frais) }}</td>
@@ -63,6 +65,7 @@
                                         @if ($paiement->controle_reference)<span class="texte-carte block">{{ $paiement->controle_reference }}</span>@endif
                                         @if ($paiement->controle_motif)<span class="texte-carte block">{{ $paiement->controle_motif }}</span>@endif
                                     @endif
+                                    @if ($paiement->enControle())<span class="font-semibold block" data-en-controle>{{ __('admin.paiements.dossier.en_controle', ['date' => $paiement->preuve_deposee_le->format('d/m/Y H:i')]) }}</span>@endif
                                     @if ($correction)<span class="texte-carte block" data-correction-en-attente>{{ $d['correction_en_attente'] }}</span>@endif
                                 </td>
                                 <td>

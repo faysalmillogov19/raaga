@@ -37,7 +37,24 @@ class ServicePaiement
 
     public function initier(Payable&Model $objet, MoyenPaiement $canal, ?string $telephone, PaymentProvider $fournisseur, User $acteur): Paiement
     {
-        $paiement = DB::transaction(function () use ($objet, $canal, $telephone, $acteur) {
+        $paiement = $this->creer($objet, $canal, $telephone, $acteur);
+        $fournisseur->initier($paiement);
+
+        return $paiement;
+    }
+
+    /**
+     * Paiement manuel (virement, versement, espèces) : aucun opérateur. Le citoyen reçoit le montant exact, le compte
+     * de destination et une référence de paiement unique, puis joint sa preuve ; le CONTRÔLEUR DES PAIEMENTS tranche.
+     */
+    public function initierManuel(Payable&Model $objet, MoyenPaiement $canal, User $acteur): Paiement
+    {
+        return $this->creer($objet, $canal, null, $acteur, Paiement::nouvelleReferenceVersement());
+    }
+
+    private function creer(Payable&Model $objet, MoyenPaiement $canal, ?string $telephone, User $acteur, ?string $referenceVersement = null): Paiement
+    {
+        return DB::transaction(function () use ($objet, $canal, $telephone, $acteur, $referenceVersement) {
             /** @var Payable&Model $objet */
             $objet = $objet::query()->lockForUpdate()->findOrFail($objet->getKey());
 
@@ -52,6 +69,7 @@ class ServicePaiement
                 'reference' => 'PAY-'.Str::upper(Str::ulid()),
                 'statut' => StatutPaiement::EnAttente,
                 'metadonnees' => array_filter(['telephone' => $telephone]),
+                'reference_versement' => $referenceVersement,
             ]);
 
             $this->journal->ecrire($acteur, 'paiement.initie', 'Paiement', $paiement->id, null, [
@@ -60,10 +78,6 @@ class ServicePaiement
 
             return $paiement;
         });
-
-        $fournisseur->initier($paiement);
-
-        return $paiement;
     }
 
     /**
@@ -126,27 +140,52 @@ class ServicePaiement
             + $this->expirer(CandidatureBoutique::class, StatutCandidatureBoutique::Reservee, StatutCandidatureBoutique::Expiree, 'candidature_boutique.expiree');
     }
 
-    /** @param class-string<Model&Payable> $classe */
+    /**
+     * Expire un objet précis si son délai est dépassé et qu'aucune preuve n'attend de contrôle (après le rejet d'une
+     * preuve déposée trop tard : la boutique ou la souscription est libérée).
+     */
+    public function expirerSiEchu(Souscription|CandidatureBoutique $objet): bool
+    {
+        [$reservee, $expiree, $action] = $objet instanceof Souscription
+            ? [StatutSouscription::Reservee, StatutSouscription::Expiree, 'souscription.expiree']
+            : [StatutCandidatureBoutique::Reservee, StatutCandidatureBoutique::Expiree, 'candidature_boutique.expiree'];
+
+        return $this->expirerUn($objet::class, $objet->id, $reservee, $expiree, $action);
+    }
+
+    /**
+     * Délai gelé : un objet dont une preuve de paiement manuel attend le contrôle n'expire pas, même délai dépassé.
+     *
+     * @param  class-string<Model&Payable>  $classe
+     */
     private function expirer(string $classe, \BackedEnum $reservee, \BackedEnum $expiree, string $action): int
     {
         $nombre = 0;
 
-        $classe::query()->where('statut', $reservee)->where('expire_le', '<=', now())->pluck('id')
+        $classe::query()->where('statut', $reservee)->where('expire_le', '<=', now())
+            ->whereDoesntHave('paiements', fn ($p) => $p->enControle())->pluck('id')
             ->each(function (int $id) use ($classe, $reservee, $expiree, $action, &$nombre) {
-                DB::transaction(function () use ($classe, $id, $reservee, $expiree, $action, &$nombre) {
-                    $objet = $classe::query()->lockForUpdate()->find($id);
-
-                    if (! $objet || $objet->statut !== $reservee || $objet->expire_le->isFuture()) {
-                        return;
-                    }
-
-                    $objet->forceFill(['statut' => $expiree])->save();
-                    $objet->paiements()->where('statut', StatutPaiement::EnAttente)->update(['statut' => StatutPaiement::Annule]);
-                    $this->journal->ecrire(null, $action, class_basename($classe), $objet->id, null, ['reference' => $objet->reference]);
-                    $nombre++;
-                });
+                $nombre += (int) $this->expirerUn($classe, $id, $reservee, $expiree, $action);
             });
 
         return $nombre;
+    }
+
+    /** @param class-string<Model&Payable> $classe */
+    private function expirerUn(string $classe, int $id, \BackedEnum $reservee, \BackedEnum $expiree, string $action): bool
+    {
+        return DB::transaction(function () use ($classe, $id, $reservee, $expiree, $action) {
+            $objet = $classe::query()->lockForUpdate()->find($id);
+
+            if (! $objet || $objet->statut !== $reservee || $objet->expire_le->isFuture() || $objet->paiements()->enControle()->exists()) {
+                return false;
+            }
+
+            $objet->forceFill(['statut' => $expiree])->save();
+            $objet->paiements()->where('statut', StatutPaiement::EnAttente)->update(['statut' => StatutPaiement::Annule]);
+            $this->journal->ecrire(null, $action, class_basename($classe), $objet->id, null, ['reference' => $objet->reference]);
+
+            return true;
+        });
     }
 }

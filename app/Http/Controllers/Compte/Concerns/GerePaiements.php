@@ -6,6 +6,8 @@ use App\Contracts\Payable;
 use App\Contracts\PaymentProvider;
 use App\Enums\StatutPaiement;
 use App\Models\MoyenPaiement;
+use App\Services\Audit\Journal;
+use App\Services\Kyc\VerificationIdentite;
 use App\Services\Paiement\OuverturePaiements;
 use App\Services\Paiement\ServicePaiement;
 use App\Support\CompteSequestre;
@@ -14,6 +16,7 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -31,25 +34,46 @@ trait GerePaiements
      */
     protected function ecranPaiement(Payable&Model $objet, array $contexte): View
     {
+        $ouverts = OuverturePaiements::ouverts($objet->compteDestination());
         $fournisseur = $this->fournisseur($objet);
         $enAttente = ServicePaiement::enAttente($objet);
         $dernier = $objet->paiements()->latest('id')->first();
+        $canaux = $this->canauxProposes($objet, $fournisseur);
 
         return view('public.paiement.show', [
             ...$contexte,
             'objet' => $objet,
             'etat' => match (true) {
                 $objet->estExpire() => 'expiree',
-                ! $fournisseur => 'indisponible',
+                $enAttente?->enControle() => 'controle',
+                $enAttente?->estManuel() => 'manuel',
+                ! $ouverts || $canaux === [] => 'indisponible',
                 $enAttente !== null => 'attente',
                 $dernier?->statut === StatutPaiement::Echoue => 'echec',
                 default => 'choix',
             },
             'paiement' => $enAttente,
+            'dernier' => $dernier,
             'simule' => $fournisseur?->estSimule() ?? false,
-            'canaux' => $objet->canauxPaiement(),
+            'canaux' => $canaux,
             'sequestre' => CompteSequestre::pour($objet->compteDestination()),
+            'compte' => $objet->compteDestination(),
         ]);
+    }
+
+    /**
+     * Moyens proposés : les paiements manuels (virement, versement, espèces) ne passent par aucun opérateur ; les autres
+     * exigent un fournisseur configuré.
+     *
+     * @return list<MoyenPaiement>
+     */
+    private function canauxProposes(Payable $objet, ?PaymentProvider $fournisseur): array
+    {
+        if (! OuverturePaiements::ouverts($objet->compteDestination())) {
+            return [];
+        }
+
+        return array_values(array_filter($objet->canauxPaiement(), fn (MoyenPaiement $c) => $c->estManuel() || $fournisseur !== null));
     }
 
     protected function demanderPaiement(Request $request, Payable&Model $objet): void
@@ -66,15 +90,25 @@ trait GerePaiements
                 }],
         ], [], __('public.paiement.attributs'));
 
-        // Aucun opérateur réel (production sans opérateur : le simulateur refuse de fonctionner) : aucun paiement démarré.
-        $fournisseur = $this->fournisseur($objet);
-        if ($fournisseur === null) {
+        // Paiements fermés pour ce compte (production sans opérateur réel ou sans coordonnées) : aucun paiement démarré.
+        if (! OuverturePaiements::ouverts($objet->compteDestination())) {
             throw ValidationException::withMessages(['canal' => __('public.paiement.indisponible_titre')]);
         }
         $this->service->expirerReservations();
         abort_unless($objet->fresh()->attendPaiement(), 409);
+        abort_if($objet->paiements()->enControle()->exists(), 409);
 
         $canal = MoyenPaiement::parCode($donnees['canal']);
+        // Virement, versement, espèces : aucun opérateur ; référence de paiement unique, puis preuve jointe.
+        if ($canal->estManuel()) {
+            $this->service->initierManuel($objet, $canal, $request->user());
+
+            return;
+        }
+        $fournisseur = $this->fournisseur($objet);
+        if ($fournisseur === null) {
+            throw ValidationException::withMessages(['canal' => __('public.paiement.indisponible_titre')]);
+        }
         $mobile = $canal->estMobile();
         $this->service->initier($objet, $canal, $mobile ? Telephone::normaliser($donnees['telephone']) : null, $fournisseur, $request->user());
     }
@@ -102,7 +136,35 @@ trait GerePaiements
     /** Abandon de la demande en cours pour choisir un autre moyen de paiement. */
     protected function abandonnerPaiement(Payable $objet): void
     {
+        // Preuve en cours de contrôle : le paiement ne peut plus être abandonné.
+        abort_if($objet->paiements()->enControle()->exists(), 409);
         $objet->paiements()->where('statut', StatutPaiement::EnAttente)->update(['statut' => StatutPaiement::Annule]);
+    }
+
+    /**
+     * Preuve d'un paiement manuel (avis de virement, bordereau ou reçu de caisse : image ou PDF, 5 Mo au plus), jointe
+     * avant la fin du délai. Le paiement passe « en attente de contrôle » : délai gelé jusqu'à la décision du contrôleur.
+     */
+    protected function deposerPreuve(Request $request, Payable&Model $objet): void
+    {
+        $fichier = $request->validate([
+            'preuve' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'],
+        ], ['preuve.max' => __('public.paiement.manuel.erreurs.taille'), 'preuve.mimes' => __('public.paiement.manuel.erreurs.format'),
+            'preuve.mimetypes' => __('public.paiement.manuel.erreurs.format')], ['preuve' => __('public.paiement.manuel.preuve')])['preuve'];
+
+        $paiement = ServicePaiement::enAttente($objet);
+        if ($paiement === null || ! $paiement->estManuel() || $paiement->enControle()) {
+            throw ValidationException::withMessages(['preuve' => __('public.paiement.manuel.erreurs.aucun_paiement')]);
+        }
+        if (! $objet->attendPaiement() || $objet->expire_le->isPast()) {
+            throw ValidationException::withMessages(['preuve' => __('public.paiement.manuel.erreurs.delai')]);
+        }
+
+        $chemin = $fichier->storeAs('paiements/'.$objet->reference, Str::uuid().'.'.$fichier->extension(), VerificationIdentite::DISQUE);
+        $paiement->forceFill(['preuve_chemin' => $chemin, 'preuve_nom' => Str::limit($fichier->getClientOriginalName(), 200, ''),
+            'preuve_mime' => $fichier->getMimeType(), 'preuve_deposee_le' => now()])->save();
+        app(Journal::class)->ecrire($request->user(), 'paiement.preuve_deposee', 'Paiement', $paiement->id, null,
+            ['objet' => $objet->reference, 'reference_versement' => $paiement->reference_versement]);
     }
 
     /** Fournisseur configuré, ou null s'il refuse de fonctionner (simulateur en production). */
