@@ -58,7 +58,7 @@ if (! function_exists('pourcentage_lisible')) {
 if (! function_exists('format_md')) {
     /**
      * Montant en milliards, sans devise : 6450000000 → « 6,45 Md ».
-     * Sans nombre de décimales imposé, les zéros inutiles sont retirés : 3000000000 → « 3 Md ».
+     * Sans nombre de décimales imposé, les zéros inutiles sont retirés : 2500000000 → « 2,5 Md ».
      */
     function format_md(int $montant, ?int $decimales = null): string
     {

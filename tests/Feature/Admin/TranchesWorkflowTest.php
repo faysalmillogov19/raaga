@@ -27,7 +27,7 @@ class TranchesWorkflowTest extends TestCase
 
         $this->creerActeurs();
         // Valeur indicative et minimum confirmés : ils préremplissent chaque nouvelle tranche.
-        $this->confirmerParametresInvestissement(10_000, minimum: 1);
+        $this->confirmerParametresInvestissement(10_000, objectif: 3_000_000_000, minimum: 1);
     }
 
     /** Formulaire complet des 6 sections, tel que le navigateur l'envoie. */

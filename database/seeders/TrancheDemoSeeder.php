@@ -36,6 +36,8 @@ class TrancheDemoSeeder extends Seeder
             'nom' => self::NOM,
             'valeur_unitaire' => 10_000,
             'min_actions_par_souscription' => 1,
+            // Objectif de collecte confirmé ; à défaut, objectif fictif de démonstration (100 000 actions).
+            'objectif_montant' => TranchesController::valeursParDefaut()['objectif_montant'] ?? 100_000 * 10_000,
             'statut' => StatutTranche::Brouillon,
             'version' => 0,
             'cree_par' => $auteur->id,

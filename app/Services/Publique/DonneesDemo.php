@@ -2,6 +2,7 @@
 
 namespace App\Services\Publique;
 
+use App\Services\Invest\RaagaInvest;
 use Carbon\CarbonImmutable;
 
 /**
@@ -12,14 +13,17 @@ final class DonneesDemo
 {
     public static function collecte(): EtatCollecte
     {
+        $souscrit = 1_284_650_000;
+
         return new EtatCollecte(
             nomTranche: 'Tranche 1 – 2026',
-            valeurUnitaire: 10_000,
+            valeurUnitaire: RaagaInvest::parametres()['valeur_action'] ?? 10_000,
             plafondActionsParPersonne: null,
-            objectifMontant: 3_000_000_000,
+            // Objectif de collecte confirmé ; à défaut, objectif fictif (collecte à mi-parcours).
+            objectifMontant: RaagaInvest::parametres()['objectif_collecte'] ?? 2 * $souscrit,
             dateOuverture: CarbonImmutable::parse('2026-10-01 08:00:00', 'Africa/Ouagadougou'),
             dateCloture: CarbonImmutable::parse('2026-12-31 23:59:59', 'Africa/Ouagadougou'),
-            montantSouscrit: 1_284_650_000,
+            montantSouscrit: $souscrit,
             nbSouscripteurs: 18_742,
             nbActions: 128_465,
             demo: true,

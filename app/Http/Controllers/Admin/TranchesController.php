@@ -251,9 +251,9 @@ class TranchesController extends Controller
     }
 
     /**
-     * Valeurs proposées à la création d'une tranche. Prix et minimum : valeur indicative et nombre minimum d'actions
-     * des paramètres d'investissement confirmés (aucune valeur en dur) ; le RÉGULATEUR peut les ajuster, ils sont
-     * figés quand le VALIDATEUR confirme la tranche.
+     * Valeurs proposées à la création d'une tranche. Prix, minimum et objectif : valeur indicative, nombre minimum
+     * d'actions et objectif de collecte des paramètres d'investissement confirmés (aucune valeur en dur) ; le RÉGULATEUR
+     * peut les ajuster, prix et minimum sont figés quand le VALIDATEUR confirme la tranche.
      *
      * @return array<string, mixed>
      */
@@ -264,7 +264,7 @@ class TranchesController extends Controller
         return [
             'valeur_unitaire' => $parametres['valeur_action'] ?? null,
             'min_actions_par_souscription' => $parametres['minimum_actions'] ?? 1,
-            'objectif_montant' => 3_000_000_000,
+            'objectif_montant' => $parametres['objectif_collecte'] ?? null,
             'date_ouverture' => now()->addMonth()->startOfDay()->setTime(8, 0),
             'date_cloture' => now()->addMonths(3)->endOfDay()->setTime(23, 59),
             'publics_autorises' => [PublicAutorise::ResidentBf->value, PublicAutorise::Diaspora->value],

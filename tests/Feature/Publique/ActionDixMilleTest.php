@@ -76,6 +76,26 @@ class ActionDixMilleTest extends TestCase
         $this->assertNull(RaagaInvest::conditions());
     }
 
+    public function test_objectif_de_tranche_lu_dans_les_parametres(): void
+    {
+        // Aucune trace de 3 000 000 000 dans le code (hors tests), sauf le plan de financement du projet (contenu éditable).
+        $exceptions = ["['libelle' => 'Participation populaire', 'montant' => 3_000_000_000"];
+        foreach ([app_path(), resource_path(), lang_path(), config_path(), base_path('routes'), database_path(), public_path('js')] as $dossier) {
+            foreach (File::allFiles($dossier) as $fichier) {
+                if (! in_array($fichier->getExtension(), ['php', 'js', 'json'], true)) {
+                    continue;
+                }
+                $source = str_replace($exceptions, '', $fichier->getContents());
+                $this->assertDoesNotMatchRegularExpression('/3[_\s\x{00A0}\x{202F}]?000[_\s\x{00A0}\x{202F}]?000[_\s\x{00A0}\x{202F}]?000/u', $source, $fichier->getRelativePathname());
+            }
+        }
+
+        // Sans paramètres confirmés : aucun objectif proposé ; avec : l'objectif de collecte confirmé, ajustable.
+        $this->assertNull(TranchesController::valeursParDefaut()['objectif_montant']);
+        $this->confirmerParametresInvestissement(10_000, objectif: 2_000_000_000);
+        $this->assertSame(2_000_000_000, TranchesController::valeursParDefaut()['objectif_montant']);
+    }
+
     public function test_simulateur_a_10_000(): void
     {
         $this->confirmerParametresInvestissement(10_000, minimum: 1);
