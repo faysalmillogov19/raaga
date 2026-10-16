@@ -92,14 +92,16 @@
                                                 <span class="inline-flex gap-1">
                                                     <a href="{{ $page(['detail' => $e['cle']]) }}" class="bo-bouton-icone" title="{{ __('admin.a_valider.voir', ['element' => $e['libelle']]) }}"
                                                        aria-label="{{ __('admin.a_valider.voir', ['element' => $e['libelle']]) }}"><x-icon name="voir" class="h-5 w-5" /></a>
-                                                    @unless ($e['moi'])
+                                                    @if ($e['element'] === 'attribution')
+                                                        <a href="{{ $e['url'] }}" class="bo-bouton bo-bouton-contour bo-bouton-petit" data-attribuer>{{ __('admin.boutiques.reservations.attribuer') }}</a>
+                                                    @elseif (! $e['moi'])
                                                         <button type="button" class="bo-bouton-icone" title="{{ __('admin.a_valider.valider', ['element' => $e['libelle']]) }}"
                                                                 aria-label="{{ __('admin.a_valider.valider', ['element' => $e['libelle']]) }}"
                                                                 @click="decider(@js($e['cle']), @js($e['libelle']), 'confirmer')"><x-icon name="check" class="h-5 w-5 text-vert-fonce" /></button>
                                                         <button type="button" class="bo-bouton-icone" title="{{ __('admin.a_valider.rejeter', ['element' => $e['libelle']]) }}"
                                                                 aria-label="{{ __('admin.a_valider.rejeter', ['element' => $e['libelle']]) }}"
                                                                 @click="decider(@js($e['cle']), @js($e['libelle']), 'rejeter')"><x-icon name="fermer" class="h-5 w-5 text-rouge" /></button>
-                                                    @endunless
+                                                    @endif
                                                 </span>
                                             </td>
                                         </tr>

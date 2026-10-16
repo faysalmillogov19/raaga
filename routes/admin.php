@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ConnexionsController;
 use App\Http\Controllers\Admin\ConventionsController;
 use App\Http\Controllers\Admin\DividendesController;
 use App\Http\Controllers\Admin\GrillesTarifairesController;
+use App\Http\Controllers\Admin\HistoriqueDecisionsController;
 use App\Http\Controllers\Admin\ImportBoutiquesController;
 use App\Http\Controllers\Admin\ImportsController;
 use App\Http\Controllers\Admin\ImportSitesController;
@@ -167,6 +168,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{import}/confirmer', 'confirmer')->whereNumber('import')->middleware('can:'.Droit::SitesConfirmer->value)->name('confirmer');
             Route::post('/{import}/rejeter', 'rejeter')->whereNumber('import')->middleware('can:'.Droit::SitesConfirmer->value)->name('rejeter');
         });
+
+        // Historique de mes décisions (VALIDATEUR) : ses confirmations, rejets et attributions, tirés du journal d'audit.
+        Route::get('/historique-decisions', HistoriqueDecisionsController::class)->middleware('can:'.Droit::AValiderVoir->value)->name('historique-decisions');
 
         // « Mes brouillons » : brouillons et rejetés du GESTIONNAIRE ou du RÉGULATEUR, toutes entités confondues.
         Route::get('/brouillons', BrouillonsController::class)->middleware('can:'.Droit::BrouillonsVoir->value)->name('brouillons');
@@ -338,6 +342,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::BoutiquesVoir->value);
             Route::get('/creer', 'create')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.create');
             Route::post('/', 'store')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.store');
+            // Réservations prêtes à attribuer, toutes campagnes (VALIDATEUR : menu « Boutiques › Attributions à faire »).
+            Route::get('/attributions', 'attributions')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.attributions');
             Route::get('/{campagne}', 'show')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesVoir->value)->name('.show');
             Route::get('/{campagne}/modifier', 'edit')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.edit');
             Route::put('/{campagne}', 'update')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.update');

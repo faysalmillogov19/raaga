@@ -136,7 +136,7 @@ class MenuRegulateurTest extends TestCase
         // Le GESTIONNAIRE ne voit jamais les finances ; les autres profils gardent la définition commune.
         $this->connecterBackoffice(Role::GestionnaireSites);
         $this->get(route('admin.sites.finances.liste'))->assertForbidden();
-        foreach ([Role::SuperAdmin, Role::Validateur, Role::GestionnaireSites] as $role) {
+        foreach ([Role::SuperAdmin, Role::GestionnaireSites] as $role) {
             $user = $this->connecterBackoffice($role);
             $this->assertSame(collect($this->ancienMenu($user))->pluck('cle')->all(), collect(MenuBackoffice::pour($user))->flatten(1)->pluck('cle')->all());
             $this->get('/admin')->assertOk()->assertDontSee('sous-menu-tarification', false)->assertDontSee('Mes soumissions');

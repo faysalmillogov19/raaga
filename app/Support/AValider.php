@@ -11,6 +11,7 @@ use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
 use App\Models\AuditLog;
+use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
 use App\Models\CorrectionPaiement;
 use App\Models\DecisionAvance;
@@ -31,6 +32,7 @@ use App\Models\Unite;
 use App\Models\User;
 use App\Models\VerificationKyc;
 use App\Models\ZoneSite;
+use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Kyc\VerificationIdentite;
 use App\Services\Parametrage\WorkflowParametrage;
 use Carbon\CarbonInterface;
@@ -120,6 +122,13 @@ final class AValider
             'campagnes' => ['slug' => 'campagnes', 'droits' => [Droit::BoutiquesConfirmer], 'groupable' => false, 'elements' => ['campagne'],
                 'source' => fn (\Closure $e) => CampagneBoutiques::query()->where('statut', StatutCampagneBoutiques::Soumise)->get()
                     ->map(fn (CampagneBoutiques $c) => $e('campagne:'.$c->id, 'campagne', $c->nom, $c->soumis_par, $c->soumise_le, route('admin.boutiques.show', $c)))],
+            // Attributions : réservations prêtes (caution et avance payées). Pas de « confirmer ou rejeter » : chaque ligne
+            // mène au formulaire d'attribution (date de signature du contrat), une réservation à la fois.
+            'attributions' => ['slug' => 'attributions', 'droits' => [Droit::BoutiquesPiloter], 'groupable' => false, 'elements' => ['attribution'],
+                'source' => fn (\Closure $e) => ReservationsBoutiques::aAttribuer()
+                    ->addSelect(['reservations_boutiques.*', 'code_boutique' => Boutique::query()->select('code')->whereColumn('boutiques.id', 'reservations_boutiques.boutique_id')])->get()
+                    ->map(fn (ReservationBoutique $r) => $e('attribution:'.$r->id, 'attribution', $r->reference.' · '.$r->code_boutique, null, $r->avance_payee_le ?? $r->updated_at,
+                        route('admin.boutiques.attributions')))],
             'demarches' => ['slug' => 'demarches', 'droits' => [Droit::PhaseConfirmer], 'groupable' => false, 'elements' => ['phase'],
                 'source' => fn (\Closure $e) => DecisionPhase::query()->where('statut', DecisionPhase::SOUMISE)->get()
                     ->map(fn (DecisionPhase $d) => $e('phase:'.$d->id, 'phase', self::libellePhase($d), $d->propose_par, $d->created_at, route('admin.phase')))],
@@ -372,6 +381,13 @@ final class AValider
                     $x['effet'] => $x['effet_annulation'],
                 ], 'pieces' => app(VerificationIdentite::class)->dossier($citoyen)->filter()
                     ->map(fn ($d) => ['libelle' => __('admin.kyc.pieces.'.strtolower($d->type->value)).($d->face ? ' · '.$d->face->value : ''), 'url' => route('admin.kyc.piece', $d)])->values()->all()];
+            })(),
+            'attribution' => (function () use ($id) {
+                $r = ReservationBoutique::query()->with(['boutique', 'campagne'])->findOrFail($id);
+                $x = __('admin.boutiques.attributions.colonnes');
+
+                return ['infos' => [$x['reference'] => $r->reference, $x['campagne'] => $r->campagne?->nom, $x['boutique'] => $r->boutique?->code,
+                    $x['avance'] => $r->avance_payee_le?->format('d/m/Y') ?? __('admin.boutiques.attributions.sans_avance'), $x['reference_avance'] => $r->reference_avance]];
             })(),
             'phase' => (function () use ($id) {
                 $d = DecisionPhase::query()->findOrFail($id);

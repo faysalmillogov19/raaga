@@ -117,12 +117,14 @@ return [
             'paiements' => 'Paiements : corrections et remboursements',
             'identites' => 'Identités : annulations proposées',
             'cautions' => 'Cautions : retenues proposées',
+            'attributions' => 'Attributions : réservations prêtes',
         ],
         'elements' => [
             'site' => 'Site', 'grille' => 'Grille', 'finances' => 'Finances', 'type' => 'Type', 'niveaux' => 'Niveau', 'zones' => 'Zone',
             'unites' => 'Unité', 'moyens' => 'Moyen de paiement', 'investissement' => 'Paramètres d’investissement', 'delais' => 'Délais de paiement', 'campagne' => 'Campagne', 'phase' => 'Démarches', 'autorisation' => 'Demande', 'import' => 'Import',
             'correction' => 'Correction de paiement', 'remboursement' => 'Remboursement', 'annulation' => 'Annulation (identité douteuse)',
             'retenue' => 'Retenue sur une caution',
+            'attribution' => 'Attribution',
         ],
         'colonnes' => ['selection' => 'Sélection', 'element' => 'Élément', 'par' => 'Soumis par', 'date' => 'Date', 'attente' => 'En attente depuis', 'actions' => 'Actions'],
         'tout_cocher' => 'Tout cocher : :groupe',
@@ -136,9 +138,10 @@ return [
             'grilles' => 'Grilles tarifaires',
             'referentiels' => 'Référentiels',
             'campagnes' => 'Campagnes',
-            'demarches' => 'Démarches du site public',
+            'demarches' => 'Démarches',
             'autorisations' => 'Autorisations de modification',
             'imports' => 'Imports',
+            'attributions' => 'Attributions',
             'paiements' => 'Paiements',
             'identites' => 'Identités',
             'cautions' => 'Cautions',
@@ -220,6 +223,40 @@ return [
         'invest' => 'RAAGA Invest',
         'site_public' => 'Site public',
         'soumissions' => 'Mes soumissions',
+        'gestion_boutiques' => 'Boutiques',
+        'controle' => 'Contrôle',
+    ],
+
+    // Intertitres des menus dépliants (rubriques de « À valider » du VALIDATEUR).
+    'intertitres_menus' => [
+        'referencement' => 'Référencement',
+        'finances' => 'Finances',
+        'campagnes' => 'Campagnes & réservations',
+        'contenus' => 'Contenus & identités',
+    ],
+
+    // Libellés propres au menu du VALIDATEUR.
+    'menu_validateur' => [
+        'attributions_a_faire' => 'Attributions à faire',
+        'sites' => 'Consultation des sites et boutiques',
+        'imports_sites' => 'Imports : sites et capacités',
+        'imports_boutiques' => 'Imports : boutiques',
+        'historique' => 'Historique de mes décisions',
+    ],
+
+    'historique_decisions' => [
+        'titre' => 'Historique de mes décisions',
+        'intro' => 'Vos confirmations, rejets, autorisations et attributions, tirés du journal d’audit, des plus récentes aux plus anciennes.',
+        'colonnes' => ['date' => 'Date', 'decision' => 'Décision', 'objet' => 'Objet', 'motif' => 'Motif'],
+        'unite' => 'décisions',
+        'decisions' => ['confirmee' => 'Confirmée', 'rejetee' => 'Rejetée', 'attribuee' => 'Attribuée', 'autorisee' => 'Autorisée', 'refusee' => 'Refusée'],
+        'objets' => [
+            'site' => 'Site', 'site_finance' => 'Données financières', 'grille_tarifaire' => 'Grille tarifaire', 'campagne_boutiques' => 'Campagne',
+            'tranche' => 'Tranche', 'distribution' => 'Dividendes', 'convention' => 'Convention', 'investissement' => 'Paramètres d’investissement',
+            'delais' => 'Délais de paiement', 'type_boutique' => 'Type de boutique', 'niveaux' => 'Niveau', 'zones' => 'Zone', 'unites' => 'Unité',
+            'moyens' => 'Moyen de paiement', 'phase' => 'Démarches du site public', 'kyc' => 'Identité', 'paiement' => 'Paiement',
+            'remboursement' => 'Remboursement', 'caution' => 'Caution', 'reservation_boutique' => 'Réservation de boutique', 'import' => 'Import',
+        ],
     ],
 
     // Libellés propres au menu du RÉGULATEUR (sous-menus de ses menus dépliants).
@@ -2337,6 +2374,15 @@ return [
             'une_seule_ouverte' => 'Une autre campagne est déjà ouverte : clôturez-la d’abord.',
             'cloture_ouverte' => 'Seule une campagne ouverte peut être clôturée.',
             'sans_grille' => 'Ouverture impossible : ces sites n’ont pas de grille tarifaire confirmée : :lots.',
+        ],
+        'attributions' => [
+            'titre' => 'Attributions à faire',
+            'intro' => 'Réservations dont la caution et l’avance sont payées : attribuez la boutique en indiquant la date de signature du contrat. La référence de l’avance vient du paiement confirmé.',
+            'vide' => 'Aucune attribution à faire.',
+            'nombre' => '{0} Aucune réservation prête|{1} 1 réservation prête à attribuer|[2,*] :n réservations prêtes à attribuer',
+            'sans_avance' => 'Sans avance',
+            'colonnes' => ['reference' => 'Réservation', 'campagne' => 'Campagne', 'boutique' => 'Boutique', 'avance' => 'Avance payée le',
+                'reference_avance' => 'Référence de l’avance', 'action' => 'Action'],
         ],
         'reservations' => [
             'titre' => 'Réservations',

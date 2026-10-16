@@ -57,7 +57,10 @@
     </section>
 
     <footer class="mt-6 flex flex-wrap gap-3 border-t border-ligne pt-4" x-data="{ rejet: false }">
-        @if ($e['moi'])
+        @if ($e['element'] === 'attribution')
+            {{-- Attribution : pas de décision ici, le formulaire (date de signature du contrat) est sur « Attributions à faire ». --}}
+            <x-admin.bouton variante="principal" href="{{ $e['url'] }}">{{ __('admin.boutiques.reservations.attribuer') }}</x-admin.bouton>
+        @elseif ($e['moi'])
             <x-admin.message type="avertissement" class="!mb-0 w-full" data-motif-moi>{{ $v['erreurs']['auto_validation'] }}</x-admin.message>
         @else
             <form method="POST" action="{{ route('admin.a-valider.decider') }}" class="flex flex-wrap items-start gap-3">
@@ -75,7 +78,7 @@
                 <x-admin.bouton variante="danger" type="submit" name="decision" value="rejeter" x-show="rejet" x-cloak>{{ $v['detail']['confirmer_rejet'] }}</x-admin.bouton>
             </form>
         @endif
-        @if ($e['fiche'])
+        @if ($e['fiche'] && $e['element'] !== 'attribution')
             <x-admin.bouton variante="contour" href="{{ $e['url'] }}">{{ $v['detail']['fiche'] }}</x-admin.bouton>
         @endif
     </footer>

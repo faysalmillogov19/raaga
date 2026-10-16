@@ -31,7 +31,16 @@ final class MenuBackoffice
 {
     /** Icône de chaque menu dépliant (barre latérale réduite en icônes). */
     public const ICONES_MENUS = ['referentiels' => 'referentiels', 'modalites' => 'dividendes', 'imports' => 'importer', 'a_valider' => 'taches',
-        'tarification' => 'dividendes', 'location' => 'boutiques', 'invest' => 'tranches', 'site_public' => 'plateforme', 'soumissions' => 'taches'];
+        'tarification' => 'dividendes', 'location' => 'boutiques', 'invest' => 'tranches', 'site_public' => 'plateforme', 'soumissions' => 'taches',
+        'gestion_boutiques' => 'boutiques', 'controle' => 'audit'];
+
+    /** Rubriques de « À valider » du VALIDATEUR, classées sous quatre intertitres (badge de l'intertitre : somme des rubriques). */
+    public const INTERTITRES_A_VALIDER = [
+        'referencement' => ['sites', 'imports', 'referentiels', 'autorisations'],
+        'finances' => ['finances', 'grilles', 'paiements', 'cautions'],
+        'campagnes' => ['campagnes', 'attributions'],
+        'contenus' => ['demarches', 'identites'],
+    ];
 
     /**
      * « etape » : étape de livraison (back-office métier), ou du module d'administration quand « module » = admin.
@@ -51,7 +60,7 @@ final class MenuBackoffice
                 ['cle' => 'a_valider', 'route' => 'admin.a-valider', 'droit' => Droit::AValiderVoir, 'icone' => 'taches', 'etape' => 0,
                     'sous_menu' => 'a_valider', 'exclure' => ['admin.a-valider.rubrique'], 'compteur_zero' => true, 'libelle' => __('admin.a_valider.menus.vue')],
                 ...array_map(fn (string $groupe, array $r) => ['cle' => 'a_valider_'.$groupe, 'route' => 'admin.a-valider.rubrique', 'parametres' => ['rubrique' => $r['slug']],
-                    'droit' => $r['droits'][0], 'icone' => 'taches', 'etape' => 0, 'sous_menu' => 'a_valider', 'compteur_zero' => true,
+                    'droit' => $r['droits'][0], 'icone' => 'taches', 'etape' => 0, 'sous_menu' => 'a_valider', 'grise_si_vide' => true,
                     'libelle' => __('admin.a_valider.menus.'.$groupe)], array_keys(AValider::rubriques()), AValider::rubriques()),
                 // « Mes brouillons » (GESTIONNAIRE, RÉGULATEUR) : badge = brouillons et rejetés non soumis.
                 ['cle' => 'brouillons', 'route' => 'admin.brouillons', 'droit' => Droit::BrouillonsVoir, 'icone' => 'taches', 'etape' => 0],
@@ -192,6 +201,50 @@ final class MenuBackoffice
     }
 
     /**
+     * Menu du VALIDATEUR, regroupé par domaine (16/10/2026) : « À valider » (vue d'ensemble, puis ses rubriques sous quatre
+     * intertitres), « Boutiques », « Contrôle ». Mêmes écrans, mêmes URL, mêmes droits que la définition commune. Les
+     * écrans hors des domaines demandés sont rangés dans le plus proche (consultation du référencement, campagnes et
+     * imports : Boutiques ; RAAGA Invest, Actions A, opérations, registres, démarches, référentiels : Contrôle).
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    public static function validateur(): array
+    {
+        $dans = fn (string $menu, string $cle, array $plus = []) => [...self::entree($cle), 'sous_menu' => $menu, ...$plus];
+        $libelle = fn (string $cle) => __('admin.menu_validateur.'.$cle);
+        $rubriques = [];
+        foreach (self::INTERTITRES_A_VALIDER as $intertitre => $groupes) {
+            foreach ($groupes as $groupe) {
+                $rubriques[] = [...self::entree('a_valider_'.$groupe), 'intertitre' => $intertitre];
+            }
+        }
+
+        return [
+            'pilotage' => [
+                self::entree('tableau'),
+                self::entree('a_valider'),
+                ...$rubriques,
+                // Boutiques : attributions à faire, cautions à rembourser, consultation du référencement.
+                ['cle' => 'attributions_a_faire', 'route' => 'admin.boutiques.attributions', 'droit' => Droit::BoutiquesPiloter, 'icone' => 'boutiques', 'etape' => 0,
+                    'sous_menu' => 'gestion_boutiques', 'libelle' => $libelle('attributions_a_faire')],
+                $dans('gestion_boutiques', 'cautions'),
+                $dans('gestion_boutiques', 'sites', ['libelle' => $libelle('sites')]),
+                $dans('gestion_boutiques', 'boutiques_referentiel'),
+                $dans('gestion_boutiques', 'capacites'),
+                $dans('gestion_boutiques', 'grille'),
+                $dans('gestion_boutiques', 'boutiques', ['exclure' => ['admin.boutiques.attributions', 'admin.boutiques.grilles', 'admin.boutiques.grilles.*']]),
+                $dans('gestion_boutiques', 'imports_sites', ['libelle' => $libelle('imports_sites')]),
+                $dans('gestion_boutiques', 'imports_boutiques', ['libelle' => $libelle('imports_boutiques')]),
+                // Contrôle : historique de mes décisions, journal d'audit, puis les écrans de consultation restants.
+                ['cle' => 'historique', 'route' => 'admin.historique-decisions', 'droit' => Droit::AValiderVoir, 'icone' => 'audit', 'etape' => 0,
+                    'sous_menu' => 'controle', 'libelle' => $libelle('historique')],
+                ...array_map(fn (string $cle) => $dans('controle', $cle), ['audit', 'registre', 'registre_a', 'observations', 'kyc', 'conformite', 'souscriptions',
+                    'remboursements', 'tranches', 'investissement', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'phase', 'referentiels']),
+            ],
+        ];
+    }
+
+    /**
      * Entrées visibles pour l'utilisateur, groupées ; les groupes vides sont retirés.
      *
      * @return array<string, list<array{cle: string, route: string, droit: Droit, icone: string, etape: int}>>
@@ -201,7 +254,11 @@ final class MenuBackoffice
         return array_filter(array_map(
             fn (array $entrees) => array_values(array_filter($entrees, fn (array $e) => $user->can($e['droit']->value)
                 && ! (isset($e['masque_si']) && $user->can($e['masque_si']->value)))),
-            $user->hasRole(Role::Regulateur) ? self::regulateur() : self::definition(),
+            match (true) {
+                $user->hasRole(Role::Regulateur) => self::regulateur(),
+                $user->hasRole(Role::Validateur) => self::validateur(),
+                default => self::definition(),
+            },
         ));
     }
 
@@ -290,11 +347,13 @@ final class MenuBackoffice
         $parElement = $file ? AValider::parElement($user) : [];
         $regulateur = $user->hasRole(Role::Regulateur);
 
-        return array_filter([
+        $badges = array_filter([
             // VALIDATEUR : total de la file « À valider » (entrée et vue d'ensemble), puis une valeur par rubrique.
             'a_valider' => $total,
             'menu:a_valider' => $total,
             ...($file ? collect(AValider::compteurs($user))->mapWithKeys(fn (int $n, string $g) => ['a_valider_'.$g => $n])->all() : []),
+            // VALIDATEUR : « Boutiques › Attributions à faire » = rubrique « Attributions » (même file, aucune requête de plus).
+            'attributions_a_faire' => $file ? (AValider::compteurs($user)['attributions'] ?? 0) : 0,
             'brouillons' => $user->can(Droit::BrouillonsVoir->value) && ! $regulateur ? SoumissionGroupee::nombreBrouillons($user) : 0,
             // RÉGULATEUR (« Mes soumissions ») : brouillons et rejetés comptés à part, sommés sur le menu parent.
             'mes_brouillons' => $regulateur ? SoumissionGroupee::nombreBrouillons($user, 'brouillons') : 0,
@@ -348,6 +407,14 @@ final class MenuBackoffice
                 default => 0,
             },
         ]);
+
+        // VALIDATEUR : sites et grilles soumis sont déjà comptés dans « À valider » ; leurs entrées de consultation
+        // (menu « Boutiques ») n'en reprennent pas le badge, pour ne pas le compter deux fois sur le parent.
+        if ($user->hasRole(Role::Validateur)) {
+            unset($badges['sites'], $badges['grille']);
+        }
+
+        return $badges;
     }
 
     /**

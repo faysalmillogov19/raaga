@@ -15,8 +15,9 @@
     $c = __('admin.cadre');
     $theme = $user->theme_backoffice === 'foret' ? 'foret' : 'clair';
     $enAttente = count(\App\Support\ATraiter::pour($user));
-    $notifications = $user->unreadNotifications()->latest()->limit(10)->get();
-    $nonLues = $user->unreadNotifications()->count();
+    // Dix dernières notifications non lues et leur nombre total, en une seule requête (fenêtre calculée avant la limite).
+    $notifications = $user->unreadNotifications()->latest()->limit(10)->select('notifications.*')->selectRaw('count(*) over () as total_non_lues')->get();
+    $nonLues = (int) ($notifications->first()?->total_non_lues ?? 0);
     $initiales = collect(preg_split('/\s+/', trim($user->name)))->filter()->take(2)->map(fn ($m) => mb_strtoupper(mb_substr($m, 0, 1)))->implode('');
     // Groupe de la page courante, pour le fil d'Ariane.
     $groupeActif = collect($menu)->search(fn ($entrees) => collect($entrees)->contains(fn ($e) => MenuBackoffice::estActive($e)));

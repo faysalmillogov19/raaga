@@ -5,7 +5,9 @@
     ses sous-menus, légèrement en retrait (animation de hauteur, coupée si l'utilisateur réduit les animations).
     Ouvert d'office quand la page affichée est l'un de ses sous-menus ; sinon, dernier état mémorisé pour l'utilisateur.
     Barre latérale réduite en icônes : survol ou clic → petit panneau flottant. Badge = somme des sous-menus.
-    Réutilisable : MenuBackoffice regroupe les entrées marquées « sous_menu » => {cle}.
+    Réutilisable : MenuBackoffice regroupe les entrées marquées « sous_menu » => {cle}. Intertitres (« intertitre » sur
+    les entrées, par exemple les rubriques de « À valider ») : badge = somme de leurs sous-menus. Sous-menu marqué
+    « grise_si_vide » sans élément : grisé, sans compteur.
 --}}
 @php
     use App\Support\MenuBackoffice;
@@ -13,6 +15,7 @@
     $id = 'sous-menu-'.$cle;
     // Total du menu : fourni (« menu:{cle} », par exemple le total de « À valider »), sinon la somme des sous-menus.
     $total = $badges['menu:'.$cle] ?? collect($entrees)->sum(fn (array $e) => $badges[$e['cle']] ?? 0);
+    $intertitre = null;
 @endphp
 
 <li class="adm-deroulant" x-data="menuDeroulant({ deplie: @js($ouvert), cle: @js($cle), url: @js(route('admin.preferences.menu')) })"
@@ -32,9 +35,22 @@
                 @php
                     $actif = MenuBackoffice::estActive($entree);
                     $n = $badges[$entree['cle']] ?? 0;
+                    $vide = ($entree['grise_si_vide'] ?? false) && ! $n;
                 @endphp
+                @if (isset($entree['intertitre']) && $entree['intertitre'] !== $intertitre)
+                    @php
+                        $intertitre = $entree['intertitre'];
+                        $somme = collect($entrees)->where('intertitre', $intertitre)->sum(fn (array $e) => $badges[$e['cle']] ?? 0);
+                    @endphp
+                    <li class="adm-intertitre" data-intertitre="{{ $intertitre }}">
+                        <span>{{ __('admin.intertitres_menus.'.$intertitre) }}</span>
+                        @if ($somme)
+                            <span class="adm-compteur">{{ $somme }}<span class="sr-only"> {{ trans_choice('admin.a_traiter', $somme, ['n' => $somme]) }}</span></span>
+                        @endif
+                    </li>
+                @endif
                 <li>
-                    <a href="{{ MenuBackoffice::url($entree) }}" @class(['bo-lien', 'adm-sous-lien', 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif>
+                    <a href="{{ MenuBackoffice::url($entree) }}" @class(['bo-lien', 'adm-sous-lien', 'adm-sous-lien-vide' => $vide, 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif>
                         <span class="adm-libelle">{{ $entree['libelle'] ?? __('admin.menu.'.$entree['cle']) }}</span>
                         @if ($n)
                             <span class="adm-compteur">{{ $n }}<span class="sr-only"> {{ trans_choice('admin.a_traiter', $n, ['n' => $n]) }}</span></span>

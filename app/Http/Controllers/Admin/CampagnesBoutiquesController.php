@@ -247,6 +247,16 @@ class CampagnesBoutiquesController extends Controller
     }
 
     /** Avance payée et contrat signé : boutique attribuée (VALIDATEUR). */
+    /** Attributions à faire : réservations prêtes (caution et avance payées), toutes campagnes, les plus anciennes d'abord. */
+    public function attributions(): View
+    {
+        Gate::authorize(Droit::BoutiquesPiloter->value);
+
+        return view('admin.boutiques.attributions', [
+            'reservations' => ReservationsBoutiques::aAttribuer()->with(['boutique', 'campagne'])->orderBy('avance_payee_le')->orderBy('id')->get(),
+        ]);
+    }
+
     public function attribuer(Request $request, CampagneBoutiques $campagne, ReservationBoutique $reservation): RedirectResponse
     {
         Gate::authorize(Droit::BoutiquesPiloter->value);
@@ -256,7 +266,10 @@ class CampagnesBoutiquesController extends Controller
         ], [], __('admin.boutiques.reservations.champs'));
         $this->reservations->attribuer($reservation, $donnees['contrat_signe_le'], $request->user());
 
-        return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.attribuee'));
+        // Retour sur « Attributions à faire » quand l'attribution y a été faite.
+        $retour = url()->previous() === route('admin.boutiques.attributions') ? route('admin.boutiques.attributions') : route('admin.boutiques.show', $campagne);
+
+        return redirect($retour)->with('succes', __('admin.boutiques.messages.attribuee'));
     }
 
     /** Sites confirmés qui ont des boutiques réservables. */

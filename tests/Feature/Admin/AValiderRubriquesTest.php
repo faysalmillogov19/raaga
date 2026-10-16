@@ -52,10 +52,12 @@ class AValiderRubriquesTest extends TestCase
         $attendus = ['Vue d’ensemble' => [route('admin.a-valider'), '3'], 'Sites' => [route('admin.a-valider.rubrique', 'sites'), '2'],
             'Données financières' => [route('admin.a-valider.rubrique', 'finances-sites'), '0'], 'Grilles tarifaires' => [route('admin.a-valider.rubrique', 'grilles'), '0'],
             'Référentiels' => [route('admin.a-valider.rubrique', 'referentiels'), '1'], 'Campagnes' => [route('admin.a-valider.rubrique', 'campagnes'), '0'],
-            'Démarches du site public' => [route('admin.a-valider.rubrique', 'demarches'), '0'], 'Autorisations de modification' => [route('admin.a-valider.rubrique', 'autorisations-sites'), '0']];
+            'Démarches' => [route('admin.a-valider.rubrique', 'demarches'), '0'], 'Autorisations de modification' => [route('admin.a-valider.rubrique', 'autorisations-sites'), '0']];
         foreach ($attendus as $libelle => [$url, $n]) {
-            $classe = $n === '0' ? 'adm-compteur adm-compteur-zero' : 'adm-compteur';
-            $this->assertMatchesRegularExpression('#<a href="'.preg_quote($url, '#').'"[^>]*>\s*<span class="adm-libelle">'.preg_quote($libelle, '#').'</span>\s*<span class="'.$classe.'">'.$n.'<#', $menu, $libelle);
+            // Rubrique vide : grisée, sans compteur.
+            $n === '0'
+                ? $this->assertMatchesRegularExpression('#<a href="'.preg_quote($url, '#').'" class="bo-lien adm-sous-lien adm-sous-lien-vide"[^>]*>\s*<span class="adm-libelle">'.preg_quote($libelle, '#').'</span>\s*</a>#', $menu, $libelle)
+                : $this->assertMatchesRegularExpression('#<a href="'.preg_quote($url, '#').'"[^>]*>\s*<span class="adm-libelle">'.preg_quote($libelle, '#').'</span>\s*<span class="adm-compteur">'.$n.'<#', $menu, $libelle);
         }
     }
 

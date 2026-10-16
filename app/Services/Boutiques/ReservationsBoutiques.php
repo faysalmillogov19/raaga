@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Services\Audit\Journal;
 use App\Services\Kyc\VerificationIdentite;
 use App\Support\MemoRequete;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -275,6 +276,13 @@ class ReservationsBoutiques
 
             throw $e;
         }
+    }
+
+    /** Réservations prêtes à attribuer : réservées (caution payée), avance confirmée ou sans avance, pas encore attribuées. */
+    public static function aAttribuer(): Builder
+    {
+        return ReservationBoutique::query()->where('statut', StatutReservationBoutique::Reservee)
+            ->where(fn ($q) => $q->whereNotNull('avance_payee_le')->orWhere('avance', 0));
     }
 
     /**
