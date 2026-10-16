@@ -21,7 +21,7 @@ class RelancerPaiements extends Command
         $paiements->expirerReservations();
         $n = $relances->automatiques();
 
-        $this->info("{$n['echeance']} relance(s) avant échéance, {$n['expiration']} relance(s) d'expiration.");
+        $this->info("{$n['echeance']} relance(s) avant échéance, {$n['expiration']} relance(s) d'expiration, {$n['complement']} relance(s) de complément.");
 
         return self::SUCCESS;
     }

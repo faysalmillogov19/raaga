@@ -20,6 +20,7 @@ use App\Models\MoyenPaiement;
 use App\Models\Niveau;
 use App\Models\ParametrageDecision;
 use App\Models\ParametresInvestissement;
+use App\Models\ParametresPaiements;
 use App\Models\Remboursement;
 use App\Models\Site;
 use App\Models\SiteFinance;
@@ -66,7 +67,7 @@ final class AValider
                     ->map(fn (Site $s) => $e('site:'.$s->id, 'site', $nomSite($s), $s->soumis_par, $s->soumis_le, route('admin.sites.show', $s)))],
             // Données financières : données financières des sites, et moyens de paiement (ajout ou modification, une décision à la fois).
             'finances' => ['slug' => 'finances-sites', 'droits' => [Droit::BoutiquesConfirmer, Droit::MoyensPaiementConfirmer, Droit::TranchesConfirmer], 'groupable' => false,
-                'elements' => ['finances', 'moyens', 'investissement'],
+                'elements' => ['finances', 'moyens', 'investissement', 'delais'],
                 'source' => function (\Closure $e, User $user) use ($nomSite) {
                     $liste = collect();
                     if ($user->can(Droit::BoutiquesConfirmer->value)) {
@@ -79,6 +80,9 @@ final class AValider
                         }
                     }
                     if ($user->can(Droit::MoyensPaiementConfirmer->value)) {
+                        foreach (ParametresPaiements::query()->where('statut', StatutGrilleTarifaire::Soumis)->get() as $p) {
+                            $liste->push($e('delais:'.$p->id, 'delais', __('admin.delais.titre'), $p->soumis_par, $p->soumis_le, route('admin.parametres-paiements')));
+                        }
                         foreach (MoyenPaiement::query()->where(fn ($q) => $q->where('statut', StatutTypeBoutique::AValider)->orWhereNotNull('modification_demandee'))->get() as $m) {
                             $liste->push($e('moyens:'.$m->id, 'moyens', $m->code.' · '.$m->libelle, $m->demande_par, $m->updated_at, route('admin.referencement.zones.show', ['moyens', $m->id])));
                         }
@@ -263,6 +267,11 @@ final class AValider
                 $finances = SiteFinance::query()->where('site_id', $id)->with('site')->firstOrFail();
 
                 return [...self::parametrable($finances, $champsSite, true), 'infos' => [__('admin.a_valider.detail.site') => $finances->site->nom, __('admin.parametrage.statut') => $finances->statut->label()]];
+            })(),
+            'delais' => (function () use ($id) {
+                $p = ParametresPaiements::query()->findOrFail($id);
+
+                return [...self::parametrable($p, __('admin.delais.champs'), true), 'infos' => [__('admin.parametrage.statut') => $p->statut->label()]];
             })(),
             'investissement' => (function () use ($id) {
                 $p = ParametresInvestissement::query()->findOrFail($id);

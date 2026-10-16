@@ -4,14 +4,17 @@ namespace App\Services\Paiement;
 
 use App\Contracts\PaymentProvider;
 use App\Enums\CompteDestination;
+use App\Models\MoyenPaiement;
 use App\Support\CompteSequestre;
 use Throwable;
 
 /**
- * Paiements ouverts ou fermés pour un compte de destination. En production : il faut un opérateur de paiement réel
- * (jamais le simulateur) et les coordonnées du compte concerné (RAAGA_SEQUESTRE_* pour l'investissement,
- * RAAGA_COMPTE_LOCATION_* pour la location). Hors production (recette), le simulateur suffit et les coordonnées
- * peuvent manquer. Paiements fermés : aucune campagne ne se propose ni ne s'ouvre, aucun citoyen ne paie.
+ * Paiements ouverts ou fermés, moyen par moyen, pour un compte de destination. En production :
+ *  - paiements manuels (virement, versement, espèces) : ouverts dès que les coordonnées du compte concerné sont
+ *    renseignées (RAAGA_SEQUESTRE_* pour l'investissement, RAAGA_COMPTE_LOCATION_* pour la location), même sans opérateur ;
+ *  - paiements par opérateur (mobile money, carte, Faso Arzeka) : il faut en plus un opérateur réel (jamais le simulateur).
+ * Hors production (recette), tout est ouvert. Une campagne ne se propose ni ne s'ouvre que si au moins un de ses moyens
+ * de paiement de la caution est réellement ouvert.
  */
 class OuverturePaiements
 {
@@ -34,22 +37,47 @@ class OuverturePaiements
         return ! in_array(null, CompteSequestre::pour($compte), true);
     }
 
-    /** Raison de la fermeture des paiements vers ce compte, ou null s'ils sont ouverts. */
-    public static function raisonFermeture(CompteDestination $compte): ?string
+    /** Raison de la fermeture d'un moyen précis vers ce compte, ou null s'il est ouvert. */
+    public static function raisonFermetureCanal(MoyenPaiement $canal, CompteDestination $compte): ?string
     {
         if (! app()->environment('production')) {
             return null;
         }
 
         return match (true) {
-            ! self::operateurReel() => __('public.paiement.fermes.operateur'),
             ! self::compteRenseigne($compte) => __('public.paiement.fermes.compte', ['compte' => mb_strtolower($compte->label())]),
+            ! $canal->estManuel() && ! self::operateurReel() => __('public.paiement.fermes.operateur'),
             default => null,
         };
     }
 
-    public static function ouverts(CompteDestination $compte): bool
+    public static function canalOuvert(MoyenPaiement $canal, CompteDestination $compte): bool
     {
-        return self::raisonFermeture($compte) === null;
+        return self::raisonFermetureCanal($canal, $compte) === null;
+    }
+
+    /** Paiements par opérateur ouverts vers ce compte (opérateur réel et coordonnées, en production). */
+    public static function operateurOuvert(CompteDestination $compte): bool
+    {
+        return ! app()->environment('production') || (self::compteRenseigne($compte) && self::operateurReel());
+    }
+
+    /**
+     * Raison de la fermeture quand AUCUN des moyens n'est ouvert (celle du premier moyen), ou null si au moins un l'est.
+     *
+     * @param  iterable<MoyenPaiement>  $canaux
+     */
+    public static function raisonFermeture(CompteDestination $compte, iterable $canaux): ?string
+    {
+        if (! app()->environment('production')) {
+            return null;
+        }
+        $raisons = collect($canaux)->map(fn (MoyenPaiement $c) => self::raisonFermetureCanal($c, $compte));
+
+        return match (true) {
+            $raisons->contains(null) => null,
+            $raisons->isEmpty() => __('public.paiement.fermes.aucun_moyen'),
+            default => $raisons->first(),
+        };
     }
 }

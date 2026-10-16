@@ -119,7 +119,7 @@ return [
         ],
         'elements' => [
             'site' => 'Site', 'grille' => 'Grille', 'finances' => 'Finances', 'type' => 'Type', 'niveaux' => 'Niveau', 'zones' => 'Zone',
-            'unites' => 'Unité', 'moyens' => 'Moyen de paiement', 'investissement' => 'Paramètres d’investissement', 'campagne' => 'Campagne', 'phase' => 'Démarches', 'autorisation' => 'Demande', 'import' => 'Import',
+            'unites' => 'Unité', 'moyens' => 'Moyen de paiement', 'investissement' => 'Paramètres d’investissement', 'delais' => 'Délais de paiement', 'campagne' => 'Campagne', 'phase' => 'Démarches', 'autorisation' => 'Demande', 'import' => 'Import',
             'correction' => 'Correction de paiement', 'remboursement' => 'Remboursement', 'annulation' => 'Annulation (identité douteuse)',
         ],
         'colonnes' => ['selection' => 'Sélection', 'element' => 'Élément', 'par' => 'Soumis par', 'date' => 'Date', 'attente' => 'En attente depuis', 'actions' => 'Actions'],
@@ -223,6 +223,7 @@ return [
         'zones' => 'Zones',
         'unites' => 'Unités',
         'moyens' => 'Moyens de paiement',
+        'delais' => 'Délais de paiement',
         'imports_sites' => 'Sites et capacités',
         'imports_boutiques' => 'Boutiques',
         'boutiques_referentiel' => 'Boutiques',
@@ -380,7 +381,7 @@ return [
         ],
         'colonnes_paiements' => ['reference' => 'Référence', 'date' => 'Date', 'canal' => 'Moyen', 'montant' => 'Montant', 'statut' => 'Statut', 'controle' => 'Contrôle', 'actions' => 'Actions'],
         'colonnes_relances' => ['date' => 'Date', 'type' => 'Type', 'canaux' => 'Canal', 'auteur' => 'Auteur'],
-        'types_relance' => ['ECHEANCE' => '24 h avant la fin du délai', 'EXPIRATION' => 'À l’expiration', 'MANUELLE' => 'Manuelle'],
+        'types_relance' => ['ECHEANCE' => '24 h avant la fin du délai', 'EXPIRATION' => 'À l’expiration', 'MANUELLE' => 'Manuelle', 'COMPLEMENT' => '24 h avant la fin du délai de complément'],
         'canaux' => ['notification' => 'Notification', 'email' => 'E-mail'],
         'controles' => ['RECU' => 'Reçu', 'INCOMPLET' => 'Incomplet', 'REJETE' => 'Rejeté'],
         'actions' => [
@@ -396,11 +397,13 @@ return [
         ],
         'champs' => [
             'controle' => 'résultat du contrôle', 'motif' => 'motif', 'controle_reference' => 'référence du relevé ou du reçu de caisse',
+            'controle_montant_recu' => 'montant reçu (FCFA)',
             'message' => 'message (facultatif)',
         ],
         'aides' => [
             'controle_reference' => 'Relevé bancaire, avis de virement ou numéro du reçu de caisse.',
             'motif' => 'Obligatoire pour un paiement incomplet ou rejeté.',
+            'controle_montant_recu' => 'Paiement incomplet seulement : la somme réellement reçue. Le citoyen a un délai de complément ; sans complément à l’échéance, cette somme lui est remboursée.',
             'correction' => 'Paiement finalement non reçu : le VALIDATEUR confirmera la correction ; le dossier redeviendra en attente de paiement, avec un nouveau délai.',
             'relance' => 'Notification et e-mail (si le compte a une adresse). La relance est tracée dans le dossier.',
         ],
@@ -423,6 +426,7 @@ return [
             'deja_traite' => 'Ce paiement a déjà été traité.',
             'objet_clos' => 'Le dossier n’attend plus de paiement (expiré ou déjà payé).',
             'relance_impossible' => 'Ce dossier n’attend pas de paiement : pas de relance.',
+            'montant_recu' => 'Indiquez la somme reçue : au moins 1 FCFA et moins que le montant attendu.',
             'correction_non_confirme' => 'Seul un paiement confirmé peut être corrigé.',
             'correction_trop_tard' => 'Le dossier n’est plus au stade « payé » (alloué, retenu ou annulé) : correction impossible.',
             'correction_en_cours' => 'Une correction de ce paiement attend déjà le VALIDATEUR.',
@@ -438,7 +442,7 @@ return [
             'montant' => 'Montant', 'statut' => 'Statut', 'execution' => 'Exécution', 'actions' => 'Actions',
         ],
         'statuts' => ['A_EFFECTUER' => 'À effectuer', 'PROPOSE' => 'Exécution déclarée, en attente du VALIDATEUR', 'EFFECTUE' => 'Effectué'],
-        'origines' => ['ANNULATION_IDENTITE' => 'Annulation pour identité douteuse'],
+        'origines' => ['ANNULATION_IDENTITE' => 'Annulation pour identité douteuse', 'COMPLEMENT_NON_RECU' => 'Paiement incomplet non complété'],
         'champs' => ['mode' => 'mode de remboursement', 'reference_operation' => 'référence de l’opération'],
         'aides' => ['mode' => 'Par exemple : virement, Orange Money, espèces.'],
         'actions' => ['declarer' => 'Déclarer l’exécution', 'declarer_titre' => 'Exécution du remboursement :reference', 'enregistrer' => 'Proposer au VALIDATEUR'],
@@ -765,6 +769,18 @@ return [
         'auto' => 'Vous avez fait cet import : un autre VALIDATEUR décide.',
         'tous_niveaux' => 'Tous niveaux',
         'motif' => 'Motif du rejet : :motif',
+    ],
+
+    'delais' => [
+        'titre' => 'Délais de paiement',
+        'intro' => 'Délai de complément accordé au citoyen quand le CONTRÔLEUR DES PAIEMENTS marque un paiement manuel incomplet (48 h par défaut). Il part de la décision du contrôleur, même si le délai initial est dépassé ; une relance part 24 h avant sa fin ; sans complément à l’échéance, le dossier est clos et la somme déjà reçue remboursée. Le RÉGULATEUR le saisit et le soumet ; le VALIDATEUR le confirme dans « À valider › Données financières ».',
+        'aucun' => 'Aucun paramètre saisi',
+        'vides' => 'Aucun paramètre des paiements n’a encore été saisi.',
+        'champs' => ['delai_complement_heures' => 'délai de complément (heures)'],
+        'aides' => ['delai_complement_heures' => 'Entre 1 et 720 heures (30 jours).'],
+        'heures' => '{1} :n heure|[2,*] :n heures',
+        'en_vigueur' => 'Délai de complément en vigueur : :delai.',
+        'messages' => ['enregistres' => 'Paramètres des paiements enregistrés (brouillon) : soumettez-les au VALIDATEUR.'],
     ],
 
     'investissement' => [

@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\ManifestationsInteretController;
 use App\Http\Controllers\Admin\NiveauxZonesController;
 use App\Http\Controllers\Admin\PaiementsController;
 use App\Http\Controllers\Admin\ParametresInvestissementController;
+use App\Http\Controllers\Admin\ParametresPaiementsController;
 use App\Http\Controllers\Admin\PhaseController;
 use App\Http\Controllers\Admin\PiecesKycController;
 use App\Http\Controllers\Admin\PlateformeController;
@@ -113,6 +114,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/rejeter', 'rejeter')->middleware('can:'.Droit::TranchesConfirmer->value)->name('.rejeter');
         });
         Route::get('/manifestations-interet', [ManifestationsInteretController::class, 'index'])->middleware('can:'.Droit::InteretsVoir->value)->name('interets');
+
+        // Paramètres des paiements (délai de complément) : RÉGULATEUR saisit, VALIDATEUR confirme (« À valider › Données financières »).
+        Route::controller(ParametresPaiementsController::class)->prefix('parametres-paiements')->name('parametres-paiements')->group(function () {
+            Route::get('/', 'show')->middleware('can:'.Droit::MoyensPaiementVoir->value);
+            Route::put('/', 'update')->middleware('can:'.Droit::MoyensPaiementGerer->value)->name('.update');
+            Route::post('/soumettre', 'soumettre')->middleware('can:'.Droit::MoyensPaiementGerer->value)->name('.soumettre');
+            Route::post('/reviser', 'reviser')->middleware('can:'.Droit::MoyensPaiementGerer->value)->name('.reviser');
+            Route::post('/confirmer', 'confirmer')->middleware('can:'.Droit::MoyensPaiementConfirmer->value)->name('.confirmer');
+            Route::post('/rejeter', 'rejeter')->middleware('can:'.Droit::MoyensPaiementConfirmer->value)->name('.rejeter');
+        });
 
         // Contrôle des paiements (CONTRÔLEUR DES PAIEMENTS) ; corrections confirmées par le VALIDATEUR (« À valider › Paiements »).
         Route::controller(PaiementsController::class)->prefix('paiements')->name('paiements')->group(function () {

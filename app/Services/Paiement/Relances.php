@@ -50,7 +50,7 @@ class Relances
      * Tâche planifiée : relance « échéance » des réservations qui expirent dans les 24 h, relance « expiration » de
      * celles qui viennent d'expirer ; une seule de chaque type par dossier.
      *
-     * @return array{echeance: int, expiration: int}
+     * @return array{echeance: int, expiration: int, complement: int}
      */
     public function automatiques(): array
     {
@@ -60,7 +60,8 @@ class Relances
             $sans = fn (string $type) => fn ($q) => $q->whereNotIn('id', Relance::query()->where('type', $type)->whereNotNull($cle)->select($cle));
 
             $classe::query()->where('statut', $reservee)->whereBetween('expire_le', [now(), now()->addDay()])
-                ->where($sans(Relance::ECHEANCE))->whereDoesntHave('paiements', fn ($p) => $p->enControle())->with('user')->orderBy('id')
+                ->where($sans(Relance::ECHEANCE))->whereDoesntHave('paiements', fn ($p) => $p->enControle())
+                ->whereDoesntHave('paiements', fn ($p) => $p->incomplet())->with('user')->orderBy('id')
                 ->each(function ($objet) use (&$compteurs) {
                     $this->relancer($objet, Relance::ECHEANCE);
                     $compteurs['echeance']++;
@@ -71,6 +72,22 @@ class Relances
                 ->each(function ($objet) use (&$compteurs) {
                     $this->relancer($objet, Relance::EXPIRATION);
                     $compteurs['expiration']++;
+                });
+        }
+
+        // Paiement incomplet : relance 24 h avant la fin du délai de complément (une par décision du contrôleur).
+        $compteurs['complement'] = 0;
+        foreach ([Souscription::class => 'souscription_id', CandidatureBoutique::class => 'candidature_boutique_id'] as $classe => $cle) {
+            $classe::query()->whereIn('statut', ['RESERVEE'])->whereBetween('expire_le', [now(), now()->addDay()])
+                ->whereHas('paiements', fn ($p) => $p->incomplet())->with(['user', 'paiements'])->orderBy('id')
+                ->each(function ($objet) use ($cle, &$compteurs) {
+                    $paiement = $objet->paiements->sortByDesc('id')->first(fn ($p) => $p->aCompleter());
+                    if ($paiement === null || Relance::query()->where($cle, $objet->id)->where('type', Relance::COMPLEMENT)
+                        ->where('created_at', '>=', $paiement->controle_le)->exists()) {
+                        return;
+                    }
+                    $this->relancer($objet, Relance::COMPLEMENT);
+                    $compteurs['complement']++;
                 });
         }
 

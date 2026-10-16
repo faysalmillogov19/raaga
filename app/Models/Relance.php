@@ -24,6 +24,9 @@ class Relance extends Model
 
     public const MANUELLE = 'MANUELLE';
 
+    /** 24 h avant la fin du délai de complément d'un paiement incomplet. */
+    public const COMPLEMENT = 'COMPLEMENT';
+
     protected function casts(): array
     {
         return ['canaux' => 'array', 'created_at' => 'datetime'];

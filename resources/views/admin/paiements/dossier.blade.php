@@ -64,6 +64,7 @@
                                         <span class="texte-carte block">{{ $paiement->controleur?->name }} · {{ $paiement->controle_le?->format('d/m/Y H:i') }}</span>
                                         @if ($paiement->controle_reference)<span class="texte-carte block">{{ $paiement->controle_reference }}</span>@endif
                                         @if ($paiement->controle_motif)<span class="texte-carte block">{{ $paiement->controle_motif }}</span>@endif
+                                        @if ($paiement->controle_montant_recu)<span class="texte-carte block">{{ ucfirst($p['champs']['controle_montant_recu']) }} : {{ format_fcfa($paiement->controle_montant_recu) }}</span>@endif
                                     @endif
                                     @if ($paiement->enControle())<span class="font-semibold block" data-en-controle>{{ __('admin.paiements.dossier.en_controle', ['date' => $paiement->preuve_deposee_le->format('d/m/Y H:i')]) }}</span>@endif
                                     @if ($correction)<span class="texte-carte block" data-correction-en-attente>{{ $d['correction_en_attente'] }}</span>@endif
@@ -76,6 +77,7 @@
                                                 <x-slot:declencheur>{{ $p['actions']['controler'] }}</x-slot:declencheur>
                                                 <x-admin.champ nom="controle" :libelle="ucfirst($p['champs']['controle'])" type="radio" :options="$p['controles']" :valeur="Paiement::RECU" obligatoire />
                                                 <x-admin.champ nom="controle_reference" :libelle="ucfirst($p['champs']['controle_reference'])" maxlength="100" class="mt-4" :aide="$p['aides']['controle_reference']" />
+                                                <x-admin.champ nom="controle_montant_recu" :libelle="ucfirst($p['champs']['controle_montant_recu'])" type="number" min="1" class="mt-4" :aide="$p['aides']['controle_montant_recu']" />
                                                 <x-admin.champ nom="motif" :libelle="ucfirst($p['champs']['motif'])" type="zone" maxlength="1000" class="mt-4" :aide="$p['aides']['motif']" />
                                             </x-admin.fenetre>
                                         @elseif ($rapprocher && $paiement->statut === StatutPaiement::Confirme && ! $correction)

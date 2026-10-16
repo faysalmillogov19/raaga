@@ -113,9 +113,11 @@ class PaiementsController extends Controller
             'controle' => ['required', 'in:'.Paiement::RECU.','.Paiement::INCOMPLET.','.Paiement::REJETE],
             'motif' => ['nullable', 'required_unless:controle,'.Paiement::RECU, 'string', 'min:5', 'max:1000'],
             'controle_reference' => ['nullable', 'string', 'max:100'],
-        ], [], __('admin.paiements.champs'));
+            'controle_montant_recu' => ['nullable', 'required_if:controle,'.Paiement::INCOMPLET, 'integer', 'min:1'],
+        ], ['controle_montant_recu.*' => __('admin.paiements.erreurs.montant_recu')], __('admin.paiements.champs'));
 
-        $this->controle->marquer($paiement, $donnees['controle'], $donnees['motif'] ?? null, $donnees['controle_reference'] ?? null, $request->user());
+        $this->controle->marquer($paiement, $donnees['controle'], $donnees['motif'] ?? null, $donnees['controle_reference'] ?? null, $request->user(),
+            isset($donnees['controle_montant_recu']) ? (int) $donnees['controle_montant_recu'] : null);
 
         return $this->retour($paiement, 'admin.paiements.messages.controle_'.strtolower($donnees['controle']));
     }

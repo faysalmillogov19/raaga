@@ -98,7 +98,7 @@ class VerrousProductionTest extends TestCase
         // Aucun opérateur réel, comptes de destination manquants : avertissements, code 0 (paiements fermés).
         config(['raaga.demo' => false, 'raaga.paiement.fournisseur' => null, 'raaga.compte_sequestre' => [], 'raaga.compte_location' => ['titulaire' => 'Raaga SA']]);
         $commande = $this->artisan('raaga:verifier-production')->assertSuccessful()
-            ->expectsOutputToContain('AVERTISSEMENT : Aucun opérateur de paiement réel configuré : paiements fermés')
+            ->expectsOutputToContain('AVERTISSEMENT : Aucun opérateur de paiement réel configuré : paiements par opérateur fermés')
             ->expectsOutputToContain('Aucun point bloquant (6 avertissement(s)');
         foreach (['RAAGA_SEQUESTRE_TITULAIRE', 'RAAGA_SEQUESTRE_BANQUE', 'RAAGA_SEQUESTRE_NUMERO', 'RAAGA_COMPTE_LOCATION_BANQUE', 'RAAGA_COMPTE_LOCATION_NUMERO'] as $variable) {
             $commande->expectsOutputToContain('Variable manquante : '.$variable);
@@ -122,28 +122,29 @@ class VerrousProductionTest extends TestCase
         $this->app['env'] = 'production';
         $this->withoutMiddleware(PreventRequestForgery::class); // en « production », le jeton CSRF n'est plus ignoré par les tests
         config(['raaga.paiement.fournisseur' => null, ...self::COMPTES]);
-        $brouillon = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Brouillon 2027']);
-        $confirmee = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Confirmee, 'nom' => 'Confirmée 2027']);
+        $mobile = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Mobile 2027', 'canaux_actifs' => ['ORANGE_MONEY']]);
+        $virement = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Virement 2027', 'canaux_actifs' => ['VIREMENT']]);
+        $confirmee = CandidatureBoutiqueTest::campagneOuverte(['statut' => StatutCampagneBoutiques::Confirmee, 'nom' => 'Confirmée 2027', 'canaux_actifs' => ['ORANGE_MONEY']]);
         $google2fa = new Google2FA;
         $this->validateur->forceFill(['totp_secret' => $google2fa->generateSecretKey(32), 'totp_active_le' => now()])->save();
         $code = fn () => $google2fa->oathTotp($this->validateur->fresh()->totp_secret, $google2fa->getTimestamp());
         $message = 'Paiements fermés : aucun opérateur de paiement réel n’est configuré.';
 
-        // Aucun opérateur réel : ni proposition (RÉGULATEUR), ni ouverture (VALIDATEUR), message clair sur la fiche.
-        $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $brouillon))->assertSessionHas('erreur', fn ($m) => str_starts_with($m, $message));
-        $this->assertSame(StatutCampagneBoutiques::Brouillon, $brouillon->fresh()->statut);
+        // Sans opérateur réel, une campagne qui n'accepte que le mobile money ne se propose ni ne s'ouvre ; message sur la fiche.
+        $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $mobile))->assertSessionHas('erreur', fn ($m) => str_starts_with($m, $message));
+        $this->assertSame(StatutCampagneBoutiques::Brouillon, $mobile->fresh()->statut);
         $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $confirmee), ['confirmation' => 'CONFIRMER', 'code_totp' => $code()])
             ->assertSessionHas('erreur', fn ($m) => str_starts_with($m, $message));
         $this->assertSame(StatutCampagneBoutiques::Confirmee, $confirmee->fresh()->statut);
-        $this->en($this->regulateur)->get(route('admin.boutiques.show', $brouillon))->assertSee('data-paiements-fermes', false)->assertSee('aucun opérateur de paiement réel');
+        $this->en($this->regulateur)->get(route('admin.boutiques.show', $mobile))->assertSee('data-paiements-fermes', false)->assertSee('aucun opérateur de paiement réel');
 
-        // Opérateur réel mais compte des fonds de location non renseigné : toujours fermé.
-        $this->operateurReel();
-        config(['raaga.compte_location' => []]);
-        $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $brouillon))
-            ->assertSessionHas('erreur', fn ($m) => str_contains($m, 'les coordonnées du compte des fonds de location'));
+        // Avec le virement (paiement manuel, compte de location renseigné), la campagne est ouvrable même sans opérateur.
+        $this->assertNull($virement->raisonPaiementsFermes());
+        $this->en($this->regulateur)->get(route('admin.boutiques.show', $virement))->assertDontSee('data-paiements-fermes', false);
+        $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $virement));
+        $this->assertStringNotContainsString('Paiements fermés', (string) session('erreur'));
 
-        // Citoyen : caution impossible à payer (compte de location manquant), aucun paiement démarré.
+        // Citoyen, sans opérateur : le virement se paie (aucun opérateur), le mobile money est refusé.
         $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670123456']);
         $ouverte = CandidatureBoutiqueTest::campagneOuverte(['nom' => 'Ouverte 2027']);
         $this->actingAs($citoyen)->post('/boutiques/candidater', [
@@ -152,17 +153,25 @@ class VerrousProductionTest extends TestCase
         ]);
         $candidature = CandidatureBoutique::query()->sole();
         $url = '/boutiques/candidatures/'.$candidature->reference.'/caution';
+        $this->actingAs($citoyen)->get($url)->assertOk()->assertSee('value="VIREMENT"', false)->assertDontSee('value="ORANGE_MONEY"', false);
+        $this->actingAs($citoyen)->post($url, ['canal' => 'ORANGE_MONEY', 'telephone' => '70123456'])->assertSessionHasErrors(['canal' => 'Moyen de paiement indisponible']);
+        $this->assertSame(0, Paiement::query()->count());
+        $this->actingAs($citoyen)->post($url, ['canal' => 'VIREMENT'])->assertSessionHasNoErrors();
+        $this->assertNotNull(Paiement::query()->sole()->reference_versement);
+        $this->actingAs($citoyen)->post($url.'/changer');
+
+        // Compte des fonds de location non renseigné : tout est fermé, même le virement et même avec un opérateur réel.
+        $this->operateurReel();
+        config(['raaga.compte_location' => []]);
+        $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $virement->fresh()->statut === StatutCampagneBoutiques::Brouillon ? $virement : $mobile))
+            ->assertSessionHas('erreur', fn ($m) => str_contains($m, 'les coordonnées du compte des fonds de location'));
         $this->actingAs($citoyen)->get($url)->assertOk()->assertSee('Moyen de paiement indisponible');
         $this->actingAs($citoyen)->post($url, ['canal' => 'VIREMENT'])->assertSessionHasErrors(['canal' => 'Moyen de paiement indisponible']);
-        $this->assertSame(0, Paiement::query()->count());
 
-        // Tout est configuré : la campagne se propose, la caution se paie.
+        // Opérateur réel et comptes renseignés : le mobile money s'ouvre aussi.
         config(self::COMPTES);
-        // Le verrou de paiement ne bloque plus (d'autres contrôles de la campagne peuvent encore s'appliquer).
-        $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $brouillon));
-        $this->assertStringNotContainsString('Paiements fermés', (string) session('erreur'));
-        $this->actingAs($citoyen)->post($url, ['canal' => 'VIREMENT'])->assertSessionHasNoErrors();
-        $this->assertSame(1, Paiement::query()->count());
+        $this->assertNull($mobile->fresh()->raisonPaiementsFermes());
+        $this->actingAs($citoyen)->get($url)->assertSee('value="ORANGE_MONEY"', false);
     }
 
     public function test_seeders_de_referentiel_idempotents_apres_modification_par_le_gestionnaire(): void

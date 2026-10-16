@@ -17,7 +17,7 @@ use LogicException;
     'souscription_id', 'candidature_boutique_id', 'canal', 'compte_destination', 'montant', 'frais', 'reference', 'reference_fournisseur',
     'statut', 'date_confirmation', 'agent_id', 'cloture_caisse_id', 'metadonnees',
     'controle', 'controle_motif', 'controle_reference', 'controle_par', 'controle_le',
-    'reference_versement', 'preuve_chemin', 'preuve_nom', 'preuve_mime', 'preuve_deposee_le',
+    'reference_versement', 'preuve_chemin', 'preuve_nom', 'preuve_mime', 'preuve_deposee_le', 'controle_montant_recu',
 ])]
 #[Hidden(['preuve_chemin'])]
 class Paiement extends Model
@@ -49,6 +49,7 @@ class Paiement extends Model
             'metadonnees' => 'array',
             'controle_le' => 'datetime',
             'preuve_deposee_le' => 'datetime',
+            'controle_montant_recu' => 'integer',
         ];
     }
 
@@ -60,6 +61,18 @@ class Paiement extends Model
     {
         return $this->statut === StatutPaiement::EnAttente && $this->preuve_deposee_le !== null
             && ($this->controle_le === null || $this->preuve_deposee_le->greaterThan($this->controle_le));
+    }
+
+    /** Paiement manuel incomplet, sans nouvelle preuve en contrôle : le citoyen doit compléter dans le délai de complément. */
+    public function aCompleter(): bool
+    {
+        return $this->statut === StatutPaiement::EnAttente && $this->controle === self::INCOMPLET && ! $this->enControle();
+    }
+
+    /** @param  Builder<Paiement>  $requete */
+    public function scopeIncomplet(Builder $requete): void
+    {
+        $requete->where('statut', StatutPaiement::EnAttente)->where('controle', self::INCOMPLET);
     }
 
     /** @param  Builder<Paiement>  $requete */

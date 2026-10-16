@@ -26,6 +26,8 @@ class Remboursement extends Model
 
     public const ANNULATION_IDENTITE = 'ANNULATION_IDENTITE';
 
+    public const COMPLEMENT_NON_RECU = 'COMPLEMENT_NON_RECU';
+
     protected function casts(): array
     {
         return ['montant' => 'integer', 'propose_le' => 'datetime', 'valide_le' => 'datetime'];

@@ -9,7 +9,7 @@
 @endphp
 
 <x-admin.layout :titre="$campagne->nom" :fil="[['libelle' => __('admin.boutiques.titre'), 'url' => route('admin.boutiques')], ['libelle' => $campagne->nom]]">
-    @if ($fermeture = \App\Services\Paiement\OuverturePaiements::raisonFermeture(\App\Enums\CompteDestination::Location))
+    @if ($fermeture = $campagne->raisonPaiementsFermes())
         <x-admin.message type="avertissement" data-paiements-fermes>{{ __('admin.boutiques.regles.paiements_fermes', ['raison' => $fermeture]) }}</x-admin.message>
     @endif
     {{-- Statut et actions --}}

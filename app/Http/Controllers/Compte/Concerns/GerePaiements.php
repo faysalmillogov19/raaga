@@ -34,7 +34,6 @@ trait GerePaiements
      */
     protected function ecranPaiement(Payable&Model $objet, array $contexte): View
     {
-        $ouverts = OuverturePaiements::ouverts($objet->compteDestination());
         $fournisseur = $this->fournisseur($objet);
         $enAttente = ServicePaiement::enAttente($objet);
         $dernier = $objet->paiements()->latest('id')->first();
@@ -47,7 +46,7 @@ trait GerePaiements
                 $objet->estExpire() => 'expiree',
                 $enAttente?->enControle() => 'controle',
                 $enAttente?->estManuel() => 'manuel',
-                ! $ouverts || $canaux === [] => 'indisponible',
+                $canaux === [] => 'indisponible',
                 $enAttente !== null => 'attente',
                 $dernier?->statut === StatutPaiement::Echoue => 'echec',
                 default => 'choix',
@@ -62,18 +61,15 @@ trait GerePaiements
     }
 
     /**
-     * Moyens proposés : les paiements manuels (virement, versement, espèces) ne passent par aucun opérateur ; les autres
-     * exigent un fournisseur configuré.
+     * Moyens proposés : seulement ceux réellement ouverts. Paiements manuels (virement, versement, espèces) : aucun
+     * opérateur, il suffit du compte renseigné ; les autres exigent un fournisseur réel.
      *
      * @return list<MoyenPaiement>
      */
     private function canauxProposes(Payable $objet, ?PaymentProvider $fournisseur): array
     {
-        if (! OuverturePaiements::ouverts($objet->compteDestination())) {
-            return [];
-        }
-
-        return array_values(array_filter($objet->canauxPaiement(), fn (MoyenPaiement $c) => $c->estManuel() || $fournisseur !== null));
+        return array_values(array_filter($objet->canauxPaiement(), fn (MoyenPaiement $c) => OuverturePaiements::canalOuvert($c, $objet->compteDestination())
+            && ($c->estManuel() || $fournisseur !== null)));
     }
 
     protected function demanderPaiement(Request $request, Payable&Model $objet): void
@@ -90,15 +86,15 @@ trait GerePaiements
                 }],
         ], [], __('public.paiement.attributs'));
 
-        // Paiements fermés pour ce compte (production sans opérateur réel ou sans coordonnées) : aucun paiement démarré.
-        if (! OuverturePaiements::ouverts($objet->compteDestination())) {
+        // Moyen fermé (production : compte non renseigné, ou opérateur absent pour un paiement par opérateur) : rien ne démarre.
+        $canal = MoyenPaiement::parCode($donnees['canal']);
+        if (! OuverturePaiements::canalOuvert($canal, $objet->compteDestination())) {
             throw ValidationException::withMessages(['canal' => __('public.paiement.indisponible_titre')]);
         }
         $this->service->expirerReservations();
         abort_unless($objet->fresh()->attendPaiement(), 409);
         abort_if($objet->paiements()->enControle()->exists(), 409);
 
-        $canal = MoyenPaiement::parCode($donnees['canal']);
         // Virement, versement, espèces : aucun opérateur ; référence de paiement unique, puis preuve jointe.
         if ($canal->estManuel()) {
             $this->service->initierManuel($objet, $canal, $request->user());
@@ -170,7 +166,7 @@ trait GerePaiements
     /** Fournisseur configuré, ou null s'il refuse de fonctionner (simulateur en production). */
     protected function fournisseur(?Payable $objet = null): ?PaymentProvider
     {
-        if ($objet !== null && ! OuverturePaiements::ouverts($objet->compteDestination())) {
+        if ($objet !== null && ! OuverturePaiements::operateurOuvert($objet->compteDestination())) {
             return null;
         }
         try {

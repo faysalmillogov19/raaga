@@ -3,14 +3,17 @@
 namespace App\Models;
 
 use App\Contracts\Parametrable;
+use App\Enums\CompteDestination;
 use App\Enums\StatutCampagneBoutiques;
 use App\Enums\UsageMoyenPaiement;
+use App\Services\Paiement\OuverturePaiements;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
 
 /**
  * Campagne d'attribution des boutiques du marché. Indépendante des actions : tout citoyen peut
@@ -48,6 +51,23 @@ class CampagneBoutiques extends Model implements Parametrable
     public static function ouverte(): ?self
     {
         return self::query()->where('statut', StatutCampagneBoutiques::Ouverte)->latest('date_ouverture')->first();
+    }
+
+    /**
+     * Moyens retenus par la campagne et autorisés pour la caution (actifs et confirmés au référentiel).
+     *
+     * @return Collection<int, MoyenPaiement>
+     */
+    public function moyensCaution(): Collection
+    {
+        return MoyenPaiement::proposables()->filter(fn (MoyenPaiement $m) => in_array($m->code, (array) $this->canaux_actifs, true)
+            && $m->usage(UsageMoyenPaiement::Caution)['autorise'])->values();
+    }
+
+    /** Raison pour laquelle aucun moyen de paiement de la caution n'est ouvert, ou null si au moins un l'est. */
+    public function raisonPaiementsFermes(): ?string
+    {
+        return OuverturePaiements::raisonFermeture(CompteDestination::Location, $this->moyensCaution());
     }
 
     /**

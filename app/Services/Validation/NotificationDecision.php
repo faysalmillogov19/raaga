@@ -8,6 +8,7 @@ use App\Models\Convention;
 use App\Models\DistributionDividende;
 use App\Models\GrilleTarifaire;
 use App\Models\ParametresInvestissement;
+use App\Models\ParametresPaiements;
 use App\Models\Site;
 use App\Models\SiteFinance;
 use App\Models\Tranche;
@@ -58,6 +59,7 @@ final class NotificationDecision
             $objet instanceof GrilleTarifaire => ['grille', $nomSite($objet->site), route('admin.boutiques.grilles.show', $objet->site_id)],
             $objet instanceof SiteFinance => ['finances', $nomSite($objet->site), route('admin.sites.finances', $objet->site_id)],
             $objet instanceof ParametresInvestissement => ['investissement', __('admin.investissement.titre'), route('admin.investissement')],
+            $objet instanceof ParametresPaiements => ['delais', __('admin.delais.titre'), route('admin.parametres-paiements')],
             $objet instanceof CampagneBoutiques => ['campagne', $objet->nom, route('admin.boutiques.show', $objet)],
             $objet instanceof Tranche => ['tranche', $objet->nom, route('admin.tranches.show', $objet)],
             $objet instanceof DistributionDividende => ['distribution', __('admin.dividendes.exercice', ['annee' => $objet->exercice]), route('admin.dividendes.show', $objet)],

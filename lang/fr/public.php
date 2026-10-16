@@ -556,6 +556,7 @@ return [
         'fermes' => [
             'operateur' => 'aucun opérateur de paiement réel n’est configuré',
             'compte' => 'les coordonnées du :compte ne sont pas renseignées',
+            'aucun_moyen' => 'aucun moyen de paiement n’est retenu pour la caution',
         ],
         'erreurs_compte' => 'Le compte de destination ne correspond pas au paiement : un paiement d’actions va au compte d’investissement, une caution au compte de location.',
         'payer' => 'Payer :montant',
@@ -572,6 +573,7 @@ return [
         'manuel' => [
             'titre' => 'Payer par :moyen',
             'montant' => 'Montant exact à payer',
+            'reste' => 'Reste à payer',
             'compte' => 'Compte de destination',
             'reference' => 'Référence de paiement',
             'reference_obligatoire' => 'Indiquez cette référence sur le virement ou le bordereau : sans elle, le paiement ne peut pas être rapproché.',
@@ -581,8 +583,8 @@ return [
             'preuve_aide' => 'Avis de virement, bordereau de versement ou reçu de caisse : image (JPG, PNG) ou PDF, 5 Mo au plus.',
             'envoyer' => 'Envoyer la preuve',
             'preuve_envoyee' => 'Preuve reçue : votre paiement est en attente de contrôle. Votre délai est suspendu pendant le contrôle.',
-            'en_controle' => 'Preuve reçue le :date : votre paiement est en attente de contrôle. Votre délai est suspendu pendant le contrôle ; vous serez notifié de la décision.',
-            'incomplet' => 'Paiement incomplet : :motif. Complétez votre paiement puis joignez la nouvelle preuve.',
+            'en_controle' => 'Preuve reçue le :date : votre paiement est en attente de contrôle. Votre délai est suspendu pendant le contrôle ; vous serez notifié de la décision.',
+            'incomplet' => 'Paiement incomplet : :motif. Reçu : :recu ; reste à payer : :reste, avant le :echeance. Joignez ensuite la preuve du complément. Sans complément à cette date, le dossier sera clos et la somme reçue vous sera remboursée.',
             'rejete' => 'Votre preuve de paiement a été rejetée : :motif. Vous pouvez payer de nouveau dans le délai restant.',
             'erreurs' => [
                 'taille' => 'La preuve dépasse 5 Mo.',
@@ -593,7 +595,7 @@ return [
             'notification' => [
                 'sujet' => 'Votre paiement :reference',
                 'recu' => 'Votre paiement :versement est reçu : votre dossier :reference est payé.',
-                'incomplet' => 'Votre paiement :versement est incomplet (dossier :reference) : complétez-le et joignez la nouvelle preuve avant le :echeance.',
+                'incomplet' => 'Votre paiement :versement est incomplet (dossier :reference) : complétez-le et joignez la preuve du complément avant le :echeance. Sans complément, le dossier sera clos et la somme reçue remboursée.',
                 'rejete' => 'Votre preuve de paiement :versement est rejetée (dossier :reference) : vous pouvez payer de nouveau avant le :echeance.',
                 'libere' => 'Votre preuve de paiement :versement est rejetée et le délai est dépassé : le dossier :reference est clos.',
                 'motif' => 'Motif : :motif',
@@ -791,6 +793,7 @@ return [
         'echeance' => 'Rappel : le délai de paiement de votre :objet :reference se termine le :echeance. Sans paiement, la réservation expirera.',
         'expiration' => 'Le délai de paiement de votre :objet :reference est expiré : la réservation est close.',
         'manuelle' => 'Votre :objet :reference attend toujours votre paiement (fin du délai : :echeance).',
+        'complement' => 'Rappel : votre paiement de la :objet :reference est incomplet. Complétez-le avant le :echeance, sinon le dossier sera clos et la somme déjà reçue vous sera remboursée.',
         'objets' => ['souscription' => 'souscription d’actions', 'caution' => 'caution de candidature aux boutiques'],
         'bouton' => 'Voir mon dossier',
     ],

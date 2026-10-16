@@ -44,11 +44,11 @@ class VerifierProduction extends Command
         if (config('raaga.paiement.fournisseur') === 'simule') {
             $bloquants[] = 'RAAGA_PAIEMENT_FOURNISSEUR=simule : le prestataire de paiement simulé est interdit en production.';
         } elseif (! OuverturePaiements::operateurReel()) {
-            $avertissements[] = 'Aucun opérateur de paiement réel configuré : paiements fermés (aucune campagne ne s’ouvre, aucun citoyen ne paie).';
+            $avertissements[] = 'Aucun opérateur de paiement réel configuré : paiements par opérateur fermés (mobile money, carte, Faso Arzeka) ; seuls les paiements manuels (virement, versement, espèces) restent ouverts vers les comptes renseignés.';
         }
         foreach (self::VARIABLES as $cle => $variable) {
             if (blank(config($cle))) {
-                $avertissements[] = 'Variable manquante : '.$variable.' (paiements fermés vers ce compte).';
+                $avertissements[] = 'Variable manquante : '.$variable.' (tous les paiements fermés vers ce compte, manuels compris).';
             }
         }
 

@@ -62,7 +62,7 @@ class AValiderController extends Controller
         Gate::authorize(Droit::AValiderVoir->value);
         $donnees = $request->validate([
             'elements' => ['required', 'array', 'min:1', 'max:200'],
-            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|moyens|investissement|campagne|phase|autorisation|import|correction|remboursement|annulation):\d+$/'],
+            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|moyens|investissement|delais|campagne|phase|autorisation|import|correction|remboursement|annulation):\d+$/'],
             'decision' => ['required', 'in:confirmer,rejeter'],
             'motif' => ['nullable', 'required_if:decision,rejeter', 'string', 'min:5', 'max:1000'],
             'mode' => ['nullable', 'in:ligne,lot'],
@@ -178,6 +178,7 @@ class AValiderController extends Controller
                 'grille' => app(GrillesTarifairesController::class)->{$decision}($sousRequete, Site::query()->findOrFail($id)),
                 'finances' => app(SiteFinancesController::class)->{$decision}($sousRequete, Site::query()->findOrFail($id)),
                 'investissement' => app(ParametresInvestissementController::class)->{$decision}($sousRequete),
+                'delais' => app(ParametresPaiementsController::class)->{$decision}($sousRequete),
                 'type' => app(TypesBoutiqueController::class)->{$decision}($sousRequete, TypeBoutique::query()->findOrFail($id)),
                 'niveaux', 'zones', 'unites', 'moyens' => app(NiveauxZonesController::class)->{$decision}($sousRequete, $type, $id),
                 'campagne' => app(CampagnesBoutiquesController::class)->{$decision}($sousRequete, CampagneBoutiques::query()->findOrFail($id)),

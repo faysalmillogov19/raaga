@@ -55,6 +55,8 @@ final class MenuBackoffice
                 ['cle' => 'tranches', 'route' => 'admin.tranches', 'droit' => Droit::TranchesVoir, 'icone' => 'tranches', 'etape' => 3, 'masque_si' => $parametres],
                 // Moyens de paiement (RÉGULATEUR, VALIDATEUR ; SUPER_ADMIN en lecture) : donnée financière, hors des référentiels des sites.
                 ['cle' => 'moyens', 'route' => 'admin.referencement.moyens', 'droit' => Droit::MoyensPaiementVoir, 'icone' => 'dividendes', 'etape' => 0],
+                // Paramètres des paiements : délai de complément d'un paiement incomplet.
+                ['cle' => 'delais', 'route' => 'admin.parametres-paiements', 'droit' => Droit::MoyensPaiementVoir, 'icone' => 'taches', 'etape' => 0],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
                 // RAAGA Invest : paramètres d'investissement, manifestations d'intérêt.

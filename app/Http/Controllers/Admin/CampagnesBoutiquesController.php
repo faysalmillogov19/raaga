@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\CompteDestination;
 use App\Enums\Droit;
 use App\Enums\StatutCampagneBoutiques;
 use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
@@ -20,7 +19,6 @@ use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Boutiques\LotsCampagne;
 use App\Services\Boutiques\TirageAuSort;
-use App\Services\Paiement\OuverturePaiements;
 use App\Services\Parametrage\WorkflowParametrage;
 use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
@@ -181,7 +179,7 @@ class CampagnesBoutiquesController extends Controller
 
         return $this->executer($campagne, function () use ($request, $campagne) {
             // Paiements fermés (aucun opérateur réel, ou compte des fonds de location non renseigné) : rien à proposer.
-            $this->exigerPaiementsOuverts();
+            $this->exigerPaiementsOuverts($campagne);
             // Nombres de boutiques recomptés dans le référentiel au moment de la soumission.
             DB::transaction(function () use ($request, $campagne) {
                 $this->lots->definir($campagne, $this->selectionActuelle($campagne));
@@ -215,7 +213,7 @@ class CampagnesBoutiquesController extends Controller
             if ($campagne->statut !== StatutCampagneBoutiques::Confirmee) {
                 throw new RegleGestionException(__('admin.boutiques.regles.ouverture_confirmee'));
             }
-            $this->exigerPaiementsOuverts();
+            $this->exigerPaiementsOuverts($campagne);
             if (CampagneBoutiques::query()->where('statut', StatutCampagneBoutiques::Ouverte)->exists()) {
                 throw new RegleGestionException(__('admin.boutiques.regles.une_seule_ouverte'));
             }
@@ -305,10 +303,10 @@ class CampagnesBoutiquesController extends Controller
         return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __($message));
     }
 
-    /** Les cautions se paient sur le compte des fonds de location : il faut un opérateur réel et ce compte renseigné. @throws RegleGestionException */
-    private function exigerPaiementsOuverts(): void
+    /** Au moins un moyen de paiement de la caution réellement ouvert (compte de location renseigné ; opérateur réel pour un moyen par opérateur). @throws RegleGestionException */
+    private function exigerPaiementsOuverts(CampagneBoutiques $campagne): void
     {
-        if ($raison = OuverturePaiements::raisonFermeture(CompteDestination::Location)) {
+        if ($raison = $campagne->raisonPaiementsFermes()) {
             throw new RegleGestionException(__('admin.boutiques.regles.paiements_fermes', ['raison' => $raison]));
         }
     }

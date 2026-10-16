@@ -152,7 +152,7 @@ class ControlePaiementsKycTest extends TestCase
 
         // Incomplet : motif obligatoire ; le paiement reste en attente.
         $this->en($this->controleur)->post(route('admin.paiements.controle', $p), ['controle' => 'INCOMPLET'])->assertSessionHasErrors('motif');
-        $this->en($this->controleur)->post(route('admin.paiements.controle', $p), ['controle' => 'INCOMPLET', 'motif' => 'Reçu de caisse illisible'])
+        $this->en($this->controleur)->post(route('admin.paiements.controle', $p), ['controle' => 'INCOMPLET', 'motif' => 'Reçu de caisse illisible', 'controle_montant_recu' => 20_000])
             ->assertSessionHas('succes');
         $this->assertSame([StatutPaiement::EnAttente, 'INCOMPLET'], [$p->fresh()->statut, $p->fresh()->controle]);
 

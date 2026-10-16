@@ -10,6 +10,7 @@ use App\Enums\StatutSouscription;
 use App\Models\CandidatureBoutique;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
+use App\Models\Remboursement;
 use App\Models\Souscription;
 use App\Models\User;
 use App\Services\Audit\Journal;
@@ -27,7 +28,7 @@ use Throwable;
  */
 class ServicePaiement
 {
-    public function __construct(private readonly Journal $journal, private readonly EnvoiSms $sms) {}
+    public function __construct(private readonly Journal $journal, private readonly EnvoiSms $sms, private readonly Remboursements $remboursements) {}
 
     /** Paiement en attente (reprise après rechargement ou coupure). */
     public static function enAttente(Payable $objet): ?Paiement
@@ -181,9 +182,17 @@ class ServicePaiement
                 return false;
             }
 
+            // Paiement incomplet jamais complété : la somme déjà reçue est remboursée (une seule fois par paiement).
+            $incomplet = $objet->paiements()->whereIn('statut', [StatutPaiement::EnAttente, StatutPaiement::Echoue])
+                ->where('controle_montant_recu', '>', 0)->whereNotIn('id', Remboursement::query()->whereNotNull('paiement_id')->select('paiement_id'))
+                ->latest('id')->first();
+
             $objet->forceFill(['statut' => $expiree])->save();
             $objet->paiements()->where('statut', StatutPaiement::EnAttente)->update(['statut' => StatutPaiement::Annule]);
-            $this->journal->ecrire(null, $action, class_basename($classe), $objet->id, null, ['reference' => $objet->reference]);
+            if ($incomplet) {
+                $this->remboursements->ouvrir($objet, $incomplet, Remboursement::COMPLEMENT_NON_RECU, null, $incomplet->controle_montant_recu);
+            }
+            $this->journal->ecrire(null, $action, class_basename($classe), $objet->id, null, ['reference' => $objet->reference, 'remboursement' => (bool) $incomplet]);
 
             return true;
         });

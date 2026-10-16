@@ -8,6 +8,7 @@ use App\Enums\StatutSouscription;
 use App\Models\CandidatureBoutique;
 use App\Models\CorrectionPaiement;
 use App\Models\Paiement;
+use App\Models\ParametresPaiements;
 use App\Models\Souscription;
 use App\Models\User;
 use App\Notifications\ControlePaiementCitoyen;
@@ -30,8 +31,11 @@ class ControlePaiements
         private readonly NotificationDecision $notifications,
     ) {}
 
-    /** @param  string  $controle  Paiement::RECU | INCOMPLET | REJETE */
-    public function marquer(Paiement $paiement, string $controle, ?string $motif, ?string $reference, User $controleur): Paiement
+    /**
+     * @param  string  $controle  Paiement::RECU | INCOMPLET | REJETE
+     * @param  int|null  $montantRecu  somme réellement reçue, pour un paiement incomplet (remboursée si le complément n'arrive pas)
+     */
+    public function marquer(Paiement $paiement, string $controle, ?string $motif, ?string $reference, User $controleur, ?int $montantRecu = null): Paiement
     {
         $erreur = fn (string $cle) => throw ValidationException::withMessages(['controle' => __('admin.paiements.erreurs.'.$cle)]);
         if (! $paiement->estManuel()) {
@@ -40,8 +44,11 @@ class ControlePaiements
         if ($paiement->statut !== StatutPaiement::EnAttente) {
             $erreur('deja_traite');
         }
-        if ($controle === Paiement::RECU && ! $paiement->objet()->attendPaiement()) {
+        if (in_array($controle, [Paiement::RECU, Paiement::INCOMPLET], true) && ! $paiement->objet()->attendPaiement()) {
             $erreur('objet_clos');
+        }
+        if ($controle === Paiement::INCOMPLET && ($montantRecu === null || $montantRecu < 1 || $montantRecu >= $paiement->montant + $paiement->frais)) {
+            throw ValidationException::withMessages(['controle_montant_recu' => __('admin.paiements.erreurs.montant_recu')]);
         }
 
         $avant = $paiement->only(['statut', 'controle']);
@@ -52,9 +59,15 @@ class ControlePaiements
         };
 
         $paiement->refresh()->forceFill(['controle' => $controle, 'controle_motif' => $motif, 'controle_reference' => $reference,
-            'controle_par' => $controleur->id, 'controle_le' => now()])->save();
+            'controle_par' => $controleur->id, 'controle_le' => now(),
+            ...($controle === Paiement::INCOMPLET ? ['controle_montant_recu' => $montantRecu] : [])])->save();
+        // Incomplet : délai de complément (48 h par défaut, paramétré par le RÉGULATEUR), à partir de cette décision,
+        // même si le délai initial est dépassé.
+        if ($controle === Paiement::INCOMPLET) {
+            $paiement->objet()->forceFill(['expire_le' => now()->addHours(ParametresPaiements::delaiComplementHeures())])->save();
+        }
         $this->journal->ecrire($controleur, 'paiement.controle', 'Paiement', $paiement->id, $avant,
-            ['statut' => $paiement->statut->value, 'controle' => $controle, 'motif' => $motif, 'reference' => $reference]);
+            ['statut' => $paiement->statut->value, 'controle' => $controle, 'motif' => $motif, 'reference' => $reference, 'montant_recu' => $montantRecu]);
 
         // Preuve rejetée : le délai restant reprend ; s'il est déjà dépassé, la boutique ou la souscription est libérée.
         $objet = $paiement->objet()->refresh();

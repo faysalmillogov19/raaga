@@ -3,7 +3,12 @@
     (location ou investissement), référence de paiement unique, délai restant, puis preuve à joindre (ou état « en attente
     de contrôle » une fois la preuve déposée : délai gelé). Variables : $paiement, $s, $compte, $sequestre, $routes, $etat.
 --}}
-@php($m = __('public.paiement.manuel'))
+@php
+    $m = __('public.paiement.manuel');
+    // Paiement incomplet : le montant à payer est ce qui reste, pas le total.
+    $incomplet = $paiement->controle === \App\Models\Paiement::INCOMPLET;
+    $aPayer = $paiement->montant + $paiement->frais - ($incomplet ? (int) $paiement->controle_montant_recu : 0);
+@endphp
 
 <section class="carte p-5" aria-labelledby="manuel-titre" data-paiement-manuel>
     <h2 id="manuel-titre" class="!text-lg">{{ __('public.paiement.manuel.titre', ['moyen' => $paiement->canal->label()]) }}</h2>
@@ -14,13 +19,15 @@
         </x-public.alerte>
     @elseif ($paiement->controle === \App\Models\Paiement::INCOMPLET)
         <x-public.alerte variante="attention" class="mt-3" role="alert" data-incomplet>
-            {{ __('public.paiement.manuel.incomplet', ['motif' => $paiement->controle_motif]) }}
+            {{ __('public.paiement.manuel.incomplet', ['motif' => $paiement->controle_motif, 'recu' => format_fcfa((int) $paiement->controle_montant_recu),
+                'reste' => format_fcfa(max(0, $paiement->montant + $paiement->frais - (int) $paiement->controle_montant_recu)),
+                'echeance' => $s->expire_le->translatedFormat('j F Y à H\hi')]) }}
         </x-public.alerte>
     @endif
 
     <dl class="mt-4 space-y-2 rounded-charte bg-fond p-4 text-[0.95rem]">
-        <div class="flex flex-wrap justify-between gap-x-3"><dt>{{ $m['montant'] }}</dt>
-            <dd class="text-xl font-extrabold text-vert-fonce" data-montant-exact>{{ format_fcfa($paiement->montant + $paiement->frais) }}</dd></div>
+        <div class="flex flex-wrap justify-between gap-x-3"><dt>{{ $incomplet ? $m['reste'] : $m['montant'] }}</dt>
+            <dd class="text-xl font-extrabold text-vert-fonce" data-montant-exact>{{ format_fcfa(max(0, $aPayer)) }}</dd></div>
         <div class="flex flex-wrap justify-between gap-x-3"><dt>{{ $m['compte'] }}</dt>
             <dd class="font-semibold text-encre" data-compte="{{ $compte->value }}">{{ $compte->label() }}</dd></div>
         @foreach (['titulaire', 'banque', 'numero'] as $champ)
