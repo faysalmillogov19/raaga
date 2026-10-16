@@ -8,9 +8,10 @@ use App\Support\VerrouEnvironnement;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Développement et recette : aucun SMS n'est envoyé. Le message s'affiche dans la console du serveur
- * (php artisan serve) et dans le journal, avec un numéro masqué. Hors production, il est aussi ajouté
- * au journal de recette lu par la page /recette/sms (saisie des codes de confirmation).
+ * Aucun fournisseur SMS branché : aucun SMS n'est envoyé. Développement et recette : le message s'affiche dans la
+ * console du serveur (php artisan serve) et dans le journal, avec un numéro masqué, et il est ajouté au journal de
+ * recette lu par la page /recette/sms. Production : l'envoi est ignoré et tracé en avertissement (« SMS non envoyé »),
+ * numéro masqué, sans jamais lever d'erreur.
  */
 class LogSmsProvider implements SmsProvider
 {
@@ -21,7 +22,14 @@ class LogSmsProvider implements SmsProvider
 
     public function envoyer(string $telephone, string $message, ?string $expediteur = null): void
     {
-        $ligne = '[SMS de développement] '.($expediteur ? "{$expediteur} → " : '').Telephone::masquer($telephone).' : '.$message;
+        $destinataire = ($expediteur ? "{$expediteur} → " : '').Telephone::masquer($telephone);
+        if (app()->environment('production')) {
+            Log::warning('[SMS non envoyé : aucun fournisseur SMS configuré] '.$destinataire.' : '.$message);
+
+            return;
+        }
+
+        $ligne = '[SMS de développement] '.$destinataire.' : '.$message;
 
         error_log($ligne);
         Log::info($ligne);

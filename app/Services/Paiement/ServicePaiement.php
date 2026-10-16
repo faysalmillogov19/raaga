@@ -28,7 +28,7 @@ use Throwable;
  */
 class ServicePaiement
 {
-    public function __construct(private readonly Journal $journal, private readonly EnvoiSms $sms, private readonly Remboursements $remboursements) {}
+    public function __construct(private readonly Journal $journal, private readonly Remboursements $remboursements) {}
 
     /** Paiement en attente (reprise après rechargement ou coupure). */
     public static function enAttente(Payable $objet): ?Paiement
@@ -126,12 +126,16 @@ class ServicePaiement
         });
     }
 
-    /** SMS de confirmation avec le numéro de reçu ; un échec d'envoi ne remet jamais le paiement en cause. */
+    /**
+     * SMS de confirmation avec le numéro de reçu ; un échec d'envoi ne remet jamais le paiement en cause. L'envoi est
+     * résolu ici, après la confirmation, et non dans le constructeur : un fournisseur SMS absent ou mal configuré ne
+     * peut pas empêcher de confirmer un paiement.
+     */
     private function smsConfirmation(Payable&Model $objet, Paiement $paiement): void
     {
         try {
             [$modele, $variables] = $objet->smsPaiementConfirme($paiement);
-            $this->sms->envoyer($objet->user->telephone, $modele, $variables);
+            app(EnvoiSms::class)->envoyer($objet->user->telephone, $modele, $variables);
         } catch (Throwable $e) {
             Log::warning('SMS de confirmation de paiement non envoyé', ['paiement' => $paiement->id, 'erreur' => $e->getMessage()]);
         }
