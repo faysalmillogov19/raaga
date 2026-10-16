@@ -78,7 +78,7 @@ class Phase1BoutiquesTest extends TestCase
             preg_match_all('/href="([^"]+)"/', $this->get($page)->assertOk()->getContent(), $trouves);
             foreach ($trouves[1] as $href) {
                 $href = html_entity_decode($href);
-                if (str_starts_with($href, url('/')) && ! preg_match('/\.(css|js|svg|png|pdf|ico|woff2)$/', $href)) {
+                if (str_starts_with($href, url('/')) && ! preg_match('/\.(css|js|svg|png|pdf|ico|woff2)(\?v=\d+)?$/', $href)) {
                     $liens[strtok(substr($href, strlen(url('/'))) ?: '/', '#')] = $page;
                 }
             }

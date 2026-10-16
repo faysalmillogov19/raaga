@@ -23,7 +23,6 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        $this->withoutVite();
         // Doublures rapides (conversion WebP, mise en page PDF) ; les vrais traitements sont testés une fois chacun.
         $this->app->instance(ConversionWebp::class, new ConversionWebpFactice);
         $this->app->instance(GenerateurPdf::class, new PdfFactice);

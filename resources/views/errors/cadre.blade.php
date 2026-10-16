@@ -19,7 +19,7 @@
     <meta name="robots" content="noindex">
     <title>{{ $titre }} · {{ $nom }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
-    @vite(['resources/css/app.css'])
+    <x-assets :scripts="false" />
 </head>
 <body class="site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased">
     <div class="bande-tricolore" aria-hidden="true"></div>

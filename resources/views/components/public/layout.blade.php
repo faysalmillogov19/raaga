@@ -32,7 +32,7 @@
     <meta name="twitter:image" content="{{ asset('images/og-raaga.png') }}">
 
     {{ $head ?? '' }}
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <x-assets />
 </head>
 <body class="site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased">
     <a href="#contenu" class="sr-only z-50 bg-jaune font-semibold text-encre focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:px-4 focus:py-3">

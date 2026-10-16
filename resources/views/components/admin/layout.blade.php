@@ -20,8 +20,9 @@
     $initiales = collect(preg_split('/\s+/', trim($user->name)))->filter()->take(2)->map(fn ($m) => mb_strtoupper(mb_substr($m, 0, 1)))->implode('');
     // Groupe de la page courante, pour le fil d'Ariane.
     $groupeActif = collect($menu)->search(fn ($entrees) => collect($entrees)->contains(fn ($e) => MenuBackoffice::estActive($e)));
-    $manifeste = public_path('build/manifest.json');
-    $version = ! app()->isProduction() && is_file($manifeste) ? date('d/m/Y', filemtime($manifeste)) : null;
+    // Version de recette : date du fichier statique (CSS, JS) modifié le plus récemment.
+    $dates = array_map('filemtime', array_filter(array_map('public_path', ['css/app.css', 'css/admin.css', 'css/raaga.css', 'js/app.js']), 'is_file'));
+    $version = ! app()->isProduction() && $dates !== [] ? date('d/m/Y', max($dates)) : null;
 @endphp
 
 <!DOCTYPE html>
@@ -35,7 +36,7 @@
     <x-meta-icones />
     <link rel="preload" href="{{ asset('fonts/public-sans-400.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ asset('fonts/public-sans-700.woff2') }}" as="font" type="font/woff2" crossorigin>
-    @vite(['resources/css/app.css', 'resources/css/admin.css', 'resources/js/app.js'])
+    <x-assets admin />
 </head>
 <body class="site-public bo adm theme-{{ $theme }}" data-layout="admin"
       x-data="cadreAdmin({ theme: @js($theme), urlTheme: @js(route('admin.preferences.theme')), urlLues: @js(route('admin.notifications.lues')) })"

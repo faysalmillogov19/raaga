@@ -36,7 +36,7 @@ class FenetresModalesTest extends TestCase
             ->assertSeeInOrder(['class="adm-fenetre-tete"', 'id="ajouter-type-titre"', 'aria-label="Fermer"', 'class="adm-fenetre-corps"', 'name="code"', 'class="adm-fenetre-pied"', 'Annuler', 'Enregistrer et soumettre', 'Enregistrer en brouillon'], false);
 
         // Le script ouvre par showModal() (jamais show()) ; plus aucun formulaire dépliable dans le back-office.
-        $script = file_get_contents(resource_path('js/app.js'));
+        $script = file_get_contents(public_path('js/app.js'));
         $this->assertStringContainsString('dialogue.showModal()', $script);
         $this->assertDoesNotMatchRegularExpression('/dialog(ue)?\.show\(\)/', $script);
         foreach (glob(resource_path('views/admin/{,*/}*.blade.php'), GLOB_BRACE) as $vue) {

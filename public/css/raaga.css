@@ -1,0 +1,5 @@
+/*
+ * Raaga : nouveaux styles, en CSS classique (sans étape de compilation).
+ * Chargé après public/css/app.css (fichier figé, à ne pas modifier) et, au back-office, après admin.css.
+ * Couleurs : variables de la charte (--charte-vert, --charte-encre…) et, au back-office, du thème (--primary, --text…).
+ */

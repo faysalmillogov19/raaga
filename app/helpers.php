@@ -9,6 +9,19 @@ use Carbon\Carbon;
  * Séparateur de milliers : espace insécable (le montant ne se coupe jamais en fin de ligne).
  */
 
+if (! function_exists('asset_versionne')) {
+    /**
+     * Adresse d'un fichier statique de public/ suivie de « ?v= » et de sa date de modification : le navigateur
+     * recharge le fichier dès qu'il change (pas d'étape de compilation, pas de manifeste).
+     */
+    function asset_versionne(string $chemin): string
+    {
+        $fichier = public_path($chemin);
+
+        return asset($chemin).(is_file($fichier) ? '?v='.filemtime($fichier) : '');
+    }
+}
+
 if (! function_exists('format_nombre')) {
     function format_nombre(int|float $n, int $decimales = 0): string
     {

@@ -209,7 +209,7 @@ class VerrousProductionTest extends TestCase
         $script = file_get_contents(base_path('deploy.sh'));
 
         $etapes = [
-            'set -euo pipefail', 'git pull --ff-only', 'composer install --no-dev --optimize-autoloader', '-lt "$NODE_MIN"', 'npm ci', 'npm run build',
+            'set -euo pipefail', 'git pull --ff-only', 'composer install --no-dev --optimize-autoloader',
             'php artisan raaga:verifier-production', 'pg_dump', 'php artisan down', "trap 'php artisan up' EXIT", 'php artisan migrate --force',
             'php artisan db:seed --class=ReferentielsSeeder --force', 'php artisan storage:link', 'php artisan config:cache', 'php artisan route:cache',
             'php artisan view:cache', 'php artisan queue:restart', 'systemctl reload',
@@ -220,9 +220,12 @@ class VerrousProductionTest extends TestCase
         foreach ($etapes as $i => $etape) {
             $this->assertNotFalse($positions[$i], $etape);
         }
-        // Dans cet ordre ; la vérification de Node précède npm ; « up » final après le rechargement de php-fpm.
+        // Dans cet ordre ; « up » final après le rechargement de php-fpm.
         $this->assertSame($positions, collect($positions)->sort()->values()->all());
-        $this->assertStringContainsString('NODE_MIN=22', $script);
+        // Assets statiques : ni Node, ni npm, ni compilation.
+        foreach (['node', 'npm', 'NODE_MIN', 'vite'] as $absent) {
+            $this->assertStringNotContainsString($absent, $script);
+        }
         $this->assertStringContainsString('/data/backups', $script);
         $this->assertStringNotContainsString('raaga:verifier-production --strict', $script); // bloquants seulement
         $this->assertStringNotContainsString('ComptesDemoSeeder', $script);

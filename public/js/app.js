@@ -1,4 +1,12 @@
-import Alpine from 'alpinejs';
+/*
+ * Raaga : JavaScript natif, sans étape de compilation. Chargé avant Alpine.js (public/vendor/alpinejs/3.17.4), tous
+ * deux avec « defer » : les composants Alpine sont déclarés à l'événement alpine:init, qu'Alpine émet au démarrage.
+ */
+(() => {
+'use strict';
+
+// Déclare un composant Alpine (x-data="nom(...)") au démarrage d'Alpine.
+const composant = (nom, fabrique) => document.addEventListener('alpine:init', () => window.Alpine.data(nom, fabrique));
 
 /*
  * Formulaires des pages Connexion et Inscription.
@@ -26,7 +34,7 @@ const envoi = {
     },
 };
 
-Alpine.data('saisieTelephone', ({ valeur = '', erreur = '', message = '' } = {}) => ({
+composant('saisieTelephone', ({ valeur = '', erreur = '', message = '' } = {}) => ({
     ...envoi,
     valeur: formaterTelephone(valeur),
     erreur,
@@ -45,7 +53,7 @@ Alpine.data('saisieTelephone', ({ valeur = '', erreur = '', message = '' } = {})
     },
 }));
 
-Alpine.data('codeOtp', ({ secondes = 0, erreur = '', message = '' } = {}) => ({
+composant('codeOtp', ({ secondes = 0, erreur = '', message = '' } = {}) => ({
     ...envoi,
     valeurs: ['', '', '', '', '', ''],
     restant: secondes,
@@ -135,7 +143,7 @@ Alpine.data('codeOtp', ({ secondes = 0, erreur = '', message = '' } = {}) => ({
     },
 }));
 
-Alpine.data('formulaireIdentite', ({ valeurs = {}, messages = {}, ageMinimum = 18 } = {}) => ({
+composant('formulaireIdentite', ({ valeurs = {}, messages = {}, ageMinimum = 18 } = {}) => ({
     ...envoi,
     nom: valeurs.nom ?? '',
     pays: valeurs.pays_residence || 'BF',
@@ -185,7 +193,7 @@ Alpine.data('formulaireIdentite', ({ valeurs = {}, messages = {}, ageMinimum = 1
 }));
 
 // Back-office : barre latérale repliable, état mémorisé dans le navigateur.
-Alpine.data('menuBackoffice', () => ({
+composant('menuBackoffice', () => ({
     replie: false,
     init() {
         try {
@@ -207,7 +215,7 @@ Alpine.data('menuBackoffice', () => ({
 // Souscription : montant et frais recalculés en direct à partir des paramètres de la tranche (fournis par le serveur).
 const fcfa = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
 
-Alpine.data('souscription', (p) => ({
+composant('souscription', (p) => ({
     nb: p.nb,
     coches: [],
     fichier: false,
@@ -243,7 +251,7 @@ Alpine.data('souscription', (p) => ({
 }));
 
 // Vérification d'identité : aperçu de la photo avant envoi, format et taille contrôlés (le serveur revérifie).
-Alpine.data('pieceKyc', ({ maxOctets, messages }) => ({
+composant('pieceKyc', ({ maxOctets, messages }) => ({
     apercu: null,
     erreur: '',
     choisir(evenement) {
@@ -274,7 +282,7 @@ Alpine.data('pieceKyc', ({ maxOctets, messages }) => ({
  * Soumission groupée à validation depuis une liste (<x-tableau> avec sélection) : cases des lignes à soumettre ou à
  * retirer, barre collante, contrôle préalable de chaque élément (✓ prêt ou ✗ raison) avant l'envoi des seuls éléments prêts.
  */
-Alpine.data('soumissionGroupee', ({ controle }) => ({
+composant('soumissionGroupee', ({ controle }) => ({
     aSoumettre: 0,
     aRetirer: 0,
     controles: [],
@@ -323,7 +331,7 @@ Alpine.data('soumissionGroupee', ({ controle }) => ({
     },
 }));
 
-Alpine.data('tableau', () => ({
+composant('tableau', () => ({
     charge: false,
     controleur: null,
     init() {
@@ -406,7 +414,7 @@ const envoyer = (url, donnees = {}) => fetch(url, {
  * Menu dépliant de la barre latérale (<x-admin.menu-deroulant>) : déplié ou replié (état mémorisé pour l'utilisateur) ;
  * barre réduite en icônes : panneau flottant au survol ou au clic, placé à la hauteur du bouton.
  */
-Alpine.data('menuDeroulant', ({ deplie = false, cle = '', url = '' } = {}) => ({
+composant('menuDeroulant', ({ deplie = false, cle = '', url = '' } = {}) => ({
     deplie,
     flottant: false,
     haut: 0,
@@ -446,7 +454,7 @@ Alpine.data('menuDeroulant', ({ deplie = false, cle = '', url = '' } = {}) => ({
     },
 }));
 
-Alpine.data('cadreAdmin', ({ theme = 'clair', urlTheme = '', urlLues = '' } = {}) => ({
+composant('cadreAdmin', ({ theme = 'clair', urlTheme = '', urlLues = '' } = {}) => ({
     theme,
     ouvert: true,
     init() {
@@ -487,7 +495,7 @@ Alpine.data('cadreAdmin', ({ theme = 'clair', urlTheme = '', urlLues = '' } = {}
 }));
 
 // Recherche globale : les dernières recherches sont proposées au focus (conservées sur cet appareil).
-Alpine.data('rechercheGlobale', () => ({
+composant('rechercheGlobale', () => ({
     ouverte: false,
     recentes: [],
     init() {
@@ -547,7 +555,7 @@ const remplacerContenu = (html, url, focusId) => {
     }, 0);
 };
 
-Alpine.data('fenetre', () => ({
+composant('fenetre', () => ({
     envoi: false,
     erreur: '',
     origine: null,
@@ -882,7 +890,4 @@ document.querySelectorAll('[data-carrousel]').forEach((carrousel) => {
     }
     majLecture();
 });
-
-window.Alpine = Alpine;
-
-Alpine.start();
+})();

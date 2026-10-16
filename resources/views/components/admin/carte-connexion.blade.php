@@ -10,7 +10,7 @@
     <x-meta-icones />
     <link rel="preload" href="{{ asset('fonts/public-sans-400.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ asset('fonts/public-sans-700.woff2') }}" as="font" type="font/woff2" crossorigin>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <x-assets />
 </head>
 <body class="site-public bo font-public">
     <x-public.bande-tricolore />
