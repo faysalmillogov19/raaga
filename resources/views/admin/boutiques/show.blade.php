@@ -81,7 +81,7 @@
             <dl class="bo-definitions mt-3">
                 <dt>{{ ucfirst($libelles['sites']) }}</dt><dd>{{ $snapshot['sites'] ?: '' }}</dd>
                 <dt>{{ ucfirst($libelles['types']) }}</dt><dd data-types-campagne>{{ $snapshot['types'] ?: '' }}</dd>
-                <dt>{{ ucfirst($libelles['max_boutiques_par_personne']) }}</dt><dd>{{ $campagne->max_boutiques_par_personne }}</dd>
+                <dt>{{ ucfirst($libelles['limites']) }}</dt><dd data-limites-campagne>{{ $snapshot['limites'] ?: '' }}</dd>
                 <dt>{{ ucfirst($libelles['canaux_actifs']) }}</dt><dd>{{ AffichageParametres::valeur('canaux_actifs', $snapshot['canaux_actifs']) }}</dd>
                 <dt>{{ ucfirst($libelles['delai_paiement']) }}</dt><dd data-delai-caution>{{ $campagne->libelleDelaiPaiement() }}
                     <span class="texte-carte">({{ __($campagne->aSonPropreDelai() ? 'admin.boutiques.aides.delai_propre_court' : 'admin.boutiques.aides.delai_parametre_court') }})</span></dd>

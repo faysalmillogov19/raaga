@@ -50,7 +50,7 @@ final class Boutiques
         return CampagneBoutiques::create([
             'statut' => StatutCampagneBoutiques::Ouverte, 'nom' => 'Réservation 2027', 'description' => 'Marché central.',
             'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addMonth(),
-            'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'], 'max_boutiques_par_personne' => 1, 'sites' => [$site->id], 'types' => [$petite->id, $grande->id],
+            'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'], 'sites' => [$site->id], 'types' => [$petite->id, $grande->id], 'limites' => [$petite->id => 1, $grande->id => 1],
             'version' => 2, 'cree_par' => $auteur->id, ...$attributs,
         ]);
     }

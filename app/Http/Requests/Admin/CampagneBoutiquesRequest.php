@@ -28,12 +28,14 @@ class CampagneBoutiquesRequest extends FormRequest
             'date_cloture' => ['required', 'date', 'after:date_ouverture'],
             'canaux_actifs' => ['required', 'array', 'min:1'],
             'canaux_actifs.*' => [Rule::in(MoyenPaiement::proposables()->pluck('code')->all())],
-            'max_boutiques_par_personne' => ['required', 'integer', 'min:1', 'max:1000'],
             'sites' => ['required', 'array', 'min:1'],
             'sites.*' => ['integer', Rule::exists('sites', 'id')->where('statut', 'CONFIRME')],
             // Types proposés : au moins un, parmi les types actifs, validés et attribuables ; jamais la chambre froide (CF).
             'types' => ['required', 'array', 'min:1'],
             'types.*' => ['integer', Rule::in(TypeBoutique::query()->proposables()->pluck('id')->all())],
+            // Limite par type coché : nombre maximum d'emplacements par personne, au moins 1.
+            'limites' => ['nullable', 'array'],
+            ...collect((array) $this->input('types'))->mapWithKeys(fn ($id) => ['limites.'.(int) $id => ['required', 'integer', 'min:1', 'max:1000']])->all(),
         ];
     }
 
@@ -44,6 +46,9 @@ class CampagneBoutiquesRequest extends FormRequest
             'sites.*.exists' => __('admin.boutiques.erreurs.sites'),
             'types.required' => __('admin.boutiques.erreurs.types'),
             'types.*.in' => __('admin.boutiques.erreurs.types'),
+            'limites.*.required' => __('admin.boutiques.erreurs.limite'),
+            'limites.*.min' => __('admin.boutiques.erreurs.limite'),
+            'limites.*.integer' => __('admin.boutiques.erreurs.limite'),
         ];
     }
 
@@ -55,9 +60,10 @@ class CampagneBoutiquesRequest extends FormRequest
     /** @return array<string, mixed> */
     public function parametres(): array
     {
-        return [...$this->safe()->only(['nom', 'description', 'date_ouverture', 'date_cloture', 'canaux_actifs', 'max_boutiques_par_personne']),
+        return [...$this->safe()->only(['nom', 'description', 'date_ouverture', 'date_cloture', 'canaux_actifs']),
             'sites' => array_values(array_unique(array_map('intval', (array) $this->validated('sites')))),
-            'types' => array_values(array_unique(array_map('intval', (array) $this->validated('types')))),
+            'types' => $types = array_values(array_unique(array_map('intval', (array) $this->validated('types')))),
+            'limites' => (object) collect($types)->mapWithKeys(fn (int $id) => [(string) $id => (int) $this->validated('limites.'.$id)])->all(),
         ];
     }
 }

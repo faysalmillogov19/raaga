@@ -24,16 +24,17 @@ use Illuminate\Support\Collection;
  */
 #[Table(name: 'campagnes_boutiques')]
 #[Fillable([
-    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes', 'canaux_actifs', 'max_boutiques_par_personne', 'sites', 'types',
+    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes', 'canaux_actifs', 'sites', 'types', 'limites',
     'version', 'cree_par', 'soumis_par', 'soumise_le', 'valide_par', 'validee_le', 'motif_rejet',
     'ouverte_le', 'cloturee_le', 'attribuee_le',
 ])]
 class CampagneBoutiques extends Model implements Parametrable
 {
-    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'types', 'max_boutiques_par_personne', 'canaux_actifs'];
+    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'types', 'limites', 'canaux_actifs'];
 
     /** Valeurs par défaut d'une nouvelle campagne. */
-    public const MAX_PAR_PERSONNE = 1;
+    /** Nombre maximum d'emplacements par personne, pour chaque type coché (par défaut). */
+    public const LIMITE_PAR_TYPE = 1;
 
     protected function casts(): array
     {
@@ -44,7 +45,7 @@ class CampagneBoutiques extends Model implements Parametrable
             'delai_paiement_valeur' => 'integer',
             'delai_paiement_duree_id' => 'integer',
             'delai_paiement_secondes' => 'integer',
-            'max_boutiques_par_personne' => 'integer',
+            'limites' => 'array',
             'canaux_actifs' => 'array',
             'sites' => 'array',
             'types' => 'array',
@@ -186,11 +187,19 @@ class CampagneBoutiques extends Model implements Parametrable
         $snapshot['sites'] = $this->sitesConcernes()->map(fn (Site $s) => ($s->code ? $s->code.' · ' : '').$s->nom)->implode(', ');
         // Types proposés, lisibles dans le différentiel du VALIDATEUR (« BOUT · Boutique, PP · Pôle : préparation… »).
         $snapshot['types'] = $this->typesConcernes()->map(fn (TypeBoutique $t) => ($t->code ? $t->code.' · ' : '').$t->libelle)->implode(', ');
+        // Limites par type, lisibles dans le différentiel du VALIDATEUR (« BOUT : 1, PV : 1 »).
+        $snapshot['limites'] = $this->typesConcernes()->map(fn (TypeBoutique $t) => ($t->code ?? $t->libelle).' : '.$this->limitePour($t->id))->implode(', ');
 
         return $snapshot;
     }
 
     /** @return \Illuminate\Database\Eloquent\Collection<int, Site> sites concernés par la campagne */
+    /** Nombre maximum d'emplacements de ce type par personne dans la campagne (1 si non précisé). */
+    public function limitePour(int $typeId): int
+    {
+        return max(1, (int) (((array) $this->limites)[(string) $typeId] ?? self::LIMITE_PAR_TYPE));
+    }
+
     /** @return \Illuminate\Database\Eloquent\Collection<int, TypeBoutique> types proposés par la campagne */
     public function typesConcernes(): \Illuminate\Database\Eloquent\Collection
     {

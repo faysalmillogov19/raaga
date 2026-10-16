@@ -99,6 +99,34 @@ class ReservationsBoutiques
     }
 
     /**
+     * Réservations actives (pré-réservées, réservées, attribuées) d'un type dans une campagne, pour une personne
+     * identifiée par son compte ou par l'un de ses numéros de pièce. Annulées et expirées ne comptent pas.
+     *
+     * @param  list<string>  $pieces  numéros de pièce normalisés
+     */
+    public static function activesDuType(CampagneBoutiques $campagne, int $typeId, int $userId, array $pieces): int
+    {
+        return ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)->whereIn('statut', StatutReservationBoutique::actifs())
+            ->whereHas('boutique', fn ($b) => $b->where('type_boutique_id', $typeId))
+            ->where(fn ($q) => $q->where('user_id', $userId)->when(array_filter($pieces), fn ($q, $p) => $q->orWhereIn('numero_piece', $p)))->count();
+    }
+
+    /**
+     * Ce qui reste au citoyen dans la campagne, par type : limite moins ses réservations actives (compte et numéros de
+     * pièce déjà utilisés dans la campagne).
+     *
+     * @return array<int, int> type => nombre encore réservable (0 : limite atteinte)
+     */
+    public static function restants(CampagneBoutiques $campagne, User $user): array
+    {
+        $pieces = ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)->where('user_id', $user->id)
+            ->whereNotNull('numero_piece')->distinct()->pluck('numero_piece')->all();
+
+        return collect((array) $campagne->types)->mapWithKeys(fn ($id) => [(int) $id => max(0,
+            $campagne->limitePour((int) $id) - self::activesDuType($campagne, (int) $id, $user->id, $pieces))])->all();
+    }
+
+    /**
      * Détail d'un emplacement (plan, récapitulatif, fiche du back-office) : code, site, niveau, bloc ou zone, type
      * (sigle, libellé complet, description pour le citoyen), surface, observations ; montants (loyer mensuel, caution,
      * avance, total à payer) seulement si demandés (citoyen), jamais pour le GESTIONNAIRE.
@@ -191,12 +219,12 @@ class ReservationsBoutiques
                 }
                 $tarif = self::tarifer($boutique) ?? $erreur('sans_tarif');
 
-                // Limite par personne : sur le compte et sur le numéro de pièce, dans la même transaction.
-                $actives = ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)
-                    ->whereIn('statut', StatutReservationBoutique::actifs())
-                    ->where(fn ($q) => $q->where('user_id', $user->id)->orWhere('numero_piece', $numero))->count();
-                if ($actives >= $campagne->max_boutiques_par_personne) {
-                    $erreur('limite', ['n' => $campagne->max_boutiques_par_personne]);
+                // Limite par personne et par type : réservations actives de ce type dans la campagne, sur le compte et sur
+                // le numéro de pièce. Même transaction, campagne verrouillée : deux demandes simultanées sont traitées l'une
+                // après l'autre et ne dépassent jamais la limite.
+                $limite = $campagne->limitePour($boutique->type_boutique_id);
+                if (self::activesDuType($campagne, $boutique->type_boutique_id, $user->id, [$numero]) >= $limite) {
+                    $erreur('limite_type', ['n' => $limite, 'type' => $boutique->type->code ?? $boutique->type->libelle]);
                 }
 
                 $reservation = ReservationBoutique::create([

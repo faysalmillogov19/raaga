@@ -1002,7 +1002,13 @@ return [
         ],
         'periode' => 'Réservations du :debut au :fin.',
         'premier_arrive' => 'Au premier arrivé, premier servi : aucune priorité, aucun tirage au sort.',
-        'plafond' => 'Une même personne peut réserver au plus :n boutique(s) dans cette campagne.',
+        'limites' => [
+            'par_personne' => 'Limite par personne : :liste.',
+            'restants' => 'Vous pouvez encore réserver : :liste.',
+            'aucun_restant' => 'Vous avez atteint vos limites de réservation dans cette campagne.',
+            'atteinte' => 'Limite atteinte pour ce type',
+            'atteinte_detail' => 'Vous avez déjà réservé :n :type au plus autorisé par personne dans cette campagne. :restants',
+        ],
         'candidater' => 'Je réserve',
         'candidater_boutique' => 'Réserver une boutique',
         'lire_reglement' => 'Lire le règlement de la campagne',
@@ -1125,6 +1131,7 @@ return [
             'deja_prise' => 'Cette boutique vient d’être réservée par quelqu’un d’autre. Choisissez-en une autre sur le plan.',
             'sans_tarif' => 'Le tarif de cette boutique n’est pas encore publié : elle ne peut pas être réservée.',
             'limite' => 'Limite atteinte : :n boutique(s) par personne dans cette campagne (contrôlée sur le compte et le numéro de pièce).',
+            'limite_type' => 'Limite atteinte pour ce type : :n :type au plus par personne dans cette campagne (contrôlée sur le compte et le numéro de pièce).',
         ],
     ],
 

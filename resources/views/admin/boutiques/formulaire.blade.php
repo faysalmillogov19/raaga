@@ -1,4 +1,5 @@
 @php
+    use App\Models\CampagneBoutiques;
     use App\Models\MoyenPaiement;
 
     $c = __('admin.boutiques.champs');
@@ -50,9 +51,30 @@
             <p class="texte-carte mt-1">{{ __('admin.boutiques.aides.types') }}</p>
             @error('types') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
             @error('types.*') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-            <x-admin.cases nom="types" :libelle="ucfirst($c['types'])" class="mt-3" data-types-campagne
-                           :options="$typesDisponibles->mapWithKeys(fn ($t) => [$t->id => ($t->code ? $t->code.' · ' : '').$t->libelle])->all()"
-                           :valeurs="array_map('strval', (array) ($campagne->types ?? []))" />
+            {{-- Une ligne par type : case à cocher, puis nombre maximum d'emplacements de ce type par personne (1 par défaut, au moins 1). --}}
+            <fieldset class="mt-3" data-types-campagne>
+                <legend class="adm-libelle">{{ ucfirst($c['types']) }}</legend>
+                @error('limites.*') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+                <div class="mt-2 grid gap-2">
+                    @foreach ($typesDisponibles as $t)
+                        @php
+                            $coche = in_array((string) $t->id, array_map('strval', (array) old('types', $campagne->types ?? [])), true);
+                            $limite = old('limites.'.$t->id, $campagne->exists ? $campagne->limitePour($t->id) : CampagneBoutiques::LIMITE_PAR_TYPE);
+                        @endphp
+                        <div class="campagne-type-limite" data-type-limite="{{ $t->code }}">
+                            <label class="adm-option">
+                                <input type="checkbox" name="types[]" value="{{ $t->id }}" @checked($coche)>
+                                <span>{{ ($t->code ? $t->code.' · ' : '').$t->libelle }}</span>
+                            </label>
+                            <label class="campagne-type-limite-champ">
+                                <span>{{ $c['limite_par_type'] }}</span>
+                                <input type="number" name="limites[{{ $t->id }}]" value="{{ $limite }}" min="1" max="1000" class="champ" aria-label="{{ $c['limite_par_type'] }} : {{ $t->code ?? $t->libelle }}">
+                            </label>
+                        </div>
+                    @endforeach
+                </div>
+                <p class="texte-carte mt-2">{{ __('admin.boutiques.aides.limites') }}</p>
+            </fieldset>
         </section>
 
         <section class="bo-carte !mt-0" aria-labelledby="s-paiement">
@@ -67,8 +89,6 @@
                     <p class="font-semibold">{{ $campagne->libelleDelaiPaiement() }}</p>
                     <p class="texte-carte">{{ __($campagne->aSonPropreDelai() ? 'admin.boutiques.aides.delai_propre' : 'admin.boutiques.aides.delai_paiement') }}</p>
                 </div>
-                <x-admin.champ nom="max_boutiques_par_personne" :libelle="ucfirst($c['max_boutiques_par_personne'])" type="number" min="1" required
-                               :valeur="$campagne->max_boutiques_par_personne" :aide="__('admin.boutiques.aides.max_boutiques_par_personne')" />
             </div>
         </section>
 

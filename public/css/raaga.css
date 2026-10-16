@@ -219,3 +219,39 @@ button.plan-case:focus-visible {
     color: var(--vert-fonce);
     font-variant-numeric: tabular-nums;
 }
+
+/* Formulaire de campagne : une ligne par type proposé, avec sa limite par personne. */
+.campagne-type-limite {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 8px 12px;
+    border: 1px solid var(--ligne, #d9e2dc);
+    border-radius: 6px;
+}
+
+.campagne-type-limite-champ {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.campagne-type-limite-champ .champ {
+    width: 5.5rem;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+/* Limite atteinte pour ce type (citoyen connecté) : la boutique reste visible mais n'est plus réservable pour lui. */
+.plan-limite {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #8A3B00;
+}
+
+.plan-detail .plan-limite {
+    font-size: 0.95rem;
+}

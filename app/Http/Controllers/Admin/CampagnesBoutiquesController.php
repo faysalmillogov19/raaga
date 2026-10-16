@@ -82,7 +82,6 @@ class CampagnesBoutiquesController extends Controller
             'campagne' => new CampagneBoutiques([
                 'date_ouverture' => now()->addMonth()->startOfDay()->setTime(8, 0),
                 'date_cloture' => now()->addMonths(2)->setTime(23, 59),
-                'max_boutiques_par_personne' => CampagneBoutiques::MAX_PAR_PERSONNE,
                 'canaux_actifs' => MoyenPaiement::proposables()->pluck('code')->all(),
                 'sites' => [],
                 'types' => [],

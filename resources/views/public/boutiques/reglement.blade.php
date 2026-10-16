@@ -27,7 +27,9 @@
             <section><h3>Article 3 : Réservation</h3>
                 <p>Le citoyen, titulaire d’un compte dont le téléphone est vérifié, choisit une boutique disponible sur le plan, joint sa CNIB, son passeport ou son NIF (avec le RCCM pour une entreprise) et confirme.
                     La boutique est alors pré-réservée à son nom. Le premier est celui dont la confirmation est enregistrée en premier par le serveur.
-                    Une même personne, identifiée par son compte et par le numéro de sa pièce, ne peut pas réserver plus de {{ $c->max_boutiques_par_personne }} boutique(s) dans cette campagne.</p></section>
+                    Une même personne, identifiée par son compte et par le numéro de sa pièce, peut réserver au plus, par type d’emplacement :
+                    {{ $c->typesConcernes()->map(fn ($t) => $c->limitePour($t->id).' '.($t->code ? $t->code.' ('.$t->libelle.')' : $t->libelle))->implode(', ') }}.
+                    Une réservation annulée ou expirée ne compte plus.</p></section>
 
             <section><h3>Article 4 : Caution et avance</h3>
                 <p>La réservation est confirmée par le paiement de la caution ({{ __('public.boutiques.montants.mention_caution') }}) dans un délai de {{ $c->libelleDelaiPaiement() }} ; sans paiement dans ce délai,

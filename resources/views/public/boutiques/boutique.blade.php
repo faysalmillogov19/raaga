@@ -9,6 +9,7 @@
     $r = $b['reservation'];
     $titre = __('public.boutiques.reservation.titre', ['code' => $boutique->code]);
     $disponible = $boutique->statut->reservable();
+    $limiteAtteinte = $limites['restants'] !== null && ($limites['restants'][$boutique->type_boutique_id] ?? 0) === 0;
 @endphp
 
 <x-public.layout :titre="$titre">
@@ -18,6 +19,8 @@
         @if ($errors->has('boutique'))
             <x-public.alerte variante="danger" class="mb-6" role="alert">{{ $errors->first('boutique') }}</x-public.alerte>
         @endif
+
+        <p class="mb-4 font-semibold text-encre" data-limites>{{ $limites['resume'] }}</p>
 
         <section class="carte p-5" aria-labelledby="recap-titre" data-recapitulatif>
             <h2 id="recap-titre" class="!text-lg">{{ $r['recapitulatif'] }}</h2>
@@ -54,6 +57,8 @@
             <x-public.alerte variante="info" class="mt-6">{{ $r['fermee'] }}</x-public.alerte>
         @elseif (! $disponible)
             <x-public.alerte variante="attention" class="mt-6" data-indisponible>{{ $r['indisponible'] }}</x-public.alerte>
+        @elseif ($limiteAtteinte)
+            <x-public.alerte variante="attention" class="mt-6" data-limite-atteinte :titre="$b['limites']['atteinte']">{{ __('public.boutiques.limites.atteinte_detail', ['n' => $campagne->limitePour($boutique->type_boutique_id), 'type' => $boutique->type?->code ?? $boutique->type?->libelle, 'restants' => $limites['resume']]) }}</x-public.alerte>
         @elseif (! $tarif)
             <x-public.alerte variante="attention" class="mt-6">{{ $r['sans_tarif'] }}</x-public.alerte>
         @else

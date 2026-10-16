@@ -71,9 +71,9 @@ class CampagnesBoutiquesTest extends TestCase
             'date_ouverture' => now()->addDay()->format('Y-m-d\TH:i'),
             'date_cloture' => now()->addMonth()->format('Y-m-d\TH:i'),
             'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'],
-            'max_boutiques_par_personne' => 2,
             'sites' => [$this->site->id],
             'types' => [$this->petite->id, $this->grande->id],
+            'limites' => [$this->petite->id => 2, $this->grande->id => 1],
             ...$surcharges,
         ];
     }
@@ -89,9 +89,9 @@ class CampagnesBoutiquesTest extends TestCase
 
     public function test_le_regulateur_choisit_les_sites_et_les_parametres(): void
     {
-        // Valeurs par défaut : une boutique par personne, caution à payer sous 72 h.
+        // Valeurs par défaut : un emplacement par personne et par type, caution à payer sous 72 h.
         $creation = $this->en($this->regulateur)->get(route('admin.boutiques.create'))->assertOk()->assertSee('Marché central')->getContent();
-        $this->assertMatchesRegularExpression('/name="max_boutiques_par_personne"[^>]*value="1"/', $creation);
+        $this->assertMatchesRegularExpression('/name="limites\['.$this->petite->id.'\]"[^>]*value="1"/', $creation);
         // Délai de paiement de la caution : celui des « Délais de paiement » (72 heures par défaut), affiché sans être saisi.
         $this->assertStringNotContainsString('name="delai_paiement', $creation);
         $this->assertMatchesRegularExpression('/data-delai-caution>\s*<p[^>]*>[^<]*<\/p>\s*<p class="font-semibold">72 heures<\/p>/', $creation);
@@ -99,7 +99,8 @@ class CampagnesBoutiquesTest extends TestCase
         $campagne = $this->campagneSoumise();
 
         $this->assertSame(StatutCampagneBoutiques::Soumise, $campagne->statut);
-        $this->assertSame(2, $campagne->max_boutiques_par_personne);
+        $this->assertSame([2, 1], [$campagne->limitePour($this->petite->id), $campagne->limitePour($this->grande->id)]);
+        $this->assertStringContainsString(': 2', $campagne->versions()->first()->parametres['limites']);
         $this->assertSame([$this->site->id], $campagne->sites);
         $this->assertSame('Marché central', $campagne->versions()->first()->parametres['sites']);
 
@@ -127,8 +128,8 @@ class CampagnesBoutiquesTest extends TestCase
         $this->en($this->validateur)->post(route('admin.boutiques.rejeter', $campagne), ['motif' => 'Délai trop court'])->assertSessionHas('succes');
         $this->assertSame(StatutCampagneBoutiques::Brouillon, $campagne->refresh()->statut);
 
-        $this->en($this->regulateur)->put(route('admin.boutiques.update', $campagne), $this->formulaire(['max_boutiques_par_personne' => 1]))->assertSessionHasNoErrors();
-        $this->assertSame(1, $campagne->refresh()->max_boutiques_par_personne);
+        $this->en($this->regulateur)->put(route('admin.boutiques.update', $campagne), $this->formulaire(['limites' => [$this->petite->id => 1, $this->grande->id => 1]]))->assertSessionHasNoErrors();
+        $this->assertSame(1, $campagne->refresh()->limitePour($this->petite->id));
         $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $campagne));
         $this->en($this->validateur)->post(route('admin.boutiques.confirmer', $campagne))->assertSessionHas('succes');
 

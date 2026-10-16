@@ -113,18 +113,19 @@ class ReservationBoutiquesTest extends TestCase
 
         // Même compte : refusé (une boutique par personne par défaut).
         Boutiques::reserver($this, $citoyen, Boutiques::boutique('A', 2), 'X9999999')
-            ->assertSessionHasErrors(['boutique' => __('public.boutiques.erreurs.limite', ['n' => 1])]);
+            ->assertSessionHasErrors(['boutique' => __('public.boutiques.erreurs.limite_type', ['n' => 1, 'type' => 'Petite boutique'])]);
 
         // Autre compte, même pièce (casse et séparateurs ignorés) : refusé aussi.
         Boutiques::reserver($this, $this->citoyen(), Boutiques::boutique('A', 2), 'b1234567')
-            ->assertSessionHasErrors(['boutique' => __('public.boutiques.erreurs.limite', ['n' => 1])]);
+            ->assertSessionHasErrors(['boutique' => __('public.boutiques.erreurs.limite_type', ['n' => 1, 'type' => 'Petite boutique'])]);
 
         // Autre pièce : accepté.
         Boutiques::reserver($this, $this->citoyen(), Boutiques::boutique('A', 2), 'C7654321')->assertSessionHasNoErrors();
         $this->assertSame(2, ReservationBoutique::count());
 
-        // Limite relevée par la campagne : deux boutiques pour la même personne.
-        $this->campagne->forceFill(['max_boutiques_par_personne' => 2])->save();
+        // Limite relevée par la campagne pour ce type : deux petites boutiques pour la même personne.
+        $petite = Boutiques::boutique('A', 3)->type_boutique_id;
+        $this->campagne->forceFill(['limites' => [...$this->campagne->limites, $petite => 2]])->save();
         Boutiques::reserver($this, $citoyen, Boutiques::boutique('A', 3), 'B1234567')->assertSessionHasNoErrors();
         $this->assertSame(3, ReservationBoutique::count());
     }

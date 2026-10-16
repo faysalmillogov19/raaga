@@ -58,7 +58,7 @@ class TypesCampagneTest extends TestCase
         // Campagne ouverte sur le premier site : boutiques (BOUT) et pôle de préparation (PP) seulement.
         $this->campagne = CampagneBoutiques::create([
             'statut' => StatutCampagneBoutiques::Ouverte, 'nom' => 'Réservation 2027', 'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addMonth(),
-            'canaux_actifs' => ['ORANGE_MONEY'], 'max_boutiques_par_personne' => 1, 'sites' => [$this->site->id],
+            'canaux_actifs' => ['ORANGE_MONEY'], 'sites' => [$this->site->id],
             'types' => [$this->types['BOUT']->id, $this->types['PP']->id], 'version' => 2, 'cree_par' => $this->regulateur->id,
         ]);
     }
@@ -72,7 +72,7 @@ class TypesCampagneTest extends TestCase
     {
         $formulaire = [
             'nom' => 'Pôle boucherie 2027', 'date_ouverture' => now()->addDay()->format('Y-m-d\TH:i'), 'date_cloture' => now()->addMonth()->format('Y-m-d\TH:i'),
-            'canaux_actifs' => ['ORANGE_MONEY'], 'max_boutiques_par_personne' => 1, 'sites' => [$this->site->id],
+            'canaux_actifs' => ['ORANGE_MONEY'], 'sites' => [$this->site->id],
         ];
         $page = $this->en($this->regulateur)->get(route('admin.boutiques.create'))->assertOk()->assertSee('data-types-campagne', false)->getContent();
         $this->assertStringContainsString('value="'.$this->types['PP']->id.'"', $page);
@@ -80,7 +80,8 @@ class TypesCampagneTest extends TestCase
 
         $this->en($this->regulateur)->post(route('admin.boutiques.store'), $formulaire)->assertSessionHasErrors('types');
         $this->en($this->regulateur)->post(route('admin.boutiques.store'), [...$formulaire, 'types' => [$this->types['CF']->id]])->assertSessionHasErrors('types.0');
-        $this->en($this->regulateur)->post(route('admin.boutiques.store'), [...$formulaire, 'types' => [$this->types['PP']->id, $this->types['MAG']->id]])->assertSessionHasNoErrors();
+        $this->en($this->regulateur)->post(route('admin.boutiques.store'), [...$formulaire, 'types' => [$this->types['PP']->id, $this->types['MAG']->id],
+            'limites' => [$this->types['PP']->id => 1, $this->types['MAG']->id => 1]])->assertSessionHasNoErrors();
 
         // Le VALIDATEUR voit les types choisis (version figée et fiche).
         $c = CampagneBoutiques::query()->where('nom', 'Pôle boucherie 2027')->sole();

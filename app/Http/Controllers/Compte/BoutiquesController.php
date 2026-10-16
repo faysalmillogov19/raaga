@@ -12,6 +12,7 @@ use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
 use App\Models\ReservationBoutique;
 use App\Models\Site;
+use App\Models\User;
 use App\Services\Boutiques\AvancesBoutiques;
 use App\Services\Boutiques\ReservationsBoutiques;
 use Illuminate\Http\RedirectResponse;
@@ -56,10 +57,33 @@ class BoutiquesController extends Controller
             'ouverte' => $campagne?->accepteReservations() ?? false,
             'sites' => $sites, 'site' => $site, 'niveaux' => $niveaux, 'niveau' => $niveau, 'blocs' => $blocs, 'bloc' => $bloc,
             'types' => $types, 'type' => $type,
+            // Limites par type : ce qui reste au citoyen connecté (null pour un visiteur : les limites seules).
+            'limites' => $campagne ? self::limites($campagne, $user) : null,
             'plan' => $campagne && $site && $niveau !== null && $bloc !== null ? ReservationsBoutiques::plan($campagne, $site->id, $niveau, $bloc, $type?->id) : collect(),
             'mesReservations' => $campagne && $user ? ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)->where('user_id', $user->id)
                 ->whereIn('statut', StatutReservationBoutique::actifs())->with('boutique')->get() : collect(),
         ]);
+    }
+
+    /**
+     * Limites par type de la campagne, et ce qui reste au citoyen connecté : « Vous pouvez encore réserver : 1 PV, 1 PP ».
+     *
+     * @return array{resume: string, restants: array<int, int>|null}
+     */
+    private static function limites(CampagneBoutiques $campagne, ?User $user): array
+    {
+        $types = $campagne->typesConcernes();
+        $restants = $user?->hasRole(Role::Citoyen) ? ReservationsBoutiques::restants($campagne, $user) : null;
+        $liste = fn (callable $n) => $types->map(fn ($t) => $n($t).' '.($t->code ?? $t->libelle))->implode(', ');
+
+        return [
+            'restants' => $restants,
+            'resume' => $restants === null
+                ? __('public.boutiques.limites.par_personne', ['liste' => $liste(fn ($t) => $campagne->limitePour($t->id))])
+                : (array_sum($restants) === 0 ? __('public.boutiques.limites.aucun_restant')
+                    : __('public.boutiques.limites.restants', ['liste' => $types->filter(fn ($t) => ($restants[$t->id] ?? 0) > 0)
+                        ->map(fn ($t) => $restants[$t->id].' '.($t->code ?? $t->libelle))->implode(', ')])),
+        ];
     }
 
     public function reglement(): View
@@ -82,6 +106,7 @@ class BoutiquesController extends Controller
             'boutique' => $boutique,
             'tarif' => ReservationsBoutiques::tarifer($boutique),
             'detail' => ReservationsBoutiques::detail($boutique),
+            'limites' => self::limites($campagne, $request->user()),
             'ouverte' => $campagne->accepteReservations(),
             'engagements' => ReservationsBoutiques::ENGAGEMENTS,
             'pieces' => ReservationsBoutiques::PIECES,

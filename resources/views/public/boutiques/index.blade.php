@@ -23,7 +23,8 @@
             <section aria-labelledby="campagne-titre">
                 <h2 id="campagne-titre">{{ $campagne->nom }}</h2>
                 <p class="mt-1 font-semibold text-vert-fonce">{{ __('public.boutiques.periode', ['debut' => $campagne->date_ouverture->format('d/m/Y à H\hi'), 'fin' => $campagne->date_cloture->format('d/m/Y à H\hi')]) }}</p>
-                <p class="mt-2">{{ $b['premier_arrive'] }} {{ __('public.boutiques.plafond', ['n' => $campagne->max_boutiques_par_personne]) }}</p>
+                <p class="mt-2">{{ $b['premier_arrive'] }}</p>
+                <p class="mt-2 font-semibold text-encre" data-limites>{{ $limites['resume'] }}</p>
                 @if ($campagne->description)
                     <p class="mt-3 max-w-3xl whitespace-pre-line leading-relaxed">{{ $campagne->description }}</p>
                 @endif
@@ -108,8 +109,11 @@
                         @foreach ($plan as $boutique)
                             @php
                                 $statut = $boutique->statut->surPlan();
+                                // Limite atteinte pour ce type : la boutique reste visible mais n'est plus réservable pour ce citoyen.
+                                $limiteAtteinte = $limites['restants'] !== null && ($limites['restants'][$boutique->type_boutique_id] ?? 0) === 0;
                                 $detail = [...\App\Services\Boutiques\ReservationsBoutiques::detail($boutique), 'statut' => $p['statuts'][$statut],
-                                    'lien' => $statut === 'disponible' && $ouverte ? route('boutiques.boutique', $boutique->code) : null];
+                                    'limite' => $limiteAtteinte && $statut === 'disponible' ? $b['limites']['atteinte'] : null,
+                                    'lien' => $statut === 'disponible' && $ouverte && ! $limiteAtteinte ? route('boutiques.boutique', $boutique->code) : null];
                                 $survol = $boutique->code.' · '.$boutique->type?->libelle.($boutique->surface ? ' · '.format_nombre((float) $boutique->surface, 1).' m²' : '');
                             @endphp
                             <li>
@@ -122,7 +126,7 @@
                                     <button type="button" class="plan-case plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                             aria-label="{{ __('public.boutiques.plan.boutique', ['code' => $boutique->code, 'statut' => $p['statuts'][$statut]]) }}"
                                             aria-controls="plan-detail" @mouseenter="d = @js($detail)" @click="d = @js($detail)">
-                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut])
+                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut, 'limite' => $detail['limite']])
                                     </button>
                                 @endif
                             </li>
@@ -149,6 +153,7 @@
                                     <dt>{{ $p['detail']['avance'] }}</dt><dd x-text="d.montants?.avance"></dd>
                                     <dt class="font-semibold text-encre">{{ $p['detail']['total'] }}</dt><dd class="font-bold text-vert-fonce" x-text="d.montants?.total"></dd>
                                 </dl>
+                                <p class="plan-limite mt-3" x-show="d.limite" x-text="d.limite" role="status"></p>
                                 <a x-show="d.lien" :href="d.lien" class="btn-primaire mt-3">{{ $p['detail']['reserver'] }}</a>
                             </div>
                         </template>
