@@ -14,6 +14,7 @@
                     <x-admin.champ nom="code" :libelle="$t['champs']['code']" maxlength="5" required autocomplete="off" :aide="$t['code_aide']" />
                     <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" maxlength="80" required />
                     <x-admin.champ nom="description" :libelle="$t['champs']['description']" maxlength="300" class="adm-plein" />
+                    <x-admin.champ nom="description_citoyen" :libelle="$t['champs']['description_citoyen']" type="zone" maxlength="300" class="adm-plein" :aide="$t['aides']['description_citoyen']" />
                     <x-admin.champ nom="ordre" :libelle="$t['champs']['ordre']" type="number" min="0" max="9999" />
                     <x-admin.champ nom="attribuable" :libelle="$t['champs']['attribuable']" type="liste" :options="['1' => $t['oui'], '0' => $t['non']]" valeur="1" required />
                 </div>

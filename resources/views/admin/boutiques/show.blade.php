@@ -80,6 +80,7 @@
             <h2 id="sec-paiement" class="!text-[1.05rem]">{{ __('admin.boutiques.sections.paiement') }}</h2>
             <dl class="bo-definitions mt-3">
                 <dt>{{ ucfirst($libelles['sites']) }}</dt><dd>{{ $snapshot['sites'] ?: '' }}</dd>
+                <dt>{{ ucfirst($libelles['types']) }}</dt><dd data-types-campagne>{{ $snapshot['types'] ?: '' }}</dd>
                 <dt>{{ ucfirst($libelles['max_boutiques_par_personne']) }}</dt><dd>{{ $campagne->max_boutiques_par_personne }}</dd>
                 <dt>{{ ucfirst($libelles['canaux_actifs']) }}</dt><dd>{{ AffichageParametres::valeur('canaux_actifs', $snapshot['canaux_actifs']) }}</dd>
                 <dt>{{ ucfirst($libelles['delai_paiement']) }}</dt><dd data-delai-caution>{{ $campagne->libelleDelaiPaiement() }}

@@ -1,5 +1,6 @@
 {{--
-    Récapitulatif d'une boutique (code, type, surface, loyer mensuel, caution, avance) et confirmation de la réservation :
+    Récapitulatif d'une boutique (code, site, niveau, bloc ou zone, type et sa description, surface, observations, loyer
+    mensuel, caution, avance, total à payer) et confirmation de la réservation :
     pièce d'identité (CNIB, passeport ou NIF ; RCCM facultatif), numéro, trois engagements. La boutique est alors
     pré-réservée au nom du citoyen pour le délai de paiement de la caution.
 --}}
@@ -22,8 +23,16 @@
             <h2 id="recap-titre" class="!text-lg">{{ $r['recapitulatif'] }}</h2>
             <dl class="mt-3 grid gap-x-6 gap-y-2 text-[0.95rem] tab:grid-cols-2">
                 <div class="flex justify-between gap-3"><dt>{{ $r['boutique'] }}</dt><dd class="font-bold tracking-wide text-encre">{{ $boutique->code }}</dd></div>
-                <div class="flex justify-between gap-3"><dt>{{ $r['type'] }}</dt><dd class="text-right font-semibold">{{ $boutique->type?->libelle }}</dd></div>
-                <div class="flex justify-between gap-3"><dt>{{ $r['surface'] }}</dt><dd class="font-semibold">{{ $boutique->surface ? format_nombre((float) $boutique->surface, 2).' m²' : '' }}</dd></div>
+                <div class="flex justify-between gap-3"><dt>{{ $b['plan']['detail']['site'] }}</dt><dd class="text-right font-semibold">{{ $detail['site'] }}</dd></div>
+                <div class="flex justify-between gap-3"><dt>{{ $b['plan']['detail']['niveau'] }}</dt><dd class="text-right font-semibold">{{ $detail['niveau'] }}</dd></div>
+                <div class="flex justify-between gap-3"><dt>{{ $b['plan']['detail']['bloc'] }}</dt><dd class="font-semibold">{{ $detail['bloc'] }}</dd></div>
+                <div class="flex justify-between gap-3 tab:col-span-2" data-type-detail><dt>{{ $r['type'] }}</dt>
+                    <dd class="text-right"><span class="plan-sigle">{{ $detail['type_code'] }}</span> <span class="font-semibold">{{ $detail['type'] }}</span>
+                        @if ($detail['type_description'])<span class="texte-carte block">{{ $detail['type_description'] }}</span>@endif</dd></div>
+                <div class="flex justify-between gap-3"><dt>{{ $r['surface'] }}</dt><dd class="font-semibold">{{ $detail['surface'] }}</dd></div>
+                @if ($detail['observations'])
+                    <div class="flex justify-between gap-3 tab:col-span-2" data-observations><dt>{{ $b['plan']['detail']['observations'] }}</dt><dd class="text-right">{{ $detail['observations'] }}</dd></div>
+                @endif
                 @if ($tarif)
                     <div class="flex justify-between gap-3"><dt>{{ $r['loyer'] }}</dt><dd class="font-semibold">{{ format_fcfa($tarif['loyer_mensuel']) }}</dd></div>
                     <div class="flex justify-between gap-3 border-t border-ligne pt-2 tab:col-span-2"><dt class="font-semibold text-encre">{{ $r['caution'] }}</dt>
@@ -31,6 +40,8 @@
                     @if ($tarif['avance'] > 0)
                         <div class="flex justify-between gap-3 tab:col-span-2"><dt>{{ $r['avance'] }}</dt><dd class="font-semibold" data-avance>{{ format_fcfa($tarif['avance']) }}</dd></div>
                     @endif
+                    <div class="flex justify-between gap-3 border-t border-ligne pt-2 tab:col-span-2" data-total><dt class="font-semibold text-encre">{{ $b['plan']['detail']['total'] }}</dt>
+                        <dd class="font-bold">{{ $detail['montants']['total'] }}</dd></div>
                 @endif
             </dl>
             @if ($tarif)

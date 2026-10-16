@@ -17,9 +17,11 @@ use App\Models\GrilleTarifaire;
 use App\Models\GrilleTarifaireLigne;
 use App\Models\KycDocument;
 use App\Models\ReservationBoutique;
+use App\Models\TypeBoutique;
 use App\Models\User;
 use App\Services\Audit\Journal;
 use App\Services\Kyc\VerificationIdentite;
+use App\Support\MemoRequete;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -52,11 +54,22 @@ class ReservationsBoutiques
 
     public function __construct(private readonly Journal $journal) {}
 
-    /** Types de boutiques réservables : attribuables, actifs et validés au référentiel. */
+    /**
+     * Boutiques réservables d'une campagne : sur ses sites et de ses types (attribuables, actifs et validés au
+     * référentiel ; jamais la chambre froide mutualisée).
+     */
     private static function requeteReservables(CampagneBoutiques $campagne)
     {
-        return Boutique::query()->whereIn('site_id', (array) $campagne->sites)
-            ->whereHas('type', fn ($q) => $q->utilisables()->where('attribuable', true));
+        return Boutique::query()->whereIn('site_id', (array) $campagne->sites)->whereIn('type_boutique_id', (array) $campagne->types)
+            ->whereHas('type', fn ($q) => $q->proposables());
+    }
+
+    /** @return Collection<int, TypeBoutique> types de la campagne présents sur un site (filtre du plan) */
+    public static function typesDuSite(CampagneBoutiques $campagne, int $siteId): Collection
+    {
+        $ids = self::requeteReservables($campagne)->where('site_id', $siteId)->distinct()->pluck('type_boutique_id');
+
+        return TypeBoutique::query()->whereIn('id', $ids)->orderBy('ordre')->orderBy('libelle')->get();
     }
 
     /**
@@ -64,9 +77,9 @@ class ReservationsBoutiques
      *
      * @return Collection<string, list<string>>
      */
-    public static function niveauxEtBlocs(CampagneBoutiques $campagne, int $siteId): Collection
+    public static function niveauxEtBlocs(CampagneBoutiques $campagne, int $siteId, ?int $typeId = null): Collection
     {
-        return self::requeteReservables($campagne)->where('site_id', $siteId)->with('niveauRef')->get(['id', 'site_id', 'niveau', 'bloc'])
+        return self::requeteReservables($campagne)->where('site_id', $siteId)->when($typeId, fn ($q) => $q->where('type_boutique_id', $typeId))->with('niveauRef')->get(['id', 'site_id', 'niveau', 'bloc'])
             ->sortBy(fn (Boutique $b) => [$b->niveauRef?->rang ?? 99, $b->bloc])
             ->groupBy('niveau')->map(fn ($groupe) => $groupe->pluck('bloc')->unique()->values()->all());
     }
@@ -76,12 +89,41 @@ class ReservationsBoutiques
      *
      * @return Collection<int, Boutique>
      */
-    public static function plan(CampagneBoutiques $campagne, int $siteId, string $niveau, string $bloc): Collection
+    public static function plan(CampagneBoutiques $campagne, int $siteId, string $niveau, string $bloc, ?int $typeId = null): Collection
     {
         return self::requeteReservables($campagne)->where('site_id', $siteId)->where('niveau', $niveau)->where('bloc', $bloc)
-            ->with('type')->get(['id', 'code', 'site_id', 'niveau', 'bloc', 'numero', 'surface', 'type_boutique_id', 'statut'])
+            ->when($typeId, fn ($q) => $q->where('type_boutique_id', $typeId))
+            ->with(['type', 'site', 'niveauRef'])->get(['id', 'code', 'site_id', 'niveau', 'bloc', 'numero', 'surface', 'type_boutique_id', 'statut', 'observations'])
             // Ordre naturel des numéros (2 avant 10), quelle que soit leur écriture (2, 002).
             ->sortBy('numero', SORT_NATURAL)->values();
+    }
+
+    /**
+     * Détail d'un emplacement (plan, récapitulatif, fiche du back-office) : code, site, niveau, bloc ou zone, type
+     * (sigle, libellé complet, description pour le citoyen), surface, observations ; montants (loyer mensuel, caution,
+     * avance, total à payer) seulement si demandés (citoyen), jamais pour le GESTIONNAIRE.
+     *
+     * @return array<string, mixed>
+     */
+    public static function detail(Boutique $b, bool $montants = true): array
+    {
+        $tarif = $montants ? self::tarifer($b) : null;
+
+        return [
+            'code' => $b->code,
+            'site' => $b->site ? ($b->site->code ? $b->site->code.' · ' : '').$b->site->nom : null,
+            'niveau' => $b->niveau ? $b->niveau.' · '.$b->libelleNiveau() : null,
+            'bloc' => $b->bloc,
+            'type_code' => $b->type?->code,
+            'type' => $b->type?->libelle,
+            'type_description' => $b->type?->description_citoyen,
+            'surface' => $b->surface ? format_nombre((float) $b->surface, 2).' m²' : null,
+            'observations' => $b->observations,
+            'montants' => $tarif ? [
+                'loyer' => format_fcfa($tarif['loyer_mensuel']), 'caution' => format_fcfa($tarif['caution']),
+                'avance' => format_fcfa($tarif['avance']), 'total' => format_fcfa($tarif['caution'] + $tarif['avance']),
+            ] : null,
+        ];
     }
 
     /**
@@ -94,7 +136,8 @@ class ReservationsBoutiques
         if ($boutique->niveau === null || $boutique->surface === null) {
             return null;
         }
-        $grille = GrilleTarifaire::query()->where('site_id', $boutique->site_id)->first()?->confirmee();
+        // Grille confirmée lue une fois par site et par requête (plan d'un bloc entier).
+        $grille = MemoRequete::retenir('grille_confirmee.'.$boutique->site_id, fn () => GrilleTarifaire::query()->where('site_id', $boutique->site_id)->first()?->confirmee());
         $ligne = $grille['lignes'][GrilleTarifaire::cle($boutique->niveau, $boutique->type_boutique_id)] ?? null;
         if ($ligne === null) {
             return null;
@@ -139,7 +182,8 @@ class ReservationsBoutiques
                     $erreur('fermee');
                 }
                 $boutique = Boutique::query()->lockForUpdate()->with('type')->findOrFail($boutique->id);
-                if (! in_array($boutique->site_id, (array) $campagne->sites) || ! $boutique->type?->attribuable) {
+                if (! in_array($boutique->site_id, (array) $campagne->sites) || ! in_array($boutique->type_boutique_id, (array) $campagne->types)
+                    || ! $boutique->type?->attribuable || $boutique->type->code === TypeBoutique::CODE_CHAMBRE_FROIDE) {
                     $erreur('hors_campagne');
                 }
                 if (! $boutique->statut->reservable()) {

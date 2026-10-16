@@ -1022,6 +1022,15 @@ return [
             'boutique' => ':code : :statut',
             'choisir' => 'Choisir la boutique :code',
             'surface' => ':surface m²',
+            'type' => 'Type',
+            'tous_types' => 'Tous les types',
+            'legende_types' => 'Types d’emplacement',
+            'detail_aide' => 'Survolez ou touchez un emplacement pour voir son détail ; un emplacement disponible mène à sa réservation.',
+            'detail' => [
+                'site' => 'Site', 'niveau' => 'Niveau', 'bloc' => 'Bloc ou zone', 'surface' => 'Surface', 'non_renseigne' => 'Non renseignée',
+                'observations' => 'Observations', 'loyer' => 'Loyer mensuel', 'caution' => 'Caution', 'avance' => 'Avance',
+                'total' => 'Total à payer (caution et avance)', 'reserver' => 'Voir et réserver cet emplacement',
+            ],
         ],
         'mes_reservations' => 'Mes réservations en cours',
         'reservation' => [

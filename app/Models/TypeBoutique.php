@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  * imports et des nouvelles campagnes ; les boutiques existantes le gardent. Chaque changement crée une version.
  */
 #[Table(name: 'types_boutiques')]
-#[Fillable(['code', 'libelle', 'description', 'attribuable', 'actif', 'par_defaut', 'statut', 'ordre'])]
+#[Fillable(['code', 'libelle', 'description', 'description_citoyen', 'attribuable', 'actif', 'par_defaut', 'statut', 'ordre'])]
 class TypeBoutique extends Model
 {
     use ModificationDemandee;
@@ -28,8 +28,14 @@ class TypeBoutique extends Model
     /** Code du type : 2 à 5 lettres majuscules (BOUT, MAG, ETAL, CF). */
     public const FORMAT_CODE = '/^[A-Z]{2,5}$/';
 
-    /** Libellé, description et ordre : modifiables à tout moment, sans validation. */
+    /** Libellé, description et ordre : modifiables à tout moment, sans validation (sauf type « par défaut »). */
     public const CHAMPS_LIBRES = ['libelle', 'description', 'ordre'];
+
+    /** Description montrée au citoyen (plan, récapitulatif) : toute modification passe par le VALIDATEUR. */
+    public const CHAMPS_VALIDES = ['description_citoyen'];
+
+    /** Chambre froide mutualisée : jamais proposée dans une campagne. */
+    public const CODE_CHAMBRE_FROIDE = 'CF';
 
     protected function casts(): array
     {
@@ -55,6 +61,14 @@ class TypeBoutique extends Model
                 throw new RegleGestionException(__('admin.types.regles.code_fige'));
             }
         });
+    }
+
+    /** Types proposables dans une campagne : validés, actifs, attribuables, jamais la chambre froide mutualisée. */
+    public function scopeProposables(Builder $requete): Builder
+    {
+        // Un type sans code reste proposable (code NULL : jamais égal à CF).
+        return $requete->utilisables()->where('attribuable', true)
+            ->where(fn (Builder $q) => $q->whereNull('code')->orWhere('code', '!=', self::CODE_CHAMBRE_FROIDE));
     }
 
     /** Types proposés dans les saisies, les imports et les nouvelles campagnes : validés et actifs. */
@@ -94,7 +108,7 @@ class TypeBoutique extends Model
         $version = TypeBoutiqueVersion::create([
             'type_boutique_id' => $this->id, 'numero' => $numero, 'auteur_id' => $auteur?->id, 'motif' => $motif, 'created_at' => now(),
             'parametres' => [
-                'code' => $this->code, 'libelle' => $this->libelle, 'description' => $this->description,
+                'code' => $this->code, 'libelle' => $this->libelle, 'description' => $this->description, 'description_citoyen' => $this->description_citoyen,
                 'attribuable' => $this->attribuable, 'actif' => $this->actif, 'ordre' => $this->ordre, 'statut' => $this->statut?->value,
             ],
         ]);

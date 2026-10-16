@@ -101,6 +101,7 @@ class TypesBoutiqueController extends Controller
                 fn (string $a, mixed $v, Closure $echec) => HistoriqueCode::query()->where('objet_type', HistoriqueCode::TYPE)->where('ancien_code', $v)->exists()
                     ? $echec(__('admin.types.regles.code_reutilise')) : null],
             ...$this->reglesLibres(),
+            'description_citoyen' => ['nullable', 'string', 'max:300'],
             'attribuable' => ['required', 'boolean'],
         ], [], __('admin.types.attributs'));
 
@@ -118,15 +119,21 @@ class TypesBoutiqueController extends Controller
         return redirect()->route('admin.sites.types')->with('succes', __($brouillon ? 'admin.types.messages.cree_brouillon' : 'admin.types.messages.cree'));
     }
 
-    /** Libellé, description et ordre : modifiables à tout moment. L'unité du loyer relève de la grille tarifaire. */
+    /**
+     * Libellé, description et ordre : modifiables à tout moment (type « par défaut » : soumis au VALIDATEUR). La
+     * description pour le citoyen passe toujours par le VALIDATEUR. L'unité du loyer relève de la grille tarifaire.
+     */
     public function update(Request $request, TypeBoutique $type): RedirectResponse
     {
         Gate::authorize(Droit::SitesGerer->value);
         $donnees = $request->validate([
             ...$this->reglesLibres($type),
+            'description_citoyen' => ['nullable', 'string', 'max:300'],
         ], [], __('admin.types.attributs'));
+        $donnees['description_citoyen'] = $request->has('description_citoyen') ? ($donnees['description_citoyen'] ?? null) : $type->description_citoyen;
+        $citoyenChange = $donnees['description_citoyen'] !== $type->description_citoyen;
 
-        return $this->puisSoumettre($request, $this->executer($type, function () use ($request, $type, $donnees) {
+        return $this->puisSoumettre($request, $this->executer($type, function () use ($request, $type, $donnees, $citoyenChange) {
             $avant = $type->only(['libelle', 'description', 'ordre']);
             if ($type->par_defaut) {
                 $type->fill($donnees);
@@ -136,10 +143,17 @@ class TypesBoutiqueController extends Controller
 
                 return;
             }
-            $type->fill($donnees)->save();
-            $type->creerVersion($request->user(), __('admin.types.motifs.modification'));
-            $this->journal->ecrire($request->user(), 'type_boutique.modifie', 'TypeBoutique', $type->id, $avant, $type->only(array_keys($avant)));
-        }, $type->par_defaut ? 'admin.types.messages.demande' : 'admin.types.messages.modifie'), 'type', $type, route('admin.sites.types.show', $type), 'modifier-type');
+            $type->fill(collect($donnees)->only(TypeBoutique::CHAMPS_LIBRES)->all());
+            if ($type->isDirty()) {
+                $type->save();
+                $type->creerVersion($request->user(), __('admin.types.motifs.modification'));
+                $this->journal->ecrire($request->user(), 'type_boutique.modifie', 'TypeBoutique', $type->id, $avant, $type->only(array_keys($avant)));
+            }
+            // Description pour le citoyen : appliquée seulement à la validation.
+            if ($citoyenChange) {
+                $this->demander($request, $type, ['description_citoyen' => $donnees['description_citoyen']]);
+            }
+        }, $type->par_defaut || $citoyenChange ? 'admin.types.messages.demande' : 'admin.types.messages.modifie'), 'type', $type, route('admin.sites.types.show', $type), 'modifier-type');
     }
 
     /** Demande de changement d'« réservable » : effective après validation. */

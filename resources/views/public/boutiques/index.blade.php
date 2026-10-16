@@ -1,13 +1,14 @@
 {{--
     Boutiques du marché, au premier arrivé : campagne, choix du site, du niveau et du bloc, puis plan schématique généré
-    depuis la base (vrais codes, statut en couleur et en toutes lettres, légende). Aucune donnée personnelle : seul le
-    statut de chaque boutique est public. Une boutique disponible mène à son récapitulatif et à la réservation.
+    depuis la base (vrais codes, statut en couleur et en toutes lettres, sigle du type, légende), filtre par type. Détail
+    de chaque emplacement au survol ou au clic (type, surface, observations, montants). Aucune donnée personnelle : seul
+    le statut de chaque boutique est public. Une boutique disponible mène à son récapitulatif et à la réservation.
 --}}
 @php
     $b = __('public.boutiques');
     $p = $b['plan'];
     $titre = $b['titre'];
-    $lien = fn (array $choix) => route('boutiques', array_filter(['site' => $site?->id, 'niveau' => $niveau, 'bloc' => $bloc, ...$choix], fn ($v) => $v !== null));
+    $lien = fn (array $choix) => route('boutiques', array_filter(['site' => $site?->id, 'type' => $type?->id, 'niveau' => $niveau, 'bloc' => $bloc, ...$choix], fn ($v) => $v !== null));
 @endphp
 
 <x-public.layout :titre="$titre">
@@ -58,54 +59,100 @@
                 </ol>
             </section>
 
-            <section class="mt-10" aria-labelledby="plan-titre" data-plan>
+            <section class="mt-10" aria-labelledby="plan-titre" data-plan x-data="{ d: null }">
                 <h2 id="plan-titre" class="!text-xl">{{ $p['titre'] }}</h2>
 
+                {{-- Choix : site, type (avec « Tous les types »), niveau, bloc. --}}
                 @foreach ([['site', $p['site'], $sites->mapWithKeys(fn ($s) => [$s->id => ($s->code ? $s->code.' · ' : '').$s->nom]), $site?->id],
+                           ['type', $p['type'], $types->count() > 1 ? collect(['' => $p['tous_types']])->union($types->mapWithKeys(fn ($t) => [$t->id => $t->code.' · '.$t->libelle])) : collect(), $type?->id ?? ''],
                            ['niveau', $p['niveau'], $niveaux->keys()->mapWithKeys(fn ($n) => [$n => $n]), $niveau],
                            ['bloc', $p['bloc'], collect($blocs)->mapWithKeys(fn ($bl) => [$bl => $bl]), $bloc]] as [$cle, $libelle, $options, $actuel])
                     @if ($options->isNotEmpty())
-                        <nav class="plan-choix mt-4" aria-label="{{ $libelle }}">
+                        <nav class="plan-choix mt-4" aria-label="{{ $libelle }}" data-choix="{{ $cle }}">
                             <span class="plan-choix-libelle">{{ $libelle }}</span>
                             @foreach ($options as $valeur => $texte)
-                                <a href="{{ $lien($cle === 'site' ? ['site' => $valeur, 'niveau' => null, 'bloc' => null] : ($cle === 'niveau' ? ['niveau' => $valeur, 'bloc' => null] : ['bloc' => $valeur])) }}"
+                                @php
+                                    $choix = match ($cle) {
+                                        'site' => ['site' => $valeur, 'type' => null, 'niveau' => null, 'bloc' => null],
+                                        'type' => ['type' => $valeur === '' ? null : $valeur, 'niveau' => null, 'bloc' => null],
+                                        'niveau' => ['niveau' => $valeur, 'bloc' => null],
+                                        default => ['bloc' => $valeur],
+                                    };
+                                @endphp
+                                <a href="{{ $lien($choix) }}"
                                    @class(['plan-choix-option', 'est-actif' => (string) $valeur === (string) $actuel]) @if ((string) $valeur === (string) $actuel) aria-current="page" @endif>{{ $texte }}</a>
                             @endforeach
                         </nav>
                     @endif
                 @endforeach
 
+                {{-- Légende : couleur du statut, et sigle de chaque type. --}}
                 <ul class="plan-legende mt-5" aria-label="{{ $p['legende'] }}">
                     @foreach (['disponible', 'pre_reservee', 'reservee', 'attribuee'] as $statut)
                         <li><span class="plan-pastille plan-{{ $statut }}" aria-hidden="true"></span>{{ $p['statuts'][$statut] }}</li>
                     @endforeach
                 </ul>
+                @if ($types->isNotEmpty())
+                    <ul class="plan-legende plan-legende-types mt-2" aria-label="{{ $p['legende_types'] }}" data-legende-types>
+                        @foreach ($types as $t)
+                            <li><span class="plan-sigle">{{ $t->code }}</span>{{ $t->libelle }}</li>
+                        @endforeach
+                    </ul>
+                @endif
 
                 @if ($plan->isEmpty())
                     <p class="texte-carte mt-4">{{ $p['aucune'] }}</p>
                 @else
-                    <ul class="plan-boutiques mt-4" data-bloc="{{ $niveau }}-{{ $bloc }}">
+                    <p class="texte-carte mt-4">{{ $p['detail_aide'] }}</p>
+                    <ul class="plan-boutiques mt-3" data-bloc="{{ $niveau }}-{{ $bloc }}">
                         @foreach ($plan as $boutique)
-                            @php($statut = $boutique->statut->surPlan())
+                            @php
+                                $statut = $boutique->statut->surPlan();
+                                $detail = [...\App\Services\Boutiques\ReservationsBoutiques::detail($boutique), 'statut' => $p['statuts'][$statut],
+                                    'lien' => $statut === 'disponible' && $ouverte ? route('boutiques.boutique', $boutique->code) : null];
+                                $survol = $boutique->code.' · '.$boutique->type?->libelle.($boutique->surface ? ' · '.format_nombre((float) $boutique->surface, 1).' m²' : '');
+                            @endphp
                             <li>
-                                @if ($statut === 'disponible' && $ouverte)
-                                    <a href="{{ route('boutiques.boutique', $boutique->code) }}" class="plan-case plan-{{ $statut }}" data-statut="{{ $statut }}"
-                                       aria-label="{{ __('public.boutiques.plan.choisir', ['code' => $boutique->code]) }}">
-                                        <span class="plan-code">{{ $boutique->code }}</span>
-                                        <span class="plan-etat">{{ $p['statuts'][$statut] }}</span>
-                                        @if ($boutique->surface)<span class="plan-surface">{{ __('public.boutiques.plan.surface', ['surface' => format_nombre((float) $boutique->surface, 1)]) }}</span>@endif
+                                @if ($detail['lien'])
+                                    <a href="{{ $detail['lien'] }}" class="plan-case plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
+                                       aria-label="{{ __('public.boutiques.plan.choisir', ['code' => $boutique->code]) }}" @mouseenter="d = @js($detail)" @focus="d = @js($detail)">
+                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut])
                                     </a>
                                 @else
-                                    <span class="plan-case plan-{{ $statut }}" data-statut="{{ $statut }}"
-                                          aria-label="{{ __('public.boutiques.plan.boutique', ['code' => $boutique->code, 'statut' => $p['statuts'][$statut]]) }}">
-                                        <span class="plan-code">{{ $boutique->code }}</span>
-                                        <span class="plan-etat">{{ $p['statuts'][$statut] }}</span>
-                                        @if ($boutique->surface)<span class="plan-surface">{{ __('public.boutiques.plan.surface', ['surface' => format_nombre((float) $boutique->surface, 1)]) }}</span>@endif
-                                    </span>
+                                    <button type="button" class="plan-case plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
+                                            aria-label="{{ __('public.boutiques.plan.boutique', ['code' => $boutique->code, 'statut' => $p['statuts'][$statut]]) }}"
+                                            aria-controls="plan-detail" @mouseenter="d = @js($detail)" @click="d = @js($detail)">
+                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut])
+                                    </button>
                                 @endif
                             </li>
                         @endforeach
                     </ul>
+
+                    {{-- Détail de l'emplacement survolé ou choisi (sans JavaScript : le récapitulatif de chaque boutique disponible). --}}
+                    <section id="plan-detail" class="plan-detail carte mt-4 p-4" x-show="d" x-cloak aria-live="polite" data-plan-detail>
+                        <template x-if="d">
+                            <div>
+                                <p class="flex flex-wrap items-center gap-2"><strong class="plan-code" x-text="d.code"></strong><span class="plan-sigle" x-text="d.type_code"></span><span class="texte-carte" x-text="d.statut"></span></p>
+                                <p class="mt-1 font-semibold text-encre" x-text="d.type"></p>
+                                <p class="texte-carte" x-show="d.type_description" x-text="d.type_description"></p>
+                                <dl class="plan-detail-grille mt-3">
+                                    <dt>{{ $p['detail']['site'] }}</dt><dd x-text="d.site"></dd>
+                                    <dt>{{ $p['detail']['niveau'] }}</dt><dd x-text="d.niveau"></dd>
+                                    <dt>{{ $p['detail']['bloc'] }}</dt><dd x-text="d.bloc"></dd>
+                                    <dt>{{ $p['detail']['surface'] }}</dt><dd x-text="d.surface || @js($p['detail']['non_renseigne'])"></dd>
+                                </dl>
+                                <p class="mt-2 texte-carte" x-show="d.observations"><span class="font-semibold">{{ $p['detail']['observations'] }} :</span> <span x-text="d.observations"></span></p>
+                                <dl class="plan-detail-grille mt-3" x-show="d.montants">
+                                    <dt>{{ $p['detail']['loyer'] }}</dt><dd x-text="d.montants?.loyer"></dd>
+                                    <dt>{{ $p['detail']['caution'] }}</dt><dd x-text="d.montants?.caution"></dd>
+                                    <dt>{{ $p['detail']['avance'] }}</dt><dd x-text="d.montants?.avance"></dd>
+                                    <dt class="font-semibold text-encre">{{ $p['detail']['total'] }}</dt><dd class="font-bold text-vert-fonce" x-text="d.montants?.total"></dd>
+                                </dl>
+                                <a x-show="d.lien" :href="d.lien" class="btn-primaire mt-3">{{ $p['detail']['reserver'] }}</a>
+                            </div>
+                        </template>
+                    </section>
                 @endif
             </section>
         @endif

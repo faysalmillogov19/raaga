@@ -24,13 +24,13 @@ use Illuminate\Support\Collection;
  */
 #[Table(name: 'campagnes_boutiques')]
 #[Fillable([
-    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes', 'canaux_actifs', 'max_boutiques_par_personne', 'sites',
+    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes', 'canaux_actifs', 'max_boutiques_par_personne', 'sites', 'types',
     'version', 'cree_par', 'soumis_par', 'soumise_le', 'valide_par', 'validee_le', 'motif_rejet',
     'ouverte_le', 'cloturee_le', 'attribuee_le',
 ])]
 class CampagneBoutiques extends Model implements Parametrable
 {
-    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'max_boutiques_par_personne', 'canaux_actifs'];
+    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'types', 'max_boutiques_par_personne', 'canaux_actifs'];
 
     /** Valeurs par défaut d'une nouvelle campagne. */
     public const MAX_PAR_PERSONNE = 1;
@@ -47,6 +47,7 @@ class CampagneBoutiques extends Model implements Parametrable
             'max_boutiques_par_personne' => 'integer',
             'canaux_actifs' => 'array',
             'sites' => 'array',
+            'types' => 'array',
             'version' => 'integer',
             'soumise_le' => 'datetime',
             'validee_le' => 'datetime',
@@ -183,11 +184,19 @@ class CampagneBoutiques extends Model implements Parametrable
             $snapshot[$champ] = $valeur instanceof \DateTimeInterface ? $valeur->format(DATE_ATOM) : $valeur;
         }
         $snapshot['sites'] = $this->sitesConcernes()->map(fn (Site $s) => ($s->code ? $s->code.' · ' : '').$s->nom)->implode(', ');
+        // Types proposés, lisibles dans le différentiel du VALIDATEUR (« BOUT · Boutique, PP · Pôle : préparation… »).
+        $snapshot['types'] = $this->typesConcernes()->map(fn (TypeBoutique $t) => ($t->code ? $t->code.' · ' : '').$t->libelle)->implode(', ');
 
         return $snapshot;
     }
 
     /** @return \Illuminate\Database\Eloquent\Collection<int, Site> sites concernés par la campagne */
+    /** @return \Illuminate\Database\Eloquent\Collection<int, TypeBoutique> types proposés par la campagne */
+    public function typesConcernes(): \Illuminate\Database\Eloquent\Collection
+    {
+        return TypeBoutique::query()->whereIn('id', (array) $this->types)->orderBy('ordre')->orderBy('libelle')->get();
+    }
+
     public function sitesConcernes(): \Illuminate\Database\Eloquent\Collection
     {
         return Site::query()->whereIn('id', (array) $this->sites)->orderBy('nom')->get();
@@ -208,13 +217,14 @@ class CampagneBoutiques extends Model implements Parametrable
     }
 
     /**
-     * Boutiques par statut sur les sites de la campagne (tableau de bord) : disponibles, pré-réservées, réservées, attribuées.
+     * Boutiques par statut sur les sites et les types de la campagne (tableau de bord) : disponibles, pré-réservées, réservées, attribuées.
      *
      * @return array{disponible: int, pre_reservee: int, reservee: int, attribuee: int}
      */
     public function compteurs(): array
     {
-        $parStatut = Boutique::query()->whereIn('site_id', (array) $this->sites)->whereHas('type', fn ($q) => $q->where('attribuable', true))
+        $parStatut = Boutique::query()->whereIn('site_id', (array) $this->sites)->whereIn('type_boutique_id', (array) $this->types)
+            ->whereHas('type', fn ($q) => $q->where('attribuable', true))
             ->selectRaw('statut, count(*) as n')->groupBy('statut')->pluck('n', 'statut');
         $n = fn (array $statuts) => (int) collect($statuts)->sum(fn ($s) => $parStatut[$s] ?? 0);
 

@@ -19,6 +19,8 @@
                 @if ($type->attribuable_demande !== null)<br><x-admin.badge-statut :statut="$type->attribuable_demande ? $t['demande_oui'] : $t['demande_non']" variante="avertissement" />@endif</dd></div>
             <div><dt class="texte-carte">{{ $t['colonnes']['utilise_par'] }}</dt><dd class="font-semibold">{{ trans_choice('admin.types.boutiques', $type->boutiques_count, ['n' => format_nombre($type->boutiques_count)]) }}</dd></div>
             <div><dt class="texte-carte">{{ $t['version'] }}</dt><dd class="font-semibold">{{ $type->version ?: '—' }}</dd></div>
+            <div class="sm:col-span-2" data-description-citoyen><dt class="texte-carte">{{ $t['champs']['description_citoyen'] }}</dt>
+                <dd>{{ $type->description_citoyen ?: $t['aucune_description'] }}</dd></div>
         </dl>
         @if ($type->motif_rejet)
             <x-admin.message type="erreur" class="mt-4 !mb-0">{{ __('admin.parametrage.motif_rejet', ['motif' => $type->motif_rejet]) }}</x-admin.message>
@@ -46,6 +48,8 @@
                         <x-admin.champ nom="code_affiche" :libelle="$t['champs']['code']" type="verrouille" :valeur="$type->code ?? '—'" :aide="$t['code_fige']" />
                         <x-admin.champ nom="libelle" :libelle="$t['champs']['libelle']" :valeur="$type->libelle" maxlength="80" required />
                         <x-admin.champ nom="description" :libelle="$t['champs']['description']" :valeur="$type->description" maxlength="300" class="adm-plein" />
+                        <x-admin.champ nom="description_citoyen" :libelle="$t['champs']['description_citoyen']" :valeur="$type->description_citoyen" type="zone" maxlength="300"
+                                       class="adm-plein" :aide="$t['aides']['description_citoyen']" />
                         <x-admin.champ nom="ordre" :libelle="$t['champs']['ordre']" :valeur="$type->ordre" type="number" min="0" max="9999" required />
                     </div>
                 </x-admin.fenetre>

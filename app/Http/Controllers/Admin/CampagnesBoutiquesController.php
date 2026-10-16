@@ -14,6 +14,7 @@ use App\Models\MoyenPaiement;
 use App\Models\ParametrageDecision;
 use App\Models\ReservationBoutique;
 use App\Models\Site;
+use App\Models\TypeBoutique;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
@@ -84,8 +85,10 @@ class CampagnesBoutiquesController extends Controller
                 'max_boutiques_par_personne' => CampagneBoutiques::MAX_PAR_PERSONNE,
                 'canaux_actifs' => MoyenPaiement::proposables()->pluck('code')->all(),
                 'sites' => [],
+                'types' => [],
             ]),
             'sitesDisponibles' => $this->sitesDisponibles(),
+            'typesDisponibles' => TypeBoutique::query()->proposables()->orderBy('ordre')->orderBy('libelle')->get(),
             'mode' => 'creation',
         ]);
     }
@@ -160,7 +163,8 @@ class CampagnesBoutiquesController extends Controller
             return redirect()->route('admin.boutiques.show', $campagne)->with('erreur', __('admin.parametrage.regles.non_modifiable'));
         }
 
-        return view('admin.boutiques.formulaire', ['campagne' => $campagne, 'sitesDisponibles' => $this->sitesDisponibles(), 'mode' => 'modification']);
+        return view('admin.boutiques.formulaire', ['campagne' => $campagne, 'sitesDisponibles' => $this->sitesDisponibles(),
+            'typesDisponibles' => TypeBoutique::query()->proposables()->orderBy('ordre')->orderBy('libelle')->get(), 'mode' => 'modification']);
     }
 
     public function update(CampagneBoutiquesRequest $request, CampagneBoutiques $campagne): RedirectResponse

@@ -129,6 +129,81 @@ a.plan-case.plan-disponible:focus-visible {
     outline-offset: 2px;
 }
 
+/* Case en bouton (emplacement non disponible) : même rendu qu'un lien, détail au clic. */
+button.plan-case {
+    width: 100%;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+button.plan-case:focus-visible {
+    outline: 3px solid var(--jaune);
+    outline-offset: 2px;
+}
+
+/* Ligne du haut d'une case : code, puis sigle du type. */
+.plan-ligne {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+/* Sigle du type (BOUT, PP, PV…), distinct de la couleur du statut. */
+.plan-sigle {
+    display: inline-block;
+    padding: 0 5px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--encre);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.plan-attribuee .plan-sigle {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.plan-legende-types li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Détail de l'emplacement survolé ou choisi : intitulé qui se replie et valeur à droite sur mobile, deux colonnes serrées au-delà. */
+.plan-detail-grille {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    font-size: 0.95rem;
+}
+
+.plan-detail-grille dt {
+    color: var(--gris);
+}
+
+.plan-detail-grille dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+}
+
+@media (min-width: 640px) {
+    .plan-detail-grille {
+        grid-template-columns: max-content minmax(0, 1fr);
+        gap: 4px 16px;
+    }
+
+    .plan-detail-grille dd {
+        text-align: left;
+    }
+}
+
 /* Compte à rebours du délai de paiement de la caution. */
 .compte-rebours {
     display: flex;

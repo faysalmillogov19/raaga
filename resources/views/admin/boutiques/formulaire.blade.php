@@ -44,6 +44,15 @@
                                :options="$sitesDisponibles->mapWithKeys(fn ($site) => [$site->id => ($site->code ? $site->code.' · ' : '').$site->nom])->all()"
                                :valeurs="array_map('strval', (array) ($campagne->sites ?? []))" />
             @endif
+
+            {{-- Types proposés : actifs, validés et attribuables ; la chambre froide mutualisée (CF) n'est jamais proposée. --}}
+            <h3 class="mt-6 !text-base" id="s-types">{{ __('admin.boutiques.sections.types') }}</h3>
+            <p class="texte-carte mt-1">{{ __('admin.boutiques.aides.types') }}</p>
+            @error('types') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+            @error('types.*') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+            <x-admin.cases nom="types" :libelle="ucfirst($c['types'])" class="mt-3" data-types-campagne
+                           :options="$typesDisponibles->mapWithKeys(fn ($t) => [$t->id => ($t->code ? $t->code.' · ' : '').$t->libelle])->all()"
+                           :valeurs="array_map('strval', (array) ($campagne->types ?? []))" />
         </section>
 
         <section class="bo-carte !mt-0" aria-labelledby="s-paiement">

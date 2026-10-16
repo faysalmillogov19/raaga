@@ -73,6 +73,7 @@ class CampagnesBoutiquesTest extends TestCase
             'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'],
             'max_boutiques_par_personne' => 2,
             'sites' => [$this->site->id],
+            'types' => [$this->petite->id, $this->grande->id],
             ...$surcharges,
         ];
     }

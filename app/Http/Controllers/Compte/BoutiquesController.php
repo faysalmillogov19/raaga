@@ -42,7 +42,10 @@ class BoutiquesController extends Controller
         $campagne = $this->campagne();
         $sites = $campagne?->sitesConcernes() ?? collect();
         $site = $sites->firstWhere('id', (int) $request->query('site')) ?? $sites->first();
-        $niveaux = $campagne && $site ? ReservationsBoutiques::niveauxEtBlocs($campagne, $site->id) : collect();
+        // Filtre par type : types de la campagne présents sur le site.
+        $types = $campagne && $site ? ReservationsBoutiques::typesDuSite($campagne, $site->id) : collect();
+        $type = $types->firstWhere('id', (int) $request->query('type'));
+        $niveaux = $campagne && $site ? ReservationsBoutiques::niveauxEtBlocs($campagne, $site->id, $type?->id) : collect();
         $niveau = $niveaux->has((string) $request->query('niveau')) ? (string) $request->query('niveau') : $niveaux->keys()->first();
         $blocs = $niveau !== null ? $niveaux[$niveau] : [];
         $bloc = in_array($request->query('bloc'), $blocs, true) ? (string) $request->query('bloc') : ($blocs[0] ?? null);
@@ -52,7 +55,8 @@ class BoutiquesController extends Controller
             'campagne' => $campagne,
             'ouverte' => $campagne?->accepteReservations() ?? false,
             'sites' => $sites, 'site' => $site, 'niveaux' => $niveaux, 'niveau' => $niveau, 'blocs' => $blocs, 'bloc' => $bloc,
-            'plan' => $campagne && $site && $niveau !== null && $bloc !== null ? ReservationsBoutiques::plan($campagne, $site->id, $niveau, $bloc) : collect(),
+            'types' => $types, 'type' => $type,
+            'plan' => $campagne && $site && $niveau !== null && $bloc !== null ? ReservationsBoutiques::plan($campagne, $site->id, $niveau, $bloc, $type?->id) : collect(),
             'mesReservations' => $campagne && $user ? ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)->where('user_id', $user->id)
                 ->whereIn('statut', StatutReservationBoutique::actifs())->with('boutique')->get() : collect(),
         ]);
@@ -70,13 +74,14 @@ class BoutiquesController extends Controller
     public function boutique(Request $request, string $code): View
     {
         $campagne = CampagneBoutiques::ouverte();
-        $boutique = Boutique::query()->where('code', $code)->with(['type', 'site'])->firstOrFail();
-        abort_unless($campagne && in_array($boutique->site_id, (array) $campagne->sites), 404);
+        $boutique = Boutique::query()->where('code', $code)->with(['type', 'site', 'niveauRef'])->firstOrFail();
+        abort_unless($campagne && in_array($boutique->site_id, (array) $campagne->sites) && in_array($boutique->type_boutique_id, (array) $campagne->types), 404);
 
         return view('public.boutiques.boutique', [
             'campagne' => $campagne,
             'boutique' => $boutique,
             'tarif' => ReservationsBoutiques::tarifer($boutique),
+            'detail' => ReservationsBoutiques::detail($boutique),
             'ouverte' => $campagne->accepteReservations(),
             'engagements' => ReservationsBoutiques::ENGAGEMENTS,
             'pieces' => ReservationsBoutiques::PIECES,

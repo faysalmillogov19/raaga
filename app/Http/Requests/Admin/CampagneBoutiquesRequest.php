@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\MoyenPaiement;
+use App\Models\TypeBoutique;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,6 +31,9 @@ class CampagneBoutiquesRequest extends FormRequest
             'max_boutiques_par_personne' => ['required', 'integer', 'min:1', 'max:1000'],
             'sites' => ['required', 'array', 'min:1'],
             'sites.*' => ['integer', Rule::exists('sites', 'id')->where('statut', 'CONFIRME')],
+            // Types proposés : au moins un, parmi les types actifs, validés et attribuables ; jamais la chambre froide (CF).
+            'types' => ['required', 'array', 'min:1'],
+            'types.*' => ['integer', Rule::in(TypeBoutique::query()->proposables()->pluck('id')->all())],
         ];
     }
 
@@ -38,6 +42,8 @@ class CampagneBoutiquesRequest extends FormRequest
         return [
             'sites.required' => __('admin.boutiques.erreurs.sites'),
             'sites.*.exists' => __('admin.boutiques.erreurs.sites'),
+            'types.required' => __('admin.boutiques.erreurs.types'),
+            'types.*.in' => __('admin.boutiques.erreurs.types'),
         ];
     }
 
@@ -51,6 +57,7 @@ class CampagneBoutiquesRequest extends FormRequest
     {
         return [...$this->safe()->only(['nom', 'description', 'date_ouverture', 'date_cloture', 'canaux_actifs', 'max_boutiques_par_personne']),
             'sites' => array_values(array_unique(array_map('intval', (array) $this->validated('sites')))),
+            'types' => array_values(array_unique(array_map('intval', (array) $this->validated('types')))),
         ];
     }
 }
