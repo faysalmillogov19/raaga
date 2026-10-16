@@ -36,6 +36,7 @@ class ComptesDemoSeeder extends Seeder
         ['Boukary ZONGO', 'validation2@raaga.test', Role::Validateur],
         ['Clarisse SOMÉ', 'regulation@raaga.test', Role::Regulateur],
         ['Salif OUÉDRAOGO', 'sites@raaga.test', Role::GestionnaireSites],
+        ['Adama SANOU', 'paiements@raaga.test', Role::ControleurPaiements],
     ];
 
     /** Comptes institutionnels de démonstration, rattachés à l'institution de démonstration : [nom, e-mail, rôle]. */

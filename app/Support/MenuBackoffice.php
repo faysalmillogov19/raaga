@@ -96,10 +96,12 @@ final class MenuBackoffice
                 ['cle' => 'registre_a', 'route' => 'admin.registre-a', 'droit' => Droit::RegistreAVoir, 'icone' => 'registre', 'etape' => 0],
             ],
             'operations' => [
-                ['cle' => 'kyc', 'route' => 'admin.kyc', 'droit' => Droit::KycVoir, 'icone' => 'kyc', 'etape' => 5],
+                // Contrôle des paiements (CONTRÔLEUR DES PAIEMENTS) ; vérifications d'identité (ADMIN, VALIDATEUR, RÉGULATEUR en lecture).
+                ['cle' => 'paiements', 'route' => 'admin.paiements', 'droit' => Droit::PaiementsVoir, 'icone' => 'souscriptions', 'etape' => 0],
+                ['cle' => 'kyc', 'route' => 'admin.kyc', 'droit' => Droit::KycVoir, 'icone' => 'kyc', 'etape' => 0],
                 ['cle' => 'conformite', 'route' => 'admin.conformite', 'droit' => Droit::ConformiteVoir, 'icone' => 'conformite', 'etape' => 5],
                 ['cle' => 'souscriptions', 'route' => 'admin.souscriptions', 'droit' => Droit::SouscriptionsVoir, 'icone' => 'souscriptions', 'etape' => 5],
-                ['cle' => 'remboursements', 'route' => 'admin.remboursements', 'droit' => Droit::RemboursementsVoir, 'icone' => 'remboursements', 'etape' => 5],
+                ['cle' => 'remboursements', 'route' => 'admin.remboursements', 'droit' => Droit::RemboursementsVoir, 'icone' => 'remboursements', 'etape' => 0],
             ],
             'controle' => [
                 ['cle' => 'registre', 'route' => 'admin.registre', 'droit' => Droit::RegistreVoir, 'icone' => 'registre', 'etape' => 6],

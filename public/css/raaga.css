@@ -3,3 +3,25 @@
  * Chargé après public/css/app.css (fichier figé, à ne pas modifier) et, au back-office, après admin.css.
  * Couleurs : variables de la charte (--charte-vert, --charte-encre…) et, au back-office, du thème (--primary, --text…).
  */
+
+/* Badge de rôle du CONTRÔLEUR DES PAIEMENTS (classe donnée par Role::badgeClasse()), à côté des autres profils. */
+.bo-badge-paiements {
+    background: #5B3F8C;
+}
+
+/* Vérifications d'identité : pièces du dossier, en grille. */
+.kyc-pieces {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    list-style: none;
+    padding: 0;
+}
+
+.kyc-piece {
+    border: 1px solid var(--line, var(--ligne));
+    border-radius: 10px;
+    padding: 12px;
+    display: grid;
+    gap: 6px;
+}

@@ -4,7 +4,7 @@
 
     $c = $candidature;
     $l = __('public.boutiques.candidature');
-    $badge = ['RESERVEE' => 'bg-jaune-pale text-encre', 'PAYEE' => 'bg-vert-pale text-vert-fonce', 'RETENUE' => 'bg-vert-fonce text-white', 'NON_RETENUE' => 'bg-fond text-encre', 'EXPIREE' => 'bg-fond text-gris'];
+    $badge = ['RESERVEE' => 'bg-jaune-pale text-encre', 'PAYEE' => 'bg-vert-pale text-vert-fonce', 'RETENUE' => 'bg-vert-fonce text-white', 'NON_RETENUE' => 'bg-fond text-encre', 'EXPIREE' => 'bg-fond text-gris', 'ANNULEE' => 'bg-fond text-gris'];
 @endphp
 
 <x-public.layout :titre="$l['titre']">

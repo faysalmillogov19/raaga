@@ -11,6 +11,8 @@ use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
 use App\Models\AuditLog;
 use App\Models\CampagneBoutiques;
+use App\Models\CandidatureBoutique;
+use App\Models\CorrectionPaiement;
 use App\Models\DecisionPhase;
 use App\Models\GrilleTarifaire;
 use App\Models\ImportValidation;
@@ -18,12 +20,15 @@ use App\Models\MoyenPaiement;
 use App\Models\Niveau;
 use App\Models\ParametrageDecision;
 use App\Models\ParametresInvestissement;
+use App\Models\Remboursement;
 use App\Models\Site;
 use App\Models\SiteFinance;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
 use App\Models\User;
+use App\Models\VerificationKyc;
 use App\Models\ZoneSite;
+use App\Services\Kyc\VerificationIdentite;
 use App\Services\Parametrage\WorkflowParametrage;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
@@ -115,6 +120,30 @@ final class AValider
             'autorisations' => ['slug' => 'autorisations-sites', 'droits' => [Droit::SitesConfirmer], 'groupable' => true, 'elements' => ['autorisation'],
                 'source' => fn (\Closure $e) => $lesSites()->where('statut', StatutSite::Confirme)->whereNotNull('revision_demandee_le')->values()
                     ->map(fn (Site $s) => $e('autorisation:'.$s->id, 'autorisation', $nomSite($s).' : « '.$s->revision_demande_motif.' »', $s->revision_demandee_par, $s->revision_demandee_le, route('admin.sites.show', $s)))],
+            // Paiements : corrections de paiements confirmés et exécutions de remboursements déclarées par le CONTRÔLEUR DES PAIEMENTS.
+            'paiements' => ['slug' => 'paiements', 'droits' => [Droit::PaiementsCorrectionsConfirmer, Droit::RemboursementsApprouver], 'groupable' => false,
+                'elements' => ['correction', 'remboursement'],
+                'source' => function (\Closure $e, User $user) {
+                    $liste = collect();
+                    if ($user->can(Droit::PaiementsCorrectionsConfirmer->value)) {
+                        foreach (CorrectionPaiement::query()->where('statut', CorrectionPaiement::PROPOSEE)->with('paiement')->get() as $c) {
+                            $p = $c->paiement;
+                            $liste->push($e('correction:'.$c->id, 'correction', $p->reference.' · '.$p->objet()->reference, $c->propose_par, $c->propose_le,
+                                route('admin.paiements.dossier', $p->souscription_id ? ['souscription', $p->souscription_id] : ['caution', $p->candidature_boutique_id])));
+                        }
+                    }
+                    if ($user->can(Droit::RemboursementsApprouver->value)) {
+                        foreach (Remboursement::query()->where('statut', Remboursement::PROPOSE)->get() as $r) {
+                            $liste->push($e('remboursement:'.$r->id, 'remboursement', $r->reference, $r->propose_par, $r->propose_le, route('admin.remboursements')));
+                        }
+                    }
+
+                    return $liste;
+                }],
+            // Identités : annulations proposées par l'ADMIN pour un dossier douteux (une décision à la fois).
+            'identites' => ['slug' => 'identites', 'droits' => [Droit::KycAnnulationConfirmer], 'groupable' => false, 'elements' => ['annulation'],
+                'source' => fn (\Closure $e) => VerificationKyc::query()->where('statut', VerificationKyc::ANNULATION_PROPOSEE)->with('user')->get()
+                    ->map(fn (VerificationKyc $v) => $e('annulation:'.$v->id, 'annulation', $v->user->name, $v->decide_par, $v->created_at, route('admin.kyc.dossier', $v->user_id)))],
             // Import entier soumis : une ligne par import qui a encore des sites soumis ; jamais plusieurs imports à la fois.
             'imports' => ['slug' => 'imports', 'droits' => [Droit::SitesConfirmer], 'groupable' => false, 'elements' => ['import'],
                 'source' => fn (\Closure $e) => ImportValidation::query()->enAttente()->with('sites.site')->latest('id')->get()
@@ -276,6 +305,42 @@ final class AValider
                     ...($i->chemin ? [['libelle' => $x['telecharger'], 'url' => route('admin.imports-validation.fichier', $i)]] : []),
                     ...$i->sites->map(fn ($l) => ['libelle' => ($l->site->code ? $l->site->code.' · ' : '').$l->site->nom, 'url' => route('admin.sites.show', $l->site)])->all(),
                 ]];
+            })(),
+            'correction' => (function () use ($id) {
+                $c = CorrectionPaiement::query()->with(['paiement.controleur'])->findOrFail($id);
+                $p = $c->paiement;
+                $x = __('admin.paiements.detail');
+
+                return ['infos' => [
+                    $x['paiement'] => $p->reference, $x['objet'] => $p->objet()->reference, $x['citoyen'] => $p->objet()->user?->name,
+                    $x['canal'] => $p->canal?->libelle, $x['montant'] => format_fcfa($p->montant + $p->frais),
+                    $x['confirme_le'] => $p->date_confirmation?->format('d/m/Y H:i'),
+                    $x['controle'] => $p->controle ? __('admin.paiements.controles.'.$p->controle).($p->controleur ? ' ('.$p->controleur->name.')' : '') : null,
+                    $x['motif_correction'] => $c->motif, $x['effet'] => $x['effet_correction'],
+                ]];
+            })(),
+            'remboursement' => (function () use ($id) {
+                $r = Remboursement::query()->with(['user'])->findOrFail($id);
+                $x = __('admin.remboursements.detail');
+
+                return ['infos' => [
+                    $x['reference'] => $r->reference, $x['objet'] => $r->objet()?->reference, $x['citoyen'] => $r->user?->name,
+                    $x['montant'] => format_fcfa($r->montant), $x['origine'] => __('admin.remboursements.origines.'.$r->origine),
+                    $x['mode'] => $r->mode, $x['reference_operation'] => $r->reference_operation,
+                ]];
+            })(),
+            'annulation' => (function () use ($id) {
+                $v = VerificationKyc::query()->with(['user', 'auteur'])->findOrFail($id);
+                $x = __('admin.kyc.detail');
+                $citoyen = $v->user;
+
+                return ['infos' => [
+                    $x['citoyen'] => $citoyen->name, $x['telephone'] => $citoyen->telephone, $x['motif'] => $v->motif,
+                    $x['souscriptions'] => format_nombre($citoyen->souscriptions()->whereIn('statut', ['RESERVEE', 'PAYEE'])->count()),
+                    $x['candidatures'] => format_nombre(CandidatureBoutique::query()->where('user_id', $citoyen->id)->whereIn('statut', ['RESERVEE', 'PAYEE', 'RETENUE'])->count()),
+                    $x['effet'] => $x['effet_annulation'],
+                ], 'pieces' => app(VerificationIdentite::class)->dossier($citoyen)->filter()
+                    ->map(fn ($d) => ['libelle' => __('admin.kyc.pieces.'.strtolower($d->type->value)).($d->face ? ' · '.$d->face->value : ''), 'url' => route('admin.kyc.piece', $d)])->values()->all()];
             })(),
             'phase' => (function () use ($id) {
                 $d = DecisionPhase::query()->findOrFail($id);

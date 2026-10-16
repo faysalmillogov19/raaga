@@ -9,6 +9,8 @@ enum StatutCandidatureBoutique: string
     case Retenue = 'RETENUE';
     case NonRetenue = 'NON_RETENUE';
     case Expiree = 'EXPIREE';
+    // Identité douteuse confirmée par le VALIDATEUR : candidature annulée, boutique éventuelle libérée.
+    case Annulee = 'ANNULEE';
 
     public function label(): string
     {
@@ -18,6 +20,7 @@ enum StatutCandidatureBoutique: string
             self::Retenue => 'Retenue au tirage au sort',
             self::NonRetenue => 'Non retenue',
             self::Expiree => 'Expirée (caution non payée)',
+            self::Annulee => 'Annulée',
         };
     }
 

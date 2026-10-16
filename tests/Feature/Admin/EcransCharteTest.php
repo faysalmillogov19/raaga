@@ -140,7 +140,8 @@ class EcransCharteTest extends TestCase
         // ADMIN (support) : ni référencement ni finances.
         $this->connecterBackoffice(Role::Admin);
         $page = $this->get('/admin')->assertOk();
-        $this->assertSame(['actions', 'citoyens', 'institutions'], $cartes($page));
+        // Vérifications d'identité : nombre de dossiers à traiter, sans aucun montant.
+        $this->assertSame(['actions', 'kyc', 'citoyens', 'institutions'], $cartes($page));
         $page->assertDontSee('Sites : boutiques prévues et importées')->assertDontSee('Derniers imports')->assertDontSee('Cautions');
 
         // Rechargement du seul tableau « Derniers imports ».

@@ -13,3 +13,6 @@ Schedule::command('raaga:appels-de-fonds')->dailyAt('07:00');
 
 // Réservations de souscription non payées dans le délai de la tranche : passage EXPIRÉE.
 Schedule::command('raaga:expirer-reservations')->everyFiveMinutes()->withoutOverlapping();
+
+// Relances des paiements attendus (souscriptions et cautions) : 24 h avant la fin du délai, puis à l'expiration.
+Schedule::command('raaga:relancer-paiements')->everyFifteenMinutes()->withoutOverlapping();

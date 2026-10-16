@@ -28,6 +28,20 @@
     </div>
 
     <div class="conteneur py-8">
+        {{-- Notifications (relances de paiement, annulation après vérification d'identité) : les plus récentes, lues à l'affichage. --}}
+        @if ($notifications->isNotEmpty())
+            <section class="carte mb-6 p-5" aria-labelledby="notifications-titre" data-notifications>
+                <h2 id="notifications-titre" class="!text-lg">{{ __('public.notifications.titre') }}</h2>
+                <ul class="mt-3 space-y-2">
+                    @foreach ($notifications as $notification)
+                        <li @class(['font-semibold' => $notification->read_at === null])>{{ $notification->data['message'] ?? '' }}
+                            @if (! empty($notification->data['url']))<a href="{{ $notification->data['url'] }}" class="lien-fort">{{ __('public.notifications.voir') }}</a>@endif
+                            <span class="texte-carte block">{{ $notification->created_at->format('d/m/Y H:i') }}</span></li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
+
         {{-- Onglets : liens (chaque onglet a son adresse, aucun script requis) --}}
         <nav class="border-b border-ligne" aria-label="{{ __('public.espace.onglets_libelle') }}">
             <ul class="grid grid-cols-2 gap-x-1 sm:flex">
@@ -145,7 +159,7 @@
                         <li class="carte p-4 tab:p-5">
                             <div class="flex flex-wrap items-start justify-between gap-2">
                                 <p class="whitespace-nowrap font-bold tracking-wide text-encre">{{ $c->reference }}</p>
-                                <span class="rounded-full px-3 py-1 text-sm font-bold {{ ['RESERVEE' => 'bg-jaune-pale text-encre', 'PAYEE' => 'bg-vert-pale text-vert-fonce', 'RETENUE' => 'bg-vert-fonce text-white', 'NON_RETENUE' => 'bg-fond text-encre', 'EXPIREE' => 'bg-fond text-gris'][$c->statut->value] }}">{{ $c->statut->label() }}</span>
+                                <span class="rounded-full px-3 py-1 text-sm font-bold {{ ['RESERVEE' => 'bg-jaune-pale text-encre', 'PAYEE' => 'bg-vert-pale text-vert-fonce', 'RETENUE' => 'bg-vert-fonce text-white', 'NON_RETENUE' => 'bg-fond text-encre', 'EXPIREE' => 'bg-fond text-gris', 'ANNULEE' => 'bg-fond text-gris'][$c->statut->value] }}">{{ $c->statut->label() }}</span>
                             </div>
                             <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.95rem] tab:grid-cols-3">
                                 <div><dt class="text-sm text-gris">{{ __('public.boutiques.candidature.campagne') }}</dt><dd class="font-semibold">{{ $c->campagne->nom }}</dd></div>

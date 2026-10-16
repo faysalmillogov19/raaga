@@ -55,8 +55,13 @@ class EspaceController extends Controller
         $payees = $souscriptions->where('statut', StatutSouscription::Payee);
         $allouees = $souscriptions->where('statut', StatutSouscription::Allouee);
 
+        // Notifications (relances, annulation) : les cinq plus récentes, marquées lues une fois affichées.
+        $notifications = $user->notifications()->latest()->limit(5)->get();
+        $user->unreadNotifications()->whereIn('id', $notifications->pluck('id'))->update(['read_at' => now()]);
+
         return view('public.espace.show', [
             'user' => $user,
+            'notifications' => $notifications,
             'onglet' => $onglet,
             'onglets' => $onglets,
             'souscriptions' => $souscriptions,

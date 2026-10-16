@@ -752,6 +752,28 @@ return [
     ],
 
     // Accueil de la phase 1 (boutiques) : bannière, chiffres, étapes, versements, sites, questions, aide.
+    'relances' => [
+        'sujet' => 'Votre paiement attendu : :reference',
+        'echeance' => 'Rappel : le délai de paiement de votre :objet :reference se termine le :echeance. Sans paiement, la réservation expirera.',
+        'expiration' => 'Le délai de paiement de votre :objet :reference est expiré : la réservation est close.',
+        'manuelle' => 'Votre :objet :reference attend toujours votre paiement (fin du délai : :echeance).',
+        'objets' => ['souscription' => 'souscription d’actions', 'caution' => 'caution de candidature aux boutiques'],
+        'bouton' => 'Voir mon dossier',
+    ],
+
+    'annulation_identite' => [
+        'sujet' => 'Vérification d’identité : dossier annulé',
+        'message' => 'La vérification de votre identité n’a pas abouti : vos dossiers :references sont annulés.',
+        'sans_dossier' => 'La vérification de votre identité n’a pas abouti : votre identité n’est pas validée.',
+        'remboursement' => 'Ce que vous aviez déjà payé vous sera remboursé ; vous serez informé de son exécution.',
+        'bouton' => 'Ouvrir mon espace',
+    ],
+
+    'notifications' => [
+        'titre' => 'Vos notifications',
+        'voir' => 'Voir',
+    ],
+
     'invest' => [
         'simulateur' => [
             'titre' => 'Simuler mon investissement',

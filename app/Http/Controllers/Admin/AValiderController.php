@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
+use App\Models\CorrectionPaiement;
 use App\Models\ImportValidation;
 use App\Models\MoyenPaiement;
 use App\Models\Niveau;
+use App\Models\Remboursement;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
+use App\Models\VerificationKyc;
 use App\Models\ZoneSite;
 use App\Support\AValider;
 use Illuminate\Http\RedirectResponse;
@@ -59,7 +62,7 @@ class AValiderController extends Controller
         Gate::authorize(Droit::AValiderVoir->value);
         $donnees = $request->validate([
             'elements' => ['required', 'array', 'min:1', 'max:200'],
-            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|moyens|investissement|campagne|phase|autorisation|import):\d+$/'],
+            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|moyens|investissement|campagne|phase|autorisation|import|correction|remboursement|annulation):\d+$/'],
             'decision' => ['required', 'in:confirmer,rejeter'],
             'motif' => ['nullable', 'required_if:decision,rejeter', 'string', 'min:5', 'max:1000'],
             'mode' => ['nullable', 'in:ligne,lot'],
@@ -180,6 +183,9 @@ class AValiderController extends Controller
                 'campagne' => app(CampagnesBoutiquesController::class)->{$decision}($sousRequete, CampagneBoutiques::query()->findOrFail($id)),
                 'phase' => app(PhaseController::class)->{$decision}($sousRequete, $id),
                 'import' => app(ImportsValidationController::class)->{$decision}($sousRequete, ImportValidation::query()->findOrFail($id)),
+                'correction' => app(PaiementsController::class)->{$decision.'Correction'}($sousRequete, CorrectionPaiement::query()->findOrFail($id)),
+                'remboursement' => app(RemboursementsController::class)->{$decision}($sousRequete, Remboursement::query()->findOrFail($id)),
+                'annulation' => app(VerificationsIdentiteController::class)->{$decision.'Annulation'}($sousRequete, VerificationKyc::query()->findOrFail($id)),
                 // Demande d'autorisation de modifier un site validé : acceptée (motif de la demande) ou refusée (motif saisi).
                 'autorisation' => $decision === 'confirmer'
                     ? app(SitesController::class)->reviser($this->avecMotif($sousRequete, (string) Site::query()->findOrFail($id)->revision_demande_motif), Site::query()->findOrFail($id))

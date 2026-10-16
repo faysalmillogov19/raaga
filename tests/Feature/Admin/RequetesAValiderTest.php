@@ -17,7 +17,8 @@ class RequetesAValiderTest extends TestCase
     use ActeursParametrage, RefreshDatabase;
 
     /** Une requête par table consultée (file « À valider », « À traiter », notifications), jamais une par élément. */
-    private const PLAFONDS = ['a_valider' => 25, 'tableau' => 35];
+    // Rubriques « Paiements » (corrections, remboursements) et « Identités » : trois requêtes de plus pour le VALIDATEUR.
+    private const PLAFONDS = ['a_valider' => 28, 'tableau' => 38];
 
     protected function setUp(): void
     {

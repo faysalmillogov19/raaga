@@ -71,6 +71,22 @@ class CandidatureBoutique extends Model implements Payable
     }
 
     /**
+     * @return HasMany<Relance, $this>
+     */
+    public function relances(): HasMany
+    {
+        return $this->hasMany(Relance::class, 'candidature_boutique_id');
+    }
+
+    /**
+     * @return HasMany<Remboursement, $this>
+     */
+    public function remboursements(): HasMany
+    {
+        return $this->hasMany(Remboursement::class, 'candidature_boutique_id');
+    }
+
+    /**
      * @return HasMany<Paiement, $this>
      */
     public function paiements(): HasMany

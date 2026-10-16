@@ -61,6 +61,12 @@ class MoyenPaiement extends Model
     }
 
     /** Le payeur saisit son numéro de téléphone (mobile money). */
+    /** Paiement manuel (banque : virement, versement ; guichet : espèces) : contrôlé par le CONTRÔLEUR DES PAIEMENTS. */
+    public function estManuel(): bool
+    {
+        return in_array($this->famille, [FamilleMoyenPaiement::Banque, FamilleMoyenPaiement::Guichet], true);
+    }
+
     public function estMobile(): bool
     {
         return $this->famille === FamilleMoyenPaiement::MobileMoney;

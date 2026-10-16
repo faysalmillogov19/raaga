@@ -21,7 +21,7 @@ class MatriceDroitsTest extends TestCase
         foreach (Role::cases() as $role) {
             $droits = Droit::pour($role);
 
-            foreach ([[Droit::TranchesSaisir, Droit::TranchesConfirmer], [Droit::DividendesSaisir, Droit::DividendesConfirmer]] as [$saisie, $confirmation]) {
+            foreach (Droit::quatreYeux() as [$saisie, $confirmation]) {
                 $this->assertFalse(
                     in_array($saisie, $droits, true) && in_array($confirmation, $droits, true),
                     "Le profil {$role->value} cumule {$saisie->value} et {$confirmation->value}.",
@@ -64,9 +64,14 @@ class MatriceDroitsTest extends TestCase
         foreach ([Role::SuperAdmin, Role::Admin] as $role) {
             $user = User::factory()->role($role)->create();
 
-            foreach ([...Droit::financiers(), ...Droit::saisies(), ...Droit::confirmationsEtExecutions(), Droit::KycVoirPieces] as $droit) {
+            foreach ([...Droit::financiers(), ...Droit::saisies(), ...Droit::confirmationsEtExecutions()] as $droit) {
                 $this->assertFalse($user->can($droit->value), "{$role->value} : {$droit->value}");
             }
+        }
+
+        // Pièces d'identité : l'ADMIN les voit (vérifications d'identité), jamais le SUPER_ADMIN.
+        foreach ([Droit::KycVoir, Droit::KycVoirPieces, Droit::KycTraiter] as $droit) {
+            $this->assertFalse(User::factory()->role(Role::SuperAdmin)->create()->can($droit->value), $droit->value);
         }
     }
 
@@ -91,9 +96,10 @@ class MatriceDroitsTest extends TestCase
     {
         $admin = User::factory()->role(Role::Admin)->create();
 
-        // Support, plus la liste des manifestations d'intérêt RAAGA Invest (que le SUPER_ADMIN n'a pas).
+        // Support, plus la liste des manifestations d'intérêt RAAGA Invest et les vérifications d'identité (que le SUPER_ADMIN n'a pas).
         foreach (Droit::cases() as $droit) {
-            $this->assertSame(in_array($droit, [...Droit::support(), Droit::InteretsVoir], true), $admin->can($droit->value), $droit->value);
+            $this->assertSame(in_array($droit, [...Droit::support(), Droit::InteretsVoir, Droit::KycVoir, Droit::KycVoirPieces, Droit::KycTraiter], true),
+                $admin->can($droit->value), $droit->value);
         }
         $this->assertFalse(User::factory()->role(Role::SuperAdmin)->create()->can(Droit::InteretsVoir->value));
     }

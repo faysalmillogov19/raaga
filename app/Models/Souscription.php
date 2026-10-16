@@ -65,6 +65,22 @@ class Souscription extends Model implements Payable
     }
 
     /**
+     * @return HasMany<Relance, $this>
+     */
+    public function relances(): HasMany
+    {
+        return $this->hasMany(Relance::class, 'souscription_id');
+    }
+
+    /**
+     * @return HasMany<Remboursement, $this>
+     */
+    public function remboursements(): HasMany
+    {
+        return $this->hasMany(Remboursement::class, 'souscription_id');
+    }
+
+    /**
      * @return HasMany<Paiement, $this>
      */
     public function paiements(): HasMany

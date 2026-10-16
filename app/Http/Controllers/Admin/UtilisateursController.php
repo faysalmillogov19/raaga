@@ -86,7 +86,7 @@ class UtilisateursController extends Controller
 
         return view('admin.utilisateurs.show', [
             'utilisateur' => $utilisateur,
-            'rolesBackoffice' => RoleEnum::backoffice(),
+            'rolesBackoffice' => RoleEnum::attribuablesBackoffice(),
             'invitationEnAttente' => DB::table('invitations')->where('user_id', $utilisateur->id)->whereNull('utilisee_le')
                 ->whereNull('annulee_le')->where('expire_le', '>', now())->exists(),
             'connexions' => DB::table('connexions_backoffice')->where('user_id', $utilisateur->id)->orderByDesc('id')->limit(10)->get(),
@@ -116,7 +116,7 @@ class UtilisateursController extends Controller
         $donnees = $request->validate([
             'nom' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-            'role' => ['required', Rule::in(array_map(fn ($r) => $r->value, RoleEnum::backoffice()))],
+            'role' => ['required', Rule::in(array_map(fn ($r) => $r->value, RoleEnum::attribuablesBackoffice()))],
         ], [
             'email.unique' => __('admin.utilisateurs.erreurs.email_existe'),
         ], [
@@ -136,7 +136,7 @@ class UtilisateursController extends Controller
         Gate::authorize(Droit::UtilisateursGerer->value);
         $this->verifierBackoffice($utilisateur);
 
-        $donnees = $request->validate(['role' => ['required', Rule::in(array_map(fn ($r) => $r->value, RoleEnum::backoffice()))]]);
+        $donnees = $request->validate(['role' => ['required', Rule::in(array_map(fn ($r) => $r->value, RoleEnum::attribuablesBackoffice()))]]);
 
         return $this->executer(fn () => $this->gestion->changerRole($request->user(), $utilisateur, RoleEnum::from($donnees['role'])),
             $utilisateur, 'admin.utilisateurs.messages.role');

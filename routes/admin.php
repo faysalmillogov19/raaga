@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
 use App\Http\Controllers\Admin\ManifestationsInteretController;
 use App\Http\Controllers\Admin\NiveauxZonesController;
+use App\Http\Controllers\Admin\PaiementsController;
 use App\Http\Controllers\Admin\ParametresInvestissementController;
 use App\Http\Controllers\Admin\PhaseController;
 use App\Http\Controllers\Admin\PiecesKycController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\Admin\PlateformeController;
 use App\Http\Controllers\Admin\ProfilController;
 use App\Http\Controllers\Admin\ReferentielBoutiquesController;
 use App\Http\Controllers\Admin\RegistreAController;
+use App\Http\Controllers\Admin\RemboursementsController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SiteFinancesController;
 use App\Http\Controllers\Admin\SitesController;
@@ -36,6 +38,7 @@ use App\Http\Controllers\Admin\SoumissionGroupeeController;
 use App\Http\Controllers\Admin\TranchesController;
 use App\Http\Controllers\Admin\TypesBoutiqueController;
 use App\Http\Controllers\Admin\UtilisateursController;
+use App\Http\Controllers\Admin\VerificationsIdentiteController;
 use App\Support\MenuBackoffice;
 use Illuminate\Support\Facades\Route;
 
@@ -110,6 +113,32 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/rejeter', 'rejeter')->middleware('can:'.Droit::TranchesConfirmer->value)->name('.rejeter');
         });
         Route::get('/manifestations-interet', [ManifestationsInteretController::class, 'index'])->middleware('can:'.Droit::InteretsVoir->value)->name('interets');
+
+        // Contrôle des paiements (CONTRÔLEUR DES PAIEMENTS) ; corrections confirmées par le VALIDATEUR (« À valider › Paiements »).
+        Route::controller(PaiementsController::class)->prefix('paiements')->name('paiements')->group(function () {
+            Route::get('/', 'index')->middleware('can:'.Droit::PaiementsVoir->value);
+            Route::get('/{type}/{id}', 'dossier')->where('type', 'souscription|caution')->whereNumber('id')->middleware('can:'.Droit::PaiementsVoir->value)->name('.dossier');
+            Route::post('/{type}/{id}/relance', 'relancer')->where('type', 'souscription|caution')->whereNumber('id')->middleware('can:'.Droit::RelancesEnvoyer->value)->name('.relance');
+            Route::post('/controle/{paiement}', 'marquer')->whereNumber('paiement')->middleware('can:'.Droit::SouscriptionsRapprocher->value)->name('.controle');
+            Route::post('/correction/{paiement}', 'proposerCorrection')->whereNumber('paiement')->middleware('can:'.Droit::SouscriptionsRapprocher->value)->name('.correction');
+            Route::post('/corrections/{correction}/confirmer', 'confirmerCorrection')->whereNumber('correction')->middleware('can:'.Droit::PaiementsCorrectionsConfirmer->value)->name('.corrections.confirmer');
+            Route::post('/corrections/{correction}/rejeter', 'rejeterCorrection')->whereNumber('correction')->middleware('can:'.Droit::PaiementsCorrectionsConfirmer->value)->name('.corrections.rejeter');
+        });
+        Route::controller(RemboursementsController::class)->prefix('remboursements')->name('remboursements')->group(function () {
+            Route::get('/', 'index')->middleware('can:'.Droit::RemboursementsVoir->value);
+            Route::post('/{remboursement}/execution', 'declarer')->whereNumber('remboursement')->middleware('can:'.Droit::RemboursementsSuivre->value)->name('.execution');
+            Route::post('/{remboursement}/confirmer', 'confirmer')->whereNumber('remboursement')->middleware('can:'.Droit::RemboursementsApprouver->value)->name('.confirmer');
+            Route::post('/{remboursement}/rejeter', 'rejeter')->whereNumber('remboursement')->middleware('can:'.Droit::RemboursementsApprouver->value)->name('.rejeter');
+        });
+        // Vérifications d'identité : l'ADMIN marque le dossier ; le VALIDATEUR confirme ou rejette l'annulation (« À valider › Identités »).
+        Route::controller(VerificationsIdentiteController::class)->prefix('kyc')->name('kyc')->group(function () {
+            Route::get('/', 'index')->middleware('can:'.Droit::KycVoir->value);
+            Route::get('/dossiers/{citoyen}', 'dossier')->whereNumber('citoyen')->middleware('can:'.Droit::KycVoir->value)->name('.dossier');
+            Route::post('/dossiers/{citoyen}/conforme', 'conforme')->whereNumber('citoyen')->middleware('can:'.Droit::KycTraiter->value)->name('.conforme');
+            Route::post('/dossiers/{citoyen}/douteux', 'douteux')->whereNumber('citoyen')->middleware('can:'.Droit::KycTraiter->value)->name('.douteux');
+            Route::post('/propositions/{verification}/confirmer', 'confirmerAnnulation')->whereNumber('verification')->middleware('can:'.Droit::KycAnnulationConfirmer->value)->name('.annulation.confirmer');
+            Route::post('/propositions/{verification}/rejeter', 'rejeterAnnulation')->whereNumber('verification')->middleware('can:'.Droit::KycAnnulationConfirmer->value)->name('.annulation.rejeter');
+        });
 
         // Import confirmé : détail, fichier d'origine, décision du VALIDATEUR sur l'import entier (« À valider › Imports »).
         Route::controller(ImportsValidationController::class)->prefix('imports-validation')->name('imports-validation.')->group(function () {
@@ -441,7 +470,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('connexions');
 
         // Sections livrées aux étapes suivantes : déjà protégées par leur droit.
-        foreach (['demandes', 'contenus', 'approbations', 'securite', 'simulations', 'kyc', 'conformite', 'souscriptions', 'remboursements',
+        foreach (['demandes', 'contenus', 'approbations', 'securite', 'simulations', 'conformite', 'souscriptions',
             'registre', 'audit', 'regulation', 'observations', 'referentiels'] as $section) {
             $entree = MenuBackoffice::entree($section);
 

@@ -8,11 +8,13 @@ use App\Enums\StatutPaiement;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
 #[Fillable([
     'souscription_id', 'candidature_boutique_id', 'canal', 'compte_destination', 'montant', 'frais', 'reference', 'reference_fournisseur',
     'statut', 'date_confirmation', 'agent_id', 'cloture_caisse_id', 'metadonnees',
+    'controle', 'controle_motif', 'controle_reference', 'controle_par', 'controle_le',
 ])]
 class Paiement extends Model
 {
@@ -41,7 +43,37 @@ class Paiement extends Model
             'statut' => StatutPaiement::class,
             'date_confirmation' => 'datetime',
             'metadonnees' => 'array',
+            'controle_le' => 'datetime',
         ];
+    }
+
+    /** Contrôles d'un paiement manuel par le CONTRÔLEUR DES PAIEMENTS. */
+    public const RECU = 'RECU';
+
+    public const INCOMPLET = 'INCOMPLET';
+
+    public const REJETE = 'REJETE';
+
+    /** Paiement manuel (virement, versement, espèces) : un opérateur ne le confirme pas, le contrôleur le marque. */
+    public function estManuel(): bool
+    {
+        return $this->canal?->estManuel() ?? false;
+    }
+
+    /**
+     * @return HasMany<CorrectionPaiement, $this>
+     */
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(CorrectionPaiement::class)->latest('id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function controleur(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'controle_par');
     }
 
     /**

@@ -115,6 +115,13 @@ enum Droit: string
 
     // RAAGA Invest : manifestations d'intérêt (simulations non engageantes), en lecture et export (RÉGULATEUR, ADMIN).
     case InteretsVoir = 'interets.voir';
+    // Contrôle des paiements (CONTRÔLEUR DES PAIEMENTS) : dossiers, relances, suivi des remboursements.
+    case PaiementsVoir = 'paiements.voir';
+    case RelancesEnvoyer = 'relances.envoyer';
+    case RemboursementsSuivre = 'remboursements.suivre';
+    // Décisions du VALIDATEUR dans « À valider » : corrections de paiements confirmés, annulations pour identité douteuse.
+    case PaiementsCorrectionsConfirmer = 'paiements.corrections_confirmer';
+    case KycAnnulationConfirmer = 'kyc.annulation_confirmer';
     case RemboursementsVoir = 'remboursements.voir';
     case RemboursementsApprouver = 'remboursements.approuver';
 
@@ -160,8 +167,9 @@ enum Droit: string
             self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer, self::MoyensPaiementGerer, self::MoyensPaiementConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
-            self::KycTraiter, self::ConformiteTraiter,
-            self::SouscriptionsRapprocher, self::RemboursementsApprouver,
+            self::KycTraiter, self::ConformiteTraiter, self::KycAnnulationConfirmer,
+            self::SouscriptionsRapprocher, self::RemboursementsApprouver, self::RemboursementsSuivre, self::RelancesEnvoyer,
+            self::PaiementsCorrectionsConfirmer,
             self::ObservationsRepondre,
         ], true);
     }
@@ -184,7 +192,22 @@ enum Droit: string
     public static function confirmationsEtExecutions(): array
     {
         return [self::TranchesConfirmer, self::TranchesPiloter, self::DividendesConfirmer, self::DividendesPayer, self::AllocationExecuter,
-            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::SitesConfirmer, self::UnitesConfirmer, self::MoyensPaiementConfirmer];
+            self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::SitesConfirmer, self::UnitesConfirmer, self::MoyensPaiementConfirmer,
+            self::PaiementsCorrectionsConfirmer, self::RemboursementsApprouver, self::KycAnnulationConfirmer];
+    }
+
+    /**
+     * Couples « proposition / confirmation » jamais cumulés par un même profil (quatre yeux).
+     *
+     * @return list<array{0: self, 1: self}>
+     */
+    public static function quatreYeux(): array
+    {
+        return [
+            [self::TranchesSaisir, self::TranchesConfirmer], [self::DividendesSaisir, self::DividendesConfirmer],
+            [self::SouscriptionsRapprocher, self::PaiementsCorrectionsConfirmer], [self::RemboursementsSuivre, self::RemboursementsApprouver],
+            [self::KycTraiter, self::KycAnnulationConfirmer],
+        ];
     }
 
     /**
@@ -219,8 +242,9 @@ enum Droit: string
             self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer, self::MoyensPaiementGerer, self::MoyensPaiementConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
-            self::KycTraiter, self::ConformiteTraiter,
-            self::SouscriptionsRapprocher, self::RemboursementsApprouver,
+            // KYC : l'ADMIN marque le dossier (sans aucun montant), hors de cette liste ; le VALIDATEUR confirme l'annulation.
+            self::ConformiteTraiter, self::KycAnnulationConfirmer,
+            self::SouscriptionsRapprocher, self::RemboursementsApprouver, self::RemboursementsSuivre, self::PaiementsCorrectionsConfirmer,
             self::KybVerifier, self::ConventionsSaisir, self::ConventionsConfirmer, self::AppelsFondsRapprocher,
         ];
     }
@@ -250,7 +274,9 @@ enum Droit: string
             ],
             // Support et assistance, plus la liste des manifestations d'intérêt RAAGA Invest (lecture, export),
             // que le SUPER_ADMIN n'a pas.
-            Role::Admin => [...self::support(), self::InteretsVoir],
+            Role::Admin => [...self::support(), self::InteretsVoir,
+                // Vérifications d'identité : voit la pièce, marque le dossier conforme ou douteux (aucun montant).
+                self::KycVoir, self::KycVoirPieces, self::KycTraiter],
             // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre.
             Role::Validateur => [
                 self::TableauDeBordVoir,
@@ -262,9 +288,10 @@ enum Droit: string
                 self::MoyensPaiementVoir, self::MoyensPaiementConfirmer,
                 self::DividendesVoir, self::DividendesConfirmer, self::DividendesPayer,
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
-                self::KycVoir, self::KycVoirPieces, self::KycTraiter,
+                // KYC : confirme seulement l'annulation d'un dossier douteux ; le rapprochement passe au CONTRÔLEUR DES PAIEMENTS.
+                self::KycVoir, self::KycVoirPieces, self::KycAnnulationConfirmer,
                 self::ConformiteVoir, self::ConformiteTraiter,
-                self::SouscriptionsVoir, self::SouscriptionsRapprocher,
+                self::SouscriptionsVoir, self::PaiementsCorrectionsConfirmer,
                 self::RemboursementsVoir, self::RemboursementsApprouver,
                 self::RegistreVoir,
                 self::AuditVoir,
@@ -279,6 +306,13 @@ enum Droit: string
             Role::GestionnaireSites => [
                 self::TableauDeBordVoir, self::BrouillonsVoir,
                 self::SitesVoir, self::SitesGerer, self::ImportsVoir, self::UnitesVoir,
+            ],
+            // Rapproche, marque les paiements manuels, relance, suit les remboursements ; aucune grille, aucun montant,
+            // aucun moyen de paiement ; ses corrections et remboursements sont confirmés par le VALIDATEUR.
+            Role::ControleurPaiements => [
+                self::TableauDeBordVoir,
+                self::PaiementsVoir, self::SouscriptionsRapprocher, self::RelancesEnvoyer,
+                self::RemboursementsVoir, self::RemboursementsSuivre,
             ],
             Role::Regulateur => [
                 self::TableauDeBordVoir, self::BrouillonsVoir, self::InteretsVoir,

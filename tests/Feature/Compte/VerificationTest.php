@@ -117,7 +117,7 @@ class VerificationTest extends TestCase
         $this->assertSame([], $this->sms->envoyes);
     }
 
-    public function test_les_fichiers_ne_sont_servis_qu_au_titulaire_et_au_validateur(): void
+    public function test_les_fichiers_ne_sont_servis_qu_au_titulaire_a_l_admin_et_au_validateur(): void
     {
         $this->deposerCnib();
         $document = $this->citoyen->kycDocuments()->firstOrFail();
@@ -128,10 +128,15 @@ class VerificationTest extends TestCase
         $autre = User::factory()->role(Role::Citoyen)->create();
         $this->actingAs($autre)->get(route('espace.verification.fichier', $document))->assertForbidden();
 
-        // ADMIN connecté au back-office : refusé sur les deux routes.
+        // ADMIN connecté au back-office : la pièce lui est servie au back-office (vérification d'identité), jamais par l'espace du citoyen.
         $this->app['auth']->forgetGuards();
         $this->connecterBackoffice(Role::Admin);
         $this->get(route('espace.verification.fichier', $document))->assertForbidden();
+        $this->get(route('admin.kyc.piece', $document))->assertOk();
+
+        // SUPER_ADMIN : refusé.
+        $this->app['auth']->forgetGuards();
+        $this->connecterBackoffice(Role::SuperAdmin);
         $this->get(route('admin.kyc.piece', $document))->assertForbidden();
 
         // VALIDATEUR connecté au back-office : autorisé, consultation journalisée.

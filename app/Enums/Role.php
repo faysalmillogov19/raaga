@@ -21,6 +21,9 @@ enum Role: string
     case Validateur = 'validateur';
     // Tient le référentiel des sites et des boutiques (saisie et soumission) ; le VALIDATEUR confirme.
     case GestionnaireSites = 'gestionnaire_sites';
+    // Rapproche et contrôle les paiements, relance, suit les remboursements ; ne valide jamais ses propres corrections.
+    case ControleurPaiements = 'controleur_paiements';
+    // Sans droit, masqué des listes d'attribution (le KYC revient à l'ADMIN).
     case Conformite = 'conformite';
     case Auditeur = 'auditeur';
 
@@ -46,6 +49,7 @@ enum Role: string
             self::Regulateur => 'Régulateur',
             self::Validateur => 'Validateur',
             self::GestionnaireSites => 'Gestionnaire des sites et boutiques',
+            self::ControleurPaiements => 'Contrôleur des paiements',
             self::Conformite => 'Conformité',
             self::Auditeur => 'Auditeur',
             self::InstitutionSignataire => 'Signataire (institution)',
@@ -60,13 +64,14 @@ enum Role: string
     {
         return match ($this) {
             self::SuperAdmin => 'Support et assistance, comptes back-office, approbations, sécurité. Lecture seule sur les paramètres et le journal d’audit ; aucune décision financière.',
-            self::Admin => 'Support et assistance : aide aux utilisateurs, demandes, contenus du site, préparation des textes légaux. Aucune décision financière.',
+            self::Admin => 'Support et assistance : aide aux utilisateurs, demandes, contenus du site, préparation des textes légaux ; vérification d’identité (KYC) des citoyens, sans aucun montant. Aucune décision financière.',
             self::Citoyen => "S'inscrire, déposer ses pièces, souscrire, payer, consulter son espace.",
-            self::AgentGuichet => 'Inscrire un citoyen, saisir une souscription et un encaissement espèces pour son compte, clôturer sa caisse.',
+            self::AgentGuichet => 'À venir : encaisser au guichet (le CONTRÔLEUR DES PAIEMENTS vérifie). Espace /guichet encore vide ; masqué des listes d’attribution.',
             self::Regulateur => 'Saisit et soumet les paramètres de souscription des tranches et de distribution des dividendes, lance les simulations, exporte et émet des observations. Ne confirme ni n’exécute jamais.',
-            self::Validateur => 'Confirme ou rejette les paramétrages, ouvre, prolonge et clôture les tranches, exécute l’allocation et la mise en paiement des dividendes, traite KYC, alertes, rapprochements et remboursements. Ne saisit jamais un paramètre.',
+            self::Validateur => 'Confirme ou rejette les paramétrages, ouvre, prolonge et clôture les tranches, exécute l’allocation et la mise en paiement des dividendes ; confirme les corrections de paiement, les remboursements et les annulations pour identité douteuse. Ne saisit jamais un paramètre.',
             self::GestionnaireSites => 'Crée et met à jour les sites du marché et leurs boutiques (numéro, bloc, surface, type), puis les soumet au VALIDATEUR. Ne fixe ni cautions ni campagnes.',
-            self::Conformite => "Valider ou rejeter les dossiers d'identité (KYC), traiter les alertes.",
+            self::ControleurPaiements => 'Rapproche les paiements avec les souscriptions et les cautions, marque les paiements manuels (reçu, incomplet, rejeté), relance et suit les remboursements. Ne touche ni aux grilles, ni aux montants, ni aux moyens de paiement ; ne valide jamais ses propres corrections.',
+            self::Conformite => 'Sans droit (le KYC revient à l’ADMIN) ; masqué des listes d’attribution.',
             self::Auditeur => "Lecture seule sur tout, y compris le journal d'audit.",
             self::InstitutionSignataire => 'Signe la convention de souscription des actions A, déclare les virements des appels de fonds et gère les utilisateurs de son institution.',
             self::InstitutionLecteur => 'Consulte les informations de son institution (convention, appels de fonds, actions A, dividendes).',
@@ -91,6 +96,7 @@ enum Role: string
             self::Regulateur => 'regulation',
             self::Validateur => 'validation',
             self::GestionnaireSites => 'sites',
+            self::ControleurPaiements => 'paiements',
             self::Conformite => 'conformite',
             self::Auditeur => 'audit',
             self::InstitutionSignataire, self::InstitutionLecteur => 'institutionnel',
@@ -116,7 +122,7 @@ enum Role: string
      */
     public static function backoffice(): array
     {
-        return [self::SuperAdmin, self::Admin, self::Validateur, self::Regulateur, self::GestionnaireSites];
+        return [self::SuperAdmin, self::Admin, self::Validateur, self::Regulateur, self::GestionnaireSites, self::ControleurPaiements];
     }
 
     public function estBackoffice(): bool
@@ -156,6 +162,7 @@ enum Role: string
             self::Validateur => 'VALIDATEUR',
             self::Regulateur => 'RÉGULATEUR',
             self::GestionnaireSites => 'GESTIONNAIRE SITES',
+            self::ControleurPaiements => 'CONTRÔLEUR PAIEMENTS',
             default => mb_strtoupper($this->label()),
         };
     }
@@ -171,6 +178,7 @@ enum Role: string
             self::Validateur => 'bo-badge-validateur',
             self::Regulateur => 'bo-badge-regulateur',
             self::GestionnaireSites => 'bo-badge-sites',
+            self::ControleurPaiements => 'bo-badge-paiements',
             default => '',
         };
     }
@@ -183,6 +191,27 @@ enum Role: string
     public static function grandPublic(): array
     {
         return [self::Citoyen, self::AgentGuichet];
+    }
+
+    /**
+     * Profils masqués des listes d'attribution (sans écran ni droit pour l'instant) : ni invitation, ni changement de
+     * profil, ni inscription. Les comptes qui les portent déjà sont conservés tels quels.
+     *
+     * @return list<self>
+     */
+    public static function masques(): array
+    {
+        return [self::Conformite, self::AgentGuichet];
+    }
+
+    /**
+     * Profils back-office proposés à l'invitation et au changement de profil.
+     *
+     * @return list<self>
+     */
+    public static function attribuablesBackoffice(): array
+    {
+        return array_values(array_filter(self::backoffice(), fn (self $r) => ! in_array($r, self::masques(), true)));
     }
 
     /**

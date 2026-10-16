@@ -68,7 +68,8 @@ class ProfilsSupportTest extends TestCase
             ['post', route('admin.dividendes.soumettre', $distribution)],
             ['post', route('admin.dividendes.confirmer', $distribution)],
             ['get', route('admin.dividendes.simulation', $distribution)],
-            ['get', route('admin.kyc')],
+            // Vérifications d'identité : l'ADMIN y a accès (sans aucun montant), jamais le SUPER_ADMIN.
+            ...($role === Role::SuperAdmin ? [['get', route('admin.kyc')]] : []),
             ['get', route('admin.conformite')],
             ['get', route('admin.souscriptions')],
             ['get', route('admin.remboursements')],
