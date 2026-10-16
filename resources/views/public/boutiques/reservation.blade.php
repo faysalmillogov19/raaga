@@ -8,7 +8,7 @@
         StatutReservationBoutique::Reservee => $r['reservee'],
         StatutReservationBoutique::Attribuee => $r['attribuee'],
         StatutReservationBoutique::Expiree => $r['expiree'],
-        StatutReservationBoutique::Annulee => $r['annulee'],
+        StatutReservationBoutique::Annulee => $c->annulation_motif === \App\Models\ReservationBoutique::ANNULATION_AVANCE ? $r['annulee_avance'] : $r['annulee'],
         default => null,
     };
 @endphp
@@ -32,11 +32,12 @@
                 <p class="mt-4 texte-carte">{{ __('public.boutiques.reservation.payer_avant', ['date' => $c->expire_le->translatedFormat('j F Y à H\hi')]) }}</p>
                 <a href="{{ route('boutiques.reservation.show', $c->reference) }}" class="btn-primaire mt-3">{{ $r['payer'] }}</a>
             @elseif (in_array($c->statut, [StatutReservationBoutique::Reservee, StatutReservationBoutique::Attribuee], true))
-                {{-- Avance : à payer avant sa date limite (figée au passage en « réservée »), encore payable en retard. --}}
+                {{-- Avance : à payer avant sa date limite (figée au passage en « réservée ») ; sinon, annulation automatique. --}}
                 @if ($c->naturePaiementAttendue() === \App\Models\Paiement::AVANCE)
                     @php($date = $c->avance_due_le?->translatedFormat('j F Y à H\hi'))
+                    {{-- Date limite passée : seule une preuve en contrôle retient l'annulation automatique. --}}
                     @if ($c->avance_due_le?->isPast())
-                        <x-public.alerte variante="attention" class="mt-4" data-avance-retard>{{ __('public.boutiques.reservation.avance_retard', ['date' => $date]) }}</x-public.alerte>
+                        <x-public.alerte variante="info" class="mt-4" data-avance-controle>{{ __('public.boutiques.reservation.avance_controle', ['date' => $date]) }}</x-public.alerte>
                     @elseif ($c->avance_due_le)
                         <p class="mt-4 font-semibold text-encre" data-avance-due>{{ __('public.boutiques.reservation.avance_avant', ['date' => $date]) }}</p>
                     @endif

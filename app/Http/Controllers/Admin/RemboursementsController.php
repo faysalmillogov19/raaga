@@ -43,7 +43,7 @@ class RemboursementsController extends Controller
                 Colonne::make('execution', $c['execution'])->valeur(fn (Remboursement $r) => $r->reference_operation ? $r->mode.' · '.$r->reference_operation : null),
                 Colonne::make('actions', $c['actions'])->vue('admin.remboursements._actions', 'remboursement')->exportable(false),
             ])
-            ->filtres([Filtre::make('statut', $c['statut'], collect([Remboursement::A_EFFECTUER, Remboursement::PROPOSE, Remboursement::EFFECTUE])
+            ->filtres([Filtre::make('statut', $c['statut'], collect([Remboursement::EN_ATTENTE_RETENUE, Remboursement::A_EFFECTUER, Remboursement::PROPOSE, Remboursement::EFFECTUE, Remboursement::RETENUE_TOTALE])
                 ->mapWithKeys(fn ($s) => [$s => __('admin.remboursements.statuts.'.$s)])->all(), 'statut')])
             ->triParDefaut('date', 'desc')
             ->unite(__('admin.remboursements.unite'))

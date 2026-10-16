@@ -13,70 +13,101 @@ use App\Notifications\AvanceBoutiqueCitoyen;
 use App\Services\Audit\Journal;
 use App\Services\Paiement\Remboursements;
 use App\Services\Validation\NotificationDecision;
-use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Avances des boutiques réservées traitées au cas par cas. Date limite dépassée sans avance confirmée : le dossier passe
- * « avance en retard » et le citoyen est notifié, sans aucune action automatique (la boutique reste réservée, l'avance
- * se paie encore). Le RÉGULATEUR propose une décision motivée : prolonger (nouvelle date limite), annuler (boutique
- * disponible, remboursement de la caution moins une retenue de 0 à 100 %) ou attendre (note, le dossier reste dans la
- * liste). Prolonger et annuler sont confirmés ou rejetés par le VALIDATEUR, jamais par l'auteur de la proposition.
+ * Avance non payée à temps : à la date limite, si l'avance n'est pas confirmée et qu'aucune preuve n'est en contrôle,
+ * la réservation est annulée automatiquement (boutique disponible, citoyen notifié, historique des statuts et journal
+ * d'audit). Le remboursement de la caution est ouvert « en attente de retenue » : le RÉGULATEUR propose la retenue
+ * (0 à 100 %, motif obligatoire), le VALIDATEUR la confirme ou la rejette, jamais l'auteur de la proposition ; le
+ * CONTRÔLEUR DES PAIEMENTS suit ensuite le remboursement. À 100 %, rien n'est versé et la décision reste enregistrée.
  */
 class AvancesBoutiques
 {
     public function __construct(private readonly Journal $journal, private readonly Remboursements $remboursements, private readonly NotificationDecision $notifications) {}
 
-    /**
-     * Tâche planifiée : dossiers dont la date limite de l'avance est dépassée, sans avance confirmée ni preuve en
-     * contrôle, marqués « avance en retard » (une seule fois) ; le citoyen est notifié.
-     */
-    public function marquerRetards(): int
+    /** Tâche planifiée : annule les réservations dont l'avance n'est pas payée à la date limite (hors preuve en contrôle). */
+    public function annulerEchues(): int
     {
         $n = 0;
         ReservationBoutique::query()->where('statut', StatutReservationBoutique::Reservee)->whereNull('avance_payee_le')->where('avance', '>', 0)
-            ->whereNull('avance_retard_le')->where('avance_due_le', '<', now())
-            ->whereDoesntHave('paiements', fn ($p) => $p->enControle())->with('user')->orderBy('id')
-            ->each(function (ReservationBoutique $r) use (&$n) {
-                $r->forceFill(['avance_retard_le' => now()])->save();
-                $this->journal->ecrire(null, 'reservation_boutique.avance_en_retard', 'ReservationBoutique', $r->id, null,
-                    ['reference' => $r->reference, 'date_limite' => $r->avance_due_le->toAtomString()]);
-                $r->user->notify(new AvanceBoutiqueCitoyen($r, 'retard'));
-                $n++;
+            ->where('avance_due_le', '<=', now())->whereDoesntHave('paiements', fn ($p) => $p->enControle())->pluck('id')
+            ->each(function (int $id) use (&$n) {
+                $n += (int) $this->annulerUne($id);
             });
 
         return $n;
     }
 
-    /** Proposition du RÉGULATEUR sur un dossier en retard (motif obligatoire) ; « attendre » est seulement noté. */
-    public function proposer(ReservationBoutique $r, string $decision, string $motif, ?CarbonInterface $nouvelleDate, ?int $retenuePct, User $regulateur): DecisionAvance
+    /** Même règle pour un dossier précis (consultation par le citoyen, demande de paiement). */
+    public function annulerSiEchue(ReservationBoutique $r): bool
     {
-        return DB::transaction(function () use ($r, $decision, $motif, $nouvelleDate, $retenuePct, $regulateur) {
-            $r = ReservationBoutique::query()->lockForUpdate()->findOrFail($r->id);
-            $erreur = fn (string $champ, string $cle) => throw ValidationException::withMessages([$champ => __('admin.avances.erreurs.'.$cle)]);
-            if (! $r->avanceEnRetard()) {
-                $erreur('decision', 'pas_en_retard');
-            }
-            if ($decision !== DecisionAvance::ATTENDRE && $r->decisionsAvance()->where('statut', DecisionAvance::PROPOSEE)->exists()) {
-                $erreur('decision', 'en_cours');
-            }
-            if ($decision === DecisionAvance::PROLONGER && ($nouvelleDate === null || ! $nouvelleDate->isFuture())) {
-                $erreur('nouvelle_date', 'date');
-            }
-            if ($decision === DecisionAvance::ANNULER && ($retenuePct === null || $retenuePct < 0 || $retenuePct > 100)) {
-                $erreur('retenue_pct', 'retenue');
+        return $r->avanceEchue() && $this->annulerUne($r->id);
+    }
+
+    private function annulerUne(int $id): bool
+    {
+        $annulee = DB::transaction(function () use ($id) {
+            $r = ReservationBoutique::query()->lockForUpdate()->find($id);
+            if (! $r || ! $r->avanceEchue()) {
+                return null;
             }
 
-            $d = $r->decisionsAvance()->create([
-                'decision' => $decision, 'motif' => $motif,
-                'nouvelle_date' => $decision === DecisionAvance::PROLONGER ? $nouvelleDate : null,
-                'retenue_pct' => $decision === DecisionAvance::ANNULER ? $retenuePct : null,
-                'statut' => $decision === DecisionAvance::ATTENDRE ? DecisionAvance::NOTEE : DecisionAvance::PROPOSEE,
-                'propose_par' => $regulateur->id, 'propose_le' => now(),
+            $r->forceFill(['statut' => StatutReservationBoutique::Annulee, 'annulation_motif' => ReservationBoutique::ANNULATION_AVANCE])->save();
+            $r->libererBoutique('avance_non_payee');
+
+            // Avance partiellement reçue (paiement incomplet jamais complété) : la somme reçue est remboursée en entier.
+            $incomplet = $r->paiements()->where('nature', Paiement::AVANCE)->whereIn('statut', [StatutPaiement::EnAttente, StatutPaiement::Echoue])
+                ->where('controle_montant_recu', '>', 0)->whereNotIn('id', Remboursement::query()->whereNotNull('paiement_id')->select('paiement_id'))
+                ->latest('id')->first();
+            $r->paiements()->where('statut', StatutPaiement::EnAttente)->update(['statut' => StatutPaiement::Annule]);
+            if ($incomplet) {
+                $this->remboursements->ouvrir($r, $incomplet, Remboursement::COMPLEMENT_NON_RECU, null, $incomplet->controle_montant_recu);
+            }
+
+            // Caution : remboursement ouvert « en attente de retenue ».
+            $caution = $r->paiements()->where('nature', Paiement::CAUTION)->where('statut', StatutPaiement::Confirme)->latest('id')->first();
+            $remboursement = $caution
+                ? $this->remboursements->ouvrir($r, $caution, Remboursement::ANNULATION_AVANCE, null, (int) $r->caution, Remboursement::EN_ATTENTE_RETENUE)
+                : null;
+
+            $this->journal->ecrire(null, 'reservation_boutique.annulee_avance_non_payee', 'ReservationBoutique', $r->id, ['statut' => 'RESERVEE'], [
+                'statut' => 'ANNULEE', 'reference' => $r->reference, 'date_limite' => $r->avance_due_le?->toAtomString(),
+                'remboursement' => $remboursement?->reference, 'incomplet' => $incomplet?->reference,
             ]);
-            $this->journal->ecrire($regulateur, 'avance.decision_proposee', 'ReservationBoutique', $r->id, null,
-                ['reference' => $r->reference, 'decision' => $decision, 'motif' => $motif, 'nouvelle_date' => $d->nouvelle_date?->toAtomString(), 'retenue_pct' => $d->retenue_pct]);
+
+            return $r;
+        });
+
+        if ($annulee) {
+            $annulee->user->notify(new AvanceBoutiqueCitoyen($annulee, 'annulee_auto'));
+        }
+
+        return $annulee !== null;
+    }
+
+    /** Retenue proposée par le RÉGULATEUR sur une caution en attente de retenue (0 à 100 %, motif obligatoire). */
+    public function proposerRetenue(Remboursement $remboursement, int $retenuePct, string $motif, User $regulateur): DecisionAvance
+    {
+        return DB::transaction(function () use ($remboursement, $retenuePct, $motif, $regulateur) {
+            $rb = Remboursement::query()->lockForUpdate()->findOrFail($remboursement->id);
+            if ($rb->statut !== Remboursement::EN_ATTENTE_RETENUE || $rb->origine !== Remboursement::ANNULATION_AVANCE) {
+                throw ValidationException::withMessages(['retenue_pct' => __('admin.avances.erreurs.pas_en_attente')]);
+            }
+            if (DecisionAvance::query()->where('remboursement_id', $rb->id)->where('statut', DecisionAvance::PROPOSEE)->exists()) {
+                throw ValidationException::withMessages(['retenue_pct' => __('admin.avances.erreurs.en_cours')]);
+            }
+            if ($retenuePct < 0 || $retenuePct > 100) {
+                throw ValidationException::withMessages(['retenue_pct' => __('admin.avances.erreurs.retenue')]);
+            }
+
+            $d = DecisionAvance::create([
+                'reservation_boutique_id' => $rb->reservation_boutique_id, 'remboursement_id' => $rb->id, 'decision' => DecisionAvance::RETENUE,
+                'retenue_pct' => $retenuePct, 'motif' => $motif, 'statut' => DecisionAvance::PROPOSEE, 'propose_par' => $regulateur->id, 'propose_le' => now(),
+            ]);
+            $this->journal->ecrire($regulateur, 'caution.retenue_proposee', 'Remboursement', $rb->id, null,
+                ['reference' => $rb->reference, 'retenue_pct' => $retenuePct, 'motif' => $motif]);
 
             return $d;
         });
@@ -96,44 +127,32 @@ class AvancesBoutiques
     {
         DB::transaction(function () use ($d, $validateur, $confirmee, $motif) {
             $d = DecisionAvance::query()->lockForUpdate()->findOrFail($d->id);
-            if ($d->statut !== DecisionAvance::PROPOSEE) {
+            if ($d->statut !== DecisionAvance::PROPOSEE || $d->decision !== DecisionAvance::RETENUE) {
                 throw ValidationException::withMessages(['motif' => __('admin.a_valider.erreurs.deja_traite')]);
             }
             if ($d->propose_par === $validateur->id) {
                 throw ValidationException::withMessages(['motif' => __('admin.a_valider.erreurs.auto_validation')]);
             }
-            $r = ReservationBoutique::query()->lockForUpdate()->findOrFail($d->reservation_boutique_id);
-            // Avance payée entre-temps : la proposition est sans objet.
-            if ($confirmee && ! $r->avanceEnRetard()) {
-                $d->forceFill(['statut' => DecisionAvance::CADUQUE])->save();
-                throw ValidationException::withMessages(['motif' => __('admin.avances.erreurs.plus_en_retard')]);
+            $rb = Remboursement::query()->lockForUpdate()->findOrFail($d->remboursement_id);
+            if ($rb->statut !== Remboursement::EN_ATTENTE_RETENUE) {
+                throw ValidationException::withMessages(['motif' => __('admin.a_valider.erreurs.deja_traite')]);
             }
 
-            $remboursement = null;
-            if ($confirmee && $d->decision === DecisionAvance::PROLONGER) {
-                $r->forceFill(['avance_due_le' => $d->nouvelle_date, 'avance_retard_le' => null])->save();
-            } elseif ($confirmee) {
-                // Annulation : boutique disponible, paiements en attente clos, caution remboursée moins la retenue.
-                $r->forceFill(['statut' => StatutReservationBoutique::Annulee, 'avance_retard_le' => null])->save();
-                $r->libererBoutique('annulation_avance', $validateur);
-                $r->paiements()->where('statut', StatutPaiement::EnAttente)->update(['statut' => StatutPaiement::Annule]);
-                $caution = $r->paiements()->where('nature', Paiement::CAUTION)->where('statut', StatutPaiement::Confirme)->latest('id')->first();
+            // Confirmée : montant = caution moins la retenue ; à 100 %, rien n'est versé (décision enregistrée).
+            if ($confirmee) {
                 $montant = $d->montantRembourse();
-                if ($caution && $montant > 0) {
-                    $remboursement = $this->remboursements->ouvrir($r, $caution, Remboursement::ANNULATION_AVANCE, $validateur, $montant);
-                }
+                $rb->forceFill(['montant' => $montant, 'retenue_pct' => $d->retenue_pct,
+                    'statut' => $montant > 0 ? Remboursement::A_EFFECTUER : Remboursement::RETENUE_TOTALE])->save();
             }
-
             $d->forceFill(['statut' => $confirmee ? DecisionAvance::CONFIRMEE : DecisionAvance::REJETEE, 'decide_par' => $validateur->id,
-                'decide_le' => now(), 'motif_decision' => $motif, 'remboursement_id' => $remboursement?->id])->save();
-            $this->journal->ecrire($validateur, $confirmee ? 'avance.decision_confirmee' : 'avance.decision_rejetee', 'ReservationBoutique', $r->id, null,
-                ['reference' => $r->reference, 'decision' => $d->decision, 'motif' => $motif, 'remboursement' => $remboursement?->reference]);
+                'decide_le' => now(), 'motif_decision' => $motif])->save();
+            $this->journal->ecrire($validateur, $confirmee ? 'caution.retenue_confirmee' : 'caution.retenue_rejetee', 'Remboursement', $rb->id, null,
+                ['reference' => $rb->reference, 'retenue_pct' => $d->retenue_pct, 'montant' => $rb->montant, 'motif' => $motif]);
 
-            DB::afterCommit(function () use ($d, $r, $confirmee, $motif) {
-                $this->notifications->envoyer($d->propose_par, __('admin.a_valider.elements.avance'), $r->reference, $confirmee ? 'confirmer' : 'rejeter', $motif, route('admin.avances'));
-                // Le citoyen est notifié de la décision confirmée.
+            DB::afterCommit(function () use ($d, $rb, $confirmee, $motif) {
+                $this->notifications->envoyer($d->propose_par, __('admin.a_valider.elements.retenue'), $rb->reference, $confirmee ? 'confirmer' : 'rejeter', $motif, route('admin.cautions'));
                 if ($confirmee) {
-                    $r->user->notify(new AvanceBoutiqueCitoyen($r->fresh(), $d->decision === DecisionAvance::PROLONGER ? 'prolongee' : 'annulee', $d));
+                    $d->reservation->user->notify(new AvanceBoutiqueCitoyen($d->reservation, 'retenue', $d));
                 }
             });
         });

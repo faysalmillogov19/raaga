@@ -8,13 +8,13 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * Avance d'une boutique réservée : dossier passé « avance en retard », puis décision confirmée (date limite
- * prolongée, ou réservation annulée avec remboursement de la caution moins la retenue). Notification dans
- * « Mon espace » et e-mail si le compte a une adresse.
+ * Avance d'une boutique réservée : réservation annulée automatiquement (avance non payée dans le délai), puis retenue
+ * confirmée sur la caution (montant remboursé, ou rien à 100 %). Notification dans « Mon espace » et e-mail si le
+ * compte a une adresse.
  */
 class AvanceBoutiqueCitoyen extends Notification
 {
-    /** @param  string  $evenement  retard | prolongee | annulee */
+    /** @param  string  $evenement  annulee_auto | retenue */
     public function __construct(
         private readonly ReservationBoutique $reservation,
         private readonly string $evenement,
@@ -47,9 +47,11 @@ class AvanceBoutiqueCitoyen extends Notification
     {
         $r = $this->reservation;
 
-        return __('public.boutiques.avance.notifications.'.$this->evenement, [
+        $cle = $this->evenement === 'retenue' && (int) $this->decision?->retenue_pct === 100 ? 'retenue_totale' : $this->evenement;
+
+        return __('public.boutiques.avance.notifications.'.$cle, [
             'reference' => $r->reference, 'boutique' => (string) $r->boutique?->code,
-            'date' => ($this->evenement === 'prolongee' ? $this->decision?->nouvelle_date : $r->avance_due_le)?->translatedFormat('j F Y à H\hi') ?? '',
+            'date' => $r->avance_due_le?->translatedFormat('j F Y à H\hi') ?? '',
             'montant' => $this->decision ? format_fcfa($this->decision->montantRembourse()) : '',
             'pct' => (int) $this->decision?->retenue_pct,
         ]);
@@ -57,6 +59,6 @@ class AvanceBoutiqueCitoyen extends Notification
 
     private function url(): string
     {
-        return $this->evenement === 'annulee' ? route('boutiques.suivi', $this->reservation->reference) : route('boutiques.avance.show', $this->reservation->reference);
+        return route('boutiques.suivi', $this->reservation->reference);
     }
 }

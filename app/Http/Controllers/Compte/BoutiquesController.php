@@ -12,6 +12,7 @@ use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
 use App\Models\ReservationBoutique;
 use App\Models\Site;
+use App\Services\Boutiques\AvancesBoutiques;
 use App\Services\Boutiques\ReservationsBoutiques;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -111,7 +112,9 @@ class BoutiquesController extends Controller
     {
         $reservation = ReservationBoutique::query()->where('reference', $reference)->with(['campagne', 'boutique.type'])->firstOrFail();
         abort_unless($reservation->user_id === $request->user()->id && $request->user()->hasRole(Role::Citoyen), 403);
+        // Avance non payée à la date limite (sans preuve en contrôle) : annulation, comme au passage de la tâche planifiée.
+        app(AvancesBoutiques::class)->annulerSiEchue($reservation);
 
-        return view('public.boutiques.reservation', ['reservation' => $reservation]);
+        return view('public.boutiques.reservation', ['reservation' => $reservation->refresh()]);
     }
 }

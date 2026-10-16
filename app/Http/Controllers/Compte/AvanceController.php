@@ -6,6 +6,7 @@ use App\Http\Controllers\Compte\Concerns\GerePaiements;
 use App\Http\Controllers\Controller;
 use App\Models\Paiement;
 use App\Models\ReservationBoutique;
+use App\Services\Boutiques\AvancesBoutiques;
 use App\Services\Documents\GenerateurPdf;
 use App\Services\Paiement\ServicePaiement;
 use App\Support\Recu;
@@ -19,19 +20,20 @@ use Illuminate\View\View;
  * Paiement de l'avance d'une boutique réservée, par le même circuit que la caution : montant figé depuis la grille
  * confirmée, moyens ouverts et autorisés pour la location (plafonds respectés), compte de location ; opérateur
  * (confirmation automatique) ou paiement manuel (référence unique, preuve, contrôle, délai suspendu pendant le
- * contrôle, délai de complément si incomplet). En retard, l'avance se paie encore tant qu'aucune annulation n'est
- * confirmée.
+ * contrôle, délai de complément si incomplet). Non payée à la date limite (sans preuve en contrôle), la réservation
+ * est annulée automatiquement : plus aucun paiement d'avance n'est accepté.
  */
 class AvanceController extends Controller
 {
     use GerePaiements;
 
-    public function __construct(private readonly ServicePaiement $service) {}
+    public function __construct(private readonly ServicePaiement $service, private readonly AvancesBoutiques $avances) {}
 
     public function show(Request $request, string $reference): View|RedirectResponse
     {
         $r = $this->reservation($request, $reference);
-        if ($r->naturePaiementAttendue() !== Paiement::AVANCE) {
+        $this->avances->annulerSiEchue($r);
+        if ($r->refresh()->naturePaiementAttendue() !== Paiement::AVANCE) {
             return redirect()->route('boutiques.suivi', $r->reference);
         }
 
@@ -41,7 +43,6 @@ class AvanceController extends Controller
         return $this->ecranPaiement($r->load(['campagne', 'boutique.type']), [
             'titre' => $titre,
             'fil' => [['libelle' => __('public.boutiques.titre'), 'url' => route('boutiques')], ['libelle' => $r->reference, 'url' => route('boutiques.suivi', $r->reference)], ['libelle' => $titre]],
-            'alerte' => $r->avance_due_le?->isPast() ? __('public.boutiques.avance.retard', ['date' => $r->avance_due_le->translatedFormat('j F Y à H\hi')]) : null,
             'lignes' => [
                 [$t['boutique'], (string) $r->boutique?->code],
                 [$t['type'], (string) $r->boutique?->type?->libelle],
@@ -62,7 +63,9 @@ class AvanceController extends Controller
     public function payer(Request $request, string $reference): RedirectResponse
     {
         $r = $this->reservation($request, $reference);
-        abort_unless($r->naturePaiementAttendue() === Paiement::AVANCE, 409);
+        // Date limite dépassée : la réservation est annulée, plus aucun paiement d'avance n'est accepté.
+        $this->avances->annulerSiEchue($r);
+        abort_unless($r->refresh()->naturePaiementAttendue() === Paiement::AVANCE, 409);
         $this->demanderPaiement($request, $r->load('campagne'));
 
         return redirect()->route('boutiques.avance.show', $r->reference);

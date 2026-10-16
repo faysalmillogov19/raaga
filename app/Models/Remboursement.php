@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 /**
@@ -14,10 +15,16 @@ use Illuminate\Support\Str;
  */
 #[Fillable([
     'reference', 'souscription_id', 'reservation_boutique_id', 'paiement_id', 'user_id', 'montant', 'origine', 'statut',
-    'mode', 'reference_operation', 'propose_par', 'propose_le', 'valide_par', 'valide_le', 'motif_rejet',
+    'mode', 'reference_operation', 'propose_par', 'propose_le', 'valide_par', 'valide_le', 'motif_rejet', 'retenue_pct',
 ])]
 class Remboursement extends Model
 {
+    /** Caution d'une réservation annulée faute d'avance : la retenue (0 à 100 %) doit d'abord être décidée. */
+    public const EN_ATTENTE_RETENUE = 'EN_ATTENTE_RETENUE';
+
+    /** Retenue de 100 % confirmée : rien n'est versé, la décision reste enregistrée. */
+    public const RETENUE_TOTALE = 'RETENUE_TOTALE';
+
     public const A_EFFECTUER = 'A_EFFECTUER';
 
     public const PROPOSE = 'PROPOSE';
@@ -33,7 +40,7 @@ class Remboursement extends Model
 
     protected function casts(): array
     {
-        return ['montant' => 'integer', 'propose_le' => 'datetime', 'valide_le' => 'datetime'];
+        return ['montant' => 'integer', 'retenue_pct' => 'integer', 'propose_le' => 'datetime', 'valide_le' => 'datetime'];
     }
 
     protected static function booted(): void
@@ -49,6 +56,14 @@ class Remboursement extends Model
         } while (static::query()->where('reference', $reference)->exists());
 
         return $reference;
+    }
+
+    /**
+     * @return HasMany<DecisionAvance, $this> retenues proposées (caution d'une réservation annulée faute d'avance)
+     */
+    public function decisions(): HasMany
+    {
+        return $this->hasMany(DecisionAvance::class);
     }
 
     /** Libellé du statut (« À effectuer », « Exécution déclarée », « Effectué »). */

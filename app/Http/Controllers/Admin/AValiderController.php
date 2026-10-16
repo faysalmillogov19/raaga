@@ -63,7 +63,7 @@ class AValiderController extends Controller
         Gate::authorize(Droit::AValiderVoir->value);
         $donnees = $request->validate([
             'elements' => ['required', 'array', 'min:1', 'max:200'],
-            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|moyens|investissement|delais|campagne|phase|autorisation|import|correction|remboursement|annulation|avance):\d+$/'],
+            'elements.*' => ['string', 'regex:/^(site|grille|finances|type|niveaux|zones|unites|moyens|investissement|delais|campagne|phase|autorisation|import|correction|remboursement|annulation|retenue):\d+$/'],
             'decision' => ['required', 'in:confirmer,rejeter'],
             'motif' => ['nullable', 'required_if:decision,rejeter', 'string', 'min:5', 'max:1000'],
             'mode' => ['nullable', 'in:ligne,lot'],
@@ -187,7 +187,7 @@ class AValiderController extends Controller
                 'import' => app(ImportsValidationController::class)->{$decision}($sousRequete, ImportValidation::query()->findOrFail($id)),
                 'correction' => app(PaiementsController::class)->{$decision.'Correction'}($sousRequete, CorrectionPaiement::query()->findOrFail($id)),
                 'remboursement' => app(RemboursementsController::class)->{$decision}($sousRequete, Remboursement::query()->findOrFail($id)),
-                'avance' => app(AvancesRetardController::class)->{$decision}($sousRequete, DecisionAvance::query()->findOrFail($id)),
+                'retenue' => app(CautionsRembourserController::class)->{$decision}($sousRequete, DecisionAvance::query()->findOrFail($id)),
                 'annulation' => app(VerificationsIdentiteController::class)->{$decision.'Annulation'}($sousRequete, VerificationKyc::query()->findOrFail($id)),
                 // Demande d'autorisation de modifier un site validé : acceptée (motif de la demande) ou refusée (motif saisi).
                 'autorisation' => $decision === 'confirmer'

@@ -26,12 +26,12 @@ class Remboursements
      * Ouvre le remboursement d'un paiement : montant réellement payé (frais compris) pour un objet annulé, ou la somme
      * déjà reçue d'un paiement incomplet jamais complété.
      */
-    public function ouvrir(Souscription|ReservationBoutique $objet, Paiement $paiement, string $origine, ?User $acteur, ?int $montant = null): Remboursement
+    public function ouvrir(Souscription|ReservationBoutique $objet, Paiement $paiement, string $origine, ?User $acteur, ?int $montant = null, string $statut = Remboursement::A_EFFECTUER): Remboursement
     {
         $remboursement = Remboursement::create([
             ...($objet instanceof Souscription ? ['souscription_id' => $objet->id] : ['reservation_boutique_id' => $objet->id]),
             'paiement_id' => $paiement->id, 'user_id' => $objet->user_id, 'montant' => $montant ?? $paiement->montant + $paiement->frais,
-            'origine' => $origine, 'statut' => Remboursement::A_EFFECTUER,
+            'origine' => $origine, 'statut' => $statut,
         ]);
         $this->journal->ecrire($acteur, 'remboursement.ouvert', 'Remboursement', $remboursement->id, null,
             ['reference' => $remboursement->reference, 'objet' => $objet->reference, 'origine' => $origine]);

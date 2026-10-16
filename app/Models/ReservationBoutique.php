@@ -19,8 +19,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Réservation d'une boutique précise, au premier arrivé : pré-réservée à la confirmation (caution à payer dans le délai
  * de la campagne), réservée une fois la caution payée, puis avance à payer avant sa date limite (même circuit de
- * paiement ; en retard, le dossier attend une décision au cas par cas, sans action automatique), attribuée quand
- * l'avance est confirmée et le contrat signé. Montants
+ * paiement ; non payée à temps, la réservation est annulée automatiquement et la boutique redevient disponible),
+ * attribuée quand l'avance est confirmée et le contrat signé. Montants
  * figés à la réservation depuis la grille tarifaire confirmée du site : seule la caution confirme la réservation ;
  * l'avance est due avant la signature du contrat. Une seule réservation active par boutique (index unique en base).
  */
@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'reference', 'user_id', 'campagne_boutiques_id', 'boutique_id', 'caution', 'avance',
     'loyer_mensuel', 'mois_caution', 'mois_avance', 'statut', 'expire_le', 'payee_le',
-    'type_piece', 'numero_piece', 'reservee_le', 'avance_due_le', 'avance_payee_le', 'avance_retard_le', 'attribuee_le', 'reference_avance', 'contrat_signe_le',
+    'type_piece', 'numero_piece', 'reservee_le', 'avance_due_le', 'avance_payee_le', 'annulation_motif', 'attribuee_le', 'reference_avance', 'contrat_signe_le',
 ])]
 class ReservationBoutique extends Model implements Payable
 {
@@ -46,7 +46,6 @@ class ReservationBoutique extends Model implements Payable
             'reservee_le' => 'datetime',
             'avance_due_le' => 'datetime',
             'avance_payee_le' => 'datetime',
-            'avance_retard_le' => 'datetime',
             'attribuee_le' => 'datetime',
             'contrat_signe_le' => 'date',
         ];
@@ -140,16 +139,13 @@ class ReservationBoutique extends Model implements Payable
         return $this->naturePaiementAttendue() === Paiement::AVANCE ? $this->avance_due_le : $this->expire_le;
     }
 
-    /** L'avance se paie encore en retard, tant qu'aucune annulation n'est confirmée. */
-    public function paiementTardifAccepte(): bool
-    {
-        return $this->naturePaiementAttendue() === Paiement::AVANCE;
-    }
+    /** Motif d'annulation : avance non payée dans le délai (annulation automatique à la date limite). */
+    public const ANNULATION_AVANCE = 'AVANCE_NON_PAYEE';
 
-    /** Avance attendue et date limite dépassée : dossier « avance en retard ». */
-    public function avanceEnRetard(): bool
+    /** Avance attendue et date limite dépassée, sans preuve en contrôle : la réservation est à annuler. */
+    public function avanceEchue(): bool
     {
-        return $this->naturePaiementAttendue() === Paiement::AVANCE && $this->avance_retard_le !== null;
+        return $this->naturePaiementAttendue() === Paiement::AVANCE && $this->avance_due_le?->isPast() && ! $this->paiements()->enControle()->exists();
     }
 
     /** Avance confirmée (ou aucune avance due) : la boutique peut être attribuée une fois le contrat signé. */
@@ -158,11 +154,11 @@ class ReservationBoutique extends Model implements Payable
         return $this->avance_payee_le !== null || (int) $this->avance === 0;
     }
 
-    /** Statut affiché : « Réservée : avance en retard », « Réservée : avance payée »… */
+    /** Statut affiché : « Réservée : avance payée », « Annulée : avance non payée dans le délai »… */
     public function libelleStatut(): string
     {
         return match (true) {
-            $this->avanceEnRetard() => __('public.boutiques.statuts.avance_retard'),
+            $this->statut === StatutReservationBoutique::Annulee && $this->annulation_motif === self::ANNULATION_AVANCE => __('public.boutiques.statuts.annulee_avance'),
             $this->statut === StatutReservationBoutique::Reservee && $this->avance_payee_le !== null => __('public.boutiques.statuts.avance_payee'),
             default => $this->statut->label(),
         };
@@ -187,15 +183,14 @@ class ReservationBoutique extends Model implements Payable
     }
 
     /**
-     * Caution payée : boutique réservée ; date limite de paiement de l'avance figée (30 jours par défaut). Avance payée
-     * (même en retard) : référence du paiement retenue pour l'attribution ; les propositions en cours deviennent caduques.
+     * Caution payée : boutique réservée ; date limite de paiement de l'avance figée (30 jours par défaut). Avance payée :
+     * référence du paiement retenue pour l'attribution.
      */
     public function marquerPaye(): void
     {
         if ($this->naturePaiementAttendue() === Paiement::AVANCE) {
-            $this->forceFill(['avance_payee_le' => now(), 'avance_retard_le' => null,
+            $this->forceFill(['avance_payee_le' => now(),
                 'reference_avance' => $this->paiements()->where('nature', Paiement::AVANCE)->where('statut', StatutPaiement::Confirme)->latest('id')->value('reference')])->save();
-            $this->decisionsAvance()->where('statut', DecisionAvance::PROPOSEE)->update(['statut' => DecisionAvance::CADUQUE, 'updated_at' => now()]);
 
             return;
         }

@@ -4,11 +4,11 @@ use App\Enums\Droit;
 use App\Http\Controllers\Admin\AppelsFondsController;
 use App\Http\Controllers\Admin\AssistanceController;
 use App\Http\Controllers\Admin\AValiderController;
-use App\Http\Controllers\Admin\AvancesRetardController;
 use App\Http\Controllers\Admin\BrouillonsController;
 use App\Http\Controllers\Admin\CadreController;
 use App\Http\Controllers\Admin\CampagnesBoutiquesController;
 use App\Http\Controllers\Admin\CapacitesController;
+use App\Http\Controllers\Admin\CautionsRembourserController;
 use App\Http\Controllers\Admin\ConnexionController;
 use App\Http\Controllers\Admin\ConnexionsController;
 use App\Http\Controllers\Admin\ConventionsController;
@@ -143,10 +143,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{remboursement}/confirmer', 'confirmer')->whereNumber('remboursement')->middleware('can:'.Droit::RemboursementsApprouver->value)->name('.confirmer');
             Route::post('/{remboursement}/rejeter', 'rejeter')->whereNumber('remboursement')->middleware('can:'.Droit::RemboursementsApprouver->value)->name('.rejeter');
         });
-        // Avances des boutiques en retard : RÉGULATEUR propose (prolonger, annuler avec retenue, attendre) ; VALIDATEUR décide (« À valider › Avances »).
-        Route::controller(AvancesRetardController::class)->prefix('avances')->name('avances')->group(function () {
+        // Cautions à rembourser (réservations annulées faute d'avance) : RÉGULATEUR propose la retenue ; VALIDATEUR décide (« À valider › Cautions »).
+        Route::controller(CautionsRembourserController::class)->prefix('cautions-a-rembourser')->name('cautions')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::AvancesVoir->value);
-            Route::post('/{reservation}/decisions', 'proposer')->whereNumber('reservation')->middleware('can:'.Droit::AvancesProposer->value)->name('.proposer');
+            Route::post('/{remboursement}/retenue', 'proposer')->whereNumber('remboursement')->middleware('can:'.Droit::AvancesProposer->value)->name('.proposer');
             Route::post('/decisions/{decision}/confirmer', 'confirmer')->whereNumber('decision')->middleware('can:'.Droit::AvancesDecider->value)->name('.confirmer');
             Route::post('/decisions/{decision}/rejeter', 'rejeter')->whereNumber('decision')->middleware('can:'.Droit::AvancesDecider->value)->name('.rejeter');
         });

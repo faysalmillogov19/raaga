@@ -129,11 +129,6 @@ class Souscription extends Model implements Payable
         return $this->expire_le;
     }
 
-    public function paiementTardifAccepte(): bool
-    {
-        return false;
-    }
-
     public function naturePaiementAttendue(): ?string
     {
         return null;

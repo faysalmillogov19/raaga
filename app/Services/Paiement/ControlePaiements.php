@@ -64,11 +64,11 @@ class ControlePaiements
             ...($controle === Paiement::INCOMPLET ? ['controle_montant_recu' => $montantRecu] : [])])->save();
         // Incomplet : délai de complément (48 heures par défaut, paramétré par le RÉGULATEUR), à partir de cette décision,
         // même si le délai initial est dépassé.
-        // Avance : le complément repousse la date limite de l'avance (le dossier sort du retard le temps du complément).
+        // Avance : le complément repousse la date limite de l'avance (pas d'annulation automatique pendant ce délai).
         if ($controle === Paiement::INCOMPLET) {
             $echeance = now()->addSeconds(ParametresPaiements::delaiSecondes('complement'));
             $paiement->objet()->forceFill($paiement->nature === Paiement::AVANCE
-                ? ['avance_due_le' => $echeance, 'avance_retard_le' => null] : ['expire_le' => $echeance])->save();
+                ? ['avance_due_le' => $echeance] : ['expire_le' => $echeance])->save();
         }
         $this->journal->ecrire($controleur, 'paiement.controle', 'Paiement', $paiement->id, $avant,
             ['statut' => $paiement->statut->value, 'controle' => $controle, 'motif' => $motif, 'reference' => $reference, 'montant_recu' => $montantRecu]);
@@ -137,7 +137,7 @@ class ControlePaiements
             }
             // Avance finalement non reçue : de nouveau attendue, avec un nouveau délai pour la payer ; la boutique reste réservée.
             if ($confirmee && $paiement->nature === Paiement::AVANCE) {
-                $objet->forceFill(['avance_payee_le' => null, 'reference_avance' => null, 'avance_retard_le' => null,
+                $objet->forceFill(['avance_payee_le' => null, 'reference_avance' => null,
                     'avance_due_le' => now()->addSeconds(ParametresPaiements::delaiSecondes('avance'))])->save();
             } elseif ($confirmee) {
                 $secondes = $objet instanceof Souscription ? $objet->tranche->delaiPaiementSecondes() : $objet->campagne->delaiPaiementSecondes();

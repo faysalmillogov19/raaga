@@ -7,7 +7,6 @@ use App\Enums\DecisionParametrage;
 use App\Enums\Droit;
 use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutGrilleTarifaire;
-use App\Enums\StatutPaiement;
 use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
@@ -147,11 +146,12 @@ final class AValider
 
                     return $liste;
                 }],
-            // Avances en retard : prolongations et annulations proposées par le RÉGULATEUR (une décision à la fois).
-            'avances' => ['slug' => 'avances', 'droits' => [Droit::AvancesDecider], 'groupable' => false, 'elements' => ['avance'],
-                'source' => fn (\Closure $e) => DecisionAvance::query()->where('statut', DecisionAvance::PROPOSEE)->with('reservation.boutique')->get()
-                    ->map(fn (DecisionAvance $d) => $e('avance:'.$d->id, 'avance', $d->reservation->reference.' · '.$d->reservation->boutique?->code.' · '.$d->resume(),
-                        $d->propose_par, $d->propose_le, route('admin.avances')))],
+            // Cautions à rembourser : retenues proposées par le RÉGULATEUR (une décision à la fois).
+            'cautions' => ['slug' => 'cautions', 'droits' => [Droit::AvancesDecider], 'groupable' => false, 'elements' => ['retenue'],
+                'source' => fn (\Closure $e) => DecisionAvance::query()->where('statut', DecisionAvance::PROPOSEE)->where('decision', DecisionAvance::RETENUE)
+                    ->with('reservation.boutique')->get()
+                    ->map(fn (DecisionAvance $d) => $e('retenue:'.$d->id, 'retenue', $d->reservation->reference.' · '.$d->reservation->boutique?->code.' · '.$d->resume(),
+                        $d->propose_par, $d->propose_le, route('admin.cautions')))],
             // Identités : annulations proposées par l'ADMIN pour un dossier douteux (une décision à la fois).
             'identites' => ['slug' => 'identites', 'droits' => [Droit::KycAnnulationConfirmer], 'groupable' => false, 'elements' => ['annulation'],
                 'source' => fn (\Closure $e) => VerificationKyc::query()->where('statut', VerificationKyc::ANNULATION_PROPOSEE)->with('user')->get()
@@ -323,22 +323,18 @@ final class AValider
                     ...$i->sites->map(fn ($l) => ['libelle' => ($l->site->code ? $l->site->code.' · ' : '').$l->site->nom, 'url' => route('admin.sites.show', $l->site)])->all(),
                 ]];
             })(),
-            'avance' => (function () use ($id) {
-                $d = DecisionAvance::query()->with(['reservation.boutique', 'reservation.user', 'reservation.paiements'])->findOrFail($id);
+            'retenue' => (function () use ($id) {
+                $d = DecisionAvance::query()->with(['reservation.boutique', 'reservation.user', 'remboursement'])->findOrFail($id);
                 $r = $d->reservation;
                 $x = __('admin.avances.detail');
-                $caution = $r->paiements->where('nature', 'CAUTION')->where('statut', StatutPaiement::Confirme)->sortByDesc('id')->first();
 
                 return ['infos' => [
                     $x['reservation'] => $r->reference, $x['boutique'] => $r->boutique?->code, $x['citoyen'] => $r->user?->name,
-                    $x['date_limite'] => $r->avance_due_le?->format('d/m/Y H:i'), $x['retard_depuis'] => $r->avance_retard_le?->format('d/m/Y H:i'),
-                    $x['avance'] => format_fcfa((int) $r->avance), $x['caution'] => format_fcfa((int) $r->caution),
-                    $x['decision'] => $d->resume(), $x['motif'] => $d->motif,
-                    ...($d->decision === DecisionAvance::ANNULER ? [
-                        $x['retenue'] => format_nombre((int) $d->retenue_pct).' %', $x['rembourse'] => format_fcfa($d->montantRembourse()),
-                        $x['paiement_caution'] => $caution?->reference,
-                    ] : []),
-                    $x['effet'] => $d->decision === DecisionAvance::PROLONGER ? $x['effet_prolonger'] : $x['effet_annuler'],
+                    $x['date_limite'] => $r->avance_due_le?->format('d/m/Y H:i'), $x['annulee'] => $d->remboursement?->created_at?->format('d/m/Y H:i'),
+                    $x['caution'] => format_fcfa((int) $r->caution), $x['retenue'] => format_nombre((int) $d->retenue_pct).' %',
+                    $x['rembourse'] => format_fcfa($d->montantRembourse()), $x['remboursement'] => $d->remboursement?->reference,
+                    $x['motif'] => $d->motif,
+                    $x['effet'] => (int) $d->retenue_pct === 100 ? $x['effet_total'] : $x['effet_retenue'],
                 ]];
             })(),
             'correction' => (function () use ($id) {

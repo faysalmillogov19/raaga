@@ -169,8 +169,8 @@ class DelaisPaiementTest extends TestCase
             ->assertSee('data-avance-due', false)
             ->assertSee('Avance à payer au plus tard le '.$r->avance_due_le->translatedFormat('j F Y à H\hi').', avant la signature du contrat.', false);
 
-        // Délai dépassé : le citoyen est prévenu.
+        // Délai dépassé sans avance : la réservation est annulée automatiquement, le citoyen le voit dans son dossier.
         $this->travel(31)->days();
-        $this->actingAs($citoyen)->get(route('boutiques.suivi', $r->reference))->assertOk()->assertSee('est dépassée', false);
+        $this->actingAs($citoyen)->get(route('boutiques.suivi', $r->reference))->assertOk()->assertSee('Annulée : avance non payée dans le délai');
     }
 }

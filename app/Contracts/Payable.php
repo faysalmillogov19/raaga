@@ -37,9 +37,6 @@ interface Payable
     /** Date limite du paiement attendu (délai de paiement, ou date limite de l'avance). */
     public function echeancePaiement(): ?CarbonInterface;
 
-    /** Paiement encore accepté après la date limite (avance en retard, tant qu'aucune annulation n'est confirmée). */
-    public function paiementTardifAccepte(): bool;
-
     /** Nature du paiement attendu, enregistrée sur chaque paiement (CAUTION, AVANCE) ; null pour une souscription. */
     public function naturePaiementAttendue(): ?string;
 
