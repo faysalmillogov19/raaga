@@ -290,6 +290,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Données financières d'un site : RÉGULATEUR saisit et soumet, VALIDATEUR confirme ; jamais le GESTIONNAIRE (403).
+        // Liste de tous les sites (menu « Tarification › Finances des sites » du RÉGULATEUR), puis fiche de chaque site.
+        Route::get('/referencement/finances', [SiteFinancesController::class, 'index'])->middleware('can:'.Droit::BoutiquesVoir->value)->name('sites.finances.liste');
         Route::controller(SiteFinancesController::class)->prefix('referencement/sites/{site}/finances')->whereNumber('site')->name('sites.finances')->group(function () {
             Route::get('/', 'show')->middleware('can:'.Droit::BoutiquesVoir->value);
             Route::put('/', 'update')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.update');

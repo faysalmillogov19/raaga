@@ -7,11 +7,14 @@
     use App\Services\Validation\SoumissionGroupee;
 
     $b = __('admin.soumission.brouillons');
+    // Vue « en attente » : déjà soumis, rien à soumettre ; titre, introduction et compteur propres à chaque vue.
+    $attente = $vue === 'en_attente';
+    $v = $vue ? $b['vues'][$vue] : ['titre' => $b['titre'], 'intro' => $b['intro'], 'vide' => $b['vide']];
     $cles = collect($groupes)->flatMap(fn ($lignes, $entite) => $lignes->map(fn ($l) => $entite.':'.$l->getKey()))->values();
 @endphp
 
-<x-admin.layout :titre="$b['titre']" :sous-titre="trans_choice('admin.soumission.brouillons.non_soumis', $cles->count(), ['n' => format_nombre($cles->count())])">
-    @if ($cles->isNotEmpty())
+<x-admin.layout :titre="$v['titre']" :sous-titre="trans_choice('admin.soumission.brouillons.'.(in_array($vue, ['rejetes', 'en_attente'], true) ? $vue : 'non_soumis'), $cles->count(), ['n' => format_nombre($cles->count())])">
+    @if ($cles->isNotEmpty() && ! $attente)
         <x-slot:actions>
             <form method="POST" action="{{ route('admin.soumission.soumettre') }}" data-tout-soumettre>
                 @csrf
@@ -23,7 +26,7 @@
         </x-slot:actions>
     @endif
 
-    <p class="texte-carte max-w-3xl">{{ $b['intro'] }}</p>
+    <p class="texte-carte max-w-3xl" data-vue="{{ $vue ?? 'tous' }}">{{ $v['intro'] }}</p>
 
     @forelse ($groupes as $entite => $lignes)
         <section class="bo-carte" aria-labelledby="brouillons-{{ $entite }}" data-groupe="{{ $entite }}">
@@ -32,7 +35,7 @@
             </h2>
             <div class="mt-3 overflow-x-auto">
                 <table class="bo-tableau">
-                    <thead><tr>@foreach ($b['colonnes'] as $libelle)<th scope="col">{{ $libelle }}</th>@endforeach</tr></thead>
+                    <thead><tr>@foreach ($attente ? array_slice($b['colonnes'], 0, 2) : $b['colonnes'] as $libelle)<th scope="col">{{ $libelle }}</th>@endforeach</tr></thead>
                     <tbody>
                         @foreach ($lignes as $ligne)
                             @php
@@ -43,6 +46,7 @@
                             <tr>
                                 <td><a href="{{ SoumissionGroupee::url($entite, $ligne) }}" class="font-bold text-vert-fonce underline underline-offset-2">{{ $libelle }}</a></td>
                                 <td>@if ($objet?->motif_rejet && $objet instanceof Parametrable)<x-admin.badge-statut :statut="$b['rejete']" />@else<x-admin.badge-statut :statut="$objet?->statut" />@endif</td>
+                                @unless ($attente)
                                 <td>{{ $objet?->motif_rejet }}</td>
                                 <td>
                                     <form method="POST" action="{{ route('admin.soumission.soumettre') }}">
@@ -51,6 +55,7 @@
                                         <x-admin.bouton variante="contour" taille="petit" type="submit" aria-label="{{ $b['soumettre'] }} {{ $libelle }}">{{ $b['soumettre'] }}</x-admin.bouton>
                                     </form>
                                 </td>
+                                @endunless
                             </tr>
                         @endforeach
                     </tbody>
@@ -58,6 +63,6 @@
             </div>
         </section>
     @empty
-        <div class="bo-carte"><p class="font-semibold text-encre">{{ $b['vide'] }}</p></div>
+        <div class="bo-carte"><p class="font-semibold text-encre">{{ $v['vide'] }}</p></div>
     @endforelse
 </x-admin.layout>

@@ -20,6 +20,8 @@ class NavigationTest extends TestCase
     /** Écrans hors menu mais accessibles en lecture (le SUPER_ADMIN y arrive par « Paramètres (lecture) »). */
     private const LECTURE_HORS_MENU = [
         'superadmin' => ['tranches', 'investissement', 'boutiques', 'dividendes', 'simulations', 'referentiels'],
+        // RÉGULATEUR : « Mes brouillons » est atteint par « Mes soumissions › Brouillons » (même page, filtrée).
+        'regulateur' => ['brouillons'],
     ];
 
     /** Menus attendus par profil (d'après le tableau des droits de la spécification). */
@@ -29,7 +31,7 @@ class NavigationTest extends TestCase
         'controleur_paiements' => ['tableau', 'paiements', 'remboursements'],
         'gestionnaire_sites' => ['tableau', 'brouillons', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'imports_sites', 'imports_boutiques', 'cautions'],
         'validateur' => ['tableau', 'a_valider', 'a_valider_sites', 'a_valider_finances', 'a_valider_grilles', 'a_valider_referentiels', 'a_valider_campagnes', 'a_valider_demarches', 'a_valider_autorisations', 'a_valider_imports', 'a_valider_paiements', 'a_valider_cautions', 'a_valider_identites', 'cautions', 'tranches', 'investissement', 'sites', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'observations', 'referentiels', 'phase'],
-        'regulateur' => ['tableau', 'brouillons', 'tranches', 'investissement', 'interets', 'sites', 'boutiques_referentiel', 'capacites', 'grille', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels', 'phase', 'unites', 'moyens', 'delais', 'cautions'],
+        'regulateur' => ['tableau', 'mes_brouillons', 'rejetes', 'en_attente', 'finances', 'tranches', 'investissement', 'interets', 'sites', 'boutiques_referentiel', 'capacites', 'grille', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'kyc', 'conformite', 'souscriptions', 'remboursements', 'registre', 'audit', 'regulation', 'observations', 'referentiels', 'phase', 'unites', 'moyens', 'delais', 'cautions'],
     ];
 
     public static function profils(): array

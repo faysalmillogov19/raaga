@@ -215,6 +215,22 @@ return [
         'modalites' => 'Modalités de paiement',
         'imports' => 'Imports',
         'a_valider' => 'À valider',
+        'tarification' => 'Tarification',
+        'location' => 'Location des boutiques',
+        'invest' => 'RAAGA Invest',
+        'site_public' => 'Site public',
+        'soumissions' => 'Mes soumissions',
+    ],
+
+    // Libellés propres au menu du RÉGULATEUR (sous-menus de ses menus dépliants).
+    'menu_regulateur' => [
+        'finances' => 'Finances des sites',
+        'campagnes' => 'Campagnes',
+        'referentiels' => 'Référentiels de paiement',
+        'demarches' => 'Démarches',
+        'mes_brouillons' => 'Brouillons',
+        'rejetes' => 'Rejetés',
+        'en_attente' => 'En attente de validation',
     ],
 
     'menu' => [
@@ -761,11 +777,19 @@ return [
             'tout_soumettre' => 'Tout soumettre (:n)',
             'soumettre' => 'Soumettre',
             'non_soumis' => '{0} Aucun brouillon non soumis|{1} 1 brouillon non soumis|[2,*] :n brouillons non soumis',
+            'rejetes' => '{0} Aucun élément rejeté|{1} 1 élément rejeté|[2,*] :n éléments rejetés',
+            'en_attente' => '{0} Aucun élément en attente de validation|{1} 1 élément en attente de validation|[2,*] :n éléments en attente de validation',
+            'vues' => [
+                'brouillons' => ['titre' => 'Brouillons', 'intro' => 'Éléments en brouillon jamais rejetés, toutes entités confondues. « Tout soumettre » passe chaque élément par le contrôle de sa fiche.', 'vide' => 'Aucun brouillon.'],
+                'rejetes' => ['titre' => 'Rejetés', 'intro' => 'Éléments rejetés par le VALIDATEUR, avec son motif. Corrigez-les depuis leur fiche, puis soumettez-les de nouveau.', 'vide' => 'Aucun élément rejeté.'],
+                'en_attente' => ['titre' => 'En attente de validation', 'intro' => 'Éléments soumis au VALIDATEUR, pas encore confirmés ni rejetés.', 'vide' => 'Aucun élément en attente de validation.'],
+            ],
             'colonnes' => ['element' => 'Élément', 'statut' => 'Statut', 'motif' => 'Motif du rejet', 'action' => 'Action'],
             'rejete' => 'Rejeté',
             'groupes' => [
                 'site' => 'Sites', 'type' => 'Types de boutiques', 'niveaux' => 'Niveaux', 'zones' => 'Zones', 'unites' => 'Unités', 'moyens' => 'Moyens de paiement',
                 'grille' => 'Grilles tarifaires', 'finances' => 'Données financières des sites', 'campagne' => 'Campagnes',
+                'investissement' => 'Paramètres d’investissement',
             ],
         ],
         'resultat' => [
@@ -1882,6 +1906,13 @@ return [
             'ancien_code' => 'Ce code a déjà été porté par un autre site : il ne peut pas être réutilisé.',
         ],
         'finances' => [
+            'liste' => [
+                'titre' => 'Finances des sites',
+                'intro' => 'Données financières de chaque site (coût total, part attendue des occupants, source du complément) : saisies par le RÉGULATEUR, confirmées par le VALIDATEUR.',
+                'colonnes' => ['site' => 'Site', 'statut' => 'Statut'],
+                'aucune' => 'Non saisies',
+                'unite' => 'sites',
+            ],
             'titre' => 'Données financières',
             'aide' => 'Coût total, part attendue des occupants et source du complément. Saisies par le RÉGULATEUR, confirmées par le VALIDATEUR ; jamais visibles du GESTIONNAIRE DES SITES ET BOUTIQUES.',
             'voir' => 'Voir les données financières',

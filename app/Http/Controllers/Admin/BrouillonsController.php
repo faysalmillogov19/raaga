@@ -16,6 +16,9 @@ class BrouillonsController extends Controller
 {
     public function __invoke(Request $request): View
     {
-        return view('admin.brouillons', ['groupes' => SoumissionGroupee::brouillons($request->user())]);
+        // Filtre du menu « Mes soumissions » (RÉGULATEUR) : brouillons, rejetés ou en attente de validation.
+        $vue = in_array($request->query('vue'), SoumissionGroupee::VUES, true) ? $request->query('vue') : null;
+
+        return view('admin.brouillons', ['groupes' => SoumissionGroupee::brouillons($request->user(), $vue), 'vue' => $vue]);
     }
 }

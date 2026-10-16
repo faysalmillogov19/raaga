@@ -46,6 +46,9 @@ class SoumissionGroupee
         'unites' => Droit::UnitesGerer, 'moyens' => Droit::MoyensPaiementGerer, 'grille' => Droit::BoutiquesSaisir, 'finances' => Droit::BoutiquesSaisir, 'campagne' => Droit::BoutiquesSaisir, 'investissement' => Droit::TranchesSaisir,
     ];
 
+    /** Filtres de « Mes brouillons » (menu « Mes soumissions » du RÉGULATEUR) ; sans filtre : brouillons et rejetés. */
+    public const VUES = ['brouillons', 'rejetes', 'en_attente'];
+
     private const REFERENTIELS = ['type' => TypeBoutique::class, 'niveaux' => Niveau::class, 'zones' => ZoneSite::class, 'unites' => Unite::class, 'moyens' => MoyenPaiement::class];
 
     public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal) {}
@@ -112,16 +115,17 @@ class SoumissionGroupee
     }
 
     /**
-     * « Mes brouillons » : brouillons et rejetés de chaque entité que l'utilisateur soumet, regroupés par entité.
+     * « Mes brouillons » : brouillons et rejetés de chaque entité que l'utilisateur soumet, regroupés par entité ;
+     * ou seulement les brouillons, les rejetés, ou ce qui attend le VALIDATEUR (filtre « vue »).
      *
      * @return array<string, Collection<int, Model>>
      */
-    public static function brouillons(User $user): array
+    public static function brouillons(User $user, ?string $vue = null): array
     {
         $groupes = [];
         foreach (array_keys(self::DROITS) as $entite) {
             if (self::peut($user, $entite)) {
-                $lignes = self::aSoumettre($entite, self::requete($entite))->orderBy(isset(self::REFERENTIELS[$entite]) ? 'code' : 'id')->get();
+                $lignes = self::filtrer($entite, self::requete($entite), $vue)->orderBy(isset(self::REFERENTIELS[$entite]) ? 'code' : 'id')->get();
                 if ($lignes->isNotEmpty()) {
                     $groupes[$entite] = $lignes;
                 }
@@ -131,9 +135,31 @@ class SoumissionGroupee
         return $groupes;
     }
 
-    public static function nombreBrouillons(User $user): int
+    public static function nombreBrouillons(User $user, ?string $vue = null): int
     {
-        return collect(array_keys(self::DROITS))->filter(fn ($e) => self::peut($user, $e))->sum(fn ($e) => self::aSoumettre($e, self::requete($e))->count());
+        return collect(array_keys(self::DROITS))->filter(fn ($e) => self::peut($user, $e))->sum(fn ($e) => self::filtrer($e, self::requete($e), $vue)->count());
+    }
+
+    /** Lignes d'une vue de « Mes brouillons » : brouillons seuls, rejetés seuls, en attente de validation ; sans vue : à soumettre. */
+    public static function filtrer(string $entite, Builder $requete, ?string $vue): Builder
+    {
+        if ($vue === null) {
+            return self::aSoumettre($entite, $requete);
+        }
+        $referentiel = isset(self::REFERENTIELS[$entite]);
+        $relation = ['grille' => 'grilleTarifaire', 'finances' => 'finances'][$entite] ?? null;
+        $condition = match (true) {
+            $vue === 'en_attente' => fn (Builder $q) => $q->where('statut', match (true) {
+                $referentiel => StatutTypeBoutique::AValider->value,
+                $entite === 'campagne' => 'SOUMISE',
+                default => 'SOUMIS',
+            }),
+            $referentiel => fn (Builder $q) => $q->where('statut', $vue === 'rejetes' ? StatutTypeBoutique::Rejete->value : StatutTypeBoutique::Brouillon->value),
+            // Paramétrage rejeté : revenu en brouillon avec le motif du VALIDATEUR.
+            default => fn (Builder $q) => $q->where('statut', 'BROUILLON')->{$vue === 'rejetes' ? 'whereNotNull' : 'whereNull'}('motif_rejet'),
+        };
+
+        return $relation ? $requete->whereHas($relation, $condition) : $condition($requete);
     }
 
     /** Fiche de l'élément. */

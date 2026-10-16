@@ -48,7 +48,8 @@ class CadreAdminTest extends TestCase
                 : $page->assertDontSee('<p class="adm-groupe">'.e(__('admin.groupes.'.$groupe)).'</p>', false);
             foreach ($entrees as $entree) {
                 $lien = 'href="'.MenuBackoffice::url($entree).'" class="bo-lien';
-                collect($menu[$groupe] ?? [])->contains('cle', $entree['cle']) ? $page->assertSee($lien, false) : $page->assertDontSee($lien, false);
+                // Le RÉGULATEUR a son propre regroupement : l'entrée est cherchée dans tout son menu.
+                collect($menu)->flatten(1)->contains('cle', $entree['cle']) ? $page->assertSee($lien, false) : $page->assertDontSee($lien, false);
             }
         }
         // Lien actif : le tableau de bord, en gras sur fond var(--side-active).

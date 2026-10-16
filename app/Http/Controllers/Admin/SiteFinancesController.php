@@ -12,12 +12,19 @@ use App\Models\SiteFinance;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Parametrage\WorkflowParametrage;
+use App\Support\BadgeStatut;
 use App\Support\FicheSite;
+use App\Support\Tableau\Colonne;
+use App\Support\Tableau\ResultatTableau;
+use App\Support\Tableau\Tableau;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Données financières d'un site (coût total, part attendue des occupants, source du complément) : RÉGULATEUR saisit et
@@ -29,6 +36,28 @@ class SiteFinancesController extends Controller
     use EnregistreEtSoumet;
 
     public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal) {}
+
+    /** Liste des sites et de l'état de leurs données financières (tri, recherche, export, soumission groupée). */
+    public function index(Request $request): Response|StreamedResponse|View
+    {
+        Gate::authorize(Droit::BoutiquesVoir->value);
+        $f = __('admin.sites.finances.liste');
+
+        return Tableau::pour(Site::query()->with('finances'), 'finances')
+            ->colonnes([
+                Colonne::make('nom', $f['colonnes']['site'])->triable()->recherchable(['nom', 'code'])
+                    ->valeur(fn (Site $s) => new HtmlString('<a href="'.e(route('admin.sites.finances', $s)).'" class="font-bold text-vert-fonce underline underline-offset-2">'
+                        .e(($s->code ? $s->code.' · ' : '').$s->nom).'</a>'))
+                    ->texte(fn (Site $s) => $s->nom),
+                Colonne::make('statut', $f['colonnes']['statut'])
+                    ->valeur(fn (Site $s) => $s->finances ? BadgeStatut::html($s->finances->statut) : $f['aucune'])
+                    ->texte(fn (Site $s) => $s->finances?->statut->label() ?? $f['aucune']),
+            ])
+            ->selection('finances', $request->user())
+            ->triParDefaut('nom')
+            ->unite($f['unite'])
+            ->repondre($request, fn (ResultatTableau $t) => view('admin.sites.finances-liste', ['tableau' => $t]));
+    }
 
     public function show(Site $site): View
     {

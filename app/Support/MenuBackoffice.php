@@ -30,7 +30,8 @@ use App\Services\Validation\SoumissionGroupee;
 final class MenuBackoffice
 {
     /** Icône de chaque menu dépliant (barre latérale réduite en icônes). */
-    public const ICONES_MENUS = ['referentiels' => 'referentiels', 'modalites' => 'dividendes', 'imports' => 'importer', 'a_valider' => 'taches'];
+    public const ICONES_MENUS = ['referentiels' => 'referentiels', 'modalites' => 'dividendes', 'imports' => 'importer', 'a_valider' => 'taches',
+        'tarification' => 'dividendes', 'location' => 'boutiques', 'invest' => 'tranches', 'site_public' => 'plateforme', 'soumissions' => 'taches'];
 
     /**
      * « etape » : étape de livraison (back-office métier), ou du module d'administration quand « module » = admin.
@@ -131,6 +132,66 @@ final class MenuBackoffice
     }
 
     /**
+     * Menu du RÉGULATEUR, regroupé par domaine en menus dépliants (16/10/2026) : mêmes écrans, mêmes URL, mêmes droits
+     * que la définition commune, qui reste celle des autres profils. Les écrans hors des domaines demandés sont rangés
+     * dans le domaine le plus proche (Sites, Capacités : Tarification ; Boutiques : Location ; Remboursements et
+     * Référentiels de paiement : Modalités ; Actions A, opérations et contrôle : RAAGA Invest ; Journal d'audit et
+     * Observations : Mes soumissions).
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    public static function regulateur(): array
+    {
+        $dans = fn (string $menu, string $cle, array $plus = []) => [...self::entree($cle), 'sous_menu' => $menu, ...$plus];
+        $libelle = fn (string $cle) => __('admin.menu_regulateur.'.$cle);
+        $soumissions = fn (string $cle, string $vue) => ['cle' => $cle, 'route' => 'admin.brouillons', 'requete' => ['vue' => $vue], 'droit' => Droit::BrouillonsVoir,
+            'icone' => 'taches', 'etape' => 0, 'sous_menu' => 'soumissions', 'libelle' => $libelle($cle)];
+        $finances = ['admin.sites.finances', 'admin.sites.finances.*'];
+
+        return [
+            'pilotage' => [
+                self::entree('tableau'),
+                // Tarification : grille, unités, données financières des sites (liste, puis fiche de chaque site).
+                $dans('tarification', 'grille'),
+                $dans('tarification', 'unites'),
+                ['cle' => 'finances', 'route' => 'admin.sites.finances.liste', 'droit' => Droit::BoutiquesSaisir, 'icone' => 'dividendes', 'etape' => 0,
+                    'sous_menu' => 'tarification', 'inclure' => $finances, 'libelle' => $libelle('finances')],
+                $dans('tarification', 'sites', ['exclure' => [...self::entree('sites')['exclure'], ...$finances]]),
+                $dans('tarification', 'capacites'),
+                // Location des boutiques : campagnes (hors grille tarifaire, sous la même route), cautions, boutiques.
+                $dans('location', 'boutiques', ['exclure' => ['admin.boutiques.grilles', 'admin.boutiques.grilles.*'], 'libelle' => $libelle('campagnes')]),
+                $dans('location', 'cautions'),
+                $dans('location', 'boutiques_referentiel'),
+                $dans('modalites', 'moyens'),
+                $dans('modalites', 'delais'),
+                $dans('modalites', 'remboursements'),
+                $dans('modalites', 'referentiels', ['libelle' => $libelle('referentiels')]),
+                $dans('invest', 'investissement'),
+                $dans('invest', 'tranches'),
+                $dans('invest', 'interets'),
+                $dans('invest', 'simulations'),
+                $dans('invest', 'dividendes'),
+                $dans('invest', 'souscriptions'),
+                $dans('invest', 'kyc'),
+                $dans('invest', 'conformite'),
+                $dans('invest', 'registre'),
+                $dans('invest', 'regulation'),
+                $dans('invest', 'dossiers_kyb'),
+                $dans('invest', 'conventions'),
+                $dans('invest', 'appels_fonds'),
+                $dans('invest', 'registre_a'),
+                $dans('site_public', 'phase', ['libelle' => $libelle('demarches')]),
+                // Mes soumissions : la page « Mes brouillons » filtrée (brouillons, rejetés, en attente du VALIDATEUR).
+                $soumissions('mes_brouillons', 'brouillons'),
+                $soumissions('rejetes', 'rejetes'),
+                $soumissions('en_attente', 'en_attente'),
+                $dans('soumissions', 'audit'),
+                $dans('soumissions', 'observations'),
+            ],
+        ];
+    }
+
+    /**
      * Entrées visibles pour l'utilisateur, groupées ; les groupes vides sont retirés.
      *
      * @return array<string, list<array{cle: string, route: string, droit: Droit, icone: string, etape: int}>>
@@ -140,7 +201,7 @@ final class MenuBackoffice
         return array_filter(array_map(
             fn (array $entrees) => array_values(array_filter($entrees, fn (array $e) => $user->can($e['droit']->value)
                 && ! (isset($e['masque_si']) && $user->can($e['masque_si']->value)))),
-            self::definition(),
+            $user->hasRole(Role::Regulateur) ? self::regulateur() : self::definition(),
         ));
     }
 
@@ -188,15 +249,20 @@ final class MenuBackoffice
         return (bool) (($user->menus_backoffice ?? [])[$menu] ?? false);
     }
 
-    /** Adresse d'une entrée du menu (route et paramètres éventuels). */
+    /** Adresse d'une entrée du menu (route, paramètres et filtre éventuels). */
     public static function url(array $entree): string
     {
-        return route($entree['route'], $entree['parametres'] ?? []);
+        return route($entree['route'], [...($entree['parametres'] ?? []), ...($entree['requete'] ?? [])]);
     }
 
     /** L'entrée est-elle celle de la page affichée ? (route et sous-routes, moins les exclusions, plus les inclusions) */
     public static function estActive(array $entree): bool
     {
+        // Entrées d'une même page qui diffèrent par un filtre (« Mes soumissions ») ; sans filtre : la première.
+        if (isset($entree['requete'])) {
+            return request()->routeIs($entree['route'])
+                && collect($entree['requete'])->every(fn ($v, $k) => request()->query($k, $v === 'brouillons' ? $v : null) === $v);
+        }
         if (isset($entree['liste']) && request()->routeIs('admin.referencement.zones.*')) {
             return request()->route('liste') === $entree['liste'];
         }
@@ -222,13 +288,17 @@ final class MenuBackoffice
         $file = $user->can(Droit::AValiderVoir->value);
         $total = $file ? AValider::total($user) : 0;
         $parElement = $file ? AValider::parElement($user) : [];
+        $regulateur = $user->hasRole(Role::Regulateur);
 
         return array_filter([
             // VALIDATEUR : total de la file « À valider » (entrée et vue d'ensemble), puis une valeur par rubrique.
             'a_valider' => $total,
             'menu:a_valider' => $total,
             ...($file ? collect(AValider::compteurs($user))->mapWithKeys(fn (int $n, string $g) => ['a_valider_'.$g => $n])->all() : []),
-            'brouillons' => $user->can(Droit::BrouillonsVoir->value) ? SoumissionGroupee::nombreBrouillons($user) : 0,
+            'brouillons' => $user->can(Droit::BrouillonsVoir->value) && ! $regulateur ? SoumissionGroupee::nombreBrouillons($user) : 0,
+            // RÉGULATEUR (« Mes soumissions ») : brouillons et rejetés comptés à part, sommés sur le menu parent.
+            'mes_brouillons' => $regulateur ? SoumissionGroupee::nombreBrouillons($user, 'brouillons') : 0,
+            'rejetes' => $regulateur ? SoumissionGroupee::nombreBrouillons($user, 'rejetes') : 0,
             // VALIDATEUR : sites soumis ; GESTIONNAIRE : sites rejetés à reprendre.
             'sites' => match (true) {
                 $valide => $parElement['site'] ?? 0,
