@@ -66,7 +66,7 @@
                   x-data="{ piece: @js(old('type_piece', 'CNIB')) }" data-formulaire-reservation>
                 @csrf
                 <fieldset>
-                    <legend class="text-lg font-bold text-encre">{{ $r['piece_titre'] }}</legend>
+                    <legend class="text-lg font-bold text-encre"><span class="champ-requis" aria-hidden="true">*</span> {{ $r['piece_titre'] }}</legend>
                     <p class="texte-carte">{{ $r['piece_aide'] }}</p>
                     <div class="mt-3 grid gap-3 sm:grid-cols-3">
                         @foreach ($pieces as $type)
@@ -82,7 +82,7 @@
                 <x-public.champ nom="numero_piece" :libelle="$r['numero_piece']" class="mt-4" maxlength="40" autocomplete="off" required />
 
                 <div class="mt-4">
-                    <label for="piece" class="block font-semibold text-encre">{{ $r['piece'] }}</label>
+                    <label for="piece" class="block font-semibold text-encre"><span class="champ-requis" aria-hidden="true">*</span> {{ $r['piece'] }}</label>
                     <input id="piece" name="piece" type="file" accept="image/jpeg,image/png,application/pdf" required aria-describedby="piece-erreur"
                            class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
                     <x-public.erreur :messages="$errors->get('piece')" id="piece-erreur" />
@@ -95,7 +95,7 @@
                 </div>
 
                 <fieldset class="mt-6">
-                    <legend class="font-bold text-encre">{{ $r['engagements'] }}</legend>
+                    <legend class="font-bold text-encre"><span class="champ-requis" aria-hidden="true">*</span> {{ $r['engagements'] }}</legend>
                     <p class="texte-carte">{{ $r['engagements_aide'] }}</p>
                     <div class="mt-2 space-y-3">
                         @foreach ($engagements as $document)

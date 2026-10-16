@@ -33,7 +33,7 @@
 
     @if ($motif)
         <div class="formulaire-champ adm-champ mt-4">
-            <label for="{{ $id }}-motif" class="adm-libelle">{{ __($motif === 'obligatoire' ? 'admin.composants.motif_obligatoire' : 'admin.composants.motif_facultatif') }}@if ($motif === 'obligatoire') <span class="adm-requis" aria-hidden="true">*</span>@endif</label>
+            <label for="{{ $id }}-motif" class="adm-libelle">@if ($motif === 'obligatoire')<span class="adm-requis" aria-hidden="true">*</span> @endif{{ __($motif === 'obligatoire' ? 'admin.composants.motif_obligatoire' : 'admin.composants.motif_facultatif') }}</label>
             <textarea id="{{ $id }}-motif" name="motif" rows="3" @if ($motif === 'obligatoire') required minlength="5" @endif maxlength="1000" class="champ"></textarea>
         </div>
     @endif

@@ -21,7 +21,7 @@
                 <x-public.champ nom="email" type="email" :libelle="__('public.contact.formulaire.email_facultatif')" :valeur="$user?->email" autocomplete="email" />
 
                 <div>
-                    <label for="objet" class="block font-semibold text-encre">{{ __('public.contact.formulaire.attributs.objet') }}</label>
+                    <label for="objet" class="block font-semibold text-encre"><span class="champ-requis" aria-hidden="true">*</span> {{ __('public.contact.formulaire.attributs.objet') }}</label>
                     <select id="objet" name="objet" class="champ mt-1.5 @error('objet') est-invalide @enderror" @error('objet') aria-invalid="true" @enderror aria-describedby="objet-erreur" required>
                         <option value="">{{ __('public.contact.formulaire.choisir') }}</option>
                         @foreach (\App\Models\DemandeContact::OBJETS as $objet)
@@ -32,7 +32,7 @@
                 </div>
 
                 <div>
-                    <label for="message" class="block font-semibold text-encre">{{ __('public.contact.formulaire.attributs.message') }}</label>
+                    <label for="message" class="block font-semibold text-encre"><span class="champ-requis" aria-hidden="true">*</span> {{ __('public.contact.formulaire.attributs.message') }}</label>
                     <p id="message-aide" class="texte-carte">{{ __('public.contact.formulaire.aide_message') }}</p>
                     <textarea id="message" name="message" rows="6" maxlength="2000" required
                               class="champ mt-1.5 min-h-[140px] py-3 @error('message') est-invalide @enderror"

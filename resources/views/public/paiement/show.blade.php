@@ -124,7 +124,7 @@
                           x-data="{ canal: @js(old('canal', count($canaux) === 1 ? $canaux[0]->value : null)) }">
                         @csrf
                         <fieldset>
-                            <legend class="text-lg font-bold text-encre">{{ __('public.paiement.choisir') }}</legend>
+                            <legend class="text-lg font-bold text-encre"><span class="champ-requis" aria-hidden="true">*</span> {{ __('public.paiement.choisir') }}</legend>
                             <div class="mt-3 grid gap-3 tab:grid-cols-2">
                                 @foreach ($canaux as $c)
                                     <label class="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-charte border-2 p-3"

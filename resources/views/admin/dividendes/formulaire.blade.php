@@ -33,7 +33,7 @@
             <div class="bo-carte !mt-0">
                 <p>{{ __('admin.dividendes.formulaire.avenant_intro') }}</p>
                 <div class="formulaire-champ mt-4">
-                    <label for="motif">{{ __('admin.parametrage.actions.motif') }}</label>
+                    <label for="motif"><span class="adm-requis" aria-hidden="true">*</span> {{ __('admin.parametrage.actions.motif') }}</label>
                     <textarea id="motif" name="motif" rows="2" required class="champ @error('motif') est-invalide @enderror">{{ old('motif') }}</textarea>
                     @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 </div>
@@ -79,7 +79,7 @@
                 <x-admin.liste nom="frais_supportes_par" :libelle="ucfirst($c['frais_supportes_par'])" :options="__('admin.dividendes.payeurs')" :valeur="$d->frais_supportes_par" />
                 <x-admin.champ nom="seuil_minimal" :libelle="ucfirst($c['seuil_minimal'])" type="number" min="0" :valeur="$d->seuil_minimal" :aide="$a['seuil']" required />
                 <x-admin.liste nom="canal_defaut" :libelle="ucfirst($c['canal_defaut'])" :options="$canaux" :valeur="$d->canal_defaut?->code" />
-                <x-admin.cases nom="canaux_autorises" :libelle="ucfirst($c['canaux_autorises'])" :options="$canaux" :valeurs="$d->canaux_autorises ?? []" class="lg:col-span-2" />
+                <x-admin.cases nom="canaux_autorises" :libelle="ucfirst($c['canaux_autorises'])" obligatoire :options="$canaux" :valeurs="$d->canaux_autorises ?? []" class="lg:col-span-2" />
                 <x-admin.champ nom="tentatives" :libelle="ucfirst($c['tentatives'])" type="number" min="0" max="10" :valeur="$d->tentatives" required />
                 <x-admin.champ nom="delai_tentatives_heures" :libelle="ucfirst($c['delai_tentatives_heures'])" type="number" min="1" max="720" :valeur="$d->delai_tentatives_heures" required />
             </div>

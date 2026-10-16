@@ -41,7 +41,7 @@
             @if ($sitesDisponibles->isEmpty())
                 <x-admin.message type="erreur" class="mt-4">{{ __('admin.boutiques.aucun_site') }} <a href="{{ route('admin.sites') }}">{{ __('admin.sites.titre') }}</a></x-admin.message>
             @else
-                <x-admin.cases nom="sites" :libelle="ucfirst($c['sites'])" class="mt-3"
+                <x-admin.cases nom="sites" :libelle="ucfirst($c['sites'])" obligatoire class="mt-3"
                                :options="$sitesDisponibles->mapWithKeys(fn ($site) => [$site->id => ($site->code ? $site->code.' · ' : '').$site->nom])->all()"
                                :valeurs="array_map('strval', (array) ($campagne->sites ?? []))" />
             @endif
@@ -53,7 +53,7 @@
             @error('types.*') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
             {{-- Une ligne par type : case à cocher, puis nombre maximum d'emplacements de ce type par personne (1 par défaut, au moins 1). --}}
             <fieldset class="mt-3" data-types-campagne>
-                <legend class="adm-libelle">{{ ucfirst($c['types']) }}</legend>
+                <legend class="adm-libelle"><span class="adm-requis" aria-hidden="true">*</span> {{ ucfirst($c['types']) }}</legend>
                 @error('limites.*') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 <div class="mt-2 grid gap-2">
                     @foreach ($typesDisponibles as $t)
@@ -80,7 +80,7 @@
         <section class="bo-carte !mt-0" aria-labelledby="s-paiement">
             <h2 id="s-paiement" class="!text-[1.15rem]">{{ __('admin.boutiques.sections.paiement') }}</h2>
             <div class="mt-3 grid gap-4 lg:grid-cols-2">
-                <x-admin.cases nom="canaux_actifs" :libelle="ucfirst($c['canaux_actifs'])"
+                <x-admin.cases nom="canaux_actifs" :libelle="ucfirst($c['canaux_actifs'])" obligatoire
                                :options="MoyenPaiement::proposables()->pluck('libelle', 'code')->all()"
                                :valeurs="$campagne->canaux_actifs ?? []" class="lg:col-span-2" />
                 {{-- Délai de paiement de la caution : celui des « Délais de paiement » (RÉGULATEUR), sauf ancien délai propre à la campagne. --}}

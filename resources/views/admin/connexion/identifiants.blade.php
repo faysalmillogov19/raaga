@@ -3,7 +3,7 @@
         @csrf
 
         <div class="formulaire-champ">
-            <label for="email">{{ __('admin.connexion.email') }}</label>
+            <label for="email"><span class="champ-requis" aria-hidden="true">*</span> {{ __('admin.connexion.email') }}</label>
             <input id="email" name="email" type="email" autocomplete="username" required autofocus
                    value="{{ old('email') }}" class="champ @error('email') est-invalide @enderror"
                    @error('email') aria-invalid="true" aria-describedby="email-erreur" @enderror>
@@ -13,7 +13,7 @@
         </div>
 
         <div class="formulaire-champ">
-            <label for="password">{{ __('admin.connexion.mot_de_passe') }}</label>
+            <label for="password"><span class="champ-requis" aria-hidden="true">*</span> {{ __('admin.connexion.mot_de_passe') }}</label>
             <input id="password" name="password" type="password" autocomplete="current-password" required
                    class="champ @error('password') est-invalide @enderror">
             @error('password')

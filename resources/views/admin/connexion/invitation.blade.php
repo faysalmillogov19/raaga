@@ -8,7 +8,7 @@
         </div>
 
         <div class="formulaire-champ">
-            <label for="password">{{ __('admin.connexion.mot_de_passe') }}</label>
+            <label for="password"><span class="champ-requis" aria-hidden="true">*</span> {{ __('admin.connexion.mot_de_passe') }}</label>
             <input id="password" name="password" type="password" required autocomplete="new-password"
                    minlength="{{ config('raaga.backoffice.mot_de_passe_min') }}" aria-describedby="password-aide"
                    class="champ @error('password') est-invalide @enderror">
@@ -17,7 +17,7 @@
         </div>
 
         <div class="formulaire-champ">
-            <label for="password_confirmation">{{ __('admin.invitation.confirmation') }}</label>
+            <label for="password_confirmation"><span class="champ-requis" aria-hidden="true">*</span> {{ __('admin.invitation.confirmation') }}</label>
             <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password" class="champ">
         </div>
 

@@ -36,7 +36,7 @@
 
                     @foreach ([['nom', 'text', 'family-name'], ['prenoms', 'text', 'given-name'], ['date_naissance', 'date', 'bday']] as [$champ, $type, $autocomplete])
                         <div class="formulaire-champ">
-                            <label for="{{ $champ }}">{{ __('public.compte.inscription.'.$champ) }}</label>
+                            <label for="{{ $champ }}"><span class="champ-requis" aria-hidden="true">*</span> {{ __('public.compte.inscription.'.$champ) }}</label>
                             <input id="{{ $champ }}" name="{{ $champ }}" type="{{ $type }}" autocomplete="{{ $autocomplete }}" required
                                    class="champ @error($champ) est-invalide @enderror" :class="{ 'est-invalide': erreurs.{{ $champ }} }"
                                    value="{{ $valeurs[$champ] ?? '' }}" aria-describedby="{{ $champ }}-erreur"
@@ -48,7 +48,7 @@
                     @endforeach
 
                     <div class="formulaire-champ">
-                        <label for="pays_residence">{{ __('public.compte.inscription.pays_residence') }}</label>
+                        <label for="pays_residence"><span class="champ-requis" aria-hidden="true">*</span> {{ __('public.compte.inscription.pays_residence') }}</label>
                         <select id="pays_residence" name="pays_residence" class="champ" x-model="pays">
                             @foreach ($pays as $code => $nom)
                                 <option value="{{ $code }}" @selected($valeurs['pays_residence'] === $code)>{{ $nom }}</option>

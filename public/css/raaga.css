@@ -279,3 +279,10 @@ button.plan-case:focus-visible {
     font-weight: 400;
     opacity: .6;
 }
+
+/* Champ obligatoire (pages publiques, espace institutionnel, connexion) : astérisque devant le libellé, comme .adm-requis. */
+.champ-requis,
+body:not(.adm) .adm-requis {
+    color: var(--rouge, #CE1126);
+    font-weight: 700;
+}

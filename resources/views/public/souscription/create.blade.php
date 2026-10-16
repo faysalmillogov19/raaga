@@ -97,7 +97,7 @@
                     {{-- 2. Engagements : jamais pré-cochés --}}
                     <section class="carte p-5" aria-labelledby="engagements-titre">
                         <div class="flex items-baseline justify-between gap-3">
-                            <h2 id="engagements-titre" class="!text-lg">{{ __('public.souscription.etape_engagements') }}</h2>
+                            <h2 id="engagements-titre" class="!text-lg"><span class="champ-requis" aria-hidden="true">*</span> {{ __('public.souscription.etape_engagements') }}</h2>
                             <p class="font-bold text-vert-fonce" aria-live="polite"><span x-text="coches.length">0</span>/4</p>
                         </div>
                         <p class="texte-carte">{{ __('public.souscription.engagements_aide') }}</p>

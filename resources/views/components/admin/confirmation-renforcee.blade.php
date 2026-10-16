@@ -12,14 +12,14 @@
             <p class="mt-2">{{ $message }}</p>
 
             <div class="formulaire-champ mt-4">
-                <label for="{{ $id }}-mot">{{ __('admin.confirmation_renforcee.mot') }}</label>
+                <label for="{{ $id }}-mot"><span class="adm-requis" aria-hidden="true">*</span> {{ __('admin.confirmation_renforcee.mot') }}</label>
                 <p class="aide-champ !mt-0">{{ __('admin.confirmation_renforcee.consigne', ['mot' => \App\Services\Backoffice\ConfirmationRenforcee::MOT]) }}</p>
                 <input id="{{ $id }}-mot" name="confirmation" type="text" autocomplete="off" required x-model="mot" class="champ mt-1.5">
             </div>
 
             @if ($totp)
                 <div class="formulaire-champ">
-                    <label for="{{ $id }}-code">{{ __('admin.confirmation_renforcee.code') }}</label>
+                    <label for="{{ $id }}-code"><span class="adm-requis" aria-hidden="true">*</span> {{ __('admin.confirmation_renforcee.code') }}</label>
                     <input id="{{ $id }}-code" name="code_totp" type="text" inputmode="numeric" autocomplete="one-time-code" required maxlength="6"
                            class="champ text-[1.2rem] font-bold tracking-[.3em]">
                 </div>

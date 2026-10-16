@@ -12,7 +12,7 @@
     <form method="POST" action="{{ route($espace->route('connexion.enrolement')) }}" class="formulaire" x-data="{ envoi: false }" @submit="envoi = true">
         @csrf
         <div class="formulaire-champ">
-            <label for="code">{{ __('admin.connexion.code') }}</label>
+            <label for="code"><span class="champ-requis" aria-hidden="true">*</span> {{ __('admin.connexion.code') }}</label>
             <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" required maxlength="6"
                    class="champ text-[1.3rem] font-bold tracking-[.3em] @error('code') est-invalide @enderror">
             @error('code')

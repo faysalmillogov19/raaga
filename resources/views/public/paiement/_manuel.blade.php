@@ -52,7 +52,7 @@
     @if ($etat !== 'controle')
         <form method="POST" action="{{ $routes['preuve'] }}" enctype="multipart/form-data" class="mt-5 border-t border-ligne pt-4" novalidate>
             @csrf
-            <label for="preuve" class="block font-semibold text-encre">{{ $m['preuve'] }}</label>
+            <label for="preuve" class="block font-semibold text-encre"><span class="champ-requis" aria-hidden="true">*</span> {{ $m['preuve'] }}</label>
             <p id="preuve-aide" class="texte-carte">{{ $m['preuve_aide'] }}</p>
             <input id="preuve" name="preuve" type="file" accept="image/jpeg,image/png,application/pdf" required aria-describedby="preuve-aide preuve-erreur"
                    @error('preuve') aria-invalid="true" @enderror

@@ -2,7 +2,7 @@
 @props(['id'])
 @php($s = __('admin.imports_validation.choix'))
 <fieldset class="mt-3" data-statut-apres>
-    <legend class="font-bold text-encre">{{ $s['legende'] }}</legend>
+    <legend class="font-bold text-encre"><span class="adm-requis" aria-hidden="true">*</span> {{ $s['legende'] }}</legend>
     @foreach (['SOUMETTRE' => $s['soumettre'], 'BROUILLON' => $s['brouillon']] as $valeur => $libelle)
         <label class="mt-1 flex items-start gap-2 font-normal">
             <input type="radio" name="statut_apres" value="{{ $valeur }}" id="{{ $id }}-{{ strtolower($valeur) }}" class="mt-1" required @checked($valeur === 'SOUMETTRE')>
