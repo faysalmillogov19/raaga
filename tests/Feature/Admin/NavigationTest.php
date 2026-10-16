@@ -24,7 +24,7 @@ class NavigationTest extends TestCase
         'regulateur' => ['brouillons'],
     ];
 
-    /** Menus attendus par profil (d'après le tableau des droits de la spécification). */
+    /** Écrans autorisés par profil (d'après le tableau des droits) ; le menu les montre tous, sauf les pages en préparation. */
     private const MENUS = [
         'superadmin' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'phase', 'plateforme', 'securite', 'audit', 'parametres', 'connexions', 'unites', 'moyens', 'delais'],
         'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme', 'interets', 'kyc'],
@@ -52,7 +52,8 @@ class NavigationTest extends TestCase
         $user = $this->connecterBackoffice($role);
 
         $visibles = collect(MenuBackoffice::pour($user))->flatten(1)->pluck('cle')->sort()->values()->all();
-        $attendus = collect(self::MENUS[$role->value])->sort()->values()->all();
+        $menu = collect(self::MENUS[$role->value])->diff(MenuBackoffice::EN_PREPARATION)->values()->all();
+        $attendus = collect($menu)->sort()->values()->all();
         $this->assertSame($attendus, $visibles);
 
         $page = $this->get('/admin')->assertOk()->assertSee('<span class="adm-profil-role">'.e($role->label()).'</span>', false);
@@ -60,7 +61,7 @@ class NavigationTest extends TestCase
         foreach (MenuBackoffice::definition() as $entrees) {
             foreach ($entrees as $entree) {
                 $lien = 'href="'.MenuBackoffice::url($entree).'" class="bo-lien';
-                in_array($entree['cle'], self::MENUS[$role->value], true)
+                in_array($entree['cle'], $menu, true)
                     ? $page->assertSee($lien, false)
                     : $page->assertDontSee($lien, false);
             }

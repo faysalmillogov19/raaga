@@ -23,18 +23,20 @@ class MenuRegulateurTest extends TestCase
     private const MENUS = [
         'tarification' => ['grille', 'unites', 'finances', 'sites', 'capacites'],
         'location' => ['boutiques', 'cautions', 'boutiques_referentiel'],
-        'modalites' => ['moyens', 'delais', 'remboursements', 'referentiels'],
-        'invest' => ['investissement', 'tranches', 'interets', 'simulations', 'dividendes', 'souscriptions', 'kyc', 'conformite', 'registre', 'regulation',
-            'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a'],
+        // Pages en préparation masquées : Référentiels, Simulations, Souscriptions, Alertes, Registre B, Espace régulateur,
+        // Journal d'audit, Observations.
+        'modalites' => ['moyens', 'delais', 'remboursements'],
+        'invest' => ['investissement', 'tranches', 'interets', 'dividendes', 'kyc', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a'],
         'site_public' => ['phase'],
-        'soumissions' => ['mes_brouillons', 'rejetes', 'en_attente', 'audit', 'observations'],
+        'soumissions' => ['mes_brouillons', 'rejetes', 'en_attente'],
     ];
 
-    /** Ancien menu : la définition commune filtrée par les droits du profil. */
+    /** Ancien menu : la définition commune filtrée par les droits du profil, sans les pages en préparation. */
     private function ancienMenu(User $user): array
     {
         return collect(MenuBackoffice::definition())->flatten(1)
             ->filter(fn (array $e) => $user->can($e['droit']->value) && ! (isset($e['masque_si']) && $user->can($e['masque_si']->value)))
+            ->reject(fn (array $e) => MenuBackoffice::enPreparation($e['cle']))
             ->values()->all();
     }
 
@@ -55,7 +57,7 @@ class MenuRegulateurTest extends TestCase
         // Chaque ancien onglet est dans le nouveau menu, à la même URL (« Mes brouillons » : même page, filtrée).
         $nouveau = collect($menu)->flatten(1);
         $anciens = $this->ancienMenu($user);
-        $this->assertCount(30, $anciens);
+        $this->assertCount(22, $anciens);
         foreach ($anciens as $ancien) {
             $cle = $ancien['cle'] === 'brouillons' ? 'mes_brouillons' : $ancien['cle'];
             $entree = $nouveau->firstWhere('cle', $cle);

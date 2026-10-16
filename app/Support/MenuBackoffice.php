@@ -34,6 +34,13 @@ final class MenuBackoffice
         'tarification' => 'dividendes', 'location' => 'boutiques', 'invest' => 'tranches', 'site_public' => 'plateforme', 'soumissions' => 'taches',
         'gestion_boutiques' => 'boutiques', 'controle' => 'audit', 'actions_a' => 'institutions'];
 
+    /**
+     * Pages d'attente (« Page en préparation », SectionController::show) : entrées retirées des menus de tous les profils
+     * tant qu'elles ne sont pas construites ; la route reste en place, protégée par son droit (16/10/2026).
+     */
+    public const EN_PREPARATION = ['demandes', 'contenus', 'approbations', 'securite', 'simulations', 'conformite', 'souscriptions',
+        'registre', 'audit', 'regulation', 'observations', 'referentiels'];
+
     /** Rubriques de « À valider » du VALIDATEUR, classées sous quatre intertitres (badge de l'intertitre : somme des rubriques). */
     public const INTERTITRES_A_VALIDER = [
         'referencement' => ['sites', 'imports', 'referentiels', 'autorisations'],
@@ -252,7 +259,7 @@ final class MenuBackoffice
     {
         return array_filter(array_map(
             fn (array $entrees) => array_values(array_filter($entrees, fn (array $e) => $user->can($e['droit']->value)
-                && ! (isset($e['masque_si']) && $user->can($e['masque_si']->value)))),
+                && ! (isset($e['masque_si']) && $user->can($e['masque_si']->value)) && ! self::enPreparation($e['cle']))),
             match (true) {
                 $user->hasRole(Role::Regulateur) => self::regulateur(),
                 $user->hasRole(Role::Validateur) => self::validateur(),
@@ -303,6 +310,12 @@ final class MenuBackoffice
         }
 
         return (bool) (($user->menus_backoffice ?? [])[$menu] ?? false);
+    }
+
+    /** Page encore en préparation (aucun lien de menu n'y mène). */
+    public static function enPreparation(string $cle): bool
+    {
+        return in_array($cle, self::EN_PREPARATION, true);
     }
 
     /** Adresse d'une entrée du menu (route, paramètres et filtre éventuels). */

@@ -622,7 +622,7 @@ return [
     ],
 
     'section' => [
-        'en_construction' => 'Section en cours de réalisation',
+        'en_construction' => 'Page en préparation',
         'arrive' => 'Cette section sera livrée à l’étape :etape du back-office.',
         'arrive_admin' => 'Cette section sera livrée à l’étape :etape du module d’administration (support et assistance).',
         'vos_droits' => 'Vos droits dans cette section',

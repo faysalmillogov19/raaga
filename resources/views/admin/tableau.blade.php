@@ -8,9 +8,9 @@
 
 <x-admin.layout :titre="$t['titre']" :sous-titre="trans_choice('admin.tableau.sous_titre', $n, ['n' => format_nombre($n)])">
     <x-slot:actions>
-        @can(Droit::AuditVoir->value)
+        @if (! \App\Support\MenuBackoffice::enPreparation('audit') && auth()->user()->can(Droit::AuditVoir->value))
             <x-admin.bouton variante="contour" :href="route('admin.audit')">{{ __('admin.menu.audit') }}</x-admin.bouton>
-        @endcan
+        @endif
         @can(Droit::KycTraiter->value)
             <x-admin.bouton :href="route('admin.kyc')">{{ $t['traiter_kyc'] }}</x-admin.bouton>
         @elsecan(Droit::SitesGerer->value)

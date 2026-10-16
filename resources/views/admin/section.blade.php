@@ -1,5 +1,5 @@
 <x-admin.layout :titre="__('admin.menu.'.$cle)" :fil="[['libelle' => __('admin.menu.'.$cle)]]">
-    <div class="bo-carte">
+    <div class="bo-carte" data-en-preparation>
         <p class="font-bold text-encre">{{ __('admin.section.en_construction') }}</p>
         <p class="texte-carte mt-1">{{ __($module === 'admin' ? 'admin.section.arrive_admin' : 'admin.section.arrive', ['etape' => $etape]) }}</p>
     </div>

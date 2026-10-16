@@ -39,7 +39,8 @@ class MenuValidateurTest extends TestCase
     private function ancienMenu(User $user): array
     {
         return collect(MenuBackoffice::definition())->flatten(1)
-            ->filter(fn (array $e) => $user->can($e['droit']->value) && ! (isset($e['masque_si']) && $user->can($e['masque_si']->value)))->values()->all();
+            ->filter(fn (array $e) => $user->can($e['droit']->value) && ! (isset($e['masque_si']) && $user->can($e['masque_si']->value)))
+            ->reject(fn (array $e) => MenuBackoffice::enPreparation($e['cle']))->values()->all();
     }
 
     /** Deux sites soumis (Référencement) et une réservation prête à attribuer (Campagnes & réservations). */
@@ -73,9 +74,10 @@ class MenuValidateurTest extends TestCase
             array_map(fn ($e) => substr($e['cle'], strlen('a_valider_')), array_slice($aValider, 1)));
         $attendus = [
             'gestion_boutiques' => ['attributions_a_faire', 'cautions', 'boutiques', 'sites', 'boutiques_referentiel', 'imports_sites', 'imports_boutiques'],
-            'invest' => ['investissement', 'tranches', 'dividendes', 'simulations', 'registre'],
+            // Pages en préparation masquées : Simulations, Registre B, Observations, Alertes conformité, Journal d'audit.
+            'invest' => ['investissement', 'tranches', 'dividendes'],
             'actions_a' => ['dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a'],
-            'controle' => ['historique', 'observations', 'conformite', 'audit'],
+            'controle' => ['historique'],
         ];
         foreach (array_slice($elements, 2) as $element) {
             $this->assertSame($attendus[$element['cle']], array_column($element['entrees'], 'cle'), $element['cle']);
