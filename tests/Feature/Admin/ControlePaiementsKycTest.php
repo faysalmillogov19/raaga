@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Domain\Dividendes\LigneDistribution;
 use App\Enums\CanalSouscription;
 use App\Enums\FaceDocument;
 use App\Enums\MethodeAllocation;
@@ -20,10 +21,13 @@ use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
+use App\Models\BlocageActions;
 use App\Models\Boutique;
 use App\Models\CorrectionPaiement;
+use App\Models\DistributionDividende;
 use App\Models\Duree;
 use App\Models\KycDocument;
+use App\Models\LigneRegistre;
 use App\Models\Paiement;
 use App\Models\Relance;
 use App\Models\Remboursement;
@@ -34,10 +38,13 @@ use App\Models\User;
 use App\Models\VerificationKyc;
 use App\Notifications\AnnulationIdentite;
 use App\Notifications\RelancePaiement;
+use App\Services\Dividendes\SimulationDistribution;
 use App\Services\Paiement\ControlePaiements;
 use Database\Seeders\ComptesDemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\Boutiques;
@@ -275,6 +282,56 @@ class ControlePaiementsKycTest extends TestCase
             ->assertSessionHas('succes');
         $this->assertSame(Remboursement::EFFECTUE, $r->fresh()->statut);
         $this->assertSame(StatutSouscription::Remboursee, $s->fresh()->statut);
+    }
+
+    public function test_annulation_d_identite_conserve_les_actions_allouees_le_registre_et_les_dividendes(): void
+    {
+        $citoyen = $this->citoyen(StatutKyc::Valide, ['name' => 'Issa ACTIONNAIRE']);
+        $this->dossierKyc($citoyen);
+        $allouee = $this->souscription($citoyen, StatutSouscription::Allouee, ['nb_actions_allouees' => 5, 'payee_le' => now()->subMonth()]);
+        $this->paiement($allouee, 'ORANGE_MONEY', StatutPaiement::Confirme);
+        $ligne = LigneRegistre::create(['numero_certificat' => 'CB-2026-000001', 'user_id' => $citoyen->id, 'tranche_id' => $this->tranche->id,
+            'souscription_id' => $allouee->id, 'nb_actions' => 5, 'numero_action_debut' => 1, 'numero_action_fin' => 5, 'date_inscription' => now()->subMonth()]);
+        $registre = LigneRegistre::query()->orderBy('id')->get()->map->getAttributes()->all();
+        $payee = $this->souscription($citoyen, StatutSouscription::Payee, ['payee_le' => now()]);
+        $this->paiement($payee, 'ORANGE_MONEY', StatutPaiement::Confirme);
+        $reservee = $this->souscription($citoyen);
+
+        Notification::fake();
+        $this->en($this->admin)->post(route('admin.kyc.douteux', $citoyen), ['motif' => 'Photo de la CNIB retouchée'])->assertSessionHas('succes');
+        $v = VerificationKyc::query()->sole();
+        $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['annulation:'.$v->id], 'decision' => 'confirmer', 'mode' => 'ligne'])
+            ->assertSessionHas('succes');
+        $this->assertSame(StatutKyc::Rejete, $citoyen->fresh()->statut_kyc);
+
+        // Souscriptions réservées ou payées non encore allouées : annulées, la payée remboursée.
+        $this->assertSame([StatutSouscription::Annulee, StatutSouscription::Annulee], [$payee->fresh()->statut, $reservee->fresh()->statut]);
+        $this->assertTrue(Remboursement::query()->where('souscription_id', $payee->id)->exists());
+
+        // Actions allouées et registre : inchangés, aucun remboursement, aucun blocage.
+        $this->assertSame(StatutSouscription::Allouee, $allouee->fresh()->statut);
+        $this->assertSame(5, $allouee->fresh()->nb_actions_allouees);
+        $this->assertSame(StatutPaiement::Confirme, $allouee->paiements()->sole()->statut);
+        $this->assertFalse(Remboursement::query()->where('souscription_id', $allouee->id)->exists());
+        $this->assertSame($registre, LigneRegistre::query()->orderBy('id')->get()->map->getAttributes()->all());
+        $this->assertFalse(BlocageActions::query()->where('user_id', $citoyen->id)->exists());
+
+        // Dividendes versés normalement : l'actionnaire est bénéficiaire, ses actions ne sont pas bloquées.
+        Storage::fake('local');
+        $this->en($this->regulateur)->post(route('admin.dividendes.store'), [
+            'classe_actions' => 'B', 'exercice' => 2025, 'ag_date' => now()->toDateString(), 'ag_pv_numero' => 'PV-AG-B',
+            'pv' => UploadedFile::fake()->create('pv.pdf', 50, 'application/pdf'), 'resultat_distribuable' => 5_000_000, 'mode_calcul' => 'MONTANT_GLOBAL',
+            'montant_global' => 100_000, 'date_arrete' => now()->addDay()->toDateString(), 'date_mise_en_paiement' => now()->addDays(10)->toDateString(),
+            'taux_irvm' => '12.5', 'frais_supportes_par' => 'RAAGA', 'seuil_minimal' => 0, 'canaux_autorises' => ['ORANGE_MONEY'],
+            'canal_defaut' => 'ORANGE_MONEY', 'tentatives' => 1, 'delai_tentatives_heures' => 24,
+            'conservation_non_reclames_mois' => 60, 'traitement_non_reclames' => 'CONSIGNATION',
+        ])->assertSessionHasNoErrors();
+        $distribution = DistributionDividende::query()->sole();
+        $resultat = app(SimulationDistribution::class)->simuler($distribution);
+        $this->assertSame([1, 5], [$resultat->nbBeneficiaires, $resultat->nbActions]);
+        $part = app(SimulationDistribution::class)->ligneInstitution($distribution, $citoyen->id);
+        $this->assertSame([100_000, LigneDistribution::A_PAYER], [$part->brut, $part->statut]);
+        $this->assertSame($ligne->id, LigneRegistre::query()->where('user_id', $citoyen->id)->sole()->id);
     }
 
     public function test_dossier_conforme_et_annulation_rejetee(): void

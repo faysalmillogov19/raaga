@@ -110,7 +110,8 @@ class DossiersIdentite
     /**
      * Annulation pour identité douteuse : souscriptions réservées ou payées annulées, candidatures en cours annulées
      * (boutique attribuée redevenue disponible), paiements en attente annulés, remboursement ouvert pour chaque
-     * paiement confirmé. Les souscriptions déjà allouées (actions inscrites au registre) ne sont pas touchées.
+     * paiement confirmé. Les souscriptions déjà allouées (actions inscrites au registre) ne sont pas touchées : actions
+     * conservées, aucun blocage, dividendes versés normalement.
      *
      * @return array{souscriptions: list<string>, candidatures: list<string>, boutiques: int, remboursements: int}
      */
