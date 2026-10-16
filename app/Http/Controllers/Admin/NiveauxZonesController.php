@@ -57,8 +57,9 @@ class NiveauxZonesController extends Controller
     {
         return match ($liste) {
             'unites' => ['voir' => Droit::UnitesVoir, 'gerer' => Droit::UnitesGerer, 'confirmer' => Droit::UnitesConfirmer][$action],
-            'moyens' => ['voir' => Droit::MoyensPaiementVoir, 'gerer' => Droit::MoyensPaiementGerer, 'confirmer' => Droit::MoyensPaiementConfirmer][$action],
-            default => ['voir' => Droit::SitesVoir, 'gerer' => Droit::SitesGerer, 'confirmer' => Droit::SitesConfirmer][$action],
+            // Onglet « Modalités de paiement » ; onglet « Référentiels » pour les niveaux et les zones.
+            'moyens' => ['voir' => Droit::ModalitesPaiementVoir, 'gerer' => Droit::MoyensPaiementGerer, 'confirmer' => Droit::MoyensPaiementConfirmer][$action],
+            default => ['voir' => Droit::ReferentielsBoutiquesVoir, 'gerer' => Droit::SitesGerer, 'confirmer' => Droit::SitesConfirmer][$action],
         };
     }
 
@@ -390,10 +391,11 @@ class NiveauxZonesController extends Controller
         }
     }
 
-    /** Action sur un élément ; retour à sa fiche, avec le message ou l'erreur. */
+    /** Action sur un élément ; retour à sa fiche (ou à « À valider » pour le VALIDATEUR, sans l'onglet), avec le message ou l'erreur. */
     private function executer(string $liste, Niveau|ZoneSite|Unite|MoyenPaiement $element, Closure $action, string $message): RedirectResponse
     {
-        $fiche = redirect()->route('admin.referencement.zones.show', [$liste, $element->id]);
+        $fiche = Gate::allows(self::droit($liste, 'voir')->value)
+            ? redirect()->route('admin.referencement.zones.show', [$liste, $element->id]) : redirect()->route('admin.a-valider');
         try {
             DB::transaction($action);
         } catch (RegleGestionException $e) {

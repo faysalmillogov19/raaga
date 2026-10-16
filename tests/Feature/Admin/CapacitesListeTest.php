@@ -12,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\ActeursParametrage;
 use Tests\TestCase;
 
-/** Onglet Capacités prévues : tableau filtrable par colonne, boutons voir, modifier, supprimer, ajout. */
+/** Onglet Capacités prévues : tableau (filtre par site, recherche, tri), boutons voir, modifier, supprimer, ajout. */
 class CapacitesListeTest extends TestCase
 {
     use ActeursParametrage, RefreshDatabase;
@@ -49,8 +49,8 @@ class CapacitesListeTest extends TestCase
     {
         $figee = $this->valide->capacites()->sole();
         $page = $this->en($this->gestionnaire)->get(route('admin.referencement.capacites', ['site' => $this->valide->id]))->assertOk();
-        $page->assertSee('Toutes les capacités prévues', false)->assertSee('Filtrer la colonne « Site »', false)->assertSee('Filtrer la colonne « Source »', false)
-            ->assertSee('data-site="SAR · Marché de Sarfalao"', false)->assertSee('JSON.parse(\'{\u0022site\u0022:\u0022SAR', false)
+        $page->assertSee('Toutes les capacités prévues', false)->assertSee('data-tableau="capacites"', false)
+            ->assertSee('<option value="'.$this->valide->id.'" selected>SAR · Marché de Sarfalao</option>', false)
             ->assertSee(route('admin.referencement.boutiques', ['site' => $this->valide->id, 'niveau' => 'R1', 'zone' => 'A', 'type' => $this->type->id]))
             ->assertDontSee(route('admin.referencement.capacites.edit', $figee))->assertSee('Impossible : site soumis ou validé', false)
             ->assertSee('<dialog id="ajouter-capacite"', false);

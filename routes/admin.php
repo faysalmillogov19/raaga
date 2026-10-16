@@ -117,7 +117,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Paramètres des paiements (délai de complément) : RÉGULATEUR saisit, VALIDATEUR confirme (« À valider › Données financières »).
         Route::controller(ParametresPaiementsController::class)->prefix('parametres-paiements')->name('parametres-paiements')->group(function () {
-            Route::get('/', 'show')->middleware('can:'.Droit::MoyensPaiementVoir->value);
+            Route::get('/', 'show')->middleware('can:'.Droit::ModalitesPaiementVoir->value);
             Route::put('/', 'update')->middleware('can:'.Droit::MoyensPaiementGerer->value)->name('.update');
             Route::post('/soumettre', 'soumettre')->middleware('can:'.Droit::MoyensPaiementGerer->value)->name('.soumettre');
             Route::post('/reviser', 'reviser')->middleware('can:'.Droit::MoyensPaiementGerer->value)->name('.reviser');
@@ -192,10 +192,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // Référentiels (menu dépliant) : niveaux, zones et unités, une fiche par élément ; mêmes actions pour les
             // trois listes, droits vérifiés par liste dans le contrôleur. Types de boutiques : plus bas.
             Route::controller(NiveauxZonesController::class)->prefix('referentiels')->group(function () {
-                Route::get('/niveaux', 'index')->defaults('liste', 'niveaux')->middleware('can:'.Droit::SitesVoir->value)->name('niveaux');
-                Route::get('/zones', 'index')->defaults('liste', 'zones')->middleware('can:'.Droit::SitesVoir->value)->name('zones');
+                Route::get('/niveaux', 'index')->defaults('liste', 'niveaux')->middleware('can:'.Droit::ReferentielsBoutiquesVoir->value)->name('niveaux');
+                Route::get('/zones', 'index')->defaults('liste', 'zones')->middleware('can:'.Droit::ReferentielsBoutiquesVoir->value)->name('zones');
                 Route::get('/unites', 'index')->defaults('liste', 'unites')->middleware('can:'.Droit::UnitesVoir->value)->name('unites');
-                Route::get('/moyens-paiement', 'index')->defaults('liste', 'moyens')->middleware('can:'.Droit::MoyensPaiementVoir->value)->name('moyens');
+                Route::get('/moyens-paiement', 'index')->defaults('liste', 'moyens')->middleware('can:'.Droit::ModalitesPaiementVoir->value)->name('moyens');
                 Route::get('/{liste}/{id}', 'show')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.show');
                 Route::post('/{liste}', 'store')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->name('zones.store');
                 Route::put('/{liste}/{id}', 'update')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.update');
@@ -250,11 +250,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/imports/{journal}/fichier', [ImportsController::class, 'fichier'])->whereNumber('journal')->middleware('can:'.Droit::ImportsVoir->value)->name('imports.fichier');
         });
 
-        // Types de boutiques : GESTIONNAIRE DES SITES ET BOUTIQUES gère, VALIDATEUR valide, autres profils en lecture.
+        // Types de boutiques : GESTIONNAIRE DES SITES ET BOUTIQUES gère, SUPER_ADMIN en lecture, VALIDATEUR décide depuis « À valider ».
         Route::controller(TypesBoutiqueController::class)->prefix('referencement/referentiels/types')->name('sites.types')->group(function () {
-            Route::get('/', 'index')->middleware('can:'.Droit::SitesVoir->value);
+            Route::get('/', 'index')->middleware('can:'.Droit::ReferentielsBoutiquesVoir->value);
             Route::post('/', 'store')->middleware('can:'.Droit::SitesGerer->value)->name('.store');
-            Route::get('/{type}', 'show')->whereNumber('type')->middleware('can:'.Droit::SitesVoir->value)->name('.show');
+            Route::get('/{type}', 'show')->whereNumber('type')->middleware('can:'.Droit::ReferentielsBoutiquesVoir->value)->name('.show');
             Route::put('/{type}', 'update')->whereNumber('type')->middleware('can:'.Droit::SitesGerer->value)->name('.update');
             Route::post('/{type}/attribuable', 'demanderAttribuable')->whereNumber('type')->middleware('can:'.Droit::SitesGerer->value)->name('.attribuable');
             Route::post('/{type}/activer', 'activer')->whereNumber('type')->middleware('can:'.Droit::SitesGerer->value)->name('.activer');

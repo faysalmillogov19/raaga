@@ -40,7 +40,7 @@ class TypesBoutiqueController extends Controller
 
     public function index(Request $request): Response|StreamedResponse|View
     {
-        Gate::authorize(Droit::SitesVoir->value);
+        Gate::authorize(Droit::ReferentielsBoutiquesVoir->value);
         $t = __('admin.types');
         $c = $t['colonnes'];
         $ouiNon = [1 => $t['oui'], 0 => $t['non']];
@@ -79,7 +79,7 @@ class TypesBoutiqueController extends Controller
 
     public function show(TypeBoutique $type): View
     {
-        Gate::authorize(Droit::SitesVoir->value);
+        Gate::authorize(Droit::ReferentielsBoutiquesVoir->value);
 
         return view('admin.types.show', [
             'type' => $type->loadCount('boutiques'),
@@ -314,14 +314,16 @@ class TypesBoutiqueController extends Controller
         }
     }
 
+    /** Retour à la fiche du type (ou à « À valider » pour le VALIDATEUR, sans l'onglet « Référentiels »). */
     private function executer(TypeBoutique $type, Closure $action, string $message): RedirectResponse
     {
+        $fiche = Gate::allows(Droit::ReferentielsBoutiquesVoir->value) ? redirect()->route('admin.sites.types.show', $type) : redirect()->route('admin.a-valider');
         try {
             DB::transaction($action);
         } catch (RegleGestionException $e) {
-            return redirect()->route('admin.sites.types.show', $type)->with('erreur', $e->getMessage());
+            return $fiche->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.sites.types.show', $type)->with('succes', __($message));
+        return $fiche->with('succes', __($message));
     }
 }

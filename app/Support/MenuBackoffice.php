@@ -28,7 +28,7 @@ use App\Services\Validation\SoumissionGroupee;
 final class MenuBackoffice
 {
     /** Icône de chaque menu dépliant (barre latérale réduite en icônes). */
-    public const ICONES_MENUS = ['referentiels' => 'referentiels', 'imports' => 'importer', 'a_valider' => 'taches'];
+    public const ICONES_MENUS = ['referentiels' => 'referentiels', 'modalites' => 'dividendes', 'imports' => 'importer', 'a_valider' => 'taches'];
 
     /**
      * « etape » : étape de livraison (back-office métier), ou du module d'administration quand « module » = admin.
@@ -53,10 +53,11 @@ final class MenuBackoffice
                 // « Mes brouillons » (GESTIONNAIRE, RÉGULATEUR) : badge = brouillons et rejetés non soumis.
                 ['cle' => 'brouillons', 'route' => 'admin.brouillons', 'droit' => Droit::BrouillonsVoir, 'icone' => 'taches', 'etape' => 0],
                 ['cle' => 'tranches', 'route' => 'admin.tranches', 'droit' => Droit::TranchesVoir, 'icone' => 'tranches', 'etape' => 3, 'masque_si' => $parametres],
-                // Moyens de paiement (RÉGULATEUR, VALIDATEUR ; SUPER_ADMIN en lecture) : donnée financière, hors des référentiels des sites.
-                ['cle' => 'moyens', 'route' => 'admin.referencement.moyens', 'droit' => Droit::MoyensPaiementVoir, 'icone' => 'dividendes', 'etape' => 0],
-                // Paramètres des paiements : délai de complément d'un paiement incomplet.
-                ['cle' => 'delais', 'route' => 'admin.parametres-paiements', 'droit' => Droit::MoyensPaiementVoir, 'icone' => 'taches', 'etape' => 0],
+                // Menu dépliant « Modalités de paiement » (RÉGULATEUR ; SUPER_ADMIN en lecture) : moyens de paiement, puis délais
+                // (délai de complément d'un paiement incomplet). Le VALIDATEUR décide depuis « À valider », sans cet onglet.
+                ['cle' => 'moyens', 'route' => 'admin.referencement.moyens', 'droit' => Droit::ModalitesPaiementVoir, 'icone' => 'dividendes', 'etape' => 0,
+                    'liste' => 'moyens', 'sous_menu' => 'modalites'],
+                ['cle' => 'delais', 'route' => 'admin.parametres-paiements', 'droit' => Droit::ModalitesPaiementVoir, 'icone' => 'taches', 'etape' => 0, 'sous_menu' => 'modalites'],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
                 // RAAGA Invest : paramètres d'investissement, manifestations d'intérêt.
@@ -64,26 +65,26 @@ final class MenuBackoffice
                 ['cle' => 'interets', 'route' => 'admin.interets', 'droit' => Droit::InteretsVoir, 'icone' => 'tableau', 'etape' => 0],
                 ['cle' => 'simulations', 'route' => 'admin.simulations', 'droit' => Droit::SimulationsVoir, 'icone' => 'simulations', 'etape' => 4, 'masque_si' => $parametres],
             ],
-            // Référencement des sites et des boutiques (GESTIONNAIRE DES SITES ET BOUTIQUES, RÉGULATEUR pour la grille), puis le
-            // menu dépliant « Référentiels » (entrées marquées « sous_menu ») : types, niveaux, zones, unités.
+            // Référencement des sites et des boutiques (GESTIONNAIRE DES SITES ET BOUTIQUES, RÉGULATEUR pour la grille et les
+            // unités), puis le menu dépliant « Référentiels » (GESTIONNAIRE ; SUPER_ADMIN en lecture) : types, niveaux, zones.
             'referencement' => [
                 ['cle' => 'sites', 'route' => 'admin.sites', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
                     'exclure' => ['admin.sites.types', 'admin.sites.types.*', 'admin.sites.excel.*', 'admin.sites.boutiques-excel.*']],
                 ['cle' => 'boutiques_referentiel', 'route' => 'admin.referencement.boutiques', 'droit' => Droit::SitesVoir, 'icone' => 'boutiques', 'etape' => 0],
                 ['cle' => 'capacites', 'route' => 'admin.referencement.capacites', 'droit' => Droit::SitesVoir, 'icone' => 'simulations', 'etape' => 0],
                 ['cle' => 'grille', 'route' => 'admin.boutiques.grilles', 'droit' => Droit::GrilleVoir, 'icone' => 'dividendes', 'etape' => 0],
+                // Unités de loyer (M2, UNITE, REDEVANCE) : près de la grille tarifaire, pour le RÉGULATEUR (SUPER_ADMIN en lecture).
+                ['cle' => 'unites', 'route' => 'admin.referencement.unites', 'droit' => Droit::UnitesVoir, 'icone' => 'tableau', 'etape' => 0, 'liste' => 'unites'],
                 // Menu dépliant « Imports » : un sous-onglet par entité importable, avec son historique.
                 ['cle' => 'imports_sites', 'route' => 'admin.referencement.imports.entite', 'parametres' => ['entite' => 'sites'], 'droit' => Droit::ImportsVoir,
                     'icone' => 'registre', 'etape' => 0, 'inclure' => ['admin.sites.excel.*'], 'sous_menu' => 'imports'],
                 ['cle' => 'imports_boutiques', 'route' => 'admin.referencement.imports.entite', 'parametres' => ['entite' => 'boutiques'], 'droit' => Droit::ImportsVoir,
                     'icone' => 'registre', 'etape' => 0, 'inclure' => ['admin.sites.boutiques-excel.*'], 'sous_menu' => 'imports'],
-                ['cle' => 'types', 'route' => 'admin.sites.types', 'droit' => Droit::SitesVoir, 'icone' => 'referentiels', 'etape' => 0, 'sous_menu' => 'referentiels'],
-                ['cle' => 'niveaux', 'route' => 'admin.referencement.niveaux', 'droit' => Droit::SitesVoir, 'icone' => 'tranches', 'etape' => 0,
+                ['cle' => 'types', 'route' => 'admin.sites.types', 'droit' => Droit::ReferentielsBoutiquesVoir, 'icone' => 'referentiels', 'etape' => 0, 'sous_menu' => 'referentiels'],
+                ['cle' => 'niveaux', 'route' => 'admin.referencement.niveaux', 'droit' => Droit::ReferentielsBoutiquesVoir, 'icone' => 'tranches', 'etape' => 0,
                     'liste' => 'niveaux', 'sous_menu' => 'referentiels'],
-                ['cle' => 'zones', 'route' => 'admin.referencement.zones', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
+                ['cle' => 'zones', 'route' => 'admin.referencement.zones', 'droit' => Droit::ReferentielsBoutiquesVoir, 'icone' => 'lieu', 'etape' => 0,
                     'exclure' => ['admin.referencement.zones.*'], 'liste' => 'zones', 'sous_menu' => 'referentiels'],
-                ['cle' => 'unites', 'route' => 'admin.referencement.unites', 'droit' => Droit::UnitesVoir, 'icone' => 'tableau', 'etape' => 0,
-                    'liste' => 'unites', 'sous_menu' => 'referentiels'],
             ],
             'support' => [
                 ['cle' => 'assistance', 'route' => 'admin.assistance', 'droit' => Droit::AssistanceVoir, 'icone' => 'assistance', 'etape' => 1, 'module' => 'admin'],

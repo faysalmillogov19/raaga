@@ -11,8 +11,18 @@ final class Filtre
     /** Filtre appliqué depuis l'adresse (lien d'un autre écran) mais absent des listes affichées. */
     public bool $masque = false;
 
+    /** Libellé du choix vide (« Tous les sites ») ; à défaut, « Tous ». */
+    public ?string $libelleTous = null;
+
     /** @param array<string|int, string> $options valeur => libellé */
     private function __construct(public readonly string $cle, public readonly string $libelle, public readonly array $options, private readonly Closure $appliquer) {}
+
+    public function tous(string $libelle): self
+    {
+        $this->libelleTous = $libelle;
+
+        return $this;
+    }
 
     public function masque(): self
     {

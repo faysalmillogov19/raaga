@@ -75,6 +75,8 @@
                 <x-admin.bouton variante="danger" type="submit" name="decision" value="rejeter" x-show="rejet" x-cloak>{{ $v['detail']['confirmer_rejet'] }}</x-admin.bouton>
             </form>
         @endif
-        <x-admin.bouton variante="contour" href="{{ $e['url'] }}">{{ $v['detail']['fiche'] }}</x-admin.bouton>
+        @if ($e['fiche'])
+            <x-admin.bouton variante="contour" href="{{ $e['url'] }}">{{ $v['detail']['fiche'] }}</x-admin.bouton>
+        @endif
     </footer>
 </dialog>

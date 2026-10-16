@@ -121,12 +121,19 @@ class TypesBoutiqueTest extends TestCase
             ->assertSessionHasErrors('type_boutique_id');
     }
 
-    public function test_les_autres_profils_ont_un_acces_en_lecture_seule(): void
+    public function test_le_super_admin_lit_et_les_autres_profils_sont_refuses(): void
     {
         $bout = $this->type('BOUT');
+        // VALIDATEUR et RÉGULATEUR : plus d'onglet « Référentiels » (le VALIDATEUR décide depuis « À valider »).
+        foreach ([$this->validateur, $this->regulateur] as $profil) {
+            $this->en($profil)->get(route('admin.sites.types'))->assertForbidden();
+            $this->en($profil)->get(route('admin.sites.types.show', $bout))->assertForbidden();
+        }
         foreach ([$this->validateur, $this->regulateur, User::factory()->role(Role::SuperAdmin)->create()] as $profil) {
-            $this->en($profil)->get(route('admin.sites.types'))->assertOk()->assertSee('Par défaut')->assertDontSee('Ajouter le type');
-            $this->en($profil)->get(route('admin.sites.types.show', $bout))->assertOk()->assertDontSee('Modifier le type');
+            if ($profil->hasRole(Role::SuperAdmin)) {
+                $this->en($profil)->get(route('admin.sites.types'))->assertOk()->assertSee('Par défaut')->assertDontSee('Ajouter le type');
+                $this->en($profil)->get(route('admin.sites.types.show', $bout))->assertOk()->assertDontSee('Modifier le type');
+            }
             $this->en($profil)->post(route('admin.sites.types.store'), ['code' => 'NEW', 'libelle' => 'Nouveau', 'attribuable' => 1])->assertForbidden();
             $this->en($profil)->put(route('admin.sites.types.update', $bout), ['libelle' => 'X', 'ordre' => 1])->assertForbidden();
             $this->en($profil)->post(route('admin.sites.types.desactiver', $bout))->assertForbidden();

@@ -180,14 +180,21 @@ class NiveauxZonesTest extends TestCase
         $this->assertSame(2, $r4->fresh()->versions()->count());
     }
 
-    public function test_les_autres_profils_ont_un_acces_en_lecture_seule(): void
+    public function test_le_super_admin_lit_et_les_autres_profils_sont_refuses(): void
     {
         $r1 = $this->niveau('R1');
         $a = $this->zone('A');
-        foreach ([$this->validateur, $this->regulateur, User::factory()->role(Role::SuperAdmin)->create()] as $profil) {
-            $this->en($profil)->get(route('admin.referencement.niveaux'))->assertOk()->assertSee('R+1')->assertDontSee('Ajouter un niveau')->assertDontSee('>Supprimer<', false);
-            $this->en($profil)->get(route('admin.referencement.zones'))->assertOk()->assertSee('Bloc A')->assertDontSee('Ajouter une zone');
-            $this->en($profil)->get(route('admin.referencement.zones.show', ['niveaux', $r1->id]))->assertOk()->assertDontSee('Désactiver');
+        // SUPER_ADMIN : lecture seule ; VALIDATEUR et RÉGULATEUR : plus d'onglet « Référentiels ».
+        $superAdmin = User::factory()->role(Role::SuperAdmin)->create();
+        $this->en($superAdmin)->get(route('admin.referencement.niveaux'))->assertOk()->assertSee('R+1')->assertDontSee('Ajouter un niveau')->assertDontSee('>Supprimer<', false);
+        $this->en($superAdmin)->get(route('admin.referencement.zones'))->assertOk()->assertSee('Bloc A')->assertDontSee('Ajouter une zone');
+        $this->en($superAdmin)->get(route('admin.referencement.zones.show', ['niveaux', $r1->id]))->assertOk()->assertDontSee('Désactiver');
+        foreach ([$this->validateur, $this->regulateur] as $profil) {
+            $this->en($profil)->get(route('admin.referencement.niveaux'))->assertForbidden();
+            $this->en($profil)->get(route('admin.referencement.zones'))->assertForbidden();
+            $this->en($profil)->get(route('admin.referencement.zones.show', ['niveaux', $r1->id]))->assertForbidden();
+        }
+        foreach ([$this->validateur, $this->regulateur, $superAdmin] as $profil) {
             $this->en($profil)->post(route('admin.referencement.zones.store', 'niveaux'), ['code' => 'R5', 'libelle' => 'R+5', 'rang' => 5])->assertForbidden();
             $this->en($profil)->put(route('admin.referencement.zones.update', ['niveaux', $r1->id]), ['libelle' => 'X', 'rang' => 1])->assertForbidden();
             $this->en($profil)->post(route('admin.referencement.zones.desactiver', ['zones', $a->id]))->assertForbidden();

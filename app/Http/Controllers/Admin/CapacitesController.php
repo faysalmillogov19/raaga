@@ -11,6 +11,11 @@ use App\Models\TypeBoutique;
 use App\Models\ZoneSite;
 use App\Services\Audit\Journal;
 use App\Services\Sites\ComparaisonCapacites;
+use App\Support\BadgeStatut;
+use App\Support\Tableau\Colonne;
+use App\Support\Tableau\Filtre;
+use App\Support\Tableau\ResultatTableau;
+use App\Support\Tableau\Tableau;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,9 +23,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Capacités prévues : tableau de toutes les capacités (filtre par colonne), comparaison avec les boutiques importées
+ * Capacités prévues : tableau de toutes les capacités (filtre par site retenu pendant la session, recherche et tri), comparaison avec les boutiques importées
  * pour le site choisi. Le GESTIONNAIRE DES SITES ET BOUTIQUES ajoute, modifie ou supprime une capacité d'un site en
  * brouillon ou en révision, avec les mêmes règles que l'import des sites (niveau, zone et type utilisables, surfaces
  * positives, une seule capacité par site, niveau, zone et type).
@@ -29,26 +36,83 @@ class CapacitesController extends Controller
 {
     public function __construct(private readonly Journal $journal) {}
 
-    public function index(Request $request, ComparaisonCapacites $comparaison): View
+    /** Clé de session du dernier site choisi dans le filtre (retenu pendant la session ; absent : tous les sites). */
+    public const SESSION_SITE = 'capacites.site';
+
+    public function index(Request $request, ComparaisonCapacites $comparaison): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::SitesVoir->value);
+        $k = __('admin.referencement.capacites');
+        $c = $k['colonnes'];
         $sites = Site::query()->withCount('capacites')->orderBy('code')->get();
-        $site = $sites->firstWhere('id', (int) $request->query('site')) ?? $sites->firstWhere('capacites_count', '>', 0) ?? $sites->first();
+        $this->retenirSite($request, $sites);
+        $libelleSite = fn (Site $s) => ($s->code ? $s->code.' · ' : '').$s->nom;
+        $surface = fn (?float $v) => $v === null ? '—' : format_nombre($v, fmod($v, 1.0) == 0.0 ? 0 : 2);
+        $etat = fn (CapaciteSite $x) => $x->estIncomplete() ? $k['a_completer'] : $k['complete'];
 
-        return view('admin.referencement.capacites', [
-            'sites' => $sites,
-            'site' => $site,
-            'filtreSite' => $request->query('site') ? $site : null,
-            'toutes' => CapaciteSite::query()->with(['site', 'type', 'niveauRef'])->get()
-                ->sortBy(fn (CapaciteSite $c) => [$c->site->code ?? $c->site->nom, $c->niveauRef?->rang ?? 99, $c->zone ?? '', $c->type->ordre])->values(),
-            'capacites' => $site?->capacites()->with('type')->get() ?? collect(),
-            'comparaison' => $site ? $comparaison->pour($site) : collect(),
-            'sitesModifiables' => $this->sitesModifiables(),
-            'listes' => $this->listes(),
-            'capaciteModifiee' => $modifiee = $request->integer('modifier') && Gate::allows(Droit::SitesGerer->value)
-                ? CapaciteSite::query()->with('site')->find($request->integer('modifier')) : null,
-            'listesModifiee' => $modifiee ? $this->listes($modifiee) : null,
-        ]);
+        return Tableau::pour(CapaciteSite::query()->with(['site', 'type', 'niveauRef']), 'capacites')
+            ->colonnes([
+                Colonne::make('site', $c['site'])->triable('site_id')
+                    ->recherchable(fn ($q, $terme) => $q->whereHas('site', fn ($s) => $s->whereContient('code', $terme)->orWhereContient('nom', $terme)))
+                    ->valeur(fn (CapaciteSite $x) => $libelleSite($x->site)),
+                Colonne::make('niveau', $c['niveau'])->triable()->recherchable('niveau')
+                    ->valeur(fn (CapaciteSite $x) => $x->niveau ? $x->niveau.' · '.($x->libelleNiveau() ?? '') : $k['tous_niveaux']),
+                Colonne::make('zone', $c['zone'])->triable()->recherchable('zone')->valeur(fn (CapaciteSite $x) => $x->zone ?? '—'),
+                Colonne::make('type', $c['type'])->triable('type_boutique_id')
+                    ->recherchable(fn ($q, $terme) => $q->whereHas('type', fn ($t) => $t->whereContient('code', $terme)->orWhereContient('libelle', $terme)))
+                    ->valeur(fn (CapaciteSite $x) => ($x->type->code ? $x->type->code.' · ' : '').$x->type->libelle),
+                Colonne::make('nombre', $c['nombre'])->numerique()->triable('nombre_prevu')
+                    ->valeur(fn (CapaciteSite $x) => $x->nombre_prevu !== null ? format_nombre($x->nombre_prevu) : '—')->texte(fn (CapaciteSite $x) => $x->nombre_prevu),
+                Colonne::make('unitaire', $c['surface_unitaire'])->numerique()->triable('surface_unitaire')
+                    ->valeur(fn (CapaciteSite $x) => $surface($x->surface_unitaire !== null ? (float) $x->surface_unitaire : null))->texte(fn (CapaciteSite $x) => $x->surface_unitaire),
+                Colonne::make('retenue', $c['surface_retenue'])->numerique()
+                    ->valeur(fn (CapaciteSite $x) => $surface($x->surfaceRetenue()))->texte(fn (CapaciteSite $x) => $x->surfaceRetenue()),
+                Colonne::make('etat', $c['etat'])->valeur(fn (CapaciteSite $x) => BadgeStatut::html($etat($x)))->texte($etat),
+                Colonne::make('source', $c['source'])->triable()->recherchable(['source', 'observations'])->valeur(fn (CapaciteSite $x) => $x->source ?? '—'),
+                Colonne::make('actions', $c['actions'])->vue('admin.referencement._capacite-actions', 'cap')->exportable(false),
+            ])
+            ->filtres([
+                Filtre::make('site', $k['choisir'], $sites->mapWithKeys(fn (Site $s) => [$s->id => $libelleSite($s)])->all(), 'site_id')->tous($k['tous_sites']),
+            ])
+            ->triParDefaut('site')
+            ->departage(fn ($q) => $q->orderBy('niveau')->orderBy('zone')->orderBy('type_boutique_id'))
+            ->lignesParDefaut(25)
+            ->unite($k['unite'])
+            ->repondre($request, function (ResultatTableau $t) use ($request, $sites, $comparaison) {
+                $filtre = isset($t->etat['filtres']['site']) ? $sites->firstWhere('id', (int) $t->etat['filtres']['site']) : null;
+                $site = $filtre ?? $sites->firstWhere('capacites_count', '>', 0) ?? $sites->first();
+
+                return view('admin.referencement.capacites', [
+                    'tableau' => $t,
+                    'sites' => $sites,
+                    'site' => $site,
+                    'filtreSite' => $filtre,
+                    'comparaison' => $site ? $comparaison->pour($site) : collect(),
+                    'sitesModifiables' => $this->sitesModifiables(),
+                    'listes' => $this->listes(),
+                    'capaciteModifiee' => $modifiee = $request->integer('modifier') && Gate::allows(Droit::SitesGerer->value)
+                        ? CapaciteSite::query()->with('site')->find($request->integer('modifier')) : null,
+                    'listesModifiee' => $modifiee ? $this->listes($modifiee) : null,
+                ]);
+            });
+    }
+
+    /**
+     * Dernier site choisi, retenu pendant la session : un choix (filtre du tableau, « Tous les sites » compris, ou
+     * formulaire de comparaison) est enregistré ; un simple affichage de la page sans site réapplique le site retenu.
+     */
+    private function retenirSite(Request $request, Collection $sites): void
+    {
+        if ($request->query->has('site') || $request->hasHeader('X-Tableau')) {
+            $id = (int) $request->query('site');
+            $sites->contains('id', $id) ? $request->session()->put(self::SESSION_SITE, $id) : $request->session()->forget(self::SESSION_SITE);
+
+            return;
+        }
+        $retenu = (int) $request->session()->get(self::SESSION_SITE);
+        if ($retenu && $sites->contains('id', $retenu)) {
+            $request->query->set('site', (string) $retenu);
+        }
     }
 
     public function store(Request $request): RedirectResponse

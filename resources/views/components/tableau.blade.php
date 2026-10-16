@@ -29,7 +29,7 @@
                     <div class="formulaire-champ adm-champ !mt-0">
                         <label for="{{ $t->id }}-{{ $f->cle }}" class="adm-libelle-petit">{{ $f->libelle }}</label>
                         <select id="{{ $t->id }}-{{ $f->cle }}" name="{{ $f->cle }}" class="champ adm-champ-petit" @change="soumettre()">
-                            <option value="">{{ $l['tous'] }}</option>
+                            <option value="">{{ $f->libelleTous ?? $l['tous'] }}</option>
                             @foreach ($f->options as $valeur => $texte)
                                 <option value="{{ $valeur }}" @selected(($t->etat['filtres'][$f->cle] ?? null) === (string) $valeur)>{{ $texte }}</option>
                             @endforeach

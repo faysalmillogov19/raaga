@@ -72,6 +72,13 @@ enum Droit: string
     case SitesGerer = 'sites.gerer';
     case SitesConfirmer = 'sites.confirmer';
 
+    // Onglet « Référentiels » (types de boutiques, niveaux, zones) : GESTIONNAIRE DES SITES ET BOUTIQUES, SUPER_ADMIN en
+    // lecture. Le VALIDATEUR décide depuis « À valider », sans l'onglet.
+    case ReferentielsBoutiquesVoir = 'referentiels_boutiques.voir';
+
+    // Onglet « Modalités de paiement » (moyens et délais de paiement) : RÉGULATEUR, SUPER_ADMIN en lecture.
+    case ModalitesPaiementVoir = 'modalites_paiement.voir';
+
     // Unités de loyer (référentiel de la grille tarifaire) : RÉGULATEUR saisit, VALIDATEUR confirme.
     case UnitesVoir = 'unites.voir';
     case UnitesGerer = 'unites.gerer';
@@ -271,6 +278,7 @@ enum Droit: string
                 self::AuditVoir,
                 self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
                 self::SitesVoir, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir, self::MoyensPaiementVoir,
+                self::ReferentielsBoutiquesVoir, self::ModalitesPaiementVoir,
             ],
             // Support et assistance, plus la liste des manifestations d'intérêt RAAGA Invest (lecture, export),
             // que le SUPER_ADMIN n'a pas.
@@ -284,7 +292,8 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
                 self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter,
-                self::SitesVoir, self::SitesConfirmer, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir, self::UnitesConfirmer,
+                // Référentiels, unités, moyens et délais de paiement : décidés depuis « À valider » (détail et différences), sans les onglets.
+                self::SitesVoir, self::SitesConfirmer, self::GrilleVoir, self::ImportsVoir, self::UnitesConfirmer,
                 self::MoyensPaiementVoir, self::MoyensPaiementConfirmer,
                 self::DividendesVoir, self::DividendesConfirmer, self::DividendesPayer,
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
@@ -305,7 +314,7 @@ enum Droit: string
             // Référentiel des sites et des boutiques uniquement : saisie et soumission, jamais de confirmation.
             Role::GestionnaireSites => [
                 self::TableauDeBordVoir, self::BrouillonsVoir,
-                self::SitesVoir, self::SitesGerer, self::ImportsVoir, self::UnitesVoir,
+                self::SitesVoir, self::SitesGerer, self::ImportsVoir, self::ReferentielsBoutiquesVoir,
             ],
             // Rapproche, marque les paiements manuels, relance, suit les remboursements ; aucune grille, aucun montant,
             // aucun moyen de paiement ; ses corrections et remboursements sont confirmés par le VALIDATEUR.
@@ -320,7 +329,7 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
                 self::BoutiquesVoir, self::BoutiquesSaisir,
-                self::SitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer, self::MoyensPaiementVoir, self::MoyensPaiementGerer,
+                self::SitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer, self::MoyensPaiementVoir, self::MoyensPaiementGerer, self::ModalitesPaiementVoir,
                 self::DividendesVoir, self::DividendesSaisir,
                 self::SimulationsVoir, self::SimulationsLancer,
                 self::KycVoir,

@@ -26,7 +26,7 @@ class ParametresPaiementsController extends Controller
 
     public function show(): View
     {
-        Gate::authorize(Droit::MoyensPaiementVoir->value);
+        Gate::authorize(Droit::ModalitesPaiementVoir->value);
         $fiche = ParametresPaiements::fiche();
         $versions = $fiche->exists ? $fiche->versions()->with('auteur')->get() : collect();
         $precedente = $versions->count() > 1 ? $versions->get($versions->count() - 2) : null;
@@ -106,14 +106,16 @@ class ParametresPaiementsController extends Controller
         return $fiche->exists ? $fiche : throw new RegleGestionException(__('admin.delais.vides'));
     }
 
+    /** Retour à la page des délais (ou à « À valider » pour le VALIDATEUR, sans l'onglet « Modalités de paiement »). */
     private function executer(Closure $action, string $message): RedirectResponse
     {
+        $page = Gate::allows(Droit::ModalitesPaiementVoir->value) ? redirect()->route('admin.parametres-paiements') : redirect()->route('admin.a-valider');
         try {
             $action();
         } catch (RegleGestionException $e) {
-            return redirect()->route('admin.parametres-paiements')->with('erreur', $e->getMessage());
+            return $page->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.parametres-paiements')->with('succes', __($message));
+        return $page->with('succes', __($message));
     }
 }

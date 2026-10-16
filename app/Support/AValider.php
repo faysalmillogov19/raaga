@@ -419,12 +419,26 @@ final class AValider
             .' · '.__('admin.phase.parametres.souscription_actions').' : '.__('admin.phase.'.($d->souscription_actions ? 'oui' : 'non'));
     }
 
-    /** @return array{cle: string, element: string, libelle: string, auteur_id: ?int, par: ?string, date: ?CarbonInterface, url: string, moi: bool, groupable: bool} */
+    /**
+     * Fiches que seul l'onglet de l'auteur ouvre (Référentiels, Modalités de paiement, Unités) : le VALIDATEUR décide depuis
+     * le panneau de détail (informations, différences, historique), sans lien vers une fiche qui lui serait refusée.
+     */
+    private const FICHES = ['type' => Droit::ReferentielsBoutiquesVoir, 'niveaux' => Droit::ReferentielsBoutiquesVoir, 'zones' => Droit::ReferentielsBoutiquesVoir,
+        'moyens' => Droit::ModalitesPaiementVoir, 'delais' => Droit::ModalitesPaiementVoir, 'unites' => Droit::UnitesVoir];
+
+    /**
+     * « url » : la fiche de l'élément, ou, quand elle est refusée au profil, son panneau de détail dans « À valider »
+     * (lien « Examiner » du tableau de bord) ; « fiche » : le bouton « Ouvrir la fiche » est proposé.
+     *
+     * @return array{cle: string, element: string, libelle: string, auteur_id: ?int, par: ?string, date: ?CarbonInterface, url: string, fiche: bool, moi: bool, groupable: bool}
+     */
     private static function element(User $user, string $cle, string $element, string $libelle, ?int $auteur, ?CarbonInterface $date, string $url): array
     {
+        $fiche = ! isset(self::FICHES[$element]) || $user->can(self::FICHES[$element]->value);
+
         return [
             'cle' => $cle, 'element' => $element, 'libelle' => $libelle, 'auteur_id' => $auteur,
-            'par' => null, 'date' => $date, 'url' => $url, // nom de l'auteur : chargé ensuite pour toute la file
+            'par' => null, 'date' => $date, 'url' => $fiche ? $url : route('admin.a-valider', ['detail' => $cle]), 'fiche' => $fiche, // nom de l'auteur : chargé ensuite pour toute la file
             // Quatre yeux : jamais de décision sur un élément que l'on a soumis soi-même.
             'moi' => $auteur !== null && $auteur === $user->id,
             'groupable' => ! in_array($element, self::nonGroupables(), true),

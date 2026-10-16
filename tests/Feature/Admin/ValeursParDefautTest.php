@@ -60,9 +60,9 @@ class ValeursParDefautTest extends TestCase
         $this->assertSame(0, ParametrageDecision::query()->count());
         Notification::assertNothingSent();
 
-        // Auteur affiché : le système.
+        // Auteur affiché : le système (fiche de l'onglet « Référentiels », lue par le SUPER_ADMIN).
         $niveau = Niveau::query()->where('par_defaut', true)->firstOrFail();
-        $this->en($this->validateur)->get(route('admin.referencement.zones.show', ['niveaux', $niveau->id]))->assertSee('Système (valeur par défaut)');
+        $this->en(User::factory()->role(Role::SuperAdmin)->create())->get(route('admin.referencement.zones.show', ['niveaux', $niveau->id]))->assertSee('Système (valeur par défaut)');
 
         // Idempotent : rien de créé ni de modifié au second passage.
         $versions = ReferentielVersion::query()->count();
