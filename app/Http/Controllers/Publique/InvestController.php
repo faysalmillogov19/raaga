@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Models\ManifestationInteret;
 use App\Services\Audit\Journal;
 use App\Services\Invest\RaagaInvest;
-use App\Support\Phase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -61,9 +60,9 @@ class InvestController extends Controller
             ->with('succes', __('public.invest.messages.enregistree', ['reference' => $manifestation->reference]));
     }
 
-    /** Minimum de la tranche affichée (1 sinon) : valeur de départ du simulateur. */
+    /** Nombre minimum d'actions (conditions publiques, 1 sinon) : valeur de départ du simulateur. */
     private function minimum(): int
     {
-        return max(1, (int) Phase::trancheAffichee()?->min_actions_par_souscription);
+        return RaagaInvest::conditions()['minimum'] ?? 1;
     }
 }

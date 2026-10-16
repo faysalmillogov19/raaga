@@ -370,7 +370,7 @@ class ActionsATest extends TestCase
 
         // Registre B (citoyens) : 3 000 actions, dans sa propre table.
         $citoyen = User::factory()->role(Role::Citoyen)->create();
-        $tranche = Tranche::create([...TranchesController::valeursParDefaut(), 'nom' => 'Tranche 1', 'statut' => 'BROUILLON', 'version' => 0, 'cree_par' => $this->regulateur->id]);
+        $tranche = Tranche::create([...TranchesController::valeursParDefaut(), 'valeur_unitaire' => 10_000, 'nom' => 'Tranche 1', 'statut' => 'BROUILLON', 'version' => 0, 'cree_par' => $this->regulateur->id]);
         DB::table('lignes_registre')->insert([
             'numero_certificat' => 'B-2026-000001', 'user_id' => $citoyen->id, 'tranche_id' => $tranche->id,
             'nb_actions' => 3000, 'numero_action_debut' => 1, 'numero_action_fin' => 3000, 'date_inscription' => now(),

@@ -14,10 +14,10 @@ use App\Models\User;
  */
 trait ParametresInvestissementConfirmes
 {
-    protected function confirmerParametresInvestissement(int $valeur, int $objectif = 1_000_000_000, ?int $plafond = null): ParametresInvestissement
+    protected function confirmerParametresInvestissement(int $valeur, int $objectif = 1_000_000_000, ?int $plafond = null, int $minimum = 1): ParametresInvestissement
     {
         $auteur = User::factory()->create();
-        $fiche = ParametresInvestissement::create(['objectif_collecte' => $objectif, 'valeur_action' => $valeur, 'plafond_global' => $plafond,
+        $fiche = ParametresInvestissement::create(['objectif_collecte' => $objectif, 'valeur_action' => $valeur, 'minimum_actions' => $minimum, 'plafond_global' => $plafond,
             'statut' => StatutGrilleTarifaire::Confirme]);
         $version = $fiche->creerVersion($auteur);
         ParametrageDecision::create(['objet_type' => 'investissement', 'objet_id' => $fiche->id, 'version' => $version->numero,

@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
      * - Comptes de démonstration (ComptesDemoSeeder, mot de passe = adresse e-mail, par exemple sites@raaga.test) :
      *   jamais en production. Avec APP_ENV=production, cette étape est sautée, et ComptesDemoSeeder lancé seul refuse
      *   de s'exécuter ; « php artisan raaga:comptes-demo --desactiver » désactive ceux qui existeraient déjà.
+     * - Tranche de démonstration (TrancheDemoSeeder) : 10 000 FCFA l'action, minimum 1, en brouillon ; jamais en production.
      */
     public function run(): void
     {
@@ -31,6 +32,8 @@ class DatabaseSeeder extends Seeder
         // Comptes de démonstration : jamais en production.
         if (! app()->environment('production')) {
             $this->call(ComptesDemoSeeder::class);
+            // Tranche de démonstration à 10 000 FCFA, minimum 1 action, en brouillon.
+            $this->call(TrancheDemoSeeder::class);
         }
     }
 }

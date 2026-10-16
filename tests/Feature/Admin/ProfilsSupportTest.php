@@ -28,6 +28,7 @@ class ProfilsSupportTest extends TestCase
     {
         return Tranche::create([
             ...TranchesController::valeursParDefaut(),
+            'valeur_unitaire' => 10_000,
             'nom' => 'Tranche 1',
             'statut' => StatutTranche::Brouillon,
             'version' => 0,

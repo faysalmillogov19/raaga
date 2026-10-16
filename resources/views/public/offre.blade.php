@@ -1,6 +1,7 @@
 {{--
     « Investir dans Raaga » (démarche Investir, accent or) : comment ça marche, les dividendes, les risques, le
-    calendrier, les documents et une FAQ dédiée. Prix, minimum et taux IRVM lus dans la tranche et les paramètres.
+    calendrier, les documents et une FAQ dédiée. Prix (tranche ouverte) ou valeur indicative (sinon), minimum et taux
+    IRVM lus dans la tranche et les paramètres (RaagaInvest::conditions()), jamais écrits en dur.
 --}}
 @php($o = __('public.investir'))
 
@@ -20,9 +21,7 @@
                     @foreach (['compte', 'nombre', 'paiement', 'attestation'] as $i => $cle)
                         <li class="carte demarche-investir flex gap-3 p-4">
                             <span class="badge-demarche !px-3 text-base" aria-hidden="true">{{ $i + 1 }}</span>
-                            <p class="leading-relaxed"><span class="sr-only">{{ $i + 1 }}. </span>{{ $cle === 'nombre' && $tranche
-                                ? __('public.investir.etapes.nombre_tranche', ['prix' => format_fcfa($tranche->valeur_unitaire), 'n' => format_nombre($minimum)])
-                                : $o['etapes'][$cle] }}</p>
+                            <p class="leading-relaxed"><span class="sr-only">{{ $i + 1 }}. </span>{{ $o['etapes'][$cle] }}</p>
                         </li>
                     @endforeach
                 </ol>
@@ -93,11 +92,13 @@
                 </ul>
 
                 <div class="mt-4 border-t border-ligne pt-4">
-                    @if ($tranche)
-                        <p class="font-bold text-encre">{{ __('public.demarches.investir.prix', ['prix' => format_fcfa($tranche->valeur_unitaire)]) }}</p>
-                        <p class="texte-carte">{{ $minimum > 1
-                            ? __('public.demarches.investir.minimum', ['n' => format_nombre($minimum), 'montant' => format_fcfa($minimum * $tranche->valeur_unitaire)])
-                            : __('public.demarches.investir.minimum_un') }}</p>
+                    @if ($conditions)
+                        {{-- « Prix de l'action » seulement quand une tranche est ouverte ; sinon valeur indicative des paramètres. --}}
+                        <p class="font-bold text-encre" data-conditions="{{ $conditions['ouverte'] ? 'tranche' : 'indicative' }}">{{ __($conditions['ouverte'] ? 'public.demarches.investir.prix' : 'public.demarches.investir.valeur_indicative', ['prix' => format_fcfa($conditions['prix'])]) }}</p>
+                        <p class="texte-carte">{{ trans_choice('public.demarches.investir.minimum', $conditions['minimum'], ['n' => format_nombre($conditions['minimum'])]) }}</p>
+                        @unless ($conditions['ouverte'])
+                            <p class="mt-1 font-semibold text-encre" data-souscription-fermee>{{ __('public.demarches.investir.fermee') }}</p>
+                        @endunless
                     @endif
                     <a href="{{ $urlSouscrire }}" class="btn-demarche mt-3 w-full">{{ \App\Support\Phase::souscriptionOuverte() ? __('public.demarches.investir.bouton') : __('public.demarches.bientot') }}</a>
                 </div>

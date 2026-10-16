@@ -599,14 +599,14 @@ return [
 
     'investissement' => [
         'titre' => 'Paramètres d’investissement',
-        'intro' => 'RAAGA Invest : objectif de collecte (il peut être dépassé), valeur indicative par action et plafond global facultatif. Le RÉGULATEUR les saisit et les soumet ; le VALIDATEUR les confirme dans « À valider › Données financières ». Le site public affiche la dernière version confirmée.',
+        'intro' => 'RAAGA Invest : objectif de collecte (il peut être dépassé), valeur indicative par action, nombre minimum d’actions et plafond global facultatif. Le RÉGULATEUR les saisit et les soumet ; le VALIDATEUR les confirme dans « À valider › Données financières ». Le site public affiche la dernière version confirmée.',
         'aucun' => 'Aucun paramètre saisi',
         'aucune_confirmee' => 'Aucune version confirmée : le simulateur et la jauge de l’accueil restent masqués.',
-        'en_vigueur' => 'Version confirmée en vigueur : objectif :objectif, valeur indicative :valeur par action.',
+        'en_vigueur' => 'Version confirmée en vigueur : objectif :objectif, valeur indicative :valeur par action, minimum :minimum action(s).',
         'vides' => 'Saisissez d’abord les paramètres d’investissement.',
         'sans_plafond' => 'Sans plafond',
-        'champs' => ['objectif_collecte' => 'objectif de collecte (FCFA)', 'valeur_action' => 'valeur indicative par action (FCFA)', 'plafond_global' => 'plafond global (FCFA)'],
-        'aides' => ['objectif_collecte' => 'Montant visé ; la collecte peut le dépasser.', 'plafond_global' => 'Facultatif : vide = sans plafond.'],
+        'champs' => ['objectif_collecte' => 'objectif de collecte (FCFA)', 'valeur_action' => 'valeur indicative par action (FCFA)', 'minimum_actions' => 'nombre minimum d’actions', 'plafond_global' => 'plafond global (FCFA)'],
+        'aides' => ['objectif_collecte' => 'Montant visé ; la collecte peut le dépasser.', 'minimum_actions' => '1 par défaut. Prérempli, avec la valeur indicative, dans chaque nouvelle tranche.', 'plafond_global' => 'Facultatif : vide = sans plafond.'],
         'messages' => ['enregistres' => 'Paramètres enregistrés.'],
     ],
 
@@ -2083,6 +2083,8 @@ return [
     ],
 
     'tranches' => [
+        'prerempli' => 'Prérempli avec la valeur indicative confirmée (paramètres d’investissement) ; ajustable jusqu’à la confirmation.',
+        'fige' => 'Figé depuis la confirmation de la tranche.',
         'titre' => 'Tranches',
         'nouvelle' => 'Nouvelle tranche',
         'aucune' => 'Aucune tranche pour le moment.',

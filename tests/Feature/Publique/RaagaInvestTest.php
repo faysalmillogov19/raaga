@@ -47,9 +47,9 @@ class RaagaInvestTest extends TestCase
     }
 
     /** Le RÉGULATEUR saisit et soumet, le VALIDATEUR confirme dans « À valider › Données financières ». */
-    private function confirmer(int $objectif = 1_000_000_000, int $valeur = 10_000, ?int $plafond = null): void
+    private function confirmer(int $objectif = 1_000_000_000, int $valeur = 10_000, ?int $plafond = null, int $minimum = 1): void
     {
-        $this->en($this->regulateur)->put(route('admin.investissement.update'), ['objectif_collecte' => $objectif, 'valeur_action' => $valeur, 'plafond_global' => $plafond])
+        $this->en($this->regulateur)->put(route('admin.investissement.update'), ['objectif_collecte' => $objectif, 'valeur_action' => $valeur, 'minimum_actions' => $minimum, 'plafond_global' => $plafond])
             ->assertSessionHas('succes');
         $this->en($this->regulateur)->post(route('admin.investissement.soumettre'))->assertSessionHas('succes');
 
@@ -72,7 +72,7 @@ class RaagaInvestTest extends TestCase
         $this->get(route('invest.simulateur'))->assertOk()->assertSee('data-simulateur-indisponible', false)->assertDontSee('data-formulaire-interet', false);
 
         // Saisis mais pas encore confirmés : toujours rien.
-        $this->en($this->regulateur)->put(route('admin.investissement.update'), ['objectif_collecte' => 1_000_000, 'valeur_action' => 5_000])->assertSessionHas('succes');
+        $this->en($this->regulateur)->put(route('admin.investissement.update'), ['objectif_collecte' => 1_000_000, 'valeur_action' => 5_000, 'minimum_actions' => 1])->assertSessionHas('succes');
         auth()->logout();
         $this->assertNull(RaagaInvest::parametres());
 

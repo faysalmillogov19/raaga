@@ -6,6 +6,7 @@ use App\Enums\StatutSouscription;
 use App\Models\ManifestationInteret;
 use App\Models\ParametresInvestissement;
 use App\Models\Souscription;
+use App\Support\Phase;
 
 /**
  * Calculs RAAGA Invest, tous issus de la base et des paramètres confirmés (rien n'est écrit en dur) : simulateur
@@ -14,10 +15,28 @@ use App\Models\Souscription;
  */
 class RaagaInvest
 {
-    /** @return array{objectif_collecte: int, valeur_action: int, plafond_global: ?int}|null */
+    /** @return array{objectif_collecte: int, valeur_action: int, minimum_actions: int, plafond_global: ?int}|null */
     public static function parametres(): ?array
     {
         return ParametresInvestissement::confirmes();
+    }
+
+    /**
+     * Conditions affichées au public, d'une seule source :
+     *  - souscription ouverte (paramètre ouvert et tranche ouverte) : prix et minimum figés de la tranche (« Prix de l'action ») ;
+     *  - sinon : valeur indicative et nombre minimum d'actions des paramètres confirmés (« Valeur indicative de l'action ») ;
+     *  - sans paramètres confirmés : null (aucune valeur affichée).
+     *
+     * @return array{ouverte: bool, prix: int, minimum: int}|null
+     */
+    public static function conditions(): ?array
+    {
+        if (Phase::souscriptionOuverte() && ($tranche = Phase::trancheOuverte())) {
+            return ['ouverte' => true, 'prix' => (int) $tranche->valeur_unitaire, 'minimum' => max(1, (int) $tranche->min_actions_par_souscription)];
+        }
+        $p = self::parametres();
+
+        return $p === null ? null : ['ouverte' => false, 'prix' => $p['valeur_action'], 'minimum' => $p['minimum_actions']];
     }
 
     /**

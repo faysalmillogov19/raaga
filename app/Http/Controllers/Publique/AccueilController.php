@@ -45,14 +45,13 @@ class AccueilController extends Controller
 
     /**
      * Carte « J'investis » : valeur indicative de l'action lue dans les seuls paramètres d'investissement confirmés
-     * (sinon aucune valeur, « RAAGA Invest : bientôt ») ; minimum lu dans la tranche ouverte, à défaut la prochaine
-     * tranche confirmée ; lien vers la souscription si elle est ouverte, sinon vers l'alerte SMS.
+     * avec le nombre minimum d'actions (sinon aucune valeur, « RAAGA Invest : bientôt ») ; lien vers la souscription si
+     * elle est ouverte, sinon vers l'alerte SMS.
      *
      * @return array{valeur: ?int, minimum: ?int, jauge: ?array, ouverte: bool, lien: string}
      */
     private function investir(): array
     {
-        $tranche = Phase::trancheAffichee();
         // Valeur par action et objectif : paramètres d'investissement confirmés (rien n'est écrit en dur).
         $parametres = RaagaInvest::parametres();
 
@@ -60,7 +59,7 @@ class AccueilController extends Controller
             // Une seule source : la valeur indicative confirmée, jamais le prix de la tranche.
             'valeur' => $parametres['valeur_action'] ?? null,
             'jauge' => RaagaInvest::jauge(),
-            'minimum' => $tranche ? max(1, (int) $tranche->min_actions_par_souscription) : null,
+            'minimum' => $parametres['minimum_actions'] ?? null,
             'ouverte' => Phase::souscriptionOuverte(),
             'lien' => Phase::lienSouscription(),
         ];

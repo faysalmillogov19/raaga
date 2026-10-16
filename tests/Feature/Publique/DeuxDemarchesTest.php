@@ -107,9 +107,9 @@ class DeuxDemarchesTest extends TestCase
         Tranche::query()->update(['statut' => StatutTranche::Ouverte]);
         $this->actingAs($citoyen)->get(route('souscrire'))->assertOk()->assertSee('Souscrire · Tranche 1 – 2026');
         $this->get('/')->assertOk()->assertSee('RAAGA Invest : bientôt')->assertDontSee('Prix de l’action', false);
-        $this->confirmerParametresInvestissement(10_000);
+        $this->confirmerParametresInvestissement(10_000, minimum: 1);
         $accueil = $this->get('/')->assertOk();
-        $accueil->assertSeeInOrder(['Devenez actionnaire de votre marché', "Valeur indicative de l’action : 10\u{00A0}000\u{00A0}FCFA", "Minimum : 5 actions, soit 50\u{00A0}000\u{00A0}FCFA",
+        $accueil->assertSeeInOrder(['Devenez actionnaire de votre marché', "Valeur indicative de l’action : 10\u{00A0}000\u{00A0}FCFA", 'Minimum : 1 action',
             'Rendement non garanti', 'Je deviens actionnaire', 'Installez votre commerce dans un marché moderne', 'Attribution par tirage au sort', 'Je candidate'], false)
             ->assertSee('href="'.route('souscrire').'"', false);
 

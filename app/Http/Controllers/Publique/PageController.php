@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Publique;
 
 use App\Http\Controllers\Controller;
+use App\Services\Invest\RaagaInvest;
 use App\Services\Publique\CollectePublique;
 use App\Support\Phase;
 use Carbon\CarbonImmutable;
@@ -37,15 +38,13 @@ class PageController extends Controller
         }
         unset($etape);
 
-        $tranche = Phase::trancheAffichee();
         $questions = __('public.faq.groupes');
 
         return view('public.offre', [
             'etat' => $etat,
             'etapes' => $etapes,
-            // Prix, minimum et taux IRVM lus dans la tranche et dans la dernière distribution confirmée.
-            'tranche' => $tranche,
-            'minimum' => $tranche ? max(1, (int) $tranche->min_actions_par_souscription) : null,
+            // Prix (tranche ouverte) ou valeur indicative, minimum : une seule source ; taux IRVM de la dernière distribution.
+            'conditions' => RaagaInvest::conditions(),
             'irvm' => Phase::tauxIrvm(),
             'documents' => [
                 ['cle' => 'reglement', 'url' => Phase::souscriptionOuverte() ? route('souscrire.reglement') : $this->urlFichier(config('raaga.documents.reglement'))],

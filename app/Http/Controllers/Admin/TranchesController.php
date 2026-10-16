@@ -21,6 +21,7 @@ use App\Models\Tranche;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
+use App\Services\Invest\RaagaInvest;
 use App\Services\Parametrage\WorkflowParametrage;
 use Closure;
 use Illuminate\Http\RedirectResponse;
@@ -250,13 +251,19 @@ class TranchesController extends Controller
     }
 
     /**
+     * Valeurs proposées à la création d'une tranche. Prix et minimum : valeur indicative et nombre minimum d'actions
+     * des paramètres d'investissement confirmés (aucune valeur en dur) ; le RÉGULATEUR peut les ajuster, ils sont
+     * figés quand le VALIDATEUR confirme la tranche.
+     *
      * @return array<string, mixed>
      */
     public static function valeursParDefaut(): array
     {
+        $parametres = RaagaInvest::parametres();
+
         return [
-            'valeur_unitaire' => 10_000,
-            'min_actions_par_souscription' => 1,
+            'valeur_unitaire' => $parametres['valeur_action'] ?? null,
+            'min_actions_par_souscription' => $parametres['minimum_actions'] ?? 1,
             'objectif_montant' => 3_000_000_000,
             'date_ouverture' => now()->addMonth()->startOfDay()->setTime(8, 0),
             'date_cloture' => now()->addMonths(3)->endOfDay()->setTime(23, 59),

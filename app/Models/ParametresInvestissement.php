@@ -14,15 +14,15 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * Paramètres d'investissement RAAGA Invest (une seule fiche) : objectif de collecte (peut être dépassé), valeur
- * indicative par action, plafond global facultatif (vide = sans plafond). Saisis par le RÉGULATEUR, confirmés par le
+ * indicative par action, nombre minimum d'actions (1 par défaut), plafond global facultatif (vide = sans plafond). Saisis par le RÉGULATEUR, confirmés par le
  * VALIDATEUR (workflow commun, versions figées) ; aucune valeur de départ. Le site public lit la dernière version
  * confirmée (confirmes()), même pendant une révision.
  */
 #[Table(name: 'parametres_investissement')]
-#[Fillable(['objectif_collecte', 'valeur_action', 'plafond_global', 'statut', 'version', 'soumis_par', 'soumis_le', 'valide_par', 'valide_le', 'motif_rejet'])]
+#[Fillable(['objectif_collecte', 'valeur_action', 'minimum_actions', 'plafond_global', 'statut', 'version', 'soumis_par', 'soumis_le', 'valide_par', 'valide_le', 'motif_rejet'])]
 class ParametresInvestissement extends Model implements Parametrable
 {
-    public const PARAMETRES = ['objectif_collecte', 'valeur_action', 'plafond_global'];
+    public const PARAMETRES = ['objectif_collecte', 'valeur_action', 'minimum_actions', 'plafond_global'];
 
     protected function casts(): array
     {
@@ -30,6 +30,7 @@ class ParametresInvestissement extends Model implements Parametrable
             'statut' => StatutGrilleTarifaire::class,
             'objectif_collecte' => 'integer',
             'valeur_action' => 'integer',
+            'minimum_actions' => 'integer',
             'plafond_global' => 'integer',
             'version' => 'integer',
             'soumis_le' => 'datetime',
@@ -46,7 +47,7 @@ class ParametresInvestissement extends Model implements Parametrable
     /**
      * Valeurs de la dernière version confirmée, ou null si rien n'a encore été confirmé (lues une fois par page).
      *
-     * @return array{objectif_collecte: int, valeur_action: int, plafond_global: ?int}|null
+     * @return array{objectif_collecte: int, valeur_action: int, minimum_actions: int, plafond_global: ?int}|null
      */
     public static function confirmes(): ?array
     {
@@ -59,6 +60,8 @@ class ParametresInvestissement extends Model implements Parametrable
 
             return $p && ($p['objectif_collecte'] ?? null) && ($p['valeur_action'] ?? null)
                 ? ['objectif_collecte' => (int) $p['objectif_collecte'], 'valeur_action' => (int) $p['valeur_action'],
+                    // Versions confirmées avant l'ajout du minimum : 1 action.
+                    'minimum_actions' => max(1, (int) ($p['minimum_actions'] ?? 1)),
                     'plafond_global' => isset($p['plafond_global']) ? (int) $p['plafond_global'] : null]
                 : null;
         });

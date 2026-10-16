@@ -38,9 +38,7 @@
                         @if ($investir['valeur'])
                             <ul class="acc-demarche-points">
                                 <li>{{ __('public.demarches.investir.valeur_indicative', ['prix' => format_fcfa($investir['valeur'])]) }}</li>
-                                <li>{{ $investir['minimum'] > 1
-                                    ? __('public.demarches.investir.minimum', ['n' => format_nombre($investir['minimum']), 'montant' => format_fcfa($investir['minimum'] * $investir['valeur'])])
-                                    : $d['investir']['minimum_un'] }}</li>
+                                <li>{{ trans_choice('public.demarches.investir.minimum', $investir['minimum'], ['n' => format_nombre($investir['minimum'])]) }}</li>
                             </ul>
                         @else
                             <p data-invest-bientot>{{ $d['investir']['bientot_invest'] }}</p>

@@ -53,6 +53,7 @@ class ParametresInvestissementController extends Controller
         $donnees = $request->validate([
             'objectif_collecte' => ['required', 'integer', 'min:1', 'max:999999999999999'],
             'valeur_action' => ['required', 'integer', 'min:1', 'max:999999999999'],
+            'minimum_actions' => ['required', 'integer', 'min:1', 'max:10000000'],
             'plafond_global' => ['nullable', 'integer', 'min:1', 'max:999999999999999'],
         ], [], __('admin.investissement.champs'));
         $fiche = ParametresInvestissement::fiche();

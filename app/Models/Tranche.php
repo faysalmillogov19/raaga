@@ -122,10 +122,13 @@ class Tranche extends Model implements Parametrable
      *
      * @return list<string>|null
      */
+    /** Prix et minimum, figés dès la confirmation de la tranche par le VALIDATEUR (aucun avenant ne les change). */
+    public const FIGES = ['valeur_unitaire', 'min_actions_par_souscription'];
+
     public function champsAvenantAutorises(): ?array
     {
         return match ($this->statut) {
-            StatutTranche::Confirmee => null,
+            StatutTranche::Confirmee => array_values(array_diff(self::PARAMETRES, self::FIGES)),
             StatutTranche::Ouverte => ['date_cloture'],
             default => [],
         };

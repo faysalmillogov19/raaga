@@ -23,14 +23,15 @@
         @endif
 
         @if ($fiche->exists)
-            <dl class="mt-4 grid gap-3 sm:grid-cols-3" data-saisie>
+            <dl class="mt-4 grid gap-3 sm:grid-cols-2" data-saisie>
                 <div><dt class="texte-carte">{{ ucfirst($libelles['objectif_collecte']) }}</dt><dd class="font-bold">{{ $montant($fiche->objectif_collecte) }}</dd></div>
                 <div><dt class="texte-carte">{{ ucfirst($libelles['valeur_action']) }}</dt><dd class="font-bold">{{ $montant($fiche->valeur_action) }}</dd></div>
+                <div><dt class="texte-carte">{{ ucfirst($libelles['minimum_actions']) }}</dt><dd class="font-bold">{{ format_nombre($fiche->minimum_actions ?? 1) }}</dd></div>
                 <div><dt class="texte-carte">{{ ucfirst($libelles['plafond_global']) }}</dt><dd class="font-bold">{{ $montant($fiche->plafond_global) }}</dd></div>
             </dl>
         @endif
         <p class="texte-carte mt-3" data-confirmes>{{ $confirmes
-            ? __('admin.investissement.en_vigueur', ['objectif' => format_fcfa($confirmes['objectif_collecte']), 'valeur' => format_fcfa($confirmes['valeur_action'])])
+            ? __('admin.investissement.en_vigueur', ['objectif' => format_fcfa($confirmes['objectif_collecte']), 'valeur' => format_fcfa($confirmes['valeur_action']), 'minimum' => format_nombre($confirmes['minimum_actions'])])
             : $i['aucune_confirmee'] }}</p>
 
         <div class="mt-4 flex flex-wrap gap-3">
@@ -40,6 +41,7 @@
                     <x-slot:declencheur>{{ __('admin.parametrage.actions.modifier') }}</x-slot:declencheur>
                     <x-admin.champ nom="objectif_collecte" :libelle="ucfirst($libelles['objectif_collecte'])" type="number" min="1" :valeur="$fiche->objectif_collecte" obligatoire :aide="$i['aides']['objectif_collecte']" />
                     <x-admin.champ nom="valeur_action" :libelle="ucfirst($libelles['valeur_action'])" type="number" min="1" :valeur="$fiche->valeur_action" obligatoire class="mt-4" />
+                    <x-admin.champ nom="minimum_actions" :libelle="ucfirst($libelles['minimum_actions'])" type="number" min="1" :valeur="$fiche->minimum_actions ?? 1" obligatoire class="mt-4" :aide="$i['aides']['minimum_actions']" />
                     <x-admin.champ nom="plafond_global" :libelle="ucfirst($libelles['plafond_global'])" type="number" min="1" :valeur="$fiche->plafond_global" class="mt-4" :aide="$i['aides']['plafond_global']" />
                 </x-admin.fenetre>
             @endif

@@ -54,9 +54,21 @@
                 <h2 id="s-offre" class="!text-[1.15rem]">{{ __('admin.tranches.sections.offre') }}</h2>
                 <div class="mt-3 grid gap-4 lg:grid-cols-2">
                     <x-admin.champ nom="nom" :libelle="ucfirst($c['nom'])" :valeur="$t->nom" required maxlength="150" class="lg:col-span-2" />
-                    <x-admin.champ nom="valeur_unitaire" :libelle="ucfirst($c['valeur_unitaire'])" type="number" min="1" :valeur="$t->valeur_unitaire" required />
+                    @if ($mode === 'avenant')
+                        {{-- Prix et minimum figés depuis la confirmation : affichés, non modifiables. --}}
+                        <x-admin.champ nom="valeur_unitaire_fige" :libelle="ucfirst($c['valeur_unitaire'])" type="verrouille" :valeur="format_fcfa($t->valeur_unitaire)" :aide="__('admin.tranches.fige')" />
+                        <input type="hidden" name="valeur_unitaire" value="{{ $t->valeur_unitaire }}">
+                    @else
+                        <x-admin.champ nom="valeur_unitaire" :libelle="ucfirst($c['valeur_unitaire'])" type="number" min="1" :valeur="$t->valeur_unitaire" required
+                                       :aide="$mode === 'creation' ? __('admin.tranches.prerempli') : null" />
+                    @endif
                     <x-admin.champ nom="objectif_montant" :libelle="ucfirst($c['objectif_montant'])" type="number" min="1" :valeur="$t->objectif_montant" required />
-                    <x-admin.champ nom="min_actions_par_souscription" :libelle="ucfirst($c['min_actions_par_souscription'])" type="number" min="1" :valeur="$t->min_actions_par_souscription" required />
+                    @if ($mode === 'avenant')
+                        <x-admin.champ nom="min_actions_par_souscription_fige" :libelle="ucfirst($c['min_actions_par_souscription'])" type="verrouille" :valeur="format_nombre($t->min_actions_par_souscription)" :aide="__('admin.tranches.fige')" />
+                        <input type="hidden" name="min_actions_par_souscription" value="{{ $t->min_actions_par_souscription }}">
+                    @else
+                        <x-admin.champ nom="min_actions_par_souscription" :libelle="ucfirst($c['min_actions_par_souscription'])" type="number" min="1" :valeur="$t->min_actions_par_souscription" required />
+                    @endif
                     <x-admin.champ nom="plafond_actions_par_personne" :libelle="ucfirst($c['plafond_actions_par_personne'])" type="number" min="1" :valeur="$t->plafond_actions_par_personne" :aide="__('admin.tranches.sans_plafond').' : laisser vide.'" />
                     <x-admin.champ nom="date_ouverture" :libelle="ucfirst($c['date_ouverture'])" type="datetime-local" :valeur="$dateHeure($t->date_ouverture)" required />
                     <x-admin.champ nom="date_cloture" :libelle="ucfirst($c['date_cloture'])" type="datetime-local" :valeur="$dateHeure($t->date_cloture)" required />

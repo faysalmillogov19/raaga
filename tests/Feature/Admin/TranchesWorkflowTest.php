@@ -14,17 +14,20 @@ use BackedEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\Support\ActeursParametrage;
+use Tests\Support\ParametresInvestissementConfirmes;
 use Tests\TestCase;
 
 class TranchesWorkflowTest extends TestCase
 {
-    use ActeursParametrage, RefreshDatabase;
+    use ActeursParametrage, ParametresInvestissementConfirmes, RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->creerActeurs();
+        // Valeur indicative et minimum confirmés : ils préremplissent chaque nouvelle tranche.
+        $this->confirmerParametresInvestissement(10_000, minimum: 1);
     }
 
     /** Formulaire complet des 6 sections, tel que le navigateur l'envoie. */
@@ -190,6 +193,43 @@ class TranchesWorkflowTest extends TestCase
         $this->assertSame(1_000_000_000, $tranche->objectif_montant);
         $this->assertSame(2, $tranche->version);
         $this->assertSame(StatutAvenant::Approuve, $avenant->refresh()->statut);
+    }
+
+    public function test_la_creation_est_preremplie_par_les_parametres_d_investissement_et_ajustable(): void
+    {
+        // Prix et minimum préremplis avec la valeur indicative et le nombre minimum d'actions confirmés.
+        $this->en($this->regulateur)->get(route('admin.tranches.create'))->assertOk()
+            ->assertSee('name="valeur_unitaire" type="number" value="10000"', false)
+            ->assertSee('name="min_actions_par_souscription" type="number" value="1"', false)
+            ->assertSee('Prérempli avec la valeur indicative confirmée');
+
+        // Le RÉGULATEUR peut les ajuster avant la confirmation.
+        $this->en($this->regulateur)->post(route('admin.tranches.store'), $this->formulaire(['valeur_unitaire' => 12_000, 'min_actions_par_souscription' => 2]))
+            ->assertSessionHasNoErrors();
+        $tranche = Tranche::query()->latest('id')->firstOrFail();
+        $this->assertSame([12_000, 2], [(int) $tranche->valeur_unitaire, $tranche->min_actions_par_souscription]);
+    }
+
+    public function test_prix_et_minimum_figes_apres_confirmation_de_la_tranche(): void
+    {
+        $tranche = $this->trancheConfirmee();
+        $this->assertSame([10_000, 1], [(int) $tranche->valeur_unitaire, $tranche->min_actions_par_souscription]);
+
+        // Formulaire d'avenant : prix et minimum affichés, non modifiables.
+        $this->en($this->regulateur)->get(route('admin.tranches.avenant', $tranche))->assertOk()
+            ->assertSee('Figé depuis la confirmation de la tranche.')->assertDontSee('name="valeur_unitaire" type="number"', false);
+
+        // Avenant sur le prix ou le minimum : refusé, rien ne change.
+        foreach ([['valeur_unitaire' => 12_000], ['min_actions_par_souscription' => 5]] as $changement) {
+            $this->en($this->regulateur)->post(route('admin.tranches.avenant.store', $tranche), [...$this->formulaire($changement), 'motif' => 'Nouveau prix'])
+                ->assertSessionHas('erreur');
+        }
+        $this->assertSame(0, Avenant::query()->count());
+
+        // Une nouvelle valeur indicative ne touche pas la tranche confirmée.
+        $this->confirmerParametresInvestissement(15_000, minimum: 3);
+        $tranche->refresh();
+        $this->assertSame([10_000, 1], [(int) $tranche->valeur_unitaire, $tranche->min_actions_par_souscription]);
     }
 
     public function test_un_avenant_rejete_ne_change_rien(): void

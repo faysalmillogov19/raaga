@@ -40,7 +40,7 @@ class BrandingDemarchesTest extends TestCase
     private function tranche(): Tranche
     {
         return Tranche::create([
-            'statut' => StatutTranche::Ouverte, 'nom' => 'Tranche 2027', 'valeur_unitaire' => 7_500, 'min_actions_par_souscription' => 4,
+            'statut' => StatutTranche::Ouverte, 'nom' => 'Tranche 2027', 'valeur_unitaire' => 12_000, 'min_actions_par_souscription' => 2,
             'plafond_actions_par_personne' => 500, 'objectif_montant' => 3_000_000_000, 'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addDays(30),
             'publics_autorises' => [PublicAutorise::ResidentBf->value], 'mode_saisie' => ModeSaisie::NbActions, 'souscriptions_multiples' => true,
             'regle_arret' => RegleArret::ArretAObjectif, 'methode_allocation' => MethodeAllocation::Prorata, 'regle_si_echec' => RegleSiEchec::RemboursementIntegral,
@@ -94,10 +94,15 @@ class BrandingDemarchesTest extends TestCase
 
         // La tranche seule ne donne aucune valeur d'action sur l'accueil : il faut des paramètres d'investissement confirmés.
         $this->get('/')->assertSee('RAAGA Invest : bientôt')->assertDontSee('Prix de l’action', false);
-        $this->confirmerParametresInvestissement(7_500);
-        $this->get('/')->assertSee("Valeur indicative de l’action : 7\u{00A0}500\u{00A0}FCFA", false)->assertSee("Minimum : 4 actions, soit 30\u{00A0}000\u{00A0}FCFA", false);
+        $this->confirmerParametresInvestissement(10_000, minimum: 1);
+        // Accueil : valeur indicative et minimum des paramètres, sans montant minimum calculé.
+        $this->get('/')->assertSee("Valeur indicative de l’action : 10\u{00A0}000\u{00A0}FCFA", false)->assertSee('Minimum : 1 action')
+            ->assertDontSee('soit', false);
+        // Offre, tranche ouverte : prix et minimum figés de la tranche (12 000 FCFA, 2 actions), jamais la valeur indicative.
         $this->get(route('offre'))->assertOk()
-            ->assertSee("Choisissez le nombre d’actions : 7\u{00A0}500\u{00A0}FCFA l’action, 4 au minimum.", false)
+            ->assertSee("Prix de l’action : 12\u{00A0}000\u{00A0}FCFA", false)->assertSee('Minimum : 2 actions')
+            ->assertDontSee('Valeur indicative de l’action', false)->assertDontSee('Souscription fermée')
+            ->assertSee('Le prix et le minimum sont fixés pour chaque tranche.', false)
             ->assertSee('après la retenue de l’IRVM au taux de 10 %.', false)
             ->assertSeeInOrder(['Les risques', 'Valeur non garantie', 'Dividendes non garantis', 'Aucun droit à une boutique', 'Revente'], false)
             ->assertSee('Statuts de Raaga SA')->assertSee('Règlement de la tranche')->assertSee('href="'.route('souscrire.reglement').'"', false)
