@@ -461,7 +461,9 @@ final class AValider
      * le panneau de détail (informations, différences, historique), sans lien vers une fiche qui lui serait refusée.
      */
     private const FICHES = ['type' => Droit::ReferentielsBoutiquesVoir, 'niveaux' => Droit::ReferentielsBoutiquesVoir, 'zones' => Droit::ReferentielsBoutiquesVoir,
-        'moyens' => Droit::ModalitesPaiementVoir, 'delais' => Droit::ModalitesPaiementVoir, 'unites' => Droit::UnitesVoir];
+        'moyens' => Droit::ModalitesPaiementVoir, 'delais' => Droit::ModalitesPaiementVoir, 'unites' => Droit::UnitesVoir,
+        'grille' => Droit::GrilleVoir, 'phase' => Droit::PhaseVoir, 'annulation' => Droit::KycVoir, 'correction' => Droit::PaiementsVoir,
+        'remboursement' => Droit::RemboursementsVoir];
 
     /**
      * « url » : la fiche de l'élément, ou, quand elle est refusée au profil, son panneau de détail dans « À valider »

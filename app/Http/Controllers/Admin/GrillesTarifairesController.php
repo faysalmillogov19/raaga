@@ -218,9 +218,15 @@ class GrillesTarifairesController extends Controller
             $grille = $site->grilleTarifaire ?? throw new RegleGestionException(__('admin.grilles.regles.vide'));
             $action($grille);
         } catch (RegleGestionException $e) {
-            return redirect()->route('admin.boutiques.grilles.show', $site)->with('erreur', $e->getMessage());
+            return redirect($this->retour($site))->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.boutiques.grilles.show', $site)->with('succes', __($message));
+        return redirect($this->retour($site))->with('succes', __($message));
+    }
+
+    /** Après une action : la grille, ou « À valider › Grilles » pour le VALIDATEUR (sans l'écran des grilles). */
+    private function retour(Site $site): string
+    {
+        return Gate::allows(Droit::GrilleVoir->value) ? route('admin.boutiques.grilles.show', $site) : route('admin.a-valider.rubrique', 'grilles');
     }
 }

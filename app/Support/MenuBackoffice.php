@@ -32,7 +32,7 @@ final class MenuBackoffice
     /** Icône de chaque menu dépliant (barre latérale réduite en icônes). */
     public const ICONES_MENUS = ['referentiels' => 'referentiels', 'modalites' => 'dividendes', 'imports' => 'importer', 'a_valider' => 'taches',
         'tarification' => 'dividendes', 'location' => 'boutiques', 'invest' => 'tranches', 'site_public' => 'plateforme', 'soumissions' => 'taches',
-        'gestion_boutiques' => 'boutiques', 'controle' => 'audit'];
+        'gestion_boutiques' => 'boutiques', 'controle' => 'audit', 'actions_a' => 'institutions'];
 
     /** Rubriques de « À valider » du VALIDATEUR, classées sous quatre intertitres (badge de l'intertitre : somme des rubriques). */
     public const INTERTITRES_A_VALIDER = [
@@ -86,7 +86,7 @@ final class MenuBackoffice
                 ['cle' => 'sites', 'route' => 'admin.sites', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
                     'exclure' => ['admin.sites.types', 'admin.sites.types.*', 'admin.sites.excel.*', 'admin.sites.boutiques-excel.*']],
                 ['cle' => 'boutiques_referentiel', 'route' => 'admin.referencement.boutiques', 'droit' => Droit::SitesVoir, 'icone' => 'boutiques', 'etape' => 0],
-                ['cle' => 'capacites', 'route' => 'admin.referencement.capacites', 'droit' => Droit::SitesVoir, 'icone' => 'simulations', 'etape' => 0],
+                ['cle' => 'capacites', 'route' => 'admin.referencement.capacites', 'droit' => Droit::CapacitesVoir, 'icone' => 'simulations', 'etape' => 0],
                 ['cle' => 'grille', 'route' => 'admin.boutiques.grilles', 'droit' => Droit::GrilleVoir, 'icone' => 'dividendes', 'etape' => 0],
                 // Unités de loyer (M2, UNITE, REDEVANCE) : près de la grille tarifaire, pour le RÉGULATEUR (SUPER_ADMIN en lecture).
                 ['cle' => 'unites', 'route' => 'admin.referencement.unites', 'droit' => Droit::UnitesVoir, 'icone' => 'tableau', 'etape' => 0, 'liste' => 'unites'],
@@ -201,10 +201,9 @@ final class MenuBackoffice
     }
 
     /**
-     * Menu du VALIDATEUR, regroupé par domaine (16/10/2026) : « À valider » (vue d'ensemble, puis ses rubriques sous quatre
-     * intertitres), « Boutiques », « Contrôle ». Mêmes écrans, mêmes URL, mêmes droits que la définition commune. Les
-     * écrans hors des domaines demandés sont rangés dans le plus proche (consultation du référencement, campagnes et
-     * imports : Boutiques ; RAAGA Invest, Actions A, opérations, registres, démarches, référentiels : Contrôle).
+     * Menu du VALIDATEUR, finalisé le 16/10/2026 : « À valider » (vue d'ensemble, puis ses rubriques sous quatre
+     * intertitres), « Boutiques », « RAAGA Invest », « Actions A », « Contrôle ». Mêmes URL que la définition commune ;
+     * les écrans repris par d'autres profils ne lui sont plus accessibles (droits retirés dans Droit::pour()).
      *
      * @return array<string, list<array<string, mixed>>>
      */
@@ -224,22 +223,22 @@ final class MenuBackoffice
                 self::entree('tableau'),
                 self::entree('a_valider'),
                 ...$rubriques,
-                // Boutiques : attributions à faire, cautions à rembourser, consultation du référencement.
+                // Boutiques : attributions à faire, cautions à rembourser, campagnes, consultation du référencement, imports.
                 ['cle' => 'attributions_a_faire', 'route' => 'admin.boutiques.attributions', 'droit' => Droit::BoutiquesPiloter, 'icone' => 'boutiques', 'etape' => 0,
                     'sous_menu' => 'gestion_boutiques', 'libelle' => $libelle('attributions_a_faire')],
                 $dans('gestion_boutiques', 'cautions'),
+                $dans('gestion_boutiques', 'boutiques', ['exclure' => ['admin.boutiques.attributions', 'admin.boutiques.grilles', 'admin.boutiques.grilles.*'],
+                    'libelle' => $libelle('campagnes')]),
                 $dans('gestion_boutiques', 'sites', ['libelle' => $libelle('sites')]),
-                $dans('gestion_boutiques', 'boutiques_referentiel'),
-                $dans('gestion_boutiques', 'capacites'),
-                $dans('gestion_boutiques', 'grille'),
-                $dans('gestion_boutiques', 'boutiques', ['exclure' => ['admin.boutiques.attributions', 'admin.boutiques.grilles', 'admin.boutiques.grilles.*']]),
+                $dans('gestion_boutiques', 'boutiques_referentiel', ['libelle' => $libelle('boutiques_referentiel')]),
                 $dans('gestion_boutiques', 'imports_sites', ['libelle' => $libelle('imports_sites')]),
                 $dans('gestion_boutiques', 'imports_boutiques', ['libelle' => $libelle('imports_boutiques')]),
-                // Contrôle : historique de mes décisions, journal d'audit, puis les écrans de consultation restants.
+                ...array_map(fn (string $cle) => $dans('invest', $cle), ['investissement', 'tranches', 'dividendes', 'simulations', 'registre']),
+                ...array_map(fn (string $cle) => $dans('actions_a', $cle), ['dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a']),
+                // Contrôle : historique de mes décisions, observations, alertes conformité, journal d'audit.
                 ['cle' => 'historique', 'route' => 'admin.historique-decisions', 'droit' => Droit::AValiderVoir, 'icone' => 'audit', 'etape' => 0,
                     'sous_menu' => 'controle', 'libelle' => $libelle('historique')],
-                ...array_map(fn (string $cle) => $dans('controle', $cle), ['audit', 'registre', 'registre_a', 'observations', 'kyc', 'conformite', 'souscriptions',
-                    'remboursements', 'tranches', 'investissement', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'phase', 'referentiels']),
+                ...array_map(fn (string $cle) => $dans('controle', $cle), ['observations', 'conformite', 'audit']),
             ],
         ];
     }

@@ -161,8 +161,9 @@ class GrilleTarifaireTest extends TestCase
         $this->en($this->regulateur)->put(route('admin.boutiques.grilles.update', $this->site), $lignes)->assertSessionHas('erreur');
         $this->en($this->regulateur)->post(route('admin.boutiques.grilles.confirmer', $this->site))->assertForbidden();
         $this->en($gestionnaire)->post(route('admin.boutiques.grilles.confirmer', $this->site))->assertForbidden();
-        $this->en($this->validateur)->get(route('admin.boutiques.grilles.show', $this->site))->assertOk()->assertSee("2\u{00A0}000\u{00A0}FCFA", false);
-        $this->en($this->validateur)->post(route('admin.boutiques.grilles.confirmer', $this->site))->assertSessionHas('succes');
+        // VALIDATEUR : la grille se consulte et se décide dans « À valider » (plus d'écran Grille tarifaire, 403).
+        $this->en($this->validateur)->get(route('admin.boutiques.grilles.show', $this->site))->assertForbidden();
+        $this->en($this->validateur)->post(route('admin.boutiques.grilles.confirmer', $this->site))->assertRedirect(route('admin.a-valider.rubrique', 'grilles'))->assertSessionHas('succes');
         $this->assertSame(StatutGrilleTarifaire::Confirme, $grille->fresh()->statut);
         $this->assertSame(['version' => 1, 'lignes' => ['RC|'.$this->boutique->id => ['unite_loyer' => 'M2', 'loyer_m2' => 2000, 'mois_caution' => 12, 'mois_avance' => 60]]], $grille->confirmee());
 
@@ -171,7 +172,7 @@ class GrilleTarifaireTest extends TestCase
         $this->en($this->regulateur)->put(route('admin.boutiques.grilles.update', $this->site), ['lignes' => ['RC' => [$this->boutique->id => ['unite_id' => Unite::idDuCode('M2'), 'loyer_m2' => 2400, 'mois_caution' => 12, 'mois_avance' => 60]]]]);
         $this->assertSame(1, $grille->fresh()->confirmee()['version']);
         $this->en($this->regulateur)->post(route('admin.boutiques.grilles.soumettre', $this->site));
-        $this->en($this->validateur)->get(route('admin.boutiques.grilles.show', $this->site))->assertOk()->assertSee("2\u{00A0}400\u{00A0}FCFA/m²", false);
+        $this->en($this->regulateur)->get(route('admin.boutiques.grilles.show', $this->site))->assertOk()->assertSee("2\u{00A0}400\u{00A0}FCFA/m²", false);
         $this->en($this->validateur)->post(route('admin.boutiques.grilles.confirmer', $this->site))->assertSessionHas('succes');
         $this->assertSame(2, $grille->fresh()->confirmee()['version']);
         $this->assertSame(2, $grille->versions()->count());

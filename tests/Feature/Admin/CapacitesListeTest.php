@@ -55,8 +55,9 @@ class CapacitesListeTest extends TestCase
             ->assertDontSee(route('admin.referencement.capacites.edit', $figee))->assertSee('Impossible : site soumis ou validé', false)
             ->assertSee('<dialog id="ajouter-capacite"', false);
 
-        // Les autres profils consultent : bouton voir seulement.
-        $this->en($this->validateur)->get(route('admin.referencement.capacites'))->assertOk()
+        // Le RÉGULATEUR consulte : bouton voir seulement ; le VALIDATEUR n'a plus l'écran (capacités vues dans « À valider »).
+        $this->en($this->validateur)->get(route('admin.referencement.capacites'))->assertForbidden();
+        $this->en($this->regulateur)->get(route('admin.referencement.capacites'))->assertOk()
             ->assertSee('Voir les boutiques correspondantes')->assertDontSee('aria-label="Supprimer', false)->assertDontSee('aria-label="Ajouter une capacité"', false);
         $this->en($this->validateur)->post(route('admin.referencement.capacites.store'), $this->saisie())->assertForbidden();
         $this->en($this->validateur)->delete(route('admin.referencement.capacites.destroy', $figee))->assertForbidden();

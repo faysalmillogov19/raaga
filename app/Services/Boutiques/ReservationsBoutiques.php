@@ -282,7 +282,8 @@ class ReservationsBoutiques
     public static function aAttribuer(): Builder
     {
         return ReservationBoutique::query()->where('statut', StatutReservationBoutique::Reservee)
-            ->where(fn ($q) => $q->whereNotNull('avance_payee_le')->orWhere('avance', 0));
+            // Sans avance : seulement 0 FCFA figé depuis la grille confirmée (même règle que ReservationBoutique::sansAvance()).
+            ->where(fn ($q) => $q->whereNotNull('avance_payee_le')->orWhere(fn ($r) => $r->where('avance', 0)->whereNotNull('mois_avance')));
     }
 
     /**

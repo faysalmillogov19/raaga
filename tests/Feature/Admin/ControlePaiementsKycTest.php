@@ -150,7 +150,10 @@ class ControlePaiementsKycTest extends TestCase
         $this->en($this->admin)->get(route('admin.paiements'))->assertForbidden();
         $this->en($this->validateur)->get(route('admin.paiements'))->assertForbidden();
         $this->en($this->validateur)->post(route('admin.paiements.controle', $p), ['controle' => 'RECU'])->assertForbidden();
-        $this->en($this->validateur)->get(route('admin.remboursements'))->assertOk();
+        // VALIDATEUR : remboursements et identités décidés dans « À valider » ; les écrans sont au CONTRÔLEUR et à l'ADMIN.
+        $this->en($this->validateur)->get(route('admin.remboursements'))->assertForbidden();
+        $this->en($this->validateur)->get(route('admin.kyc'))->assertForbidden();
+        $this->en($this->controleur)->get(route('admin.remboursements'))->assertOk();
     }
 
     public function test_paiement_manuel_recu_incomplet_rejete_et_paiement_operateur_sans_controle(): void

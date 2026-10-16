@@ -225,6 +225,7 @@ return [
         'soumissions' => 'Mes soumissions',
         'gestion_boutiques' => 'Boutiques',
         'controle' => 'Contrôle',
+        'actions_a' => 'Actions A',
     ],
 
     // Intertitres des menus dépliants (rubriques de « À valider » du VALIDATEUR).
@@ -238,7 +239,9 @@ return [
     // Libellés propres au menu du VALIDATEUR.
     'menu_validateur' => [
         'attributions_a_faire' => 'Attributions à faire',
-        'sites' => 'Consultation des sites et boutiques',
+        'campagnes' => 'Campagnes',
+        'sites' => 'Sites (consultation)',
+        'boutiques_referentiel' => 'Boutiques (consultation)',
         'imports_sites' => 'Imports : sites et capacités',
         'imports_boutiques' => 'Imports : boutiques',
         'historique' => 'Historique de mes décisions',
@@ -359,6 +362,7 @@ return [
         'tranches.confirmer' => 'Confirmer ou rejeter un paramétrage de tranche',
         'tranches.piloter' => 'Ouvrir, prolonger (avenant) et clôturer une tranche',
         'sites.voir' => 'Consulter les sites du marché et leurs boutiques',
+        'sites.capacites_voir' => 'Consulter les capacités prévues des sites',
         'sites.gerer' => 'Créer et modifier les sites et leurs boutiques, puis les soumettre',
         'sites.confirmer' => 'Confirmer ou rejeter un site et ses boutiques',
         'referentiels_boutiques.voir' => 'Ouvrir l’onglet Référentiels : types de boutiques, niveaux et zones',

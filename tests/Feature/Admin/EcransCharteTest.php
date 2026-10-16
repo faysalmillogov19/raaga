@@ -116,10 +116,10 @@ class EcransCharteTest extends TestCase
     {
         $cartes = fn (TestResponse $p) => preg_match_all('#data-indicateur="([a-z]+)"#', $p->getContent(), $m) ? $m[1] : [];
 
-        // VALIDATEUR : actions en attente, KYC, cautions, boutiques ; le site soumis est à examiner.
+        // VALIDATEUR : actions en attente, cautions, boutiques, engagements (plus de carte KYC : dossiers à l'ADMIN).
         $this->connecterBackoffice(Role::Validateur);
         $page = $this->get('/admin')->assertOk()->assertSee('Bonjour. 1 élément attend votre décision.');
-        $this->assertSame(['actions', 'kyc', 'cautions', 'boutiques'], $cartes($page));
+        $this->assertSame(['actions', 'cautions', 'boutiques', 'engagements'], $cartes($page));
         $page->assertSee('<td class="font-semibold">Site</td>', false)->assertSee('A04 · Arrondissement N°4')->assertSee('Gestionnaire des sites et boutiques')
             ->assertSee('Examiner')->assertSee('Sites : boutiques prévues et importées')->assertSee('3 boutiques importées sur 4 prévues')
             ->assertSee('Derniers imports')->assertSee('A04_locaux_DQE.xlsx')->assertSee('role="progressbar"', false);

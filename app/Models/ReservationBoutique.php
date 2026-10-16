@@ -151,7 +151,16 @@ class ReservationBoutique extends Model implements Payable
     /** Avance confirmée (ou aucune avance due) : la boutique peut être attribuée une fois le contrat signé. */
     public function avanceReglee(): bool
     {
-        return $this->avance_payee_le !== null || (int) $this->avance === 0;
+        return $this->avance_payee_le !== null || $this->sansAvance();
+    }
+
+    /**
+     * Aucune avance due : seulement une avance de 0 FCFA figée depuis la grille confirmée (mois d'avance renseigné).
+     * Une avance à 0 sans montants figés (valeur par défaut de la colonne) ne dispense jamais de l'avance.
+     */
+    public function sansAvance(): bool
+    {
+        return (int) $this->avance === 0 && $this->mois_avance !== null;
     }
 
     /** Statut affiché : « Réservée : avance payée », « Annulée : avance non payée dans le délai »… */

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\DecisionPhase;
 use App\Services\Audit\Journal;
@@ -119,8 +120,11 @@ class PhaseController extends Controller
         });
         Cache::forget(Phase::CACHE);
 
+        // VALIDATEUR (sans l'écran des démarches) : retour sur « À valider › Démarches ».
+        $retour = $request->user()->can(Droit::PhaseVoir->value) ? route('admin.phase') : route('admin.a-valider.rubrique', 'demarches');
+
         return $erreur
-            ? redirect()->route('admin.phase')->with('erreur', __('admin.phase.erreurs.'.$erreur))
-            : redirect()->route('admin.phase')->with('succes', __('admin.phase.messages.'.($statut === DecisionPhase::CONFIRMEE ? 'confirmee' : 'rejetee')));
+            ? redirect($retour)->with('erreur', __('admin.phase.erreurs.'.$erreur))
+            : redirect($retour)->with('succes', __('admin.phase.messages.'.($statut === DecisionPhase::CONFIRMEE ? 'confirmee' : 'rejetee')));
     }
 }

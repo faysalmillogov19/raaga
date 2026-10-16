@@ -7,9 +7,11 @@ use App\Enums\StatutBoutique;
 use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSite;
 use App\Models\AuditLog;
+use App\Models\DecisionPhase;
 use App\Models\ReservationBoutique;
 use App\Models\Site;
 use App\Models\User;
+use App\Services\Boutiques\ReservationsBoutiques;
 use App\Support\MenuBackoffice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\Boutiques;
@@ -57,32 +59,103 @@ class MenuValidateurTest extends TestCase
             'avance_payee_le' => now(), 'reference_avance' => 'PAY-AVANCE01']);
     }
 
-    public function test_menus_par_domaine_et_chaque_ancien_onglet_et_rubrique_accessibles(): void
+    public function test_menu_final_et_aucun_lien_mort(): void
     {
         $menu = MenuBackoffice::pour($this->validateur);
         $elements = MenuBackoffice::regrouper($menu['pilotage'], $this->validateur);
         $this->assertSame('tableau', $elements[0]['entree']['cle']);
-        $this->assertSame(['a_valider', 'gestion_boutiques', 'controle'], array_column(array_slice($elements, 1), 'cle'));
+        $this->assertSame(['a_valider', 'gestion_boutiques', 'invest', 'actions_a', 'controle'], array_column(array_slice($elements, 1), 'cle'));
 
-        // « À valider » : vue d'ensemble, puis les rubriques dans l'ordre des intertitres.
+        // « À valider » inchangé : vue d'ensemble, puis les rubriques dans l'ordre des intertitres.
         $aValider = $elements[1]['entrees'];
         $this->assertSame('a_valider', $aValider[0]['cle']);
         $this->assertSame(['sites', 'imports', 'referentiels', 'autorisations', 'finances', 'grilles', 'paiements', 'cautions', 'campagnes', 'attributions', 'demarches', 'identites'],
             array_map(fn ($e) => substr($e['cle'], strlen('a_valider_')), array_slice($aValider, 1)));
-        $this->assertSame(['attributions_a_faire', 'cautions', 'sites'], array_slice(array_column($elements[2]['entrees'], 'cle'), 0, 3));
-        $this->assertSame(['historique', 'audit'], array_slice(array_column($elements[3]['entrees'], 'cle'), 0, 2));
-
-        // Chaque ancien onglet et chaque rubrique : dans le nouveau menu, à la même URL, et la page répond.
-        $nouveau = collect($menu)->flatten(1);
-        foreach ($this->ancienMenu($this->validateur) as $ancien) {
-            $entree = $nouveau->firstWhere('cle', $ancien['cle']);
-            $this->assertNotNull($entree, $ancien['cle']);
-            $this->assertSame(MenuBackoffice::url($ancien), MenuBackoffice::url($entree), $ancien['cle']);
+        $attendus = [
+            'gestion_boutiques' => ['attributions_a_faire', 'cautions', 'boutiques', 'sites', 'boutiques_referentiel', 'imports_sites', 'imports_boutiques'],
+            'invest' => ['investissement', 'tranches', 'dividendes', 'simulations', 'registre'],
+            'actions_a' => ['dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a'],
+            'controle' => ['historique', 'observations', 'conformite', 'audit'],
+        ];
+        foreach (array_slice($elements, 2) as $element) {
+            $this->assertSame($attendus[$element['cle']], array_column($element['entrees'], 'cle'), $element['cle']);
         }
-        $page = $this->get('/admin')->assertOk();
-        foreach ($nouveau as $entree) {
+
+        // Aucun lien mort : chaque entrée est dans la page et répond ; même URL que dans la définition commune.
+        $page = $this->get('/admin')->assertOk()->assertSee('<span class="adm-libelle">RAAGA Invest</span>', false)->assertSee('<span class="adm-libelle">Actions A</span>', false);
+        foreach (collect($menu)->flatten(1) as $entree) {
+            if ($commune = MenuBackoffice::entree($entree['cle'])) {
+                $this->assertSame(MenuBackoffice::url($commune), MenuBackoffice::url($entree), $entree['cle']);
+            }
             $page->assertSee('href="'.MenuBackoffice::url($entree).'"', false);
             $this->get(MenuBackoffice::url($entree))->assertOk();
+        }
+    }
+
+    public function test_onglets_retires_refuses_et_profils_repreneurs_autorises(): void
+    {
+        $site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Avenue',
+            'version' => 1, 'cree_par' => $this->validateur->id]);
+        $retires = ['kyc' => Role::Admin, 'souscriptions' => Role::Regulateur, 'remboursements' => Role::ControleurPaiements, 'phase' => Role::Regulateur,
+            'referentiels' => Role::Regulateur, 'capacites' => Role::GestionnaireSites, 'grille' => Role::Regulateur];
+        $page = $this->get('/admin')->assertOk();
+        foreach ($retires as $cle => $repreneur) {
+            $url = MenuBackoffice::url(MenuBackoffice::entree($cle));
+            $page->assertDontSee('href="'.$url.'"', false);
+            $this->get($url)->assertForbidden();
+        }
+        $this->get(route('admin.boutiques.grilles.show', $site))->assertForbidden();
+        $this->get(route('admin.kyc.dossier', User::factory()->create()))->assertForbidden();
+        // Plus de lien vers les capacités ni vers les grilles depuis ses écrans.
+        $this->get(route('admin.sites'))->assertOk()->assertDontSee(route('admin.referencement.capacites', ['site' => $site->id]), false);
+        $this->get(route('admin.boutiques'))->assertOk()->assertDontSee('href="'.route('admin.boutiques.grilles').'"', false);
+
+        // Les profils qui font ce travail y ont toujours accès (le SUPER_ADMIN garde ses lectures).
+        foreach ($retires as $cle => $repreneur) {
+            $this->connecterBackoffice($repreneur);
+            $this->get(MenuBackoffice::url(MenuBackoffice::entree($cle)))->assertOk();
+        }
+        $this->connecterBackoffice(Role::SuperAdmin);
+        foreach (['capacites', 'grille', 'phase'] as $cle) {
+            $this->get(MenuBackoffice::url(MenuBackoffice::entree($cle)))->assertOk();
+        }
+    }
+
+    public function test_decisions_et_detail_toujours_possibles_dans_a_valider(): void
+    {
+        // Démarche proposée par le RÉGULATEUR : détail ouvert dans « À valider », sans lien vers l'écran retiré, puis décision.
+        $regulateur = User::factory()->role(Role::Regulateur)->create();
+        $d = DecisionPhase::create(['presentation_actions' => true, 'souscription_actions' => false, 'statut' => DecisionPhase::SOUMISE,
+            'motif' => 'Ouverture prochaine', 'propose_par' => $regulateur->id]);
+        $this->get(route('admin.a-valider.rubrique', ['rubrique' => 'demarches', 'detail' => 'phase:'.$d->id]))->assertOk()
+            ->assertSee('data-detail="phase:'.$d->id.'"', false)->assertDontSee('href="'.route('admin.phase').'"', false);
+        $this->post(route('admin.a-valider.decider'), ['elements' => ['phase:'.$d->id], 'decision' => 'confirmer', 'mode' => 'ligne'])->assertSessionHas('succes');
+        $this->assertSame(DecisionPhase::CONFIRMEE, $d->fresh()->statut);
+        // Ancienne route directe de décision : toujours permise, retour sur « À valider » (plus sur l'écran retiré).
+        $d2 = DecisionPhase::create(['presentation_actions' => false, 'souscription_actions' => false, 'statut' => DecisionPhase::SOUMISE,
+            'motif' => 'Fermeture', 'propose_par' => $regulateur->id]);
+        $this->post(route('admin.phase.rejeter', $d2), ['motif' => 'Pas maintenant'])->assertRedirect(route('admin.a-valider.rubrique', 'demarches'));
+    }
+
+    public function test_avance_absente_seulement_si_zero_selon_la_grille_confirmee(): void
+    {
+        $prete = $this->file();
+        $base = ['user_id' => $prete->user_id, 'campagne_boutiques_id' => $prete->campagne_boutiques_id, 'caution' => 540_000, 'statut' => StatutReservationBoutique::Reservee,
+            'expire_le' => now()->subDay()];
+        $boutique = fn (int $n) => Boutiques::boutique('A', $n)->id;
+        // Avance figée à 0 FCFA par la grille confirmée (0 mois d'avance) : prête sans paiement d'avance.
+        $sansAvance = ReservationBoutique::create([...$base, 'reference' => 'BTQ-ZEROAV01', 'boutique_id' => $boutique(2), 'avance' => 0, 'mois_avance' => 0]);
+        // Avance non figée (0 par défaut, aucun mois d'avance) : jamais « sans avance ».
+        $nonFigee = ReservationBoutique::create([...$base, 'reference' => 'BTQ-NONFIG01', 'boutique_id' => $boutique(3), 'avance' => 0, 'mois_avance' => null]);
+        // Avance due, pas encore confirmée : pas prête.
+        $impayee = ReservationBoutique::create([...$base, 'reference' => 'BTQ-IMPAYE01', 'boutique_id' => $boutique(4), 'avance' => 135_000, 'mois_avance' => 3]);
+
+        $this->assertSame(['BTQ-PRETE001', 'BTQ-ZEROAV01'], ReservationsBoutiques::aAttribuer()->orderBy('reference')->pluck('reference')->all());
+        $this->assertSame([true, true, false, false], [$prete->avanceReglee(), $sansAvance->avanceReglee(), $nonFigee->avanceReglee(), $impayee->avanceReglee()]);
+        $this->get(route('admin.boutiques.attributions'))->assertOk()->assertSee('BTQ-ZEROAV01')->assertDontSee('BTQ-NONFIG01')->assertDontSee('BTQ-IMPAYE01');
+        foreach ([$nonFigee, $impayee] as $r) {
+            $this->post(route('admin.boutiques.attribuer', [$r->campagne_boutiques_id, $r->id]), ['contrat_signe_le' => now()->toDateString()])->assertSessionHasErrors('contrat_signe_le');
+            $this->assertSame(StatutReservationBoutique::Reservee, $r->fresh()->statut);
         }
     }
 

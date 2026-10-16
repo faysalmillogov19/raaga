@@ -248,7 +248,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::get('/export', 'exporter')->name('.export');
                 Route::get('/{boutique}', 'show')->whereNumber('boutique')->name('.show');
             });
-            Route::get('/capacites', [CapacitesController::class, 'index'])->middleware('can:'.Droit::SitesVoir->value)->name('capacites');
+            Route::get('/capacites', [CapacitesController::class, 'index'])->middleware('can:'.Droit::CapacitesVoir->value)->name('capacites');
             Route::controller(CapacitesController::class)->prefix('capacites')->name('capacites.')->middleware('can:'.Droit::SitesGerer->value)->group(function () {
                 Route::post('/', 'store')->name('store');
                 Route::get('/{capacite}/modifier', 'edit')->whereNumber('capacite')->name('edit');

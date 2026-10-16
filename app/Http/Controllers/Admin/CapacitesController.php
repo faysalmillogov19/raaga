@@ -41,7 +41,7 @@ class CapacitesController extends Controller
 
     public function index(Request $request, ComparaisonCapacites $comparaison): Response|StreamedResponse|View
     {
-        Gate::authorize(Droit::SitesVoir->value);
+        Gate::authorize(Droit::CapacitesVoir->value);
         $k = __('admin.referencement.capacites');
         $c = $k['colonnes'];
         $sites = Site::query()->withCount('capacites')->orderBy('code')->get();

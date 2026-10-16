@@ -69,6 +69,8 @@ enum Droit: string
 
     // Référentiel des sites du marché et de leurs boutiques (GESTIONNAIRE DES SITES ET BOUTIQUES saisit, VALIDATEUR confirme).
     case SitesVoir = 'sites.voir';
+    // Capacités prévues des sites : distinct de « sites.voir », que le VALIDATEUR garde sans les capacités (16/10/2026).
+    case CapacitesVoir = 'sites.capacites_voir';
     case SitesGerer = 'sites.gerer';
     case SitesConfirmer = 'sites.confirmer';
 
@@ -283,7 +285,7 @@ enum Droit: string
                 self::PhaseVoir,
                 self::AuditVoir,
                 self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
-                self::SitesVoir, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir, self::MoyensPaiementVoir,
+                self::SitesVoir, self::CapacitesVoir, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir, self::MoyensPaiementVoir,
                 self::ReferentielsBoutiquesVoir, self::ModalitesPaiementVoir,
             ],
             // Support et assistance, plus la liste des manifestations d'intérêt RAAGA Invest (lecture, export),
@@ -291,23 +293,24 @@ enum Droit: string
             Role::Admin => [...self::support(), self::InteretsVoir,
                 // Vérifications d'identité : voit la pièce, marque le dossier conforme ou douteux (aucun montant).
                 self::KycVoir, self::KycVoirPieces, self::KycTraiter],
-            // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre.
+            // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre. Droits recentrés le 16/10/2026 : plus
+            // d'écran Démarches du site public, Référentiels, Capacités prévues, Grille tarifaire (décidés et consultés dans
+            // « À valider »), ni Vérifications d'identité (ADMIN), Souscriptions et Remboursements (CONTRÔLEUR DES PAIEMENTS).
             Role::Validateur => [
                 self::TableauDeBordVoir,
-                self::PhaseVoir, self::PhaseConfirmer, self::AValiderVoir,
-                self::ReferentielsVoir,
+                self::PhaseConfirmer, self::AValiderVoir,
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
                 self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::AvancesVoir, self::AvancesDecider,
                 // Référentiels, unités, moyens et délais de paiement : décidés depuis « À valider » (détail et différences), sans les onglets.
-                self::SitesVoir, self::SitesConfirmer, self::GrilleVoir, self::ImportsVoir, self::UnitesConfirmer,
+                self::SitesVoir, self::SitesConfirmer, self::ImportsVoir, self::UnitesConfirmer,
                 self::MoyensPaiementVoir, self::MoyensPaiementConfirmer,
                 self::DividendesVoir, self::DividendesConfirmer, self::DividendesPayer,
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
-                // KYC : confirme seulement l'annulation d'un dossier douteux ; le rapprochement passe au CONTRÔLEUR DES PAIEMENTS.
-                self::KycVoir, self::KycVoirPieces, self::KycAnnulationConfirmer,
+                // KYC : confirme seulement l'annulation d'un dossier douteux, pièces vues depuis « À valider » (le dossier est à l'ADMIN).
+                self::KycVoirPieces, self::KycAnnulationConfirmer,
                 self::ConformiteVoir, self::ConformiteTraiter,
-                self::SouscriptionsVoir, self::PaiementsCorrectionsConfirmer,
-                self::RemboursementsVoir, self::RemboursementsApprouver,
+                // Corrections et remboursements : décidés dans « À valider » ; les écrans sont au CONTRÔLEUR DES PAIEMENTS.
+                self::PaiementsCorrectionsConfirmer, self::RemboursementsApprouver,
                 self::RegistreVoir,
                 self::AuditVoir,
                 self::ObservationsVoir, self::ObservationsRepondre,
@@ -320,7 +323,7 @@ enum Droit: string
             // Référentiel des sites et des boutiques uniquement : saisie et soumission, jamais de confirmation.
             Role::GestionnaireSites => [
                 self::TableauDeBordVoir, self::BrouillonsVoir,
-                self::SitesVoir, self::SitesGerer, self::ImportsVoir, self::ReferentielsBoutiquesVoir,
+                self::SitesVoir, self::CapacitesVoir, self::SitesGerer, self::ImportsVoir, self::ReferentielsBoutiquesVoir,
                 // Avances en retard : statuts seulement, aucun montant.
                 self::AvancesVoir,
             ],
@@ -337,7 +340,7 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
                 self::BoutiquesVoir, self::BoutiquesSaisir, self::AvancesVoir, self::AvancesProposer,
-                self::SitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer, self::MoyensPaiementVoir, self::MoyensPaiementGerer, self::ModalitesPaiementVoir,
+                self::SitesVoir, self::CapacitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer, self::MoyensPaiementVoir, self::MoyensPaiementGerer, self::ModalitesPaiementVoir,
                 self::DividendesVoir, self::DividendesSaisir,
                 self::SimulationsVoir, self::SimulationsLancer,
                 self::KycVoir,
