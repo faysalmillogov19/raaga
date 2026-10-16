@@ -30,9 +30,9 @@
                     Une même personne, identifiée par son compte et par le numéro de sa pièce, ne peut pas réserver plus de {{ $c->max_boutiques_par_personne }} boutique(s) dans cette campagne.</p></section>
 
             <section><h3>Article 4 : Caution et avance</h3>
-                <p>La réservation est confirmée par le paiement de la caution ({{ __('public.boutiques.montants.mention_caution') }}) dans les {{ $c->delai_paiement_heures }} heures ; sans paiement dans ce délai,
+                <p>La réservation est confirmée par le paiement de la caution ({{ __('public.boutiques.montants.mention_caution') }}) dans un délai de {{ $c->libelleDelaiPaiement() }} ; sans paiement dans ce délai,
                     la boutique redevient disponible. Le délai est suspendu tant qu’une preuve de paiement attend son contrôle. Caution et avance sont calculées pour chaque boutique selon la grille tarifaire confirmée de son site.
-                    L’avance est due avant la signature du contrat ; la boutique est attribuée quand l’avance est payée et le contrat signé.</p></section>
+                    L’avance est due avant la signature du contrat, au plus tard {{ \App\Models\ParametresPaiements::libelleEnVigueur('avance') }} après le passage de la boutique en « réservée » ; la date limite figure dans le dossier de réservation. La boutique est attribuée quand l’avance est payée et le contrat signé.</p></section>
 
             <section><h3>Article 5 : Vérification d’identité</h3>
                 <p>Les pièces jointes sont vérifiées. Une identité reconnue douteuse peut entraîner l’annulation de la réservation : la boutique redevient disponible et la caution déjà payée est remboursée.</p></section>

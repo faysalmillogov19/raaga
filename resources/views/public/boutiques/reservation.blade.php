@@ -32,6 +32,10 @@
                 <p class="mt-4 texte-carte">{{ __('public.boutiques.reservation.payer_avant', ['date' => $c->expire_le->translatedFormat('j F Y à H\hi')]) }}</p>
                 <a href="{{ route('boutiques.reservation.show', $c->reference) }}" class="btn-primaire mt-3">{{ $r['payer'] }}</a>
             @elseif (in_array($c->statut, [StatutReservationBoutique::Reservee, StatutReservationBoutique::Attribuee], true))
+                {{-- Réservée : date limite de paiement de l'avance (figée au passage en « réservée »). --}}
+                @if ($c->statut === StatutReservationBoutique::Reservee && $c->avance_due_le)
+                    <p class="mt-4 font-semibold text-encre" data-avance-due>{{ __($c->avance_due_le->isPast() ? 'public.boutiques.reservation.avance_depassee' : 'public.boutiques.reservation.avance_avant', ['date' => $c->avance_due_le->translatedFormat('j F Y à H\hi')]) }}</p>
+                @endif
                 <a href="{{ route('boutiques.reservation.recu', $c->reference) }}" class="btn-secondaire mt-4">{{ $r['recu'] }}</a>
             @endif
         </section>

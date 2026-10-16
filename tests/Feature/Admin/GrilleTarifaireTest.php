@@ -64,7 +64,7 @@ class GrilleTarifaireTest extends TestCase
 
         return CampagneBoutiques::create([
             'statut' => StatutCampagneBoutiques::Ouverte, 'nom' => 'Réservation 2027', 'date_ouverture' => now()->subDay(), 'date_cloture' => now()->addMonth(),
-            'delai_paiement_heures' => 72, 'canaux_actifs' => ['ORANGE_MONEY'], 'max_boutiques_par_personne' => 1, 'sites' => [$this->site->id],
+            'canaux_actifs' => ['ORANGE_MONEY'], 'max_boutiques_par_personne' => 1, 'sites' => [$this->site->id],
             'version' => 1, 'cree_par' => $this->regulateur->id,
         ]);
     }

@@ -155,17 +155,17 @@ class ComplementPaiementTest extends TestCase
 
     public function test_delai_parametre_par_le_regulateur_et_confirme_par_le_validateur(): void
     {
-        $this->assertSame(48, ParametresPaiements::delaiComplementHeures());
-        $this->en($this->regulateur)->put(route('admin.parametres-paiements.update'), ['delai_complement_heures' => 72])->assertSessionHas('succes');
+        $this->assertSame(48 * 3_600, ParametresPaiements::delaiSecondes('complement'));
+        $this->en($this->regulateur)->put(route('admin.parametres-paiements.update'), ['delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE', 'delai_complement_valeur' => 72, 'delai_complement_duree' => 'HEURE', 'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR'])->assertSessionHas('succes');
         $this->en($this->regulateur)->post(route('admin.parametres-paiements.soumettre'))->assertSessionHas('succes');
-        $this->assertSame(48, ParametresPaiements::delaiComplementHeures());
+        $this->assertSame(48 * 3_600, ParametresPaiements::delaiSecondes('complement'));
 
         // Ni le CONTRÔLEUR, ni le GESTIONNAIRE n'y touchent ; le VALIDATEUR confirme dans « À valider › Données financières ».
         $this->en($this->controleur)->get(route('admin.parametres-paiements'))->assertForbidden();
         $fiche = ParametresPaiements::fiche();
         $this->en($this->validateur)->post(route('admin.a-valider.decider'), ['elements' => ['delais:'.$fiche->id], 'decision' => 'confirmer', 'mode' => 'ligne'])
             ->assertSessionHas('succes');
-        $this->assertSame(72, ParametresPaiements::delaiComplementHeures());
+        $this->assertSame(72 * 3_600, ParametresPaiements::delaiSecondes('complement'));
 
         $this->incomplet();
         $this->assertEqualsWithDelta(72, now()->diffInHours($this->souscription->fresh()->expire_le), 0.1);

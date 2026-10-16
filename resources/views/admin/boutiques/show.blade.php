@@ -82,7 +82,8 @@
                 <dt>{{ ucfirst($libelles['sites']) }}</dt><dd>{{ $snapshot['sites'] ?: '' }}</dd>
                 <dt>{{ ucfirst($libelles['max_boutiques_par_personne']) }}</dt><dd>{{ $campagne->max_boutiques_par_personne }}</dd>
                 <dt>{{ ucfirst($libelles['canaux_actifs']) }}</dt><dd>{{ AffichageParametres::valeur('canaux_actifs', $snapshot['canaux_actifs']) }}</dd>
-                <dt>{{ ucfirst($libelles['delai_paiement_heures']) }}</dt><dd>{{ $campagne->delai_paiement_heures }} h</dd>
+                <dt>{{ ucfirst($libelles['delai_paiement']) }}</dt><dd data-delai-caution>{{ $campagne->libelleDelaiPaiement() }}
+                    <span class="texte-carte">({{ __($campagne->aSonPropreDelai() ? 'admin.boutiques.aides.delai_propre_court' : 'admin.boutiques.aides.delai_parametre_court') }})</span></dd>
             </dl>
             @if ($sitesSansGrille)
                 <x-admin.message type="avertissement" class="mt-3 !mb-0">{{ __('admin.boutiques.regles.sans_grille', ['lots' => implode(', ', $sitesSansGrille)]) }}</x-admin.message>

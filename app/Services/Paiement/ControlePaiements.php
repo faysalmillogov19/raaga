@@ -62,10 +62,10 @@ class ControlePaiements
         $paiement->refresh()->forceFill(['controle' => $controle, 'controle_motif' => $motif, 'controle_reference' => $reference,
             'controle_par' => $controleur->id, 'controle_le' => now(),
             ...($controle === Paiement::INCOMPLET ? ['controle_montant_recu' => $montantRecu] : [])])->save();
-        // Incomplet : délai de complément (48 h par défaut, paramétré par le RÉGULATEUR), à partir de cette décision,
+        // Incomplet : délai de complément (48 heures par défaut, paramétré par le RÉGULATEUR), à partir de cette décision,
         // même si le délai initial est dépassé.
         if ($controle === Paiement::INCOMPLET) {
-            $paiement->objet()->forceFill(['expire_le' => now()->addHours(ParametresPaiements::delaiComplementHeures())])->save();
+            $paiement->objet()->forceFill(['expire_le' => now()->addSeconds(ParametresPaiements::delaiSecondes('complement'))])->save();
         }
         $this->journal->ecrire($controleur, 'paiement.controle', 'Paiement', $paiement->id, $avant,
             ['statut' => $paiement->statut->value, 'controle' => $controle, 'motif' => $motif, 'reference' => $reference, 'montant_recu' => $montantRecu]);
@@ -131,9 +131,10 @@ class ControlePaiements
                 }
                 $paiement->forceFill(['statut' => StatutPaiement::Annule,
                     'metadonnees' => [...(array) $paiement->metadonnees, 'correction' => $correction->id]])->save();
-                $delai = $objet instanceof Souscription ? (int) $objet->tranche->delai_paiement_heures : (int) $objet->campagne->delai_paiement_heures;
+                $secondes = $objet instanceof Souscription ? (int) $objet->tranche->delai_paiement_heures * 3_600 : $objet->campagne->delaiPaiementSecondes();
                 $objet->forceFill(['statut' => $objet instanceof Souscription ? StatutSouscription::Reservee : StatutReservationBoutique::PreReservee,
-                    'payee_le' => null, 'expire_le' => now()->addHours(max(1, $delai))])->save();
+                    'payee_le' => null, 'expire_le' => now()->addSeconds(max(3_600, $secondes)),
+                    ...($objet instanceof ReservationBoutique ? ['avance_due_le' => null] : [])])->save();
                 // Caution finalement non reçue : la boutique redevient pré-réservée le temps du nouveau délai.
                 if ($objet instanceof ReservationBoutique) {
                     $objet->boutique?->changerStatut(StatutBoutique::PreReservee, 'correction_paiement', $objet, $validateur);

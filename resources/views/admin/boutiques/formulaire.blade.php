@@ -52,8 +52,12 @@
                 <x-admin.cases nom="canaux_actifs" :libelle="ucfirst($c['canaux_actifs'])"
                                :options="MoyenPaiement::proposables()->pluck('libelle', 'code')->all()"
                                :valeurs="$campagne->canaux_actifs ?? []" class="lg:col-span-2" />
-                <x-admin.champ nom="delai_paiement_heures" :libelle="ucfirst($c['delai_paiement_heures'])" type="number" min="1" max="720" :valeur="$campagne->delai_paiement_heures" required
-                               :aide="__('admin.boutiques.aides.delai_paiement_heures')" />
+                {{-- Délai de paiement de la caution : celui des « Délais de paiement » (RÉGULATEUR), sauf ancien délai propre à la campagne. --}}
+                <div class="formulaire-champ adm-champ !mt-0" data-delai-caution>
+                    <p class="adm-libelle">{{ ucfirst($c['delai_paiement']) }}</p>
+                    <p class="font-semibold">{{ $campagne->libelleDelaiPaiement() }}</p>
+                    <p class="texte-carte">{{ __($campagne->aSonPropreDelai() ? 'admin.boutiques.aides.delai_propre' : 'admin.boutiques.aides.delai_paiement') }}</p>
+                </div>
                 <x-admin.champ nom="max_boutiques_par_personne" :libelle="ucfirst($c['max_boutiques_par_personne'])" type="number" min="1" required
                                :valeur="$campagne->max_boutiques_par_personne" :aide="__('admin.boutiques.aides.max_boutiques_par_personne')" />
             </div>

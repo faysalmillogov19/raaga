@@ -90,7 +90,7 @@
                     <x-public.erreur :messages="$errors->get('engagements')" />
                 </fieldset>
 
-                <p class="mt-5 font-semibold text-encre">{{ __('public.boutiques.reservation.delai', ['heures' => $campagne->delai_paiement_heures]) }}</p>
+                <p class="mt-5 font-semibold text-encre">{{ __('public.boutiques.reservation.delai', ['delai' => $campagne->libelleDelaiPaiement()]) }}</p>
                 <button type="submit" class="btn-primaire mt-4 w-full sm:w-auto">{{ $r['confirmer'] }}</button>
             </form>
         @endif

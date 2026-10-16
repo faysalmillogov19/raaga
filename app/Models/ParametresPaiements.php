@@ -13,21 +13,38 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
- * Paramètres des paiements (une seule fiche) : délai de complément d'un paiement manuel incomplet. Saisis par le
- * RÉGULATEUR, confirmés par le VALIDATEUR (workflow commun, versions figées). Tant que rien n'est confirmé : 48 h
- * (config raaga.paiement.delai_complement_heures).
+ * Paramètres des paiements (une seule fiche) : trois délais, chacun en valeur + durée (SECONDE, MINUTE, HEURE, JOUR),
+ * avec sa valeur en secondes calculée et stockée. Délai de paiement de la caution (72 heures par défaut), délai de
+ * complément d'un paiement incomplet (48 heures), délai pour payer l'avance à compter du passage de la boutique en
+ * « réservée » (30 jours). Saisis par le RÉGULATEUR, confirmés par le VALIDATEUR (workflow commun, versions figées) ;
+ * tant que rien n'est confirmé, les valeurs par défaut s'appliquent.
  */
 #[Table(name: 'parametres_paiements')]
-#[Fillable(['delai_complement_heures', 'statut', 'version', 'soumis_par', 'soumis_le', 'valide_par', 'valide_le', 'motif_rejet'])]
+#[Fillable([
+    'delai_caution_valeur', 'delai_caution_duree_id', 'delai_caution_secondes',
+    'delai_complement_valeur', 'delai_complement_duree_id', 'delai_complement_secondes',
+    'delai_avance_valeur', 'delai_avance_duree_id', 'delai_avance_secondes',
+    'statut', 'version', 'soumis_par', 'soumis_le', 'valide_par', 'valide_le', 'motif_rejet',
+])]
 class ParametresPaiements extends Model implements Parametrable
 {
-    public const PARAMETRES = ['delai_complement_heures'];
+    /** Délais : clé => [valeur, durée] par défaut. */
+    public const DELAIS = ['caution' => [72, 'HEURE'], 'complement' => [48, 'HEURE'], 'avance' => [30, 'JOUR']];
+
+    /** Plafond d'un délai : un an. */
+    public const SECONDES_MAX = 31_536_000;
+
+    public const PARAMETRES = [
+        'delai_caution_valeur', 'delai_caution_duree_id', 'delai_caution_secondes',
+        'delai_complement_valeur', 'delai_complement_duree_id', 'delai_complement_secondes',
+        'delai_avance_valeur', 'delai_avance_duree_id', 'delai_avance_secondes',
+    ];
 
     protected function casts(): array
     {
         return [
             'statut' => StatutGrilleTarifaire::class,
-            'delai_complement_heures' => 'integer',
+            ...collect(self::PARAMETRES)->mapWithKeys(fn (string $c) => [$c => 'integer'])->all(),
             'version' => 'integer',
             'soumis_le' => 'datetime',
             'valide_le' => 'datetime',
@@ -40,24 +57,58 @@ class ParametresPaiements extends Model implements Parametrable
         return static::query()->orderBy('id')->first() ?? new self(['statut' => StatutGrilleTarifaire::Brouillon]);
     }
 
-    /** @return array{delai_complement_heures: int}|null valeurs de la dernière version confirmée (lues une fois par page) */
-    public static function confirmes(): ?array
+    /**
+     * Délais de la dernière version confirmée, en secondes (lus une fois par page). Une ancienne version qui ne
+     * connaissait que le délai de complément en heures reste lue.
+     *
+     * @return array<string, int>
+     */
+    public static function confirmes(): array
     {
         return MemoRequete::retenir('parametres_paiements.confirmes', function () {
             $fiche = static::query()->orderBy('id')->first();
             $numero = $fiche ? ParametrageDecision::query()->where('objet_type', 'delais')->where('objet_id', $fiche->id)
                 ->where('decision', DecisionParametrage::Confirme)->latest('id')->value('version') : null;
             $p = $numero ? $fiche->versions()->where('numero', $numero)->value('parametres') : null;
-            $p = is_string($p) ? json_decode($p, true) : $p;
+            $p = (is_string($p) ? json_decode($p, true) : $p) ?? [];
+            if (isset($p['delai_complement_heures'])) {
+                $p['delai_complement_secondes'] = (int) $p['delai_complement_heures'] * 3_600;
+            }
 
-            return $p && ($p['delai_complement_heures'] ?? null) ? ['delai_complement_heures' => (int) $p['delai_complement_heures']] : null;
+            return collect(array_keys(self::DELAIS))->mapWithKeys(fn (string $d) => [$d => (int) ($p['delai_'.$d.'_secondes'] ?? 0)])->filter()->all();
         });
     }
 
-    /** Délai de complément en vigueur, en heures : valeur confirmée, sinon 48 h. */
-    public static function delaiComplementHeures(): int
+    /** Délai en vigueur, en secondes : valeur confirmée, sinon la valeur par défaut. */
+    public static function delaiSecondes(string $delai): int
     {
-        return self::confirmes()['delai_complement_heures'] ?? (int) config('raaga.paiement.delai_complement_heures', 48);
+        [$valeur, $duree] = self::DELAIS[$delai];
+
+        return self::confirmes()[$delai] ?? $valeur * Duree::DUREES[$duree][2];
+    }
+
+    /**
+     * Délai en vigueur, lisible (« 72 heures », « 30 jours ») : valeur et durée confirmées, sinon par défaut.
+     */
+    public static function libelleEnVigueur(string $delai): string
+    {
+        $secondes = self::delaiSecondes($delai);
+        [$valeur, $duree] = self::DELAIS[$delai];
+        if (isset(self::confirmes()[$delai])) {
+            // Plus grande durée qui divise exactement le délai confirmé.
+            $code = collect(Duree::DUREES)->sortByDesc(fn ($d) => $d[2])->keys()->first(fn (string $c) => $secondes % Duree::DUREES[$c][2] === 0);
+            [$valeur, $duree] = [intdiv($secondes, Duree::DUREES[$code][2]), $code];
+        }
+
+        return Duree::formater($valeur, $duree);
+    }
+
+    /** Délai saisi sur la fiche (brouillon ou soumis), lisible ; null s'il n'est pas saisi. */
+    public function libelleSaisi(string $delai): ?string
+    {
+        $duree = Duree::parId($this->{'delai_'.$delai.'_duree_id'});
+
+        return $duree && $this->{'delai_'.$delai.'_valeur'} ? $duree->libelle($this->{'delai_'.$delai.'_valeur'}) : null;
     }
 
     public function typeParametrage(): string
@@ -116,10 +167,18 @@ class ParametresPaiements extends Model implements Parametrable
         return $version;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Version figée : pour chaque délai, la valeur, le code de la durée et la valeur en secondes.
+     *
+     * @return array<string, mixed>
+     */
     public function snapshotParametres(): array
     {
-        return $this->only(self::PARAMETRES);
+        return collect(array_keys(self::DELAIS))->flatMap(fn (string $d) => [
+            'delai_'.$d.'_valeur' => $this->{'delai_'.$d.'_valeur'},
+            'delai_'.$d.'_duree' => Duree::parId($this->{'delai_'.$d.'_duree_id'})?->code,
+            'delai_'.$d.'_secondes' => $this->{'delai_'.$d.'_secondes'},
+        ])->all();
     }
 
     /**

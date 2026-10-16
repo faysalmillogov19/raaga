@@ -18,23 +18,22 @@ use Illuminate\Support\Collection;
 /**
  * Campagne de réservation des boutiques, au premier arrivé, premier servi (aucune priorité, aucun tirage). Indépendante
  * des actions. Paramètres : période d'ouverture (date et heure), site(s) concerné(s), nombre maximum de boutiques par
- * personne (1 par défaut), délai de paiement de la caution (72 h par défaut), moyens de paiement. Caution et avance de
+ * personne (1 par défaut), moyens de paiement. Délai de paiement de la caution : celui des « Délais de paiement »
+ * (72 heures par défaut), sauf pour une campagne qui avait son propre délai (gardé, en valeur + durée). Caution et avance de
  * chaque boutique : grille tarifaire confirmée de son site. Workflow commun (RÉGULATEUR saisit, VALIDATEUR confirme).
  */
 #[Table(name: 'campagnes_boutiques')]
 #[Fillable([
-    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne', 'sites',
+    'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes', 'canaux_actifs', 'max_boutiques_par_personne', 'sites',
     'version', 'cree_par', 'soumis_par', 'soumise_le', 'valide_par', 'validee_le', 'motif_rejet',
     'ouverte_le', 'cloturee_le', 'attribuee_le',
 ])]
 class CampagneBoutiques extends Model implements Parametrable
 {
-    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'max_boutiques_par_personne', 'delai_paiement_heures', 'canaux_actifs'];
+    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'max_boutiques_par_personne', 'canaux_actifs'];
 
     /** Valeurs par défaut d'une nouvelle campagne. */
     public const MAX_PAR_PERSONNE = 1;
-
-    public const DELAI_PAIEMENT_HEURES = 72;
 
     protected function casts(): array
     {
@@ -42,7 +41,9 @@ class CampagneBoutiques extends Model implements Parametrable
             'statut' => StatutCampagneBoutiques::class,
             'date_ouverture' => 'datetime',
             'date_cloture' => 'datetime',
-            'delai_paiement_heures' => 'integer',
+            'delai_paiement_valeur' => 'integer',
+            'delai_paiement_duree_id' => 'integer',
+            'delai_paiement_secondes' => 'integer',
             'max_boutiques_par_personne' => 'integer',
             'canaux_actifs' => 'array',
             'sites' => 'array',
@@ -53,6 +54,26 @@ class CampagneBoutiques extends Model implements Parametrable
             'cloturee_le' => 'datetime',
             'attribuee_le' => 'datetime',
         ];
+    }
+
+    /** Délai de paiement de la caution, en secondes : celui de la campagne s'il en a un, sinon celui des paramètres. */
+    public function delaiPaiementSecondes(): int
+    {
+        return $this->delai_paiement_secondes ?: ParametresPaiements::delaiSecondes('caution');
+    }
+
+    /** Délai de paiement de la caution, lisible (« 72 heures »). */
+    public function libelleDelaiPaiement(): string
+    {
+        $duree = Duree::parId($this->delai_paiement_duree_id);
+
+        return $duree && $this->delai_paiement_valeur ? $duree->libelle($this->delai_paiement_valeur) : ParametresPaiements::libelleEnVigueur('caution');
+    }
+
+    /** La campagne garde son propre délai (ancien paramètre de campagne, converti). */
+    public function aSonPropreDelai(): bool
+    {
+        return (bool) $this->delai_paiement_secondes;
     }
 
     public static function ouverte(): ?self

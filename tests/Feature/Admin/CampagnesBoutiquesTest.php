@@ -70,7 +70,6 @@ class CampagnesBoutiquesTest extends TestCase
             'description' => 'Boutiques du nouveau marché, réservées au premier arrivé.',
             'date_ouverture' => now()->addDay()->format('Y-m-d\TH:i'),
             'date_cloture' => now()->addMonth()->format('Y-m-d\TH:i'),
-            'delai_paiement_heures' => 72,
             'canaux_actifs' => ['ORANGE_MONEY', 'VIREMENT'],
             'max_boutiques_par_personne' => 2,
             'sites' => [$this->site->id],
@@ -92,7 +91,9 @@ class CampagnesBoutiquesTest extends TestCase
         // Valeurs par défaut : une boutique par personne, caution à payer sous 72 h.
         $creation = $this->en($this->regulateur)->get(route('admin.boutiques.create'))->assertOk()->assertSee('Marché central')->getContent();
         $this->assertMatchesRegularExpression('/name="max_boutiques_par_personne"[^>]*value="1"/', $creation);
-        $this->assertMatchesRegularExpression('/name="delai_paiement_heures"[^>]*value="72"/', $creation);
+        // Délai de paiement de la caution : celui des « Délais de paiement » (72 heures par défaut), affiché sans être saisi.
+        $this->assertStringNotContainsString('name="delai_paiement', $creation);
+        $this->assertMatchesRegularExpression('/data-delai-caution>\s*<p[^>]*>[^<]*<\/p>\s*<p class="font-semibold">72 heures<\/p>/', $creation);
 
         $campagne = $this->campagneSoumise();
 

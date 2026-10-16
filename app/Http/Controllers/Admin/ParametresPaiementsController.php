@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Enums\StatutGrilleTarifaire;
 use App\Http\Controllers\Controller;
+use App\Models\Duree;
 use App\Models\ParametrageDecision;
 use App\Models\ParametresPaiements;
 use App\Services\Audit\Journal;
@@ -14,11 +15,14 @@ use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
- * Paramètres des paiements (délai de complément d'un paiement incomplet) : RÉGULATEUR saisit et soumet, VALIDATEUR
- * confirme ou rejette (« À valider › Données financières »). 48 h tant que rien n'est confirmé.
+ * Délais de paiement (caution, complément d'un paiement incomplet, avance), chacun en valeur + durée obligatoires, la
+ * valeur en secondes étant calculée et stockée : RÉGULATEUR saisit et soumet, VALIDATEUR confirme ou rejette
+ * (« À valider › Données financières »). Valeurs par défaut (72 heures, 48 heures, 30 jours) tant que rien n'est confirmé.
  */
 class ParametresPaiementsController extends Controller
 {
@@ -33,7 +37,8 @@ class ParametresPaiementsController extends Controller
 
         return view('admin.parametres-paiements.show', [
             'fiche' => $fiche,
-            'enVigueur' => ParametresPaiements::delaiComplementHeures(),
+            'enVigueur' => collect(array_keys(ParametresPaiements::DELAIS))->mapWithKeys(fn (string $d) => [$d => ParametresPaiements::libelleEnVigueur($d)])->all(),
+            'durees' => Duree::toutes(),
             'versions' => $versions->reverse()->values(),
             'decisions' => $fiche->exists ? ParametrageDecision::query()->where('objet_type', $fiche->typeParametrage())->where('objet_id', $fiche->id)
                 ->with('decideur')->orderByDesc('id')->get() : collect(),
@@ -46,9 +51,23 @@ class ParametresPaiementsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         Gate::authorize(Droit::MoyensPaiementGerer->value);
-        $donnees = $request->validate([
-            'delai_complement_heures' => ['required', 'integer', 'min:1', 'max:720'],
-        ], [], __('admin.delais.champs'));
+        $regles = [];
+        foreach (array_keys(ParametresPaiements::DELAIS) as $d) {
+            $regles['delai_'.$d.'_valeur'] = ['required', 'integer', 'min:1', 'max:999999'];
+            $regles['delai_'.$d.'_duree'] = ['required', 'string', Rule::in(Duree::toutes()->pluck('code')->all())];
+        }
+        $saisie = $request->validate($regles, [], __('admin.delais.champs'));
+
+        // Valeur convertie en secondes, calculée et stockée ; un délai ne dépasse pas un an.
+        $donnees = [];
+        foreach (array_keys(ParametresPaiements::DELAIS) as $d) {
+            $duree = Duree::parCode($saisie['delai_'.$d.'_duree']);
+            $secondes = $duree->enSecondes((int) $saisie['delai_'.$d.'_valeur']);
+            if ($secondes > ParametresPaiements::SECONDES_MAX) {
+                throw ValidationException::withMessages(['delai_'.$d.'_valeur' => __('admin.delais.erreurs.trop_long')]);
+            }
+            $donnees += ['delai_'.$d.'_valeur' => (int) $saisie['delai_'.$d.'_valeur'], 'delai_'.$d.'_duree_id' => $duree->id, 'delai_'.$d.'_secondes' => $secondes];
+        }
         $fiche = ParametresPaiements::fiche();
 
         return $this->executer(function () use ($request, $fiche, $donnees) {

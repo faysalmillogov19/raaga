@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Paramètres d'une campagne de réservation (premier arrivé) : période (date et heure), site(s) concerné(s), nombre
- * maximum de boutiques par personne, délai de paiement de la caution, moyens de paiement. Les montants ne se saisissent
+ * maximum de boutiques par personne, moyens de paiement (le délai de paiement de la caution est un des « Délais de paiement »). Les montants ne se saisissent
  * pas : ils viennent de la grille tarifaire confirmée de chaque site.
  */
 class CampagneBoutiquesRequest extends FormRequest
@@ -25,7 +25,6 @@ class CampagneBoutiquesRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:2000'],
             'date_ouverture' => ['required', 'date'],
             'date_cloture' => ['required', 'date', 'after:date_ouverture'],
-            'delai_paiement_heures' => ['required', 'integer', 'min:1', 'max:720'],
             'canaux_actifs' => ['required', 'array', 'min:1'],
             'canaux_actifs.*' => [Rule::in(MoyenPaiement::proposables()->pluck('code')->all())],
             'max_boutiques_par_personne' => ['required', 'integer', 'min:1', 'max:1000'],
@@ -50,7 +49,7 @@ class CampagneBoutiquesRequest extends FormRequest
     /** @return array<string, mixed> */
     public function parametres(): array
     {
-        return [...$this->safe()->only(['nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_heures', 'canaux_actifs', 'max_boutiques_par_personne']),
+        return [...$this->safe()->only(['nom', 'description', 'date_ouverture', 'date_cloture', 'canaux_actifs', 'max_boutiques_par_personne']),
             'sites' => array_values(array_unique(array_map('intval', (array) $this->validated('sites')))),
         ];
     }

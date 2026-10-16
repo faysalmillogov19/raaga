@@ -127,10 +127,10 @@ class NavigationReferentielsModalitesTest extends TestCase
         $this->en($sa)->get(route('admin.parametres-paiements'))->assertOk()->assertDontSee('id="modifier-delais"', false)->assertDontSee('Soumettre');
         $this->en($sa)->post(route('admin.referencement.zones.store', 'moyens'), ['code' => 'SANK', 'libelle' => 'Sank'])->assertForbidden();
         $this->en($sa)->post(route('admin.referencement.zones.desactiver', ['moyens', $orange->id]))->assertForbidden();
-        $this->en($sa)->put(route('admin.parametres-paiements.update'), ['delai_complement_heures' => 24])->assertForbidden();
+        $this->en($sa)->put(route('admin.parametres-paiements.update'), ['delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE', 'delai_complement_valeur' => 24, 'delai_complement_duree' => 'HEURE', 'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR'])->assertForbidden();
         $this->en($sa)->post(route('admin.parametres-paiements.soumettre'))->assertForbidden();
         $this->en($sa)->post(route('admin.parametres-paiements.confirmer'))->assertForbidden();
-        $this->assertSame([true, 48], [$orange->fresh()->actif, ParametresPaiements::delaiComplementHeures()]);
+        $this->assertSame([true, 48 * 3_600], [$orange->fresh()->actif, ParametresPaiements::delaiSecondes('complement')]);
     }
 
     public function test_unites_pres_de_la_grille_tarifaire_pour_le_regulateur(): void
@@ -189,7 +189,7 @@ class NavigationReferentielsModalitesTest extends TestCase
             'instructions' => 'Numéro marchand', 'ordre' => 10, 'usages' => ['ACTIONS' => ['autorise' => 1, 'min' => '', 'max' => ''], 'CAUTION' => ['autorise' => 1, 'min' => '', 'max' => '']]])
             ->assertSessionHas('succes');
         $sank = MoyenPaiement::query()->where('code', 'SANK_MONEY')->sole();
-        $this->en($this->regulateur)->put(route('admin.parametres-paiements.update'), ['delai_complement_heures' => 72])->assertSessionHas('succes');
+        $this->en($this->regulateur)->put(route('admin.parametres-paiements.update'), ['delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE', 'delai_complement_valeur' => 72, 'delai_complement_duree' => 'HEURE', 'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR'])->assertSessionHas('succes');
         $this->en($this->regulateur)->post(route('admin.parametres-paiements.soumettre'))->assertSessionHas('succes');
         $delais = ParametresPaiements::fiche();
 
@@ -217,7 +217,7 @@ class NavigationReferentielsModalitesTest extends TestCase
         }
         $this->assertSame(StatutTypeBoutique::Valide, $zone->fresh()->statut);
         $this->assertSame(StatutTypeBoutique::Valide, $sank->fresh()->statut);
-        $this->assertSame(72, ParametresPaiements::delaiComplementHeures());
+        $this->assertSame(72 * 3_600, ParametresPaiements::delaiSecondes('complement'));
 
         // Décision prise hors « À valider » : retour sur « À valider », pas sur une fiche refusée.
         $this->en($this->gestionnaire)->post(route('admin.referencement.zones.store', 'zones'), ['code' => 'TMQ', 'libelle' => 'Autre'])->assertSessionHas('succes');

@@ -1,15 +1,20 @@
 {{--
-    Paramètres des paiements : délai de complément d'un paiement manuel incomplet (48 h par défaut). RÉGULATEUR : saisie
-    (fenêtre) et soumission ; VALIDATEUR : validation ou rejet. Le délai confirmé s'applique, même pendant une révision.
+    Délais de paiement : caution (72 heures par défaut), complément d'un paiement incomplet (48 heures), avance à compter
+    du passage de la boutique en « réservée » (30 jours). Chaque délai : valeur et durée obligatoires, valeur en secondes
+    calculée. RÉGULATEUR : saisie (fenêtre) et soumission ; VALIDATEUR : validation ou rejet. Les délais confirmés
+    s'appliquent, même pendant une révision.
 --}}
 @php
     use App\Enums\Droit;
     use App\Enums\StatutGrilleTarifaire;
+    use App\Models\Duree;
+    use App\Models\ParametresPaiements;
 
     $i = __('admin.delais');
     $libelles = $i['champs'];
     $saisir = auth()->user()->can(Droit::MoyensPaiementGerer->value);
     $modifiable = $saisir && (! $fiche->exists || $fiche->estModifiable());
+    $optionsDurees = $durees->mapWithKeys(fn (Duree $d) => [$d->code => ucfirst($d->libelle_pluriel)])->all();
 @endphp
 
 <x-admin.layout :titre="$i['titre']" :sous-titre="$i['intro']" :fil="[['libelle' => $i['titre']]]">
@@ -20,20 +25,36 @@
             <x-admin.message type="erreur" class="mt-4 !mb-0">{{ __('admin.parametrage.motif_rejet', ['motif' => $fiche->motif_rejet]) }}</x-admin.message>
         @endif
 
-        @if ($fiche->exists)
-            <dl class="mt-4 grid gap-3 sm:grid-cols-2" data-saisie>
-                <div><dt class="texte-carte">{{ ucfirst($libelles['delai_complement_heures']) }}</dt><dd class="font-bold">{{ $fiche->delai_complement_heures ? trans_choice('admin.delais.heures', $fiche->delai_complement_heures, ['n' => $fiche->delai_complement_heures]) : '' }}</dd></div>
-            </dl>
-        @endif
-        <p class="texte-carte mt-3" data-en-vigueur>{{ __('admin.delais.en_vigueur', ['delai' => trans_choice('admin.delais.heures', $enVigueur, ['n' => $enVigueur])]) }}</p>
+        <table class="bo-tableau mt-4" data-delais>
+            <thead><tr><th scope="col">{{ $i['colonnes']['delai'] }}</th><th scope="col">{{ $i['colonnes']['en_vigueur'] }}</th>
+                @if ($fiche->exists)<th scope="col">{{ $i['colonnes']['saisi'] }}</th>@endif</tr></thead>
+            <tbody>
+                @foreach (array_keys(ParametresPaiements::DELAIS) as $d)
+                    <tr data-delai="{{ $d }}">
+                        <td><span class="font-semibold text-encre">{{ $i['delais'][$d] }}</span><br><span class="texte-carte">{{ $i['aides'][$d] }}</span></td>
+                        <td class="font-bold" data-en-vigueur>{{ $enVigueur[$d] }}</td>
+                        @if ($fiche->exists)<td data-saisie>{{ $fiche->libelleSaisi($d) ?? '' }}</td>@endif
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
 
         <div class="mt-4 flex flex-wrap gap-3">
             @if ($modifiable)
                 <x-admin.fenetre id="modifier-delais" :titre="$i['titre']" :action="route('admin.parametres-paiements.update')" methode="PUT"
                                  :bouton="__('admin.composants.circuit.brouillon')" declencheur-variante="secondaire">
                     <x-slot:declencheur>{{ __('admin.parametrage.actions.modifier') }}</x-slot:declencheur>
-                    <x-admin.champ nom="delai_complement_heures" :libelle="ucfirst($libelles['delai_complement_heures'])" type="number" min="1" max="720"
-                                   :valeur="$fiche->delai_complement_heures ?? $enVigueur" obligatoire :aide="$i['aides']['delai_complement_heures']" />
+                    <p class="texte-carte mb-3">{{ $i['aide_saisie'] }}</p>
+                    @foreach (ParametresPaiements::DELAIS as $d => [$valeurDefaut, $dureeDefaut])
+                        @php($duree = Duree::parId($fiche->{'delai_'.$d.'_duree_id'}))
+                        <fieldset class="adm-fenetre-grille mt-5" data-saisie-delai="{{ $d }}">
+                            <legend class="adm-plein font-semibold">{{ $i['delais'][$d] }}</legend>
+                            <x-admin.champ :nom="'delai_'.$d.'_valeur'" :libelle="$i['valeur']" type="number" min="1" max="999999" obligatoire
+                                           :valeur="$fiche->{'delai_'.$d.'_valeur'} ?? $valeurDefaut" />
+                            <x-admin.champ :nom="'delai_'.$d.'_duree'" :libelle="$i['duree']" type="liste" obligatoire :options="$optionsDurees"
+                                           :valeur="$duree?->code ?? $dureeDefaut" :vide="$i['choisir_duree']" />
+                        </fieldset>
+                    @endforeach
                 </x-admin.fenetre>
             @endif
             @if ($modifiable && $fiche->exists)

@@ -161,7 +161,7 @@ class ReservationsBoutiques
                     'caution' => $tarif['caution'], 'avance' => $tarif['avance'], 'loyer_mensuel' => $tarif['loyer_mensuel'],
                     'mois_caution' => $tarif['mois_caution'], 'mois_avance' => $tarif['mois_avance'],
                     'type_piece' => $typePiece->value, 'numero_piece' => $numero,
-                    'statut' => StatutReservationBoutique::PreReservee, 'expire_le' => now()->addHours($campagne->delai_paiement_heures),
+                    'statut' => StatutReservationBoutique::PreReservee, 'expire_le' => now()->addSeconds($campagne->delaiPaiementSecondes()),
                 ]);
                 $boutique->changerStatut(StatutBoutique::PreReservee, 'pre_reservation', $reservation, $user);
 

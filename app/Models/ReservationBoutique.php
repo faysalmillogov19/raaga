@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'reference', 'user_id', 'campagne_boutiques_id', 'boutique_id', 'caution', 'avance',
     'loyer_mensuel', 'mois_caution', 'mois_avance', 'statut', 'expire_le', 'payee_le',
-    'type_piece', 'numero_piece', 'reservee_le', 'attribuee_le', 'reference_avance', 'contrat_signe_le',
+    'type_piece', 'numero_piece', 'reservee_le', 'avance_due_le', 'attribuee_le', 'reference_avance', 'contrat_signe_le',
 ])]
 class ReservationBoutique extends Model implements Payable
 {
@@ -40,6 +40,7 @@ class ReservationBoutique extends Model implements Payable
             'expire_le' => 'datetime',
             'payee_le' => 'datetime',
             'reservee_le' => 'datetime',
+            'avance_due_le' => 'datetime',
             'attribuee_le' => 'datetime',
             'contrat_signe_le' => 'date',
         ];
@@ -126,9 +127,11 @@ class ReservationBoutique extends Model implements Payable
     }
 
     /** Caution payée : réservation et boutique « réservées ». */
+    /** Caution payée : boutique réservée ; date limite de paiement de l'avance figée (30 jours par défaut). */
     public function marquerPaye(): void
     {
-        $this->forceFill(['statut' => StatutReservationBoutique::Reservee, 'payee_le' => now(), 'reservee_le' => now()])->save();
+        $this->forceFill(['statut' => StatutReservationBoutique::Reservee, 'payee_le' => now(), 'reservee_le' => now(),
+            'avance_due_le' => now()->addSeconds(ParametresPaiements::delaiSecondes('avance'))])->save();
         $this->boutique?->changerStatut(StatutBoutique::Reservee, 'caution_payee', $this);
     }
 

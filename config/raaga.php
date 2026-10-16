@@ -85,8 +85,7 @@ return [
 
     'paiement' => [
         'fournisseur' => env('RAAGA_PAIEMENT_FOURNISSEUR'),
-        // Délai de complément d'un paiement incomplet, tant que le RÉGULATEUR n'en a pas fait confirmer un autre.
-        'delai_complement_heures' => 48,
+        // Délais de paiement (caution, complément, avance) : ParametresPaiements::DELAIS, puis la valeur confirmée.
     ],
 
     /*
