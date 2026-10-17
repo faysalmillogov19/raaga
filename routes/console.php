@@ -16,3 +16,6 @@ Schedule::command('raaga:expirer-reservations')->everyFiveMinutes()->withoutOver
 
 // Relances des paiements attendus (souscriptions et cautions) : 24 h avant la fin du délai, puis à l'expiration.
 Schedule::command('raaga:relancer-paiements')->everyFifteenMinutes()->withoutOverlapping();
+
+// Cartes Raaga : renouvellement, expiration, avertissement avant la fin de la pièce d'identité.
+Schedule::command('raaga:cartes')->dailyAt('06:30');

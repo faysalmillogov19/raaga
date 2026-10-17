@@ -120,6 +120,8 @@ enum Droit: string
     case KycVoir = 'kyc.voir';
     case KycVoirPieces = 'kyc.voir_pieces';
     case KycTraiter = 'kyc.traiter';
+    // Cartes d'accès : vérifier une carte scannée (photo, nom, type, statut), l'imprimer au guichet.
+    case CartesVerifier = 'cartes.verifier';
 
     case ConformiteVoir = 'conformite.voir';
     case ConformiteTraiter = 'conformite.traiter';
@@ -292,7 +294,7 @@ enum Droit: string
             // que le SUPER_ADMIN n'a pas.
             Role::Admin => [...self::support(), self::InteretsVoir,
                 // Vérifications d'identité : voit la pièce, marque le dossier conforme ou douteux (aucun montant).
-                self::KycVoir, self::KycVoirPieces, self::KycTraiter],
+                self::KycVoir, self::KycVoirPieces, self::KycTraiter, self::CartesVerifier],
             // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre. Droits recentrés le 16/10/2026 : plus
             // d'écran Démarches du site public, Référentiels, Capacités prévues, Grille tarifaire (décidés et consultés dans
             // « À valider »), ni Vérifications d'identité (ADMIN), Souscriptions et Remboursements (CONTRÔLEUR DES PAIEMENTS).

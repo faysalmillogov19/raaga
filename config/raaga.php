@@ -207,4 +207,17 @@ return [
         ],
     ],
 
+    /*
+    | Cartes d'accès Raaga : durée du contrat d'une boutique (validité de la carte COMMERÇANT = signature du contrat le
+    | plus récent + cette durée), validités des cartes ACTIONNAIRE (renouvelée tant qu'il détient des actions) et
+    | PERSONNEL, avertissement avant l'expiration de la pièce d'identité. Clé des portiques : vérification sans données.
+    */
+    'cartes' => [
+        'duree_contrat_annees' => (int) env('RAAGA_DUREE_CONTRAT_ANNEES', 5),
+        'validite_actionnaire_mois' => 12,
+        'validite_personnel_mois' => 12,
+        'avertissement_piece_jours' => 30,
+        'cle_portiques' => env('RAAGA_CLE_PORTIQUES'),
+    ],
+
 ];

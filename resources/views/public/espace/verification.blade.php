@@ -110,6 +110,18 @@
                             </div>
                         @endif
                     @endforeach
+
+                    {{-- Date d'expiration de la pièce (CNIB, passeport) : la carte Raaga ne la dépasse jamais. --}}
+                    @if ($premierDepot || in_array('recto', $aFournir, true))
+                        <div x-show="piece !== 'NIF'" data-expiration-piece>
+                            <label for="piece_expire_le" class="block font-semibold text-encre"><x-requis /> {{ __('public.verification.expiration') }}</label>
+                            <p id="piece_expire_le-aide" class="texte-carte">{{ __('public.verification.aides.expiration') }}</p>
+                            <input id="piece_expire_le" name="piece_expire_le" type="date" min="{{ now()->addDay()->toDateString() }}" value="{{ old('piece_expire_le') }}"
+                                   :disabled="piece === 'NIF'" aria-describedby="piece_expire_le-aide piece_expire_le-erreur" @error('piece_expire_le') aria-invalid="true" @enderror
+                                   class="champ mt-2">
+                            <x-public.erreur :messages="$errors->get('piece_expire_le')" id="piece_expire_le-erreur" />
+                        </div>
+                    @endif
                 </div>
 
                 <button type="submit" class="btn-primaire mt-6 w-full sm:w-auto">{{ __('public.verification.envoyer') }}</button>

@@ -42,12 +42,15 @@ class VerificationController extends Controller
             'verso' => $fichier,
             'rccm' => $document,
             'selfie' => $fichier,
-        ], __('public.verification.erreurs.fichiers'), __('public.verification.attributs'));
+            // Date d'expiration de la pièce (CNIB, passeport) : la carte Raaga ne la dépasse jamais.
+            'piece_expire_le' => ['nullable', 'date_format:Y-m-d', 'after:today'],
+        ], [...__('public.verification.erreurs.fichiers'), 'piece_expire_le.*' => __('public.verification.erreurs.expiration')], __('public.verification.attributs'));
 
         $this->verification->deposer(
             $request->user(),
             isset($donnees['type_piece']) ? TypeDocumentKyc::from($donnees['type_piece']) : null,
             array_filter($request->only(['recto', 'verso', 'rccm', 'selfie'])),
+            $donnees['piece_expire_le'] ?? null,
         );
 
         return redirect()->route('espace.verification')->avecSucces('public.verification.envoye');

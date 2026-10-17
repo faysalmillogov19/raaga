@@ -15,11 +15,37 @@ return [
             'reactive' => 'Réactivé', 'desactive' => 'Désactivé', 'propose' => 'Proposé', 'demande' => 'Demande envoyée', 'revision' => 'Remis en révision',
             'ouvert' => 'Ouvert', 'cloture' => 'Clôturé', 'attribue' => 'Attribué', 'invitation' => 'Invitation envoyée', 'relance' => 'Relance envoyée',
             'declare' => 'Déclaré', 'envoye' => 'Envoyé', 'signale' => 'Signalé', 'importe' => 'Importé', 'deverrouille' => 'Déverrouillé',
-            'enregistre' => 'Enregistré', 'paiement_recu' => 'Paiement reçu', 'paiement_incomplet' => 'Paiement incomplet', 'preuve' => 'Preuve envoyée',
+            'carte' => 'Carte émise', 'enregistre' => 'Enregistré', 'paiement_recu' => 'Paiement reçu', 'paiement_incomplet' => 'Paiement incomplet', 'preuve' => 'Preuve envoyée',
         ],
         'compris' => 'Compris',
         'champs_a_corriger' => '{1} 1 champ à corriger : voir le message sous le champ.|[2,*] :n champs à corriger : voir les messages sous les champs.',
     ],
+    // Cartes d'accès Raaga.
+    'cartes' => [
+        'types' => ['COMMERCANT' => 'Commerçant', 'ACTIONNAIRE' => 'Actionnaire', 'PERSONNEL' => 'Personnel'],
+        'statuts' => ['EN_ATTENTE' => 'En attente', 'ACTIVE' => 'Active', 'SUSPENDUE' => 'Suspendue', 'REVOQUEE' => 'Révoquée', 'EXPIREE' => 'Expirée'],
+        'carte' => ['numero' => 'Carte n°', 'valide_jusqu_au' => 'Valable jusqu’au', 'numero_actionnaire' => 'Actionnaire n°', 'photo' => 'Photo du titulaire'],
+        'ma_carte' => [
+            'titre' => 'Ma carte Raaga',
+            'types' => 'Types de carte',
+            'aucune' => [
+                'commercant' => 'Votre carte commerçant sera émise à l’attribution de votre première boutique.',
+                'actionnaire' => 'Votre carte actionnaire sera émise à l’allocation de vos premières actions.',
+                'personnel' => 'Votre carte n’est pas encore émise : elle est émise par le SUPER_ADMIN.',
+            ],
+            'attente_titre' => 'En attente de vérification d’identité',
+            'attente' => 'Votre carte sera émise dès que votre dossier d’identité sera reconnu conforme. Vous recevrez une notification.',
+            'inactive' => 'cette carte n’est pas acceptée au contrôle. Contactez l’assistance.',
+        ],
+        'notification' => [
+            'sujet' => 'Votre carte Raaga est disponible',
+            'message' => 'Votre carte :type n° :numero est disponible dans votre espace : affichez-la ou téléchargez-la.',
+            'voir' => 'Voir ma carte',
+            'piece_sujet' => 'Votre pièce d’identité expire bientôt',
+            'piece_message' => 'Votre pièce d’identité expire le :date : votre carte Raaga ne sera plus valable après cette date. Déposez une pièce valide dans votre espace.',
+        ],
+    ],
+
     'navigation_historique' => [
         'retour' => 'Retour',
         'retour_long' => 'Retour à la page précédente',
@@ -779,6 +805,7 @@ return [
             'selfie' => ['SELFIE' => 'Selfie'],
         ],
         'aides' => [
+            'expiration' => 'Inscrite sur la pièce. Votre carte Raaga ne sera pas valable au-delà ; vous serez prévenu 30 jours avant.',
             'recto' => 'Face avec votre photo et votre nom ; pour le NIF, l’attestation (image ou PDF).',
             'verso' => 'Face arrière de la carte.',
             'rccm' => 'Registre du commerce de l’entreprise (image ou PDF). Facultatif pour une personne physique.',
@@ -794,7 +821,9 @@ return [
             'rccm' => 'RCCM',
             'selfie' => 'selfie',
         ],
+        'expiration' => 'Date d’expiration de la pièce',
         'erreurs' => [
+            'expiration' => 'Indiquez la date d’expiration inscrite sur votre pièce : une date à venir.',
             'resume' => 'Certaines pièces n’ont pas été acceptées : corrigez les champs signalés.',
             'type' => 'Choisissez le type de pièce : CNIB, passeport ou NIF.',
             'manquant' => 'Ajoutez cette photo.',

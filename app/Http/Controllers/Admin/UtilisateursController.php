@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\Backoffice\GestionUtilisateurs;
 use App\Services\Backoffice\RegleGestionException;
+use App\Services\Cartes\Cartes;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
 use App\Support\Tableau\ResultatTableau;
@@ -140,6 +141,17 @@ class UtilisateursController extends Controller
 
         return $this->executer(fn () => $this->gestion->changerRole($request->user(), $utilisateur, RoleEnum::from($donnees['role'])),
             $utilisateur, 'admin.utilisateurs.messages.role');
+    }
+
+    /** Carte PERSONNEL : émise (ou réémise, l'ancienne étant révoquée) par le SUPER_ADMIN pour un compte actif. */
+    public function emettreCarte(User $utilisateur): RedirectResponse
+    {
+        Gate::authorize(Droit::UtilisateursGerer->value);
+        $this->verifierBackoffice($utilisateur);
+        abort_unless($utilisateur->actif, 422);
+        $carte = app(Cartes::class)->emettrePersonnel($utilisateur, request()->user());
+
+        return redirect()->route('admin.utilisateurs.show', $utilisateur)->avecSucces('admin.utilisateurs.messages.carte_emise', ['numero' => $carte->numero], __('public.popups.titres_succes.carte'));
     }
 
     public function desactiver(Request $request, User $utilisateur): RedirectResponse

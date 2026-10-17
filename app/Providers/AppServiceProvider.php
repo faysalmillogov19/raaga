@@ -5,7 +5,12 @@ namespace App\Providers;
 use App\Contracts\PaymentProvider;
 use App\Contracts\SmsProvider;
 use App\Enums\Droit;
+use App\Enums\StatutReservationBoutique;
+use App\Enums\TypeCarte;
+use App\Models\LigneRegistre;
+use App\Models\ReservationBoutique;
 use App\Models\User;
+use App\Services\Cartes\Cartes;
 use App\Services\Paiement\SimulatedProvider;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Services\Sms\LogSmsProvider;
@@ -19,6 +24,7 @@ use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -54,6 +60,27 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Cartes d'accès : attribution ou annulation d'une boutique (COMMERÇANT), inscription au registre (ACTIONNAIRE),
+        // dossier d'identité conforme ou douteux, pièce d'identité, compte désactivé (PERSONNEL).
+        ReservationBoutique::saved(function (ReservationBoutique $r) {
+            $avant = $r->getOriginal('statut');
+            if ($r->wasChanged('statut') && in_array(StatutReservationBoutique::Attribuee, [$avant, $r->statut], true)) {
+                DB::afterCommit(fn () => app(Cartes::class)->synchroniser($r->user, TypeCarte::Commercant));
+            }
+        });
+        LigneRegistre::created(fn (LigneRegistre $l) => DB::afterCommit(fn () => app(Cartes::class)->synchroniser($l->user, TypeCarte::Actionnaire)));
+        User::saved(function (User $u) {
+            if ($u->wasChanged('statut_kyc') || $u->wasChanged('piece_expire_le')) {
+                DB::afterCommit(function () use ($u) {
+                    app(Cartes::class)->synchroniser($u, TypeCarte::Commercant);
+                    app(Cartes::class)->synchroniser($u, TypeCarte::Actionnaire);
+                });
+            }
+            if ($u->wasChanged('actif') && ! $u->actif) {
+                DB::afterCommit(fn () => app(Cartes::class)->synchroniser($u, TypeCarte::Personnel));
+            }
+        });
+
         // Message de succès en popup : texte traduit et titre (précisé, sinon déduit de la clé, sinon « Opération réussie »).
         RedirectResponse::macro('avecSucces', function (string $cle, array $remplacements = [], ?string $titre = null) {
             /** @var RedirectResponse $this */

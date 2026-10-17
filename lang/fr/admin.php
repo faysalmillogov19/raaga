@@ -362,6 +362,7 @@ return [
         'tranches.confirmer' => 'Confirmer ou rejeter un paramétrage de tranche',
         'tranches.piloter' => 'Ouvrir, prolonger (avenant) et clôturer une tranche',
         'sites.voir' => 'Consulter les sites du marché et leurs boutiques',
+        'cartes.verifier' => 'Vérifier une carte d’accès Raaga scannée (photo, nom, type, statut)',
         'sites.capacites_voir' => 'Consulter les capacités prévues des sites',
         'sites.gerer' => 'Créer et modifier les sites et leurs boutiques, puis les soumettre',
         'sites.confirmer' => 'Confirmer ou rejeter un site et ses boutiques',
@@ -599,8 +600,10 @@ return [
             'conforme' => 'Conforme', 'conforme_titre' => 'Dossier conforme', 'confirmer_conforme' => 'Marquer conforme',
             'douteux' => 'Douteux…', 'douteux_titre' => 'Dossier douteux', 'confirmer_douteux' => 'Proposer l’annulation',
         ],
-        'champs' => ['motif' => 'motif'],
+        'champs' => [
+            'piece_expire_le' => 'date d’expiration de la pièce', 'motif' => 'motif'],
         'aides' => [
+            'piece_expire_le' => 'Saisie par le citoyen : vérifiez-la sur la pièce et corrigez-la si besoin. La carte Raaga ne la dépasse jamais.',
             'conforme' => 'Toutes les pièces sont validées ; le citoyen peut souscrire. Motif facultatif.',
             'douteux' => 'Le VALIDATEUR confirmera ou rejettera l’annulation : souscriptions et candidatures en cours annulées, boutique éventuelle libérée, remboursement ouvert si le citoyen avait payé.',
         ],
@@ -616,6 +619,7 @@ return [
             'annulation_rejetee' => 'Annulation rejetée : le dossier revient à l’ADMIN.',
         ],
         'erreurs' => [
+            'expiration' => 'Indiquez la date d’expiration lue sur la pièce : aujourd’hui ou plus tard.',
             'non_examinable' => 'Ce dossier ne peut pas être examiné dans son état actuel.',
             'proposition_en_cours' => 'Une annulation est déjà proposée pour ce dossier : elle attend le VALIDATEUR.',
         ],
@@ -1350,6 +1354,8 @@ return [
             'acteur_systeme' => 'Système',
         ],
         'actions' => [
+            'emettre_carte' => 'Émettre la carte',
+            'reemettre_carte' => 'Réémettre la carte',
             'changer_role' => 'Changer le rôle',
             'appliquer_role' => 'Appliquer le nouveau rôle',
             'desactiver' => 'Désactiver le compte',
@@ -1360,6 +1366,8 @@ return [
             'motif' => 'Motif (obligatoire)',
         ],
         'confirmations' => [
+            'emettre_carte' => 'Émettre la carte PERSONNEL de ce compte ? Elle est valable 1 an, tant que le compte est actif.',
+            'reemettre_carte' => 'Réémettre la carte ? La carte :numero est révoquée et un nouveau QR code est créé.',
             'role' => 'Le nouveau rôle prend effet immédiatement : la personne est déconnectée et ses accès changent dès sa prochaine connexion.',
             'desactiver' => 'La personne est déconnectée immédiatement et ne peut plus se connecter. Ses données et son historique sont conservés. Le compte pourra être réactivé.',
             'reactiver' => 'La personne pourra de nouveau se connecter avec ses identifiants.',
@@ -1367,6 +1375,7 @@ return [
             'lien' => 'Un nouveau lien personnel, valable 48 heures, est envoyé par courriel. Les liens précédents sont annulés. À l’ouverture du lien, la personne choisit un nouveau mot de passe.',
         ],
         'messages' => [
+            'carte_emise' => 'Carte :numero émise : le titulaire est notifié.',
             'invite' => 'Invitation envoyée à :email.',
             'role' => 'Rôle modifié. La personne a été déconnectée.',
             'desactive' => 'Compte désactivé. La personne a été déconnectée.',

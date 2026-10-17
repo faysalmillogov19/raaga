@@ -42,15 +42,20 @@ class DossiersIdentite
         return VerificationKyc::query()->where('user_id', $citoyen->id)->where('statut', VerificationKyc::ANNULATION_PROPOSEE)->latest('id')->first();
     }
 
-    public function conforme(User $citoyen, User $admin, ?string $motif): VerificationKyc
+    public function conforme(User $citoyen, User $admin, ?string $motif, ?string $pieceExpireLe = null): VerificationKyc
     {
         $this->examinable($citoyen, [StatutKyc::EnAttente]);
 
-        return DB::transaction(function () use ($citoyen, $admin, $motif) {
+        return DB::transaction(function () use ($citoyen, $admin, $motif, $pieceExpireLe) {
             $this->verification->dossier($citoyen)->filter()->each(fn (KycDocument $d) => $d->forceFill([
                 'statut' => StatutDocumentKyc::Valide, 'commentaire' => null, 'valide_par' => $admin->id, 'valide_le' => now(),
             ])->save());
-            $citoyen->forceFill(['statut_kyc' => StatutKyc::Valide, 'niveau_kyc' => max(1, (int) $citoyen->niveau_kyc)])->save();
+            // Identité validée figée (seule affichée sur la carte Raaga) et date d'expiration vérifiée de la pièce.
+            $citoyen->forceFill([
+                'statut_kyc' => StatutKyc::Valide, 'niveau_kyc' => max(1, (int) $citoyen->niveau_kyc),
+                'identite_validee' => ['nom' => $citoyen->nom, 'prenoms' => $citoyen->prenoms, 'validee_le' => now()->toIso8601String(), 'par' => $admin->id],
+                'piece_expire_le' => $pieceExpireLe ?? $citoyen->piece_expire_le,
+            ])->save();
             $v = VerificationKyc::create(['user_id' => $citoyen->id, 'decision' => VerificationKyc::CONFORME, 'motif' => $motif,
                 'decide_par' => $admin->id, 'statut' => VerificationKyc::CONFORME]);
             $this->journal->ecrire($admin, 'kyc.conforme', 'User', $citoyen->id, null, ['motif' => $motif]);

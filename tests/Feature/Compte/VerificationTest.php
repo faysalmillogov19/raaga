@@ -54,6 +54,7 @@ class VerificationTest extends TestCase
     {
         $this->actingAs($this->citoyen)->post('/espace/verification', [
             'type_piece' => 'CNIB', 'recto' => $this->photo('recto.jpg'), 'verso' => $this->photo('verso.png'), 'selfie' => $this->photo('selfie.jpg'),
+            'piece_expire_le' => now()->addYears(5)->toDateString(),
         ])->assertRedirect(route('espace.verification'))->assertSessionHasNoErrors();
     }
 
@@ -87,8 +88,14 @@ class VerificationTest extends TestCase
 
         // Passeport : recto seul + selfie.
         $autre = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::NonSoumis]);
+        // Date d'expiration de la pièce : obligatoire, dans le futur.
         $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo()])
-            ->assertSessionHasNoErrors();
+            ->assertSessionHasErrors('piece_expire_le');
+        $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
+            'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
+        $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
+            'piece_expire_le' => now()->addYears(4)->toDateString()])->assertSessionHasNoErrors();
+        $this->assertSame(now()->addYears(4)->toDateString(), $autre->fresh()->piece_expire_le->toDateString());
         $this->assertSame(2, $autre->kycDocuments()->count());
     }
 

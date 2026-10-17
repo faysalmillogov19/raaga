@@ -76,6 +76,14 @@
                     @endif
 
                     @if ($utilisateur->actif)
+                        {{-- Carte PERSONNEL : émise ou réémise (l'ancienne est révoquée, nouveau QR code). --}}
+                        @php($carte = \App\Services\Cartes\Cartes::courante($utilisateur, \App\Enums\TypeCarte::Personnel))
+                        <x-admin.confirmation id="carte" :titre="__('admin.utilisateurs.actions.'.($carte ? 'reemettre_carte' : 'emettre_carte'))"
+                                              :message="__('admin.utilisateurs.confirmations.'.($carte ? 'reemettre_carte' : 'emettre_carte'), ['numero' => $carte?->numero])"
+                                              :action="route('admin.utilisateurs.carte', $utilisateur)"
+                                              :bouton="__('admin.utilisateurs.actions.'.($carte ? 'reemettre_carte' : 'emettre_carte'))">
+                            <x-slot:declencheur>{{ __('admin.utilisateurs.actions.'.($carte ? 'reemettre_carte' : 'emettre_carte')) }}</x-slot:declencheur>
+                        </x-admin.confirmation>
                         <x-admin.confirmation id="desactiver" :titre="__('admin.utilisateurs.actions.desactiver')"
                                               :message="__('admin.utilisateurs.confirmations.desactiver')"
                                               :action="route('admin.utilisateurs.desactiver', $utilisateur)"

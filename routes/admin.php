@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\ImportsValidationController;
 use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
+use App\Http\Controllers\Admin\MaCarteController;
 use App\Http\Controllers\Admin\ManifestationsInteretController;
 use App\Http\Controllers\Admin\NiveauxZonesController;
 use App\Http\Controllers\Admin\PaiementsController;
@@ -196,6 +197,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Mon profil : chaque compte back-office met à jour ses propres informations (jamais son rôle).
         Route::get('/profil', [ProfilController::class, 'show'])->name('profil');
+        // Ma carte : carte PERSONNEL émise par le SUPER_ADMIN.
+        Route::get('/ma-carte', [MaCarteController::class, 'show'])->name('carte');
         Route::post('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::post('/profil/mot-de-passe', [ProfilController::class, 'motDePasse'])->middleware('throttle:10,1')->name('profil.mot-de-passe');
 
@@ -486,6 +489,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::post('/{utilisateur}/totp', 'reinitialiserTotp')->name('.totp');
                 Route::post('/{utilisateur}/deverrouiller', 'deverrouiller')->name('.deverrouiller');
                 Route::post('/{utilisateur}/lien', 'envoyerLien')->name('.lien');
+                Route::post('/{utilisateur}/carte', 'emettreCarte')->name('.carte');
             });
 
         Route::get('/', [SectionController::class, 'tableau'])

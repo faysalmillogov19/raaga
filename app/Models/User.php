@@ -17,7 +17,7 @@ use Illuminate\Notifications\Notifiable;
 #[Fillable([
     'name', 'nom', 'prenoms', 'email', 'telephone', 'password', 'role_id',
     'date_naissance', 'nationalite', 'pays_residence', 'region',
-    'statut_kyc', 'niveau_kyc', 'actif', 'institution_id',
+    'statut_kyc', 'niveau_kyc', 'actif', 'institution_id', 'piece_expire_le',
 ])]
 #[Hidden(['password', 'remember_token', 'totp_secret', 'codes_secours'])]
 class User extends Authenticatable
@@ -56,6 +56,10 @@ class User extends Authenticatable
             'statut_kyc' => StatutKyc::class,
             'niveau_kyc' => 'integer',
             'actif' => 'boolean',
+            // Carte Raaga : expiration de la pièce d'identité, avertissement envoyé, identité validée par l'ADMIN.
+            'piece_expire_le' => 'date',
+            'piece_avertie_le' => 'datetime',
+            'identite_validee' => 'array',
             // Secrets chiffrés en base avec la clé de l'application.
             'totp_secret' => 'encrypted',
             'codes_secours' => 'encrypted:array',
@@ -168,6 +172,16 @@ class User extends Authenticatable
     public function kycDocuments(): HasMany
     {
         return $this->hasMany(KycDocument::class);
+    }
+
+    /**
+     * Cartes d'accès Raaga (courantes et historiques).
+     *
+     * @return HasMany<Carte, $this>
+     */
+    public function cartes(): HasMany
+    {
+        return $this->hasMany(Carte::class);
     }
 
     /**

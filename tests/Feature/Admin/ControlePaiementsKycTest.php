@@ -341,7 +341,10 @@ class ControlePaiementsKycTest extends TestCase
     {
         $citoyen = $this->citoyen(StatutKyc::EnAttente);
         $this->dossierKyc($citoyen);
-        $this->en($this->admin)->post(route('admin.kyc.conforme', $citoyen))->assertSessionHas('succes');
+        // Date d'expiration de la pièce : obligatoire pour une CNIB, vérifiée par l'ADMIN.
+        $this->en($this->admin)->post(route('admin.kyc.conforme', $citoyen))->assertSessionHasErrors('piece_expire_le');
+        $this->en($this->admin)->post(route('admin.kyc.conforme', $citoyen), ['piece_expire_le' => now()->addYears(3)->toDateString()])->assertSessionHas('succes');
+        $this->assertSame(now()->addYears(3)->toDateString(), $citoyen->fresh()->piece_expire_le->toDateString());
         $this->assertSame(StatutKyc::Valide, $citoyen->fresh()->statut_kyc);
         $this->assertSame(0, $citoyen->kycDocuments()->where('statut', '!=', StatutDocumentKyc::Valide)->count());
 

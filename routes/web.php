@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\Role;
+use App\Http\Controllers\CartePhotoController;
 use App\Http\Controllers\Compte\AvanceController;
 use App\Http\Controllers\Compte\BoutiquesController;
+use App\Http\Controllers\Compte\CarteController;
 use App\Http\Controllers\Compte\CautionController;
 use App\Http\Controllers\Compte\ConnexionController;
 use App\Http\Controllers\Compte\EspaceController;
@@ -140,6 +142,11 @@ Route::middleware(['actions.presentation', 'auth', 'role:citoyen'])->controller(
 });
 
 // Vérification d'identité (citoyen) : dépôt des pièces, suivi, fichiers servis au seul titulaire.
+// Ma carte : cartes COMMERÇANT et ACTIONNAIRE du citoyen ; photo d'une carte (titulaire et agents autorisés seulement).
+Route::get('/espace/carte/{type?}', [CarteController::class, 'show'])
+    ->whereIn('type', ['commercant', 'actionnaire'])->middleware(['auth', 'role:citoyen'])->name('espace.carte');
+Route::get('/cartes/{carte}/photo', CartePhotoController::class)->whereNumber('carte')->middleware('auth')->name('cartes.photo');
+
 Route::middleware(['auth', 'role:citoyen'])->controller(VerificationController::class)->prefix('espace/verification')->name('espace.verification')->group(function () {
     Route::get('/', 'show');
     Route::post('/', 'store')->middleware('throttle:10,1')->name('.store');

@@ -98,7 +98,7 @@ class MatriceDroitsTest extends TestCase
 
         // Support, plus la liste des manifestations d'intérêt RAAGA Invest et les vérifications d'identité (que le SUPER_ADMIN n'a pas).
         foreach (Droit::cases() as $droit) {
-            $this->assertSame(in_array($droit, [...Droit::support(), Droit::InteretsVoir, Droit::KycVoir, Droit::KycVoirPieces, Droit::KycTraiter], true),
+            $this->assertSame(in_array($droit, [...Droit::support(), Droit::InteretsVoir, Droit::KycVoir, Droit::KycVoirPieces, Droit::KycTraiter, Droit::CartesVerifier], true),
                 $admin->can($droit->value), $droit->value);
         }
         $this->assertFalse(User::factory()->role(Role::SuperAdmin)->create()->can(Droit::InteretsVoir->value));

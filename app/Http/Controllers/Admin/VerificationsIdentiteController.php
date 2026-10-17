@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Enums\Role;
 use App\Enums\StatutKyc;
+use App\Enums\TypeDocumentKyc;
 use App\Http\Controllers\Controller;
 use App\Models\ReservationBoutique;
 use App\Models\User;
@@ -76,8 +77,13 @@ class VerificationsIdentiteController extends Controller
     public function conforme(Request $request, User $citoyen): RedirectResponse
     {
         Gate::authorize(Droit::KycTraiter->value);
-        $motif = $request->validate(['motif' => ['nullable', 'string', 'max:1000']], [], __('admin.kyc.champs'))['motif'] ?? null;
-        $this->dossiers->conforme($citoyen, $request->user(), $motif);
+        $expirable = in_array(app(VerificationIdentite::class)->typePiece($citoyen), [TypeDocumentKyc::Cnib, TypeDocumentKyc::Passeport], true);
+        $donnees = $request->validate([
+            'motif' => ['nullable', 'string', 'max:1000'],
+            // Date d'expiration lue sur la pièce (CNIB, passeport) : saisie par le citoyen, vérifiée et corrigée ici.
+            'piece_expire_le' => [$expirable ? 'required' : 'nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
+        ], ['piece_expire_le.*' => __('admin.kyc.erreurs.expiration')], __('admin.kyc.champs'));
+        $this->dossiers->conforme($citoyen, $request->user(), $donnees['motif'] ?? null, $donnees['piece_expire_le'] ?? null);
 
         return redirect()->route('admin.kyc.dossier', $citoyen)->avecSucces('admin.kyc.messages.conforme');
     }

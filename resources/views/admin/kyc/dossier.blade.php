@@ -22,6 +22,9 @@
                     <x-admin.fenetre id="conforme" :titre="$k['actions']['conforme_titre']" :action="route('admin.kyc.conforme', $citoyen)" :bouton="$k['actions']['confirmer_conforme']">
                         <x-slot:declencheur>{{ $k['actions']['conforme'] }}</x-slot:declencheur>
                         <p class="texte-carte mb-4">{{ $k['aides']['conforme'] }}</p>
+                        {{-- Date d'expiration lue sur la pièce : saisie par le citoyen, vérifiée ici (la carte Raaga ne la dépasse jamais). --}}
+                        <x-admin.champ nom="piece_expire_le" :libelle="ucfirst($k['champs']['piece_expire_le'])" type="date" :valeur="$citoyen->piece_expire_le?->toDateString()"
+                                       :aide="$k['aides']['piece_expire_le']" :obligatoire="in_array(app(\App\Services\Kyc\VerificationIdentite::class)->typePiece($citoyen), [\App\Enums\TypeDocumentKyc::Cnib, \App\Enums\TypeDocumentKyc::Passeport], true)" />
                         <x-admin.champ nom="motif" :libelle="ucfirst($k['champs']['motif'])" type="zone" maxlength="1000" />
                     </x-admin.fenetre>
                 @endif

@@ -96,7 +96,7 @@ class VerificationIdentite
      *
      * @throws ValidationException
      */
-    public function deposer(User $user, ?TypeDocumentKyc $choix, array $fichiers): void
+    public function deposer(User $user, ?TypeDocumentKyc $choix, array $fichiers, ?string $expireLe = null): void
     {
         $premierDepot = in_array($user->statut_kyc, [StatutKyc::NonSoumis, null], true);
         $piece = $premierDepot ? ($choix ?? throw ValidationException::withMessages(['type_piece' => __('public.verification.erreurs.type')])) : $this->typePiece($user);
@@ -106,6 +106,12 @@ class VerificationIdentite
         $manquants = array_diff($attendus, array_keys(array_filter($fichiers)));
         if ($manquants) {
             throw ValidationException::withMessages(array_fill_keys($manquants, __('public.verification.erreurs.manquant')));
+        }
+
+        // Pièce d'identité (CNIB, passeport) déposée : sa date d'expiration est obligatoire (vérifiée ensuite par l'ADMIN).
+        $expirable = in_array('recto', $attendus, true) && in_array($piece, [TypeDocumentKyc::Cnib, TypeDocumentKyc::Passeport], true);
+        if ($expirable && $expireLe === null) {
+            throw ValidationException::withMessages(['piece_expire_le' => __('public.verification.erreurs.expiration')]);
         }
 
         $emplacements = self::emplacements($piece);
@@ -118,7 +124,10 @@ class VerificationIdentite
         $chemins = [];
 
         try {
-            DB::transaction(function () use ($user, $attendus, $emplacements, $fichiers, &$chemins) {
+            DB::transaction(function () use ($user, $attendus, $emplacements, $fichiers, &$chemins, $expirable, $expireLe) {
+                if ($expirable) {
+                    $user->forceFill(['piece_expire_le' => $expireLe, 'piece_avertie_le' => null])->save();
+                }
                 foreach ($attendus as $cle) {
                     [$type, $face] = $emplacements[$cle];
                     $fichier = $fichiers[$cle];
