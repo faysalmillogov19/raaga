@@ -212,14 +212,21 @@ return [
     | plus récent + cette durée), validités des cartes ACTIONNAIRE (renouvelée tant qu'il détient des actions) et
     | PERSONNEL, avertissement avant l'expiration de la pièce d'identité. Clé des portiques : vérification sans données.
     */
+    // Proxys de confiance (Nginx en proxy inverse sur le même serveur, par défaut) : l'adresse IP du visiteur est lue dans
+    // X-Forwarded-For seulement quand la requête vient de l'un d'eux. Liste séparée par des virgules, ou « * ».
+    'proxys_de_confiance' => env('RAAGA_PROXYS_DE_CONFIANCE', '127.0.0.1,::1'),
+
     'cartes' => [
         'duree_contrat_annees' => (int) env('RAAGA_DUREE_CONTRAT_ANNEES', 5),
         'validite_actionnaire_mois' => 12,
         'validite_personnel_mois' => 12,
         'avertissement_piece_jours' => 30,
         'cle_portiques' => env('RAAGA_CLE_PORTIQUES'),
-        // Vérifications par minute et par adresse IP, sur /c/{jeton} et /portiques/cartes/{jeton} (au-delà : 429).
+        // Vérifications par minute (au-delà : 429). Sans connexion, par adresse IP : scans de /c/{jeton} et essais de
+        // portique avec une mauvaise clé (une requête avec la bonne clé n'est jamais limitée). Agents connectés avec le
+        // droit cartes.verifier : par compte, plus large.
         'tentatives_par_minute' => (int) env('RAAGA_CARTES_TENTATIVES', 30),
+        'tentatives_agents_par_minute' => (int) env('RAAGA_CARTES_TENTATIVES_AGENTS', 300),
     ],
 
 ];

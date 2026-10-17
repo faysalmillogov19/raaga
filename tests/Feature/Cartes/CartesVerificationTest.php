@@ -172,12 +172,12 @@ class CartesVerificationTest extends TestCase
         $this->getJson(route('cartes.portique', Str::random(64)), ['X-Cle-Portique' => 'cle-secrete-des-portiques'])->assertExactJson(['valide' => false]);
     }
 
-    public function test_tentatives_limitees_par_adresse_ip_avec_message_clair(): void
+    public function test_scans_sans_connexion_limites_par_adresse_ip_avec_message_clair(): void
     {
-        config(['raaga.cartes.tentatives_par_minute' => 30, 'raaga.cartes.cle_portiques' => 'cle-secrete-des-portiques']);
+        config(['raaga.cartes.tentatives_par_minute' => 30]);
         $carte = $this->carte();
 
-        // QR code : 30 vérifications par minute et par adresse IP, puis 429 avec un message clair et le délai.
+        // 30 vérifications par minute et par adresse IP, puis 429 avec un message clair et le délai.
         for ($i = 0; $i < 30; $i++) {
             $this->get('/c/'.Str::random(64))->assertOk();
         }
@@ -185,20 +185,86 @@ class CartesVerificationTest extends TestCase
             ->assertSee('Trop de vérifications depuis cette connexion. Réessayez dans', false)->assertDontSee('Carte valide');
         // Une autre adresse IP n'est pas concernée.
         $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.2'])->get($carte->urlVerification())->assertOk()->assertSee('Carte valide');
+    }
 
-        // Portiques : compteur distinct, même limite, réponse JSON.
-        $entete = ['X-Cle-Portique' => 'cle-secrete-des-portiques'];
-        for ($i = 0; $i < 30; $i++) {
-            $this->getJson(route('cartes.portique', $carte->jeton), $entete)->assertOk();
+    public function test_portique_bonne_cle_jamais_limitee_mauvaises_cles_limitees(): void
+    {
+        config(['raaga.cartes.tentatives_par_minute' => 30, 'raaga.cartes.cle_portiques' => 'cle-secrete-des-portiques']);
+        $carte = $this->carte();
+        $bonne = ['X-Cle-Portique' => 'cle-secrete-des-portiques'];
+
+        // 100 vérifications d'un portique avec la bonne clé : toutes passent.
+        for ($i = 0; $i < 100; $i++) {
+            $this->getJson(route('cartes.portique', $carte->jeton), $bonne)->assertOk()->assertExactJson(['valide' => true]);
         }
-        $this->getJson(route('cartes.portique', $carte->jeton), $entete)->assertStatus(429)->assertHeader('Retry-After')
+
+        // Mauvaise clé ou sans clé : 30 essais par minute et par adresse IP, puis 429 (JSON, délai d'attente).
+        for ($i = 0; $i < 30; $i++) {
+            $this->getJson(route('cartes.portique', $carte->jeton), $i % 2 ? ['X-Cle-Portique' => 'mauvaise-'.$i] : [])->assertUnauthorized();
+        }
+        $this->getJson(route('cartes.portique', $carte->jeton), ['X-Cle-Portique' => 'encore-une'])->assertStatus(429)->assertHeader('Retry-After')
             ->assertJsonPath('erreur', 'trop_de_tentatives')->assertJsonMissingPath('valide');
-        // Les mauvaises clés comptent aussi (pas d'essais illimités de clés).
-        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.3']);
-        for ($i = 0; $i < 30; $i++) {
-            $this->getJson(route('cartes.portique', $carte->jeton), ['X-Cle-Portique' => 'mauvaise-'.$i])->assertUnauthorized();
+        // La bonne clé passe toujours depuis cette même adresse.
+        $this->getJson(route('cartes.portique', $carte->jeton), $bonne)->assertOk()->assertExactJson(['valide' => true]);
+        // Une autre adresse IP garde ses essais.
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.3'])->getJson(route('cartes.portique', $carte->jeton), ['X-Cle-Portique' => 'x'])->assertUnauthorized();
+    }
+
+    public function test_agents_connectes_limites_par_compte_et_non_par_adresse_ip(): void
+    {
+        config(['raaga.cartes.tentatives_par_minute' => 30, 'raaga.cartes.tentatives_agents_par_minute' => 300]);
+        $carte = $this->carte();
+
+        // Deux agents derrière la même adresse IP (même guichet) : bien au-delà de 30 scans chacun (QR code puis page du
+        // guichet), aucun blocage.
+        $scanner = fn () => $this->followingRedirects()->get($carte->urlVerification());
+        $agentA = $this->connecterBackoffice(Role::AgentGuichet);
+        for ($i = 0; $i < 40; $i++) {
+            $scanner()->assertOk()->assertSee('data-verdict="valide"', false);
         }
-        $this->getJson(route('cartes.portique', $carte->jeton), $entete)->assertStatus(429);
+        $this->app['auth']->forgetGuards();
+        $this->connecterBackoffice(Role::AgentGuichet);
+        for ($i = 0; $i < 40; $i++) {
+            $scanner()->assertOk()->assertSee('data-verdict="valide"', false);
+        }
+
+        // La limite d'un agent est comptée sur son compte, une fois par scan (réglable, ici 50) ; l'autre agent et
+        // l'ADMIN ne sont pas touchés.
+        config(['raaga.cartes.tentatives_agents_par_minute' => 50]);
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($agentA);
+        for ($i = 0; $i < 10; $i++) {
+            $scanner()->assertOk();
+        }
+        $scanner()->assertStatus(429)->assertSee('Trop de vérifications');
+        $this->app['auth']->forgetGuards();
+        $this->connecterBackoffice(Role::Admin);
+        $scanner()->assertOk()->assertSee('data-verdict="valide"', false);
+
+        // Les scans des agents n'entament pas la limite des visiteurs sans connexion de la même adresse.
+        $this->app['auth']->forgetGuards();
+        $this->get($carte->urlVerification())->assertOk()->assertSee('Carte valide');
+    }
+
+    public function test_derriere_nginx_chaque_visiteur_a_son_propre_compteur(): void
+    {
+        config(['raaga.cartes.tentatives_par_minute' => 30]);
+        $carte = $this->carte();
+        // Requêtes relayées par Nginx (proxy de confiance 127.0.0.1) : l'adresse retenue est celle de X-Forwarded-For.
+        $nginx = fn (string $visiteur) => $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])->withHeaders(['X-Forwarded-For' => $visiteur]);
+
+        for ($i = 0; $i < 30; $i++) {
+            $nginx('41.138.10.1')->get($carte->urlVerification())->assertOk();
+        }
+        $nginx('41.138.10.1')->get($carte->urlVerification())->assertStatus(429);
+        // Un autre visiteur, derrière le même Nginx : son propre compteur.
+        $nginx('41.138.10.2')->get($carte->urlVerification())->assertOk()->assertSee('Carte valide');
+        $this->assertSame('41.138.10.2', request()->ip());
+
+        // Un en-tête X-Forwarded-For venu d'une adresse qui n'est pas un proxy de confiance est ignoré.
+        $this->withServerVariables(['REMOTE_ADDR' => '196.28.1.1'])->withHeaders(['X-Forwarded-For' => '41.138.10.1'])
+            ->get($carte->urlVerification())->assertOk();
+        $this->assertSame('196.28.1.1', request()->ip());
     }
 
     public function test_l_agent_de_guichet_est_un_profil_du_back_office(): void

@@ -23,6 +23,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Events\RouteMatched;
@@ -33,6 +34,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -63,17 +65,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Vérification des cartes (QR code, portiques) : tentatives limitées par adresse IP, contre l'essai de jetons.
-        // Au-delà : 429, page claire (QR code) ou réponse JSON (portiques), avec le délai d'attente.
-        RateLimiter::for('cartes-verification', fn (Request $request) => Limit::perMinute((int) config('raaga.cartes.tentatives_par_minute'))
-            ->by('cartes:'.$request->ip())
+        // Proxys de confiance : derrière Nginx, l'adresse IP retenue (limites, journal) est celle du visiteur
+        // (X-Forwarded-For), jamais celle du proxy ; un en-tête venu d'ailleurs est ignoré.
+        TrustProxies::at(array_map('trim', explode(',', (string) config('raaga.proxys_de_confiance'))));
+        TrustProxies::withHeaders(SymfonyRequest::HEADER_X_FORWARDED_FOR | SymfonyRequest::HEADER_X_FORWARDED_HOST
+            | SymfonyRequest::HEADER_X_FORWARDED_PORT | SymfonyRequest::HEADER_X_FORWARDED_PROTO);
+
+        // Vérification des cartes par QR code, contre l'essai de jetons : agent connecté autorisé (cartes.verifier) compté
+        // par compte, plus large, une seule fois par scan (sur la page du guichet, pas sur la redirection de /c/{jeton}) ;
+        // sinon par adresse IP. Au-delà : 429, page claire avec le délai d'attente.
+        // (Portiques : seuls les essais avec une mauvaise clé sont limités, voir VerificationCarteController.)
+        RateLimiter::for('cartes-verification', fn (Request $request) => (match (true) {
+            ! $request->user()?->can(Droit::CartesVerifier->value) => Limit::perMinute((int) config('raaga.cartes.tentatives_par_minute'))->by('cartes:'.$request->ip()),
+            $request->routeIs('cartes.verifier') => Limit::none(),
+            default => Limit::perMinute((int) config('raaga.cartes.tentatives_agents_par_minute'))->by('cartes-agent:'.$request->user()->id),
+        })
             ->response(fn (Request $request, array $entetes) => response()->view('errors.429', [
-                'message' => __('public.cartes.verification.trop_de_tentatives', ['secondes' => $entetes['Retry-After'] ?? 60]),
-            ], 429, $entetes)));
-        RateLimiter::for('cartes-portiques', fn (Request $request) => Limit::perMinute((int) config('raaga.cartes.tentatives_par_minute'))
-            ->by('portiques:'.$request->ip())
-            ->response(fn (Request $request, array $entetes) => response()->json([
-                'erreur' => 'trop_de_tentatives',
                 'message' => __('public.cartes.verification.trop_de_tentatives', ['secondes' => $entetes['Retry-After'] ?? 60]),
             ], 429, $entetes)));
 
