@@ -21,6 +21,8 @@ class MenuRegulateurTest extends TestCase
     use ConnexionBackoffice, RefreshDatabase;
 
     private const MENUS = [
+        // « Mes soumissions » en premier, juste après le tableau de bord (17/10/2026).
+        'soumissions' => ['mes_brouillons', 'rejetes', 'en_attente'],
         'tarification' => ['grille', 'unites', 'finances', 'sites', 'capacites'],
         'location' => ['boutiques', 'cautions', 'boutiques_referentiel'],
         // Pages en préparation masquées : Référentiels, Simulations, Souscriptions, Alertes, Registre B, Espace régulateur,
@@ -28,7 +30,6 @@ class MenuRegulateurTest extends TestCase
         'modalites' => ['moyens', 'delais', 'remboursements'],
         'invest' => ['investissement', 'tranches', 'interets', 'dividendes', 'kyc', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a'],
         'site_public' => ['phase'],
-        'soumissions' => ['mes_brouillons', 'rejetes', 'en_attente'],
     ];
 
     /** Ancien menu : la définition commune filtrée par les droits du profil, sans les pages en préparation. */

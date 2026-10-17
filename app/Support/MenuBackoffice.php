@@ -171,6 +171,12 @@ final class MenuBackoffice
         return [
             'pilotage' => [
                 self::entree('tableau'),
+                // Mes soumissions, en premier (17/10/2026) : la page « Mes brouillons » filtrée (brouillons, rejetés, en attente du VALIDATEUR).
+                $soumissions('mes_brouillons', 'brouillons'),
+                $soumissions('rejetes', 'rejetes'),
+                $soumissions('en_attente', 'en_attente'),
+                $dans('soumissions', 'audit'),
+                $dans('soumissions', 'observations'),
                 // Tarification : grille, unités, données financières des sites (liste, puis fiche de chaque site).
                 $dans('tarification', 'grille'),
                 $dans('tarification', 'unites'),
@@ -201,12 +207,6 @@ final class MenuBackoffice
                 $dans('invest', 'appels_fonds'),
                 $dans('invest', 'registre_a'),
                 $dans('site_public', 'phase', ['libelle' => $libelle('demarches')]),
-                // Mes soumissions : la page « Mes brouillons » filtrée (brouillons, rejetés, en attente du VALIDATEUR).
-                $soumissions('mes_brouillons', 'brouillons'),
-                $soumissions('rejetes', 'rejetes'),
-                $soumissions('en_attente', 'en_attente'),
-                $dans('soumissions', 'audit'),
-                $dans('soumissions', 'observations'),
             ],
         ];
     }
