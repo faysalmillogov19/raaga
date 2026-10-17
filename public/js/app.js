@@ -250,6 +250,50 @@ composant('souscription', (p) => ({
     },
 }));
 
+/*
+ * Compte à rebours avant l'ouverture d'une campagne (« dans 2 j 3 h 15 min »), mis à jour chaque minute ; à
+ * l'échéance, invite à recharger la page. Sans JavaScript, la date d'ouverture reste écrite en toutes lettres.
+ */
+composant('compteARebours', (cible, m) => ({
+    texte: '',
+    init() {
+        this.maj();
+        this.minuteur = setInterval(() => this.maj(), 30000);
+    },
+    destroy() {
+        clearInterval(this.minuteur);
+    },
+    maj() {
+        const reste = Math.floor((new Date(cible).getTime() - Date.now()) / 60000);
+        if (reste <= 0) {
+            this.texte = m.imminent;
+            clearInterval(this.minuteur);
+            return;
+        }
+        const j = Math.floor(reste / 1440);
+        const h = Math.floor((reste % 1440) / 60);
+        const min = reste % 60;
+        this.texte = [m.dans, j ? `${j} ${m.jours}` : '', (j || h) ? `${h} ${m.heures}` : '', `${min} ${m.minutes}`].filter(Boolean).join(' ');
+    },
+}));
+
+/*
+ * Aperçu d'un texte mis en forme (Markdown léger) : rendu demandé au serveur, qui neutralise tout HTML saisi ; le
+ * résultat (déjà nettoyé) remplace l'aperçu. En cas d'échec, l'aperçu précédent reste affiché.
+ */
+composant('apercuTexte', (url) => ({
+    async maj(texte) {
+        try {
+            const reponse = await envoyer(url, { texte });
+            if (reponse.ok) {
+                this.$refs.rendu.innerHTML = (await reponse.json()).html;
+            }
+        } catch {
+            // Aperçu inchangé.
+        }
+    },
+}));
+
 // Vérification d'identité : aperçu de la photo avant envoi, format et taille contrôlés (le serveur revérifie).
 composant('pieceKyc', ({ maxOctets, messages }) => ({
     apercu: null,

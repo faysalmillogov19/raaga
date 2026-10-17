@@ -1149,9 +1149,20 @@ return [
         'lire_reglement' => 'Lire le règlement de la campagne',
         'vide_titre' => 'Aucune campagne de réservation ouverte',
         'vide' => 'Les campagnes de réservation des boutiques sont annoncées sur cette page et dans les actualités.',
-        'a_venir' => 'Les réservations ouvriront le :date. Le plan ci-dessous est consultable dès maintenant.',
-        'fermee_titre' => 'Réservations clôturées',
-        'fermee' => 'La période de réservation de cette campagne est terminée.',
+        // État de la campagne affiché au public (CampagneBoutiques::etatPublic()).
+        'etats' => [
+            'bientot' => ['badge' => 'Bientôt ouverte', 'titre' => 'Les réservations ouvrent bientôt.', 'le' => 'Ouverture le :date',
+                'plan' => 'Le plan ci-dessous est consultable dès maintenant : repérez votre boutique à l’avance.',
+                'date_a_venir' => 'La date d’ouverture sera annoncée sur cette page. Le plan ci-dessous est consultable dès maintenant.'],
+            'ouverte' => ['badge' => 'Réservations ouvertes', 'texte' => 'Réservations ouvertes jusqu’au :fin. Choisissez une boutique disponible sur le plan.'],
+            'terminee' => ['badge' => 'Terminée', 'texte' => 'La période de réservation de cette campagne est terminée.'],
+        ],
+        // Compte à rebours avant l'ouverture (écrit par le navigateur).
+        'compte_a_rebours' => ['dans' => 'dans', 'jours' => 'j', 'heures' => 'h', 'minutes' => 'min', 'imminent' => 'ouverture imminente, rechargez la page'],
+        'independance_court' => 'Réserver une boutique ne donne aucun droit sur les actions, et les actions ne donnent aucune priorité pour obtenir une boutique.',
+        'tout_savoir' => 'Tout savoir sur la campagne',
+        'tout_savoir_lien' => 'Comment ça marche, pièces, paiement',
+        'presentation' => 'Présentation de la campagne',
         'plan' => [
             'titre' => 'Plan des boutiques',
             'site' => 'Site',

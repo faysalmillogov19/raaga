@@ -367,6 +367,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::BoutiquesVoir->value);
             Route::get('/creer', 'create')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.create');
             Route::post('/', 'store')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.store');
+            // Aperçu de la présentation de la campagne (mise en forme simple, HTML neutralisé).
+            Route::post('/apercu', 'apercu')->middleware(['can:'.Droit::BoutiquesSaisir->value, 'throttle:120,1'])->name('.apercu');
             // Réservations prêtes à attribuer, toutes campagnes (VALIDATEUR : menu « Boutiques › Attributions à faire »).
             Route::get('/attributions', 'attributions')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.attributions');
             Route::get('/{campagne}', 'show')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesVoir->value)->name('.show');

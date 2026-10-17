@@ -21,11 +21,13 @@ use App\Services\Backoffice\RegleGestionException;
 use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Parametrage\WorkflowParametrage;
 use App\Support\BadgeStatut;
+use App\Support\MarkdownLeger;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
 use App\Support\Tableau\ResultatTableau;
 use App\Support\Tableau\Tableau;
 use Closure;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +74,15 @@ class CampagnesBoutiquesController extends Controller
             ->departage(fn ($q) => $q->orderByDesc('id'))
             ->unite(__('admin.boutiques.unite'))
             ->repondre($request, fn (ResultatTableau $t) => view('admin.boutiques.index', ['tableau' => $t]));
+    }
+
+    /** Aperçu de la présentation (Markdown léger) : le même rendu que la page publique, tout HTML saisi neutralisé. */
+    public function apercu(Request $request): JsonResponse
+    {
+        Gate::authorize(Droit::BoutiquesSaisir->value);
+        $texte = (string) $request->validate(['texte' => ['nullable', 'string', 'max:2000']])['texte'];
+
+        return response()->json(['html' => (string) MarkdownLeger::html($texte)]);
     }
 
     public function create(): View

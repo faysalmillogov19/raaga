@@ -23,9 +23,24 @@
             <h2 id="s-campagne" class="!text-[1.15rem]">{{ __('admin.boutiques.sections.campagne') }}</h2>
             <div class="mt-3 grid gap-4 lg:grid-cols-2">
                 <x-admin.champ nom="nom" :libelle="ucfirst($c['nom'])" :valeur="$campagne->nom" required maxlength="150" class="lg:col-span-2" />
-                <div class="formulaire-champ !mt-0 lg:col-span-2">
+                {{-- Présentation : mise en forme simple (titres, listes, gras), aperçu rendu par le serveur (HTML neutralisé). --}}
+                <div class="formulaire-champ !mt-0 lg:col-span-2" x-data="apercuTexte(@js(route('admin.boutiques.apercu')))" data-apercu-description>
                     <label for="description">{{ ucfirst($c['description']) }}</label>
-                    <textarea id="description" name="description" rows="3" maxlength="2000" class="champ @error('description') est-invalide @enderror">{{ old('description', $campagne->description) }}</textarea>
+                    <p id="description-aide" class="texte-carte">{{ __('admin.boutiques.aides.description') }}</p>
+                    <div class="apercu-texte-grille mt-2">
+                        <textarea id="description" name="description" rows="10" maxlength="2000" aria-describedby="description-aide"
+                                  @input.debounce.400ms="maj($event.target.value)" class="champ @error('description') est-invalide @enderror">{{ old('description', $campagne->description) }}</textarea>
+                        <div class="apercu-texte" aria-live="polite">
+                            <p class="apercu-texte-titre">{{ __('admin.boutiques.aides.apercu') }}</p>
+                            <div class="texte-riche" x-ref="rendu" data-apercu>
+                                @if (filled(old('description', $campagne->description)))
+                                    {{ \App\Support\MarkdownLeger::html(old('description', $campagne->description)) }}
+                                @else
+                                    <p class="texte-carte">{{ __('admin.boutiques.aides.apercu_vide') }}</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                     @error('description') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 </div>
                 <x-admin.champ nom="date_ouverture" :libelle="ucfirst($c['date_ouverture'])" type="datetime-local" :valeur="$dateHeure($campagne->date_ouverture)" required />

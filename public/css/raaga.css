@@ -726,3 +726,114 @@ html:has(body.adm) {
     border-radius: 10px;
     background: var(--zebra, #F1F4F2);
 }
+
+/* « Obtenir une boutique » : résumé de la campagne en tête (état, dates, limite), puis le plan. */
+.boutiques-resume {
+    padding: 20px;
+}
+.boutiques-resume-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+}
+.boutiques-etat {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 2px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: .875rem;
+}
+.boutiques-etat-bientot { background: #FDF0DC; color: #7A4A06; }
+.boutiques-etat-ouverte { background: var(--charte-vert-pale, #E8F4EC); color: var(--charte-vert-fonce, #005C2B); }
+.boutiques-etat-terminee { background: #ECEFED; color: #3D4A43; }
+.boutiques-annonce {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-left: 4px solid #D9A21B;
+    background: #FFF8EA;
+    border-radius: 0 10px 10px 0;
+}
+.boutiques-annonce > * + * { margin-top: 4px; }
+.boutiques-annonce-ouverte {
+    border-left-color: var(--charte-vert, #00843D);
+    background: var(--charte-vert-pale, #E8F4EC);
+    font-weight: 600;
+    color: var(--charte-vert-fonce, #005C2B);
+}
+.boutiques-annonce-terminee {
+    border-left-color: #8A968F;
+    background: #F2F4F3;
+}
+.boutiques-faits {
+    margin-top: 14px;
+    padding-left: 1.2rem;
+    list-style: disc;
+    display: grid;
+    gap: 4px;
+}
+
+/* « Tout savoir sur la campagne » : sections repliables. */
+.boutiques-repli {
+    margin-top: 12px;
+    border: 1px solid #DCE5DF;
+    border-radius: 12px;
+    background: #fff;
+}
+.boutiques-repli > summary {
+    cursor: pointer;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    font-weight: 700;
+    color: #18201C;
+}
+.boutiques-repli > summary:focus-visible {
+    outline: 3px solid var(--charte-vert, #00843D);
+    outline-offset: 2px;
+}
+.boutiques-repli[open] > summary {
+    border-bottom: 1px solid #DCE5DF;
+}
+.boutiques-repli > :not(summary) {
+    margin: 14px 16px 16px;
+}
+
+/* Texte mis en forme (Markdown léger, MarkdownLeger) : titres, listes, paragraphes. */
+.texte-riche {
+    max-width: 48rem;
+    line-height: 1.6;
+}
+.texte-riche > * + * { margin-top: .75rem; }
+.texte-riche h3 { font-size: 1.15rem; font-weight: 700; margin-top: 1.25rem; }
+.texte-riche h4 { font-size: 1rem; font-weight: 700; margin-top: 1rem; }
+.texte-riche ul { list-style: disc; padding-left: 1.3rem; }
+.texte-riche ol { list-style: decimal; padding-left: 1.4rem; }
+.texte-riche li + li { margin-top: .25rem; }
+
+/* Formulaire de campagne : présentation et son aperçu côte à côte (empilés sur mobile). */
+.apercu-texte-grille {
+    display: grid;
+    gap: 14px;
+}
+@media (min-width: 1024px) {
+    .apercu-texte-grille { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+.apercu-texte {
+    border: 1px dashed var(--line, #DCE5DF);
+    border-radius: 10px;
+    padding: 12px 14px;
+    min-height: 120px;
+    overflow-wrap: anywhere;
+}
+.apercu-texte-titre {
+    font-size: .8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--muted, #5A6672);
+    margin-bottom: 6px;
+}

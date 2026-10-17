@@ -71,13 +71,19 @@ class LimitesParTypeTest extends TestCase
         return $this->actingAs($citoyen)->get(route('boutiques', ['niveau' => 'RC', 'bloc' => 'BP']))->assertOk();
     }
 
+    /** Limites en clair : nom du type et nombre (« Boutique (1), Magasin (1) »). */
+    private function enClair(array $codes, int $n = 1): string
+    {
+        return collect($codes)->map(fn ($c) => $this->types[$c]->libelle.' ('.$n.')')->implode(', ');
+    }
+
     public function test_un_de_chaque_type_accepte_et_deuxieme_du_meme_type_refuse(): void
     {
         $citoyen = $this->citoyen();
-        $this->plan($citoyen)->assertSee('Vous pouvez encore réserver : 1 PV, 1 PP, 1 PF.');
+        $this->plan($citoyen)->assertSee('Vous pouvez encore réserver : '.$this->enClair(['PV', 'PP', 'PF']).'.');
 
         Boutiques::reserver($this, $citoyen, $this->boutique(1))->assertSessionHasNoErrors();
-        $plan = $this->plan($citoyen)->assertSee('Vous pouvez encore réserver : 1 PP, 1 PF.');
+        $plan = $this->plan($citoyen)->assertSee('Vous pouvez encore réserver : '.$this->enClair(['PP', 'PF']).'.');
         // PV : visibles, plus réservables pour lui ; PP et PF : toujours liés au récapitulatif.
         $html = $plan->getContent();
         $this->assertStringContainsString('data-limite-atteinte', $html);
@@ -95,7 +101,7 @@ class LimitesParTypeTest extends TestCase
 
         // Visiteur : les limites seules.
         $this->app['auth']->forgetGuards();
-        $this->get(route('boutiques'))->assertOk()->assertSee('Limite par personne : 1 PV, 1 PP, 1 PF.');
+        $this->get(route('boutiques'))->assertOk()->assertSee('Limite par personne : '.$this->enClair(['PV', 'PP', 'PF']).'.');
     }
 
     public function test_limite_controlee_sur_le_numero_de_piece_meme_depuis_un_autre_compte(): void
@@ -144,7 +150,7 @@ class LimitesParTypeTest extends TestCase
         $this->travel(73)->hours();
         $this->artisan('raaga:expirer-reservations')->assertSuccessful();
         $this->assertSame(StatutReservationBoutique::Expiree, ReservationBoutique::query()->where('boutique_id', $this->boutique(1)->id)->sole()->statut);
-        $this->plan($citoyen)->assertSee('Vous pouvez encore réserver : 1 PV, 1 PP, 1 PF.');
+        $this->plan($citoyen)->assertSee('Vous pouvez encore réserver : '.$this->enClair(['PV', 'PP', 'PF']).'.');
         Boutiques::reserver($this, $citoyen, $this->boutique(2))->assertSessionHasNoErrors();
 
         // Annulation : la place est libérée aussi.

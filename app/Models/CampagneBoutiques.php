@@ -219,6 +219,23 @@ class CampagneBoutiques extends Model implements Parametrable
         return $this->hasMany(ReservationBoutique::class, 'campagne_boutiques_id');
     }
 
+    /**
+     * État affiché au public (page « Obtenir une boutique ») :
+     *  - « bientot » : confirmée, ou ouverte avant sa date d'ouverture ; compte à rebours si cette date est à venir ;
+     *  - « ouverte » : réservations possibles maintenant ;
+     *  - « terminee » : clôturée, ou ouverte mais sa période est passée.
+     * Une campagne en brouillon ou soumise n'est jamais montrée au public.
+     */
+    public function etatPublic(): string
+    {
+        return match (true) {
+            $this->accepteReservations() => 'ouverte',
+            $this->statut === StatutCampagneBoutiques::Confirmee,
+            $this->statut === StatutCampagneBoutiques::Ouverte && $this->date_ouverture?->isFuture() => 'bientot',
+            default => 'terminee',
+        };
+    }
+
     /** Réservations ouvertes : campagne au statut OUVERTE et dans sa période (date et heure). */
     public function accepteReservations(): bool
     {

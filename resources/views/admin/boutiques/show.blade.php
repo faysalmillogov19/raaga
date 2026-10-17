@@ -72,7 +72,7 @@
                 <dt>{{ ucfirst($libelles['date_ouverture']) }}</dt><dd>{{ $campagne->date_ouverture->format('d/m/Y H:i') }}</dd>
                 <dt>{{ ucfirst($libelles['date_cloture']) }}</dt><dd>{{ $campagne->date_cloture->format('d/m/Y H:i') }}</dd>
                 @if ($campagne->description)
-                    <dt>{{ ucfirst($libelles['description']) }}</dt><dd class="whitespace-pre-line">{{ $campagne->description }}</dd>
+                    <dt>{{ ucfirst($libelles['description']) }}</dt><dd class="texte-riche">{{ \App\Support\MarkdownLeger::html($campagne->description) }}</dd>
                 @endif
             </dl>
         </section>

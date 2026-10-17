@@ -1,5 +1,7 @@
 {{--
-    Boutiques du marché, au premier arrivé : campagne, choix du site, du niveau et du bloc, puis plan schématique généré
+    Boutiques du marché, au premier arrivé. En tête : résumé de la campagne (état avec compte à rebours avant l'ouverture,
+    dates, limite par personne en clair), puis directement le plan ; en bas, « Tout savoir » en sections repliables
+    (présentation mise en forme, étapes, indépendance avec les actions). Plan : choix du site, du niveau et du bloc, plan schématique généré
     depuis la base (vrais codes, statut en couleur et en toutes lettres, sigle du type, légende), filtre par type. Détail
     de chaque emplacement au survol ou au clic (type, surface, observations, montants). Aucune donnée personnelle : seul
     le statut de chaque boutique est public. Une boutique disponible mène à son récapitulatif et à la réservation.
@@ -15,25 +17,45 @@
     <x-public.page-entete :titre="$titre" :intro="$b['intro']" :fil="[['libelle' => $titre]]" />
 
     <div class="conteneur py-8 tab:py-12">
-        <x-public.alerte variante="attention" :titre="$b['independance_titre']" class="mb-8">{{ $b['independance'] }}</x-public.alerte>
-
         @if (! $campagne)
             <x-etat-vide icone="boutiques" :titre="$b['vide_titre']" :lien="route('faq')" :libelle-lien="__('public.etats_vides.liens.faq')">{{ $b['vide'] }}</x-etat-vide>
         @else
-            <section aria-labelledby="campagne-titre">
-                <h2 id="campagne-titre">{{ $campagne->nom }}</h2>
-                <p class="mt-1 font-semibold text-vert-fonce">{{ __('public.boutiques.periode', ['debut' => $campagne->date_ouverture->format('d/m/Y à H\hi'), 'fin' => $campagne->date_cloture->format('d/m/Y à H\hi')]) }}</p>
-                <p class="mt-2">{{ $b['premier_arrive'] }}</p>
-                <p class="mt-2 font-semibold text-encre" data-limites>{{ $limites['resume'] }}</p>
-                @if ($campagne->description)
-                    <p class="mt-3 max-w-3xl whitespace-pre-line leading-relaxed">{{ $campagne->description }}</p>
+            @php
+                $etat = $campagne->etatPublic();
+            @endphp
+            {{-- Résumé : la campagne, son état (avec compte à rebours avant l'ouverture), les dates, la limite par personne. --}}
+            <section class="boutiques-resume carte" aria-labelledby="campagne-titre" data-etat-campagne="{{ $etat }}">
+                <div class="boutiques-resume-entete">
+                    <h2 id="campagne-titre" class="!text-xl">{{ $campagne->nom }}</h2>
+                    <span class="boutiques-etat boutiques-etat-{{ $etat }}">{{ $b['etats'][$etat]['badge'] }}</span>
+                </div>
+                @if ($etat === 'bientot')
+                    <div class="boutiques-annonce" data-campagne-fermee>
+                        <p class="font-bold text-encre">{{ $b['etats']['bientot']['titre'] }}</p>
+                        @if ($campagne->date_ouverture?->isFuture())
+                            <p x-data="compteARebours(@js($campagne->date_ouverture->toIso8601String()), @js($b['compte_a_rebours']))" data-compte-a-rebours>
+                                {{ __('public.boutiques.etats.bientot.le', ['date' => $campagne->date_ouverture->translatedFormat('j F Y à H\hi')]) }}
+                                <span x-show="texte" x-cloak> · <strong x-text="texte"></strong></span>
+                            </p>
+                            <p class="texte-carte">{{ $b['etats']['bientot']['plan'] }}</p>
+                        @else
+                            <p>{{ $b['etats']['bientot']['date_a_venir'] }}</p>
+                        @endif
+                    </div>
+                @elseif ($etat === 'ouverte')
+                    <p class="boutiques-annonce boutiques-annonce-ouverte" data-campagne-ouverte>
+                        {{ __('public.boutiques.etats.ouverte.texte', ['fin' => $campagne->date_cloture->translatedFormat('j F Y à H\hi')]) }}
+                    </p>
+                @else
+                    <p class="boutiques-annonce boutiques-annonce-terminee" data-campagne-fermee>{{ $b['etats']['terminee']['texte'] }}</p>
                 @endif
-                <a href="{{ route('boutiques.reglement') }}" class="lien-fort mt-2 inline-block">{{ $b['lire_reglement'] }}</a>
-                @if (! $ouverte)
-                    <x-public.alerte variante="info" class="mt-4" data-campagne-fermee>
-                        {{ $campagne->date_ouverture->isFuture() ? __('public.boutiques.a_venir', ['date' => $campagne->date_ouverture->translatedFormat('j F Y à H\hi')]) : $b['fermee'] }}
-                    </x-public.alerte>
-                @endif
+                <ul class="boutiques-faits">
+                    <li>{{ __('public.boutiques.periode', ['debut' => $campagne->date_ouverture->format('d/m/Y à H\hi'), 'fin' => $campagne->date_cloture->format('d/m/Y à H\hi')]) }}</li>
+                    <li>{{ $b['premier_arrive'] }}</li>
+                    <li class="font-semibold text-encre" data-limites>{{ $limites['resume'] }}</li>
+                    <li>{{ $b['independance_court'] }}</li>
+                </ul>
+                <p class="mt-3 flex flex-wrap gap-x-6 gap-y-2"><a href="#tout-savoir" class="lien-fort">{{ $b['tout_savoir_lien'] }}</a><a href="{{ route('boutiques.reglement') }}" class="lien-fort">{{ $b['lire_reglement'] }}</a></p>
             </section>
 
             @if ($mesReservations->isNotEmpty())
@@ -46,19 +68,6 @@
                     </ul>
                 </section>
             @endif
-
-            <section class="mt-8" aria-labelledby="comment-titre">
-                <h2 id="comment-titre" class="!text-xl">{{ $b['comment_titre'] }}</h2>
-                <ol class="mt-4 grid gap-3 tab:grid-cols-2 lg:grid-cols-4">
-                    @foreach ($b['etapes'] as $i => $etape)
-                        <li class="carte p-4">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-vert-fonce font-bold text-white" aria-hidden="true">{{ $i + 1 }}</span>
-                            <p class="mt-2 font-bold text-encre">{{ $etape['titre'] }}</p>
-                            <p class="texte-carte">{{ $etape['texte'] }}</p>
-                        </li>
-                    @endforeach
-                </ol>
-            </section>
 
             <section class="mt-10" aria-labelledby="plan-titre" data-plan x-data="{ d: null }">
                 <h2 id="plan-titre" class="!text-xl">{{ $p['titre'] }}</h2>
@@ -159,6 +168,34 @@
                         </template>
                     </section>
                 @endif
+            </section>
+
+            {{-- Tout savoir : présentation de la campagne (mise en forme simple), étapes, indépendance avec les actions. --}}
+            <section id="tout-savoir" class="mt-10" aria-labelledby="tout-savoir-titre">
+                <h2 id="tout-savoir-titre" class="!text-xl">{{ $b['tout_savoir'] }}</h2>
+                @if ($campagne->description)
+                    <details class="boutiques-repli" data-presentation>
+                        <summary>{{ $b['presentation'] }}</summary>
+                        <div class="texte-riche">{{ \App\Support\MarkdownLeger::html($campagne->description) }}</div>
+                    </details>
+                @endif
+                <details class="boutiques-repli">
+                    <summary>{{ $b['comment_titre'] }}</summary>
+                    <ol class="mt-2 grid gap-3 tab:grid-cols-2 lg:grid-cols-4">
+                        @foreach ($b['etapes'] as $i => $etape)
+                            <li class="carte p-4">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-vert-fonce font-bold text-white" aria-hidden="true">{{ $i + 1 }}</span>
+                                <p class="mt-2 font-bold text-encre">{{ $etape['titre'] }}</p>
+                                <p class="texte-carte">{{ $etape['texte'] }}</p>
+                            </li>
+                        @endforeach
+                    </ol>
+                </details>
+                <details class="boutiques-repli">
+                    <summary>{{ $b['independance_titre'] }}</summary>
+                    <p>{{ $b['independance'] }}</p>
+                </details>
+                <p class="mt-4"><a href="{{ route('boutiques.reglement') }}" class="lien-fort">{{ $b['lire_reglement'] }}</a></p>
             </section>
         @endif
     </div>

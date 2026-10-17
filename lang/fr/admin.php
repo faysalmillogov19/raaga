@@ -2462,6 +2462,9 @@ return [
             'max_boutiques_par_personne' => 'nombre maximum de boutiques par personne (ancien paramètre)',
         ],
         'aides' => [
+            'description' => 'Mise en forme simple : « ## Titre », « - élément de liste » ou « 1. étape », « **gras** », « *italique* », une ligne vide entre deux paragraphes. Le code HTML n’est jamais interprété.',
+            'apercu' => 'Aperçu (tel que les citoyens le verront)',
+            'apercu_vide' => 'L’aperçu apparaît ici dès que vous écrivez.',
             'types' => 'Seules les boutiques des types cochés, sur les sites cochés, sont proposées. La chambre froide mutualisée (CF) n’est jamais proposée.',
             'sites' => 'Toutes les boutiques réservables des sites cochés sont proposées sur le plan, au premier arrivé. Caution (montant de confirmation) et avance (due avant la signature du contrat) : grille tarifaire confirmée de chaque site.',
             'limites' => 'Pour chaque type coché : nombre maximum d’emplacements par personne (1 par défaut, au moins 1). Contrôlé sur le compte et sur le numéro de pièce (CNIB, CIB-AES ou passeport) d’une personne physique, ou sur l’IFU d’une personne morale ; une réservation annulée ou expirée ne compte plus.',
