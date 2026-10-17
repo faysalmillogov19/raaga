@@ -154,11 +154,13 @@ final class Tableau
             return $this->exporter($request);
         }
         $resultat = $this->traiter($request);
-        if ($request->header('X-Tableau') === $this->id) {
-            return response()->view('components.tableau-resultats', ['t' => $resultat]);
-        }
+        // Demande de mise à jour du tableau (en-tête X-Tableau = identifiant du tableau) : le seul fragment des résultats,
+        // confirmé par l'en-tête X-Tableau-Fragment ; sinon la page complète. Vary : un cache ne confond jamais les deux.
+        $reponse = $request->header('X-Tableau') === $this->id
+            ? response()->view('components.tableau-resultats', ['t' => $resultat])->header('X-Tableau-Fragment', $this->id)
+            : response($vue($resultat));
 
-        return $vue($resultat);
+        return $reponse->setVary('X-Tableau', false);
     }
 
     public function traiter(Request $request): ResultatTableau

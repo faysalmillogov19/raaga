@@ -346,9 +346,13 @@ composant('tableau', () => ({
             }
         });
     },
+    // Racine du composant (data-tableau) : this.$el désigne l'élément d'où part l'événement (lien, liste, formulaire).
+    get racine() {
+        return this.$root;
+    },
     soumettre() {
         const url = new URL(this.$refs.formulaire.action, window.location.origin);
-        const lignesDefaut = this.$el.dataset.lignesDefaut ?? '25';
+        const lignesDefaut = this.racine.dataset.lignesDefaut ?? '25';
         new FormData(this.$refs.formulaire).forEach((valeur, cle) => {
             if (String(valeur) !== '' && !(cle === 'lignes' && valeur === lignesDefaut)) {
                 url.searchParams.set(cle, valeur);
@@ -376,21 +380,28 @@ composant('tableau', () => ({
         this.controleur?.abort();
         this.controleur = new AbortController();
         this.charge = true;
+        const id = this.racine.dataset.tableau;
         try {
             const reponse = await fetch(url, {
-                headers: { 'X-Tableau': this.$el.dataset.tableau, 'X-Requested-With': 'XMLHttpRequest' },
+                headers: { 'X-Tableau': id, 'X-Requested-With': 'XMLHttpRequest' },
                 signal: this.controleur.signal,
             });
-            if (!reponse.ok) {
-                throw new Error(String(reponse.status));
+            const html = reponse.ok ? await reponse.text() : '';
+            // Seul le fragment de CE tableau est inséré (confirmé par l'en-tête X-Tableau-Fragment). Page complète, page de
+            // connexion après expiration de session, redirection ou erreur : la page est rechargée normalement à cette adresse.
+            if (!reponse.ok || reponse.redirected || reponse.headers.get('X-Tableau-Fragment') !== id
+                || !html.trimStart().startsWith('<div data-tableau-resultats')) {
+                window.location.href = url;
+
+                return;
             }
-            this.$refs.resultats.innerHTML = await reponse.text();
+            this.$refs.resultats.innerHTML = html;
             window.history.pushState({}, '', url);
             this.$dispatch('tableau-charge');
             // Bouton « Exporter » de l'en-tête de page : il suit le résultat affiché.
             const exporter = this.$refs.resultats.querySelector('[data-tableau-resultats]')?.dataset.export;
             if (exporter) {
-                document.querySelectorAll(`[data-export-tableau="${this.$el.dataset.tableau}"]`).forEach((lien) => { lien.href = exporter; });
+                document.querySelectorAll(`[data-export-tableau="${id}"]`).forEach((lien) => { lien.href = exporter; });
             }
             // Le tri choisi par un en-tête est conservé pour les recherches suivantes.
             this.$refs.formulaire.elements.tri.value = new URL(url, window.location.origin).searchParams.get('tri') ?? '';
@@ -654,16 +665,16 @@ composant('fenetre', () => ({
             });
             if (reponse.status === 422) {
                 const donnees = await reponse.json();
-                this.erreur = this.$el.dataset.messageCorriger;
+                this.erreur = this.$root.dataset.messageCorriger;
                 this.afficherErreurs(formulaire, donnees.errors ?? {});
                 return;
             }
             if (reponse.status === 403) {
-                this.erreur = this.$el.dataset.messageInterdit;
+                this.erreur = this.$root.dataset.messageInterdit;
                 return;
             }
             if (!reponse.ok) {
-                this.erreur = this.$el.dataset.messageErreur;
+                this.erreur = this.$root.dataset.messageErreur;
                 return;
             }
             const type = reponse.headers.get('Content-Type') ?? '';
@@ -688,7 +699,7 @@ composant('fenetre', () => ({
             this.fermer();
             remplacerContenu(html, url, focusId);
         } catch {
-            this.erreur = this.$el.dataset.messageErreur;
+            this.erreur = this.$root.dataset.messageErreur;
         } finally {
             this.envoi = false;
         }
