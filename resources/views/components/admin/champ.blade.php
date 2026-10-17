@@ -19,7 +19,7 @@
 <div {{ $attributes->only('class')->merge(['class' => 'formulaire-champ adm-champ !mt-0']) }}>
     @if (in_array($type, ['radio'], true))
         <fieldset @if ($decrit) aria-describedby="{{ $decrit }}" @endif>
-            <legend class="adm-libelle">@if ($obligatoire)<span class="adm-requis" aria-hidden="true">*</span> @endif{{ $libelle }}</legend>
+            <legend class="adm-libelle">@if ($obligatoire)<x-requis /> @endif{{ $libelle }}</legend>
             <div class="adm-choix">
                 @foreach ($options as $cle => $texte)
                     <label class="adm-option">
@@ -36,10 +36,10 @@
             <input id="{{ $id }}" type="checkbox" name="{{ $nom }}" value="1" @checked((bool) $courante)
                    @if ($type === 'interrupteur') role="switch" class="adm-interrupteur" @endif
                    @if ($decrit) aria-describedby="{{ $decrit }}" @endif @if ($erreur) aria-invalid="true" @endif {{ $attributes->except(['class', 'required']) }}>
-            <span>@if ($obligatoire)<span class="adm-requis" aria-hidden="true">*</span> @endif{{ $libelle }}</span>
+            <span>@if ($obligatoire)<x-requis /> @endif{{ $libelle }}</span>
         </label>
     @else
-        <label for="{{ $id }}" class="adm-libelle">@if ($obligatoire)<span class="adm-requis" aria-hidden="true">*</span> @endif{{ $libelle }}</label>
+        <label for="{{ $id }}" class="adm-libelle">@if ($obligatoire)<x-requis /> @endif{{ $libelle }}</label>
         @if ($type === 'liste')
             <select id="{{ $id }}" name="{{ $nom }}" {{ $controle }} @required($obligatoire)
                     @if ($decrit) aria-describedby="{{ $decrit }}" @endif @if ($erreur) aria-invalid="true" @endif>

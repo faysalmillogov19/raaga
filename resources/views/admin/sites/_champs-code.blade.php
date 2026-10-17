@@ -1,7 +1,7 @@
 {{-- Éléments du code boutique hors numéro : niveau et bloc. Variables : $prefixe (identifiants), $boutique (valeurs, ou null). --}}
 @php($b = __('admin.sites.boutiques'))
 <div class="formulaire-champ !mt-0">
-    <label for="{{ $prefixe }}-niveau"><span class="adm-requis" aria-hidden="true">*</span> {{ $b['niveau'] }}</label>
+    <label for="{{ $prefixe }}-niveau"><x-requis /> {{ $b['niveau'] }}</label>
     <select id="{{ $prefixe }}-niveau" name="niveau" class="champ @error('niveau') est-invalide @enderror" required>
         <option value="">{{ __('admin.sites.formulaire.choisir') }}</option>
         {{-- Niveaux validés et actifs, plus le niveau actuel de la boutique s'il a été désactivé. --}}

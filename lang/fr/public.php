@@ -6,6 +6,11 @@
  */
 
 return [
+    // Champs obligatoires : texte lu par les lecteurs d'écran après l'astérisque, mention en haut des formulaires.
+    'champs_obligatoires' => [
+        'obligatoire' => 'obligatoire',
+        'mention' => 'Champ obligatoire',
+    ],
 
     // Nom, sous-titre, devise, contacts… : paramètres de la plateforme (back-office), jamais ici.
     'site' => [

@@ -7,7 +7,7 @@
     @csrf
 
     <div class="formulaire-champ">
-        <label for="telephone"><span class="champ-requis" aria-hidden="true">*</span> {{ __('public.compte.telephone') }}</label>
+        <label for="telephone"><x-requis /> {{ __('public.compte.telephone') }}</label>
         <div class="prefixe">
             <span aria-hidden="true">+226</span>
             <input id="telephone" name="telephone" type="tel" inputmode="tel" autocomplete="tel-national"

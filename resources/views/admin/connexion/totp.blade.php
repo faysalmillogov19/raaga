@@ -3,7 +3,7 @@
         @csrf
 
         <div class="formulaire-champ">
-            <label for="code"><span class="champ-requis" aria-hidden="true">*</span> {{ __('admin.connexion.code') }}</label>
+            <label for="code"><x-requis /> {{ __('admin.connexion.code') }}</label>
             <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" required autofocus
                    maxlength="20" class="champ text-[1.3rem] font-bold tracking-[.3em] @error('code') est-invalide @enderror"
                    aria-describedby="code-aide @error('code') code-erreur @enderror">

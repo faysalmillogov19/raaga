@@ -1,0 +1,2 @@
+{{-- Champ obligatoire : astérisque visible (aria-hidden) et texte « obligatoire » lu seulement par les lecteurs d'écran. --}}
+<span class="adm-requis champ-requis" aria-hidden="true" data-requis>*</span><span class="sr-only">{{ __('public.champs_obligatoires.obligatoire') }}</span>

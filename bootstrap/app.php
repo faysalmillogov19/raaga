@@ -3,6 +3,7 @@
 use App\Http\Middleware\AuthentifieBackoffice;
 use App\Http\Middleware\DeconnecterCompteDesactive;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\MentionChampsObligatoires;
 use App\Http\Middleware\ModeMaintenancePublic;
 use App\Http\Middleware\PresentationActions;
 use App\Http\Middleware\SouscriptionActions;
@@ -18,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [DeconnecterCompteDesactive::class, ModeMaintenancePublic::class]);
+        $middleware->web(append: [DeconnecterCompteDesactive::class, ModeMaintenancePublic::class, MentionChampsObligatoires::class]);
 
         $middleware->alias([
             'role' => EnsureUserHasRole::class,

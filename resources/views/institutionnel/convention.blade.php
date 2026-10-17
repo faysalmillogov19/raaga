@@ -41,7 +41,7 @@
                     <form method="POST" action="{{ route('institutionnel.convention.signer', $convention) }}" class="mt-3 flex flex-wrap items-end gap-3">
                         @csrf
                         <div class="formulaire-champ !mt-0">
-                            <label for="code"><span class="champ-requis" aria-hidden="true">*</span> {{ $c('code') }}</label>
+                            <label for="code"><x-requis /> {{ $c('code') }}</label>
                             <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required class="champ w-40 @error('code') est-invalide @enderror">
                         </div>
                         <button type="submit" class="bo-bouton bo-bouton-principal">{{ $c('signer') }}</button>
@@ -51,7 +51,7 @@
                     <form method="POST" action="{{ route('institutionnel.convention.deposer', $convention) }}" enctype="multipart/form-data" class="mt-5 border-t border-ligne pt-4">
                         @csrf
                         <div class="formulaire-champ !mt-0">
-                            <label for="convention_signee"><span class="champ-requis" aria-hidden="true">*</span> {{ $c('deposer') }}</label>
+                            <label for="convention_signee"><x-requis /> {{ $c('deposer') }}</label>
                             <input id="convention_signee" name="convention_signee" type="file" accept="application/pdf" class="champ">
                         </div>
                         <button type="submit" class="bo-bouton bo-bouton-secondaire mt-3">{{ $c('deposer_bouton') }}</button>

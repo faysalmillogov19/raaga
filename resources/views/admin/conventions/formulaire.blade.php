@@ -36,7 +36,7 @@
         @if ($mode === 'avenant')
             <div class="bo-carte !mt-0">
                 <div class="formulaire-champ !mt-0">
-                    <label for="motif"><span class="adm-requis" aria-hidden="true">*</span> {{ __('admin.parametrage.actions.motif') }}</label>
+                    <label for="motif"><x-requis /> {{ __('admin.parametrage.actions.motif') }}</label>
                     <textarea id="motif" name="motif" rows="2" required class="champ @error('motif') est-invalide @enderror">{{ old('motif') }}</textarea>
                     @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 </div>
@@ -53,7 +53,7 @@
             <x-admin.champ nom="nb_actions" :libelle="$champs['nb_actions']" type="number" min="1" :valeur="$convention->nb_actions" required />
             <x-admin.champ nom="prix_unitaire" :libelle="$champs['prix_unitaire']" type="number" min="1" :valeur="$convention->prix_unitaire" required />
             <div class="formulaire-champ !mt-0">
-                <label for="montant_engage"><span class="adm-requis" aria-hidden="true">*</span> {{ $champs['montant_engage'] }}</label>
+                <label for="montant_engage"><x-requis /> {{ $champs['montant_engage'] }}</label>
                 <input id="montant_engage" name="montant_engage" type="number" min="1" required x-model.number="engage" class="champ @error('montant_engage') est-invalide @enderror">
                 @error('montant_engage') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
             </div>

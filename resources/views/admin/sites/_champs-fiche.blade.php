@@ -1,7 +1,7 @@
 {{-- Fiche de la boutique hors code : type, surface, position, coffret, planche, état physique. Variables : $prefixe, $boutique (ou null). --}}
 @php($b = __('admin.sites.boutiques'))
 <div class="formulaire-champ !mt-0">
-    <label for="{{ $prefixe }}-type"><span class="adm-requis" aria-hidden="true">*</span> {{ $b['type'] }}</label>
+    <label for="{{ $prefixe }}-type"><x-requis /> {{ $b['type'] }}</label>
     <select id="{{ $prefixe }}-type" name="type_boutique_id" class="champ @error('type_boutique_id') est-invalide @enderror" required>
         @foreach ($types as $type)
             <option value="{{ $type->id }}" @selected((int) old('type_boutique_id', $boutique?->type_boutique_id) === $type->id)>{{ $type->code ? $type->code.' · ' : '' }}{{ $type->libelle }}</option>
@@ -26,7 +26,7 @@
     @error('position') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
 </div>
 <div class="formulaire-champ !mt-0">
-    <label for="{{ $prefixe }}-etat"><span class="adm-requis" aria-hidden="true">*</span> {{ $b['etat_physique'] }}</label>
+    <label for="{{ $prefixe }}-etat"><x-requis /> {{ $b['etat_physique'] }}</label>
     <select id="{{ $prefixe }}-etat" name="etat_physique" class="champ @error('etat_physique') est-invalide @enderror" required>
         <option value="">{{ __('admin.sites.formulaire.choisir') }}</option>
         @foreach (\App\Enums\EtatPhysiqueBoutique::cases() as $etat)

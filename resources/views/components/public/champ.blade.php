@@ -11,7 +11,7 @@
 @endphp
 
 <div {{ $attributes->only('class') }}>
-    <label for="{{ $id }}" class="block font-semibold text-encre">@if ($obligatoire)<span class="champ-requis" aria-hidden="true">*</span> @endif{{ $libelle }}</label>
+    <label for="{{ $id }}" class="block font-semibold text-encre">@if ($obligatoire)<x-requis /> @endif{{ $libelle }}</label>
     @if ($aide)
         <p id="{{ $id }}-aide" class="texte-carte">{{ $aide }}</p>
     @endif

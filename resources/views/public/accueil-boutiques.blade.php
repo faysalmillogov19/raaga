@@ -77,7 +77,7 @@
                                 <form method="POST" action="{{ route('souscription.bientot.store') }}" class="mt-4 space-y-3" novalidate>
                                     @csrf
                                     <div>
-                                        <label for="annonce-telephone" class="font-semibold"><span class="champ-requis" aria-hidden="true">*</span> {{ __('public.demarches.alerte.telephone') }}</label>
+                                        <label for="annonce-telephone" class="font-semibold"><x-requis /> {{ __('public.demarches.alerte.telephone') }}</label>
                                         <input id="annonce-telephone" name="telephone" type="tel" inputmode="tel" autocomplete="tel" value="{{ old('telephone') }}"
                                                class="champ mt-1" aria-describedby="annonce-telephone-aide">
                                         <p id="annonce-telephone-aide" class="texte-carte">{{ __('public.demarches.alerte.telephone_aide') }}</p>

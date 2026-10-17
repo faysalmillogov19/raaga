@@ -5,5 +5,5 @@
     <input id="{{ $attributes->get('id', $nom) }}" name="{{ $nom }}" type="checkbox"
            {{ $attributes->except(['id', 'class']) }}
            class="h-6 w-6 shrink-0 rounded border-2 border-gris text-vert focus:ring-0">
-    <span class="text-texte">@if ($obligatoire || $attributes->has('required'))<span class="champ-requis" aria-hidden="true">*</span> @endif{{ $libelle }}</span>
+    <span class="text-texte">@if ($obligatoire || $attributes->has('required'))<x-requis /> @endif{{ $libelle }}</span>
 </label>

@@ -43,7 +43,7 @@
                     <form method="POST" action="{{ route('invest.interet') }}" class="mt-4 space-y-4" data-formulaire-interet>
                         @csrf
                         <fieldset>
-                            <legend class="font-bold text-encre"><span class="champ-requis" aria-hidden="true">*</span> {{ $v['attributs']['profil'] }}</legend>
+                            <legend class="font-bold text-encre"><x-requis /> {{ $v['attributs']['profil'] }}</legend>
                             <div class="mt-2 grid gap-2 sm:grid-cols-2">
                                 @foreach ($profils as $profil)
                                     <label class="inline-flex min-h-[44px] items-center gap-3">

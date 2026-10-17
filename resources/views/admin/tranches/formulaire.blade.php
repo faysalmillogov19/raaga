@@ -37,7 +37,7 @@
             <div class="bo-carte !mt-0">
                 <p>{{ $clotureSeule ? __('admin.tranches.formulaire.avenant_cloture') : __('admin.tranches.formulaire.avenant_intro') }}</p>
                 <div class="formulaire-champ mt-4">
-                    <label for="motif"><span class="adm-requis" aria-hidden="true">*</span> {{ __('admin.parametrage.actions.motif') }}</label>
+                    <label for="motif"><x-requis /> {{ __('admin.parametrage.actions.motif') }}</label>
                     <textarea id="motif" name="motif" rows="2" required class="champ @error('motif') est-invalide @enderror">{{ old('motif') }}</textarea>
                     @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 </div>
@@ -131,7 +131,7 @@
                     <x-admin.cases nom="canaux_actifs" :libelle="ucfirst($c['canaux_actifs'])" obligatoire :options="MoyenPaiement::proposables()->pluck('libelle', 'code')->all()" :valeurs="$t->canaux_actifs ?? []" class="lg:col-span-2" />
                     {{-- Délai de paiement : valeur + durée obligatoires ; la valeur en secondes est calculée. --}}
                     <fieldset class="adm-fenetre-grille" data-delai-paiement>
-                        <legend class="adm-plein adm-libelle"><span class="adm-requis" aria-hidden="true">*</span> {{ ucfirst($c['delai_paiement']) }}</legend>
+                        <legend class="adm-plein adm-libelle"><x-requis /> {{ ucfirst($c['delai_paiement']) }}</legend>
                         <x-admin.champ nom="delai_paiement_valeur" :libelle="__('admin.delais.valeur')" type="number" min="1" max="999999" :valeur="$t->delai_paiement_valeur" required />
                         <x-admin.champ nom="delai_paiement_duree" :libelle="__('admin.delais.duree')" type="liste" required :vide="__('admin.delais.choisir_duree')"
                                        :options="App\Models\Duree::toutes()->mapWithKeys(fn ($d) => [$d->code => ucfirst($d->libelle_pluriel)])->all()"

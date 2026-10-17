@@ -70,7 +70,7 @@
                 @if ($slug)<input type="hidden" name="rubrique" value="{{ $slug }}">@endif
                 @if ($suivant)<input type="hidden" name="suivant" value="{{ $suivant }}">@endif
                 <div x-show="rejet" x-cloak class="w-full">
-                    <label for="motif-detail" class="block font-semibold"><span class="adm-requis" aria-hidden="true">*</span> {{ $v['rejeter_ligne'] }}</label>
+                    <label for="motif-detail" class="block font-semibold"><x-requis /> {{ $v['rejeter_ligne'] }}</label>
                     <textarea id="motif-detail" name="motif" rows="3" minlength="5" maxlength="1000" class="champ mt-1" x-bind:required="rejet"></textarea>
                 </div>
                 <x-admin.bouton variante="principal" type="submit" name="decision" value="confirmer" x-show="! rejet">{{ $v['detail']['valider'] }}</x-admin.bouton>

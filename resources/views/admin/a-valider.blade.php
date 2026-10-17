@@ -158,7 +158,7 @@
                 <p class="mt-2" x-show="ligne.decision === 'confirmer'">{{ $v['confirmer_ligne'] }}</p>
                 <template x-if="ligne.decision === 'rejeter'">
                     <div>
-                        <label for="motif-ligne" class="mt-2 block"><span class="adm-requis" aria-hidden="true">*</span> {{ $v['rejeter_ligne'] }}</label>
+                        <label for="motif-ligne" class="mt-2 block"><x-requis /> {{ $v['rejeter_ligne'] }}</label>
                         <textarea id="motif-ligne" name="motif" rows="3" minlength="5" maxlength="1000" required class="champ mt-2"></textarea>
                     </div>
                 </template>

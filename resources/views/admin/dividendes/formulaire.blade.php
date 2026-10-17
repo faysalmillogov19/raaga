@@ -33,7 +33,7 @@
             <div class="bo-carte !mt-0">
                 <p>{{ __('admin.dividendes.formulaire.avenant_intro') }}</p>
                 <div class="formulaire-champ mt-4">
-                    <label for="motif"><span class="adm-requis" aria-hidden="true">*</span> {{ __('admin.parametrage.actions.motif') }}</label>
+                    <label for="motif"><x-requis /> {{ __('admin.parametrage.actions.motif') }}</label>
                     <textarea id="motif" name="motif" rows="2" required class="champ @error('motif') est-invalide @enderror">{{ old('motif') }}</textarea>
                     @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 </div>

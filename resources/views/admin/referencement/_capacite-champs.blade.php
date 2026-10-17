@@ -22,7 +22,7 @@
     @error('zone') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
 </div>
 <div class="formulaire-champ !mt-0">
-    <label for="{{ $px }}-type"><span class="adm-requis" aria-hidden="true">*</span> {{ ucfirst($c['type_boutique_id']) }}</label>
+    <label for="{{ $px }}-type"><x-requis /> {{ ucfirst($c['type_boutique_id']) }}</label>
     <select id="{{ $px }}-type" name="type_boutique_id" class="champ @error('type_boutique_id') est-invalide @enderror" required>
         <option value="">{{ $k['choisir_option'] }}</option>
         @foreach ($listes['types'] as $t)

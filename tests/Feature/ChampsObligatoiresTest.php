@@ -17,7 +17,10 @@ class ChampsObligatoiresTest extends TestCase
 {
     use ConnexionBackoffice, RefreshDatabase;
 
-    private const MARQUE = '#^\s*(@if \([^)]*\))?<span class="(adm|champ)-requis" aria-hidden="true">\*</span>#';
+    private const MARQUE = '#^\s*(@if \([^)]*\))?<x-requis />#';
+
+    /** Rendu de <x-requis /> : astérisque masqué aux lecteurs d'écran, puis « obligatoire » lu seulement par eux. */
+    private const REQUIS = '<span class="adm-requis champ-requis" aria-hidden="true" data-requis>*</span><span class="sr-only">obligatoire</span> ';
 
     public function test_chaque_libelle_d_un_champ_required_ecrit_a_la_main_porte_l_asterisque_devant(): void
     {
@@ -49,26 +52,80 @@ class ChampsObligatoiresTest extends TestCase
 
     public function test_formulaires_rendus_back_office_public_et_inscription(): void
     {
-        $adm = '<span class="adm-requis" aria-hidden="true">*</span> ';
-        $pub = '<span class="champ-requis" aria-hidden="true">*</span> ';
+        $r = self::REQUIS;
 
         // Back-office : composant de champ (astérisque devant) et choix multiples obligatoires.
         $this->connecterBackoffice(Role::Regulateur);
         $this->get(route('admin.boutiques.create'))->assertOk()
-            ->assertSee('class="adm-libelle">'.$adm.'Nom de la campagne', false)
-            ->assertSee('<legend class="formulaire-libelle">'.$adm.'Moyens de paiement de la caution', false)
-            ->assertSee('<legend class="adm-libelle">'.$adm.'Types proposés', false)
+            ->assertSee('class="adm-libelle">'.$r.'Nom de la campagne', false)
+            ->assertSee('<legend class="formulaire-libelle">'.$r.'Moyens de paiement de la caution', false)
+            ->assertSee('<legend class="adm-libelle">'.$r.'Types proposés', false)
             ->assertDontSee('Nom de la campagne <span class="adm-requis"', false);
 
         // Site public : contact (composant et champs écrits à la main) ; un champ facultatif n'a pas d'astérisque.
         $this->app['auth']->forgetGuards();
         $contact = $this->get(route('contact'))->assertOk();
-        $contact->assertSee('text-encre">'.$pub.__('public.contact.formulaire.attributs.nom'), false)
-            ->assertSee('<label for="objet" class="block font-semibold text-encre">'.$pub, false)
-            ->assertDontSee('text-encre">'.$pub.__('public.contact.formulaire.email_facultatif'), false);
+        $contact->assertSee('text-encre">'.$r.__('public.contact.formulaire.attributs.nom'), false)
+            ->assertSee('<label for="objet" class="block font-semibold text-encre">'.$r, false)
+            ->assertDontSee('text-encre">'.$r.__('public.contact.formulaire.email_facultatif'), false);
         // Inscription : le pays de résidence (étape suivante du parcours) et l'acceptation des conditions, exigés par le serveur.
         $vue = file_get_contents(resource_path('views/public/compte/inscription.blade.php'));
-        $this->assertStringContainsString('<label for="pays_residence">'.$pub, $vue);
-        $this->assertStringContainsString('<span>'.$pub.'{!! __(\'public.compte.inscription.conditions\'', $vue);
+        $this->assertStringContainsString('<label for="pays_residence"><x-requis /> ', $vue);
+        $this->assertStringContainsString("<span><x-requis /> {!! __('public.compte.inscription.conditions'", $vue);
+    }
+
+    public function test_astérisque_masque_aux_lecteurs_d_ecran_avec_texte_obligatoire(): void
+    {
+        // Plus aucun astérisque écrit à la main : toutes les vues passent par <x-requis />.
+        foreach (File::allFiles(resource_path('views')) as $fichier) {
+            if (! in_array($fichier->getFilename(), ['requis.blade.php', 'mention-requis.blade.php'], true)) {
+                $this->assertDoesNotMatchRegularExpression('#class="(adm|champ)-requis"#', $fichier->getContents(), $fichier->getRelativePathname());
+            }
+        }
+        $this->connecterBackoffice(Role::Regulateur);
+        $html = $this->get(route('admin.boutiques.create'))->assertOk()->getContent();
+        // Chaque astérisque est aria-hidden ; celui d'un champ est suivi du texte « obligatoire » réservé aux lecteurs
+        // d'écran (celui de la mention « * Champ obligatoire » n'en a pas besoin).
+        preg_match_all('#<span class="adm-requis champ-requis"([^>]*)>\*</span>(<span class="sr-only">obligatoire</span>)?#', $html, $m, PREG_SET_ORDER);
+        $this->assertGreaterThan(3, count($m));
+        foreach ($m as $asterisque) {
+            $this->assertStringContainsString('aria-hidden="true"', $asterisque[1]);
+            if (str_contains($asterisque[1], 'data-requis')) {
+                $this->assertNotEmpty($asterisque[2] ?? '', $asterisque[0]);
+            }
+        }
+    }
+
+    public function test_mention_en_haut_de_chaque_formulaire_avec_un_champ_obligatoire(): void
+    {
+        $mention = '<p class="mention-requis" data-mention-requis><span class="adm-requis champ-requis" aria-hidden="true">*</span> Champ obligatoire</p>';
+        $verifier = function (string $html): int {
+            preg_match_all('#(<form\b[^>]*>)(.*?)</form>#s', $html, $formulaires, PREG_SET_ORDER);
+            $avec = 0;
+            foreach ($formulaires as [$tout, $ouverture, $contenu]) {
+                $requis = str_contains($contenu, 'data-requis');
+                // Une seule mention, en tête du formulaire ; aucune dans un formulaire sans champ obligatoire.
+                $this->assertSame($requis ? 1 : 0, substr_count($contenu, 'data-mention-requis'), $ouverture);
+                if ($requis) {
+                    $this->assertStringStartsWith('<p class="mention-requis"', ltrim($contenu), $ouverture);
+                    $avec++;
+                }
+            }
+
+            return $avec;
+        };
+
+        // Back-office : formulaire de campagne (mention), recherche globale (aucune).
+        $this->connecterBackoffice(Role::Regulateur);
+        $html = $this->get(route('admin.boutiques.create'))->assertOk()->assertSee($mention, false)->getContent();
+        $this->assertGreaterThanOrEqual(1, $verifier($html));
+        $this->assertDoesNotMatchRegularExpression('#<form[^>]*recherche[^>]*>\s*<p class="mention-requis"#', $html);
+
+        // Site public : contact ; espace de connexion du back-office.
+        $this->app['auth']->forgetGuards();
+        $this->assertSame(1, $verifier($this->get(route('contact'))->assertOk()->assertSee($mention, false)->getContent()));
+        $this->assertGreaterThanOrEqual(1, $verifier($this->get(route('admin.connexion'))->assertOk()->getContent()));
+        // Page sans formulaire à champ obligatoire : aucune mention.
+        $this->get(route('accueil'))->assertOk()->assertDontSee('data-mention-requis', false);
     }
 }

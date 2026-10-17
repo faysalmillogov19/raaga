@@ -60,7 +60,7 @@ class ComposantsCharteTest extends TestCase
     public function test_champ(): void
     {
         $this->blade('<x-admin.champ nom="code" libelle="Code du site" obligatoire aide="3 caractères." />')
-            ->assertSee('<span class="adm-requis" aria-hidden="true">*</span>', false)->assertSee('required', false)
+            ->assertSee('<span class="adm-requis champ-requis" aria-hidden="true" data-requis>*</span><span class="sr-only">obligatoire</span> ', false)->assertSee('required', false)
             ->assertSee('aria-describedby="code-aide"', false)->assertSee('3 caractères.');
         $this->withViewErrors(['surface' => 'La surface doit être supérieure à 0.'])
             ->blade('<x-admin.champ nom="surface" libelle="Surface" />')

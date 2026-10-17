@@ -49,7 +49,7 @@
                         <x-slot:declencheur>{{ __('admin.parametrage.actions.soumettre') }}</x-slot:declencheur>
                         <label class="case-conditions" for="montant_conforme_pv">
                             <input id="montant_conforme_pv" name="montant_conforme_pv" type="checkbox" value="1" required>
-                            <span><span class="adm-requis" aria-hidden="true">*</span> {{ __('admin.dividendes.soumission.attestation') }}</span>
+                            <span><x-requis /> {{ __('admin.dividendes.soumission.attestation') }}</span>
                         </label>
                     </x-admin.confirmation>
                 @elseif ($d->champsAvenantAutorises() !== [])

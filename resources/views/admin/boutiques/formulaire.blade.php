@@ -53,7 +53,7 @@
             @error('types.*') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
             {{-- Une ligne par type : case à cocher, puis nombre maximum d'emplacements de ce type par personne (1 par défaut, au moins 1). --}}
             <fieldset class="mt-3" data-types-campagne>
-                <legend class="adm-libelle"><span class="adm-requis" aria-hidden="true">*</span> {{ ucfirst($c['types']) }}</legend>
+                <legend class="adm-libelle"><x-requis /> {{ ucfirst($c['types']) }}</legend>
                 @error('limites.*') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 <div class="mt-2 grid gap-2">
                     @foreach ($typesDisponibles as $t)

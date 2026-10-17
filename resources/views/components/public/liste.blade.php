@@ -8,7 +8,7 @@
 @endphp
 
 <div {{ $attributes->only('class') }}>
-    <label for="{{ $id }}" class="block font-semibold text-encre">@if ($obligatoire || $attributes->has('required'))<span class="champ-requis" aria-hidden="true">*</span> @endif{{ $libelle }}</label>
+    <label for="{{ $id }}" class="block font-semibold text-encre">@if ($obligatoire || $attributes->has('required'))<x-requis /> @endif{{ $libelle }}</label>
     <select id="{{ $id }}" name="{{ $nom }}"
             @if ($erreurs) aria-invalid="true" aria-describedby="{{ $id }}-erreur" @endif
             {{ $attributes->except(['id', 'class'])->merge(['class' => 'mt-1.5 block min-h-[48px] w-full rounded-charte border-2 px-4 text-base text-encre focus:border-vert focus:ring-0 '.($erreurs ? 'border-rouge' : 'border-ligne')]) }}>

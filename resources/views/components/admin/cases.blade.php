@@ -6,7 +6,7 @@
     $cochees = array_map('strval', (array) old($nom, $valeurs));
 @endphp
 <fieldset {{ $attributes->merge(['class' => 'formulaire-champ !mt-0']) }}>
-    <legend class="formulaire-libelle">@if ($obligatoire)<span class="adm-requis" aria-hidden="true">*</span> @endif{{ $libelle }}</legend>
+    <legend class="formulaire-libelle">@if ($obligatoire)<x-requis /> @endif{{ $libelle }}</legend>
     <div class="flex flex-wrap gap-x-5 gap-y-1">
         @foreach ($options as $cle => $texte)
             <label class="inline-flex min-h-[44px] cursor-pointer items-center gap-2">
