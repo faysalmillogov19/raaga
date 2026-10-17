@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'numero', 'type', 'user_id', 'statut', 'courante', 'jeton', 'emise_le', 'valide_jusqu_au', 'suspendue_le', 'revoquee_le',
-    'motif', 'contenu', 'version', 'emise_par', 'remplace_carte_id',
+    'motif', 'contenu', 'version', 'emise_par', 'remplace_carte_id', 'revocation_demandee_le', 'revocation_demandee_par', 'revocation_motif',
     'wallet_google_classe', 'wallet_google_objet', 'wallet_apple_type_pass', 'wallet_apple_serie', 'wallet_apple_jeton_auth', 'wallet_mis_a_jour_le',
 ])]
 #[Hidden(['jeton', 'wallet_apple_jeton_auth'])]
@@ -35,6 +35,7 @@ class Carte extends Model
             'contenu' => 'array',
             'version' => 'integer',
             'wallet_mis_a_jour_le' => 'datetime',
+            'revocation_demandee_le' => 'datetime',
         ];
     }
 

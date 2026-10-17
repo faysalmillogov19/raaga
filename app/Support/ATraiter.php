@@ -11,6 +11,7 @@ use App\Enums\StatutDistribution;
 use App\Enums\StatutDocumentKyc;
 use App\Enums\StatutGrilleTarifaire;
 use App\Enums\StatutKyc;
+use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSite;
 use App\Enums\StatutTranche;
 use App\Enums\StatutTypeBoutique;
@@ -22,6 +23,7 @@ use App\Models\DistributionDividende;
 use App\Models\GrilleTarifaire;
 use App\Models\Institution;
 use App\Models\Niveau;
+use App\Models\ReservationBoutique;
 use App\Models\Site;
 use App\Models\SiteFinance;
 use App\Models\Tranche;
@@ -167,14 +169,21 @@ class ATraiter
 
         // ------------------------------------------------------------------ Dossiers KYC des citoyens
         if ($user->can(Droit::KycTraiter->value)) {
-            foreach (User::query()->where('statut_kyc', StatutKyc::EnAttente)->oldest('updated_at')->limit(self::KYC_MAX)->get() as $c) {
+            // Commerçants déjà attribués : leur carte attend ce dossier, ils passent en tête (cf. tri ci-dessous).
+            $attribues = ReservationBoutique::query()->select('user_id')->where('statut', StatutReservationBoutique::Attribuee);
+            foreach (User::query()->where('statut_kyc', StatutKyc::EnAttente)->whereIn('id', $attribues)->oldest('updated_at')->limit(self::KYC_MAX)->get() as $c) {
+                $e[] = [...self::element('kyc_commercant', 'CIT-'.$c->updated_at->format('Y').'-'.str_pad((string) $c->id, 5, '0', STR_PAD_LEFT), __('admin.tableau.a_traiter.citoyen'),
+                    $c->updated_at, __('admin.tableau.a_traiter.prioritaire'), route('admin.kyc.dossier', $c)), 'prioritaire' => true];
+            }
+            foreach (User::query()->where('statut_kyc', StatutKyc::EnAttente)->whereNotIn('id', $attribues)->oldest('updated_at')->limit(self::KYC_MAX)->get() as $c) {
                 $heures = (int) $c->updated_at->diffInHours(now());
                 $e[] = self::element('kyc', 'CIT-'.$c->updated_at->format('Y').'-'.str_pad((string) $c->id, 5, '0', STR_PAD_LEFT), __('admin.tableau.a_traiter.citoyen'),
                     $c->updated_at, __('admin.tableau.a_traiter.en_attente_depuis', ['h' => $heures]), route('admin.kyc'));
             }
         }
 
-        usort($e, fn ($a, $b) => ($a['date']?->getTimestamp() ?? 0) <=> ($b['date']?->getTimestamp() ?? 0));
+        // Prioritaires d'abord (dossiers KYC des commerçants attribués), puis du plus ancien au plus récent.
+        usort($e, fn ($a, $b) => [! ($a['prioritaire'] ?? false), $a['date']?->getTimestamp() ?? 0] <=> [! ($b['prioritaire'] ?? false), $b['date']?->getTimestamp() ?? 0]);
 
         // Profil de chaque auteur : une seule requête pour tout le bloc.
         $auteurs = User::query()->whereIn('id', array_filter(array_column($e, 'par'), 'is_int'))->get()->keyBy('id');

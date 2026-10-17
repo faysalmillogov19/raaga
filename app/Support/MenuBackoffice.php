@@ -46,7 +46,7 @@ final class MenuBackoffice
         'referencement' => ['sites', 'imports', 'referentiels', 'autorisations'],
         'finances' => ['finances', 'grilles', 'paiements', 'cautions'],
         'campagnes' => ['campagnes', 'attributions'],
-        'contenus' => ['demarches', 'identites'],
+        'contenus' => ['demarches', 'identites', 'cartes'],
     ];
 
     /**
@@ -126,6 +126,8 @@ final class MenuBackoffice
                 ['cle' => 'kyc', 'route' => 'admin.kyc', 'droit' => Droit::KycVoir, 'icone' => 'kyc', 'etape' => 0],
                 // Guichet (Agent de guichet, ADMIN) : vérification des cartes d'accès scannées, dossier du titulaire.
                 ['cle' => 'guichet', 'route' => 'admin.guichet', 'droit' => Droit::CartesVerifier, 'icone' => 'utilisateurs', 'etape' => 0],
+                // Photos des cartes du personnel, validées par l'ADMIN.
+                ['cle' => 'photos_personnel', 'route' => 'admin.cartes.photos', 'droit' => Droit::CartesGerer, 'icone' => 'kyc', 'etape' => 0],
                 ['cle' => 'conformite', 'route' => 'admin.conformite', 'droit' => Droit::ConformiteVoir, 'icone' => 'conformite', 'etape' => 5],
                 ['cle' => 'souscriptions', 'route' => 'admin.souscriptions', 'droit' => Droit::SouscriptionsVoir, 'icone' => 'souscriptions', 'etape' => 5],
                 ['cle' => 'remboursements', 'route' => 'admin.remboursements', 'droit' => Droit::RemboursementsVoir, 'icone' => 'remboursements', 'etape' => 0],

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\BrouillonsController;
 use App\Http\Controllers\Admin\CadreController;
 use App\Http\Controllers\Admin\CampagnesBoutiquesController;
 use App\Http\Controllers\Admin\CapacitesController;
+use App\Http\Controllers\Admin\CartesController;
 use App\Http\Controllers\Admin\CautionsRembourserController;
 use App\Http\Controllers\Admin\ConnexionController;
 use App\Http\Controllers\Admin\ConnexionsController;
@@ -200,6 +201,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/profil', [ProfilController::class, 'show'])->name('profil');
         // Ma carte : carte PERSONNEL émise par le SUPER_ADMIN.
         Route::get('/ma-carte', [MaCarteController::class, 'show'])->name('carte');
+        Route::post('/ma-carte/photo', [MaCarteController::class, 'deposerPhoto'])->middleware('throttle:10,1')->name('carte.photo');
+        // Cartes : révocation (ADMIN, confirmée par le VALIDATEUR), réémission après perte, photos du personnel.
+        Route::controller(CartesController::class)->prefix('cartes')->name('cartes.')->group(function () {
+            Route::post('/{carte}/revocation', 'demanderRevocation')->whereNumber('carte')->middleware('can:'.Droit::CartesGerer->value)->name('revocation');
+            Route::post('/titulaires/{titulaire}/{type}/reemettre', 'reemettre')->whereNumber('titulaire')->whereIn('type', ['commercant', 'actionnaire', 'personnel'])
+                ->middleware('can:'.Droit::CartesGerer->value)->name('reemettre');
+            Route::post('/{carte}/revocation/confirmer', 'confirmer')->whereNumber('carte')->middleware('can:'.Droit::CartesRevocationConfirmer->value)->name('revocation.confirmer');
+            Route::post('/{carte}/revocation/rejeter', 'rejeter')->whereNumber('carte')->middleware('can:'.Droit::CartesRevocationConfirmer->value)->name('revocation.rejeter');
+            Route::get('/photos', 'photos')->middleware('can:'.Droit::CartesGerer->value)->name('photos');
+            Route::post('/photos/{document}/valider', 'validerPhoto')->whereNumber('document')->middleware('can:'.Droit::CartesGerer->value)->name('photos.valider');
+            Route::post('/photos/{document}/refuser', 'refuserPhoto')->whereNumber('document')->middleware('can:'.Droit::CartesGerer->value)->name('photos.refuser');
+        });
         // Guichet : carte scannée (chaque scan tracé), recherche par numéro, dossier du titulaire (aucun montant).
         Route::controller(GuichetController::class)->prefix('guichet')->name('guichet')->middleware('can:'.Droit::CartesVerifier->value)->group(function () {
             Route::get('/', 'index');

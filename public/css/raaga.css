@@ -707,3 +707,19 @@ html:has(body.adm) {
     width: 100%;
     height: auto;
 }
+
+/* Photos des cartes du personnel à valider (ADMIN). */
+.photos-personnel {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    list-style: none;
+    padding: 0;
+}
+.photos-personnel-image {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 10px;
+    background: var(--zebra, #F1F4F2);
+}

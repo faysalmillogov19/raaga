@@ -13,6 +13,7 @@ use App\Enums\StatutTypeBoutique;
 use App\Models\AuditLog;
 use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
+use App\Models\Carte;
 use App\Models\CorrectionPaiement;
 use App\Models\DecisionAvance;
 use App\Models\DecisionPhase;
@@ -165,6 +166,11 @@ final class AValider
             'identites' => ['slug' => 'identites', 'droits' => [Droit::KycAnnulationConfirmer], 'groupable' => false, 'elements' => ['annulation'],
                 'source' => fn (\Closure $e) => VerificationKyc::query()->where('statut', VerificationKyc::ANNULATION_PROPOSEE)->with('user')->get()
                     ->map(fn (VerificationKyc $v) => $e('annulation:'.$v->id, 'annulation', $v->user->name, $v->decide_par, $v->created_at, route('admin.kyc.dossier', $v->user_id)))],
+            // Cartes d'accès : révocations demandées par l'ADMIN (une décision à la fois).
+            'cartes' => ['slug' => 'cartes', 'droits' => [Droit::CartesRevocationConfirmer], 'groupable' => false, 'elements' => ['revocation'],
+                'source' => fn (\Closure $e) => Carte::query()->whereNotNull('revocation_demandee_le')->get()
+                    ->map(fn (Carte $c) => $e('revocation:'.$c->id, 'revocation', $c->numero.' · '.$c->type->label().' · '.($c->contenu['nom'] ?? ''),
+                        $c->revocation_demandee_par, $c->revocation_demandee_le, route('admin.guichet.titulaire', $c->user_id)))],
             // Import entier soumis : une ligne par import qui a encore des sites soumis ; jamais plusieurs imports à la fois.
             'imports' => ['slug' => 'imports', 'droits' => [Droit::SitesConfirmer], 'groupable' => false, 'elements' => ['import'],
                 'source' => fn (\Closure $e) => ImportValidation::query()->enAttente()->with('sites.site')->latest('id')->get()
@@ -382,6 +388,15 @@ final class AValider
                 ], 'pieces' => app(VerificationIdentite::class)->dossier($citoyen)->filter()
                     ->map(fn ($d) => ['libelle' => __('admin.kyc.pieces.'.strtolower($d->type->value)).($d->face ? ' · '.$d->face->value : ''), 'url' => route('admin.kyc.piece', $d)])->values()->all()];
             })(),
+            'revocation' => (function () use ($id) {
+                $c = Carte::query()->findOrFail($id);
+                $x = __('admin.cartes.detail');
+
+                return ['infos' => [
+                    $x['titulaire'] => $c->contenu['nom'] ?? null, $x['numero'] => $c->numero, $x['type'] => $c->type->label(),
+                    $x['statut'] => $c->statut->label(), $x['motif'] => $c->revocation_motif, $x['effet'] => $x['effet_revocation'],
+                ]];
+            })(),
             'attribution' => (function () use ($id) {
                 $r = ReservationBoutique::query()->with(['boutique', 'campagne'])->findOrFail($id);
                 $x = __('admin.boutiques.attributions.colonnes');
@@ -462,7 +477,7 @@ final class AValider
      */
     private const FICHES = ['type' => Droit::ReferentielsBoutiquesVoir, 'niveaux' => Droit::ReferentielsBoutiquesVoir, 'zones' => Droit::ReferentielsBoutiquesVoir,
         'moyens' => Droit::ModalitesPaiementVoir, 'delais' => Droit::ModalitesPaiementVoir, 'unites' => Droit::UnitesVoir,
-        'grille' => Droit::GrilleVoir, 'phase' => Droit::PhaseVoir, 'annulation' => Droit::KycVoir, 'correction' => Droit::PaiementsVoir,
+        'grille' => Droit::GrilleVoir, 'phase' => Droit::PhaseVoir, 'annulation' => Droit::KycVoir, 'correction' => Droit::PaiementsVoir, 'revocation' => Droit::CartesVerifier,
         'remboursement' => Droit::RemboursementsVoir];
 
     /**

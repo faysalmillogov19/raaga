@@ -70,7 +70,7 @@ class MenuValidateurTest extends TestCase
         // « À valider » inchangé : vue d'ensemble, puis les rubriques dans l'ordre des intertitres.
         $aValider = $elements[1]['entrees'];
         $this->assertSame('a_valider', $aValider[0]['cle']);
-        $this->assertSame(['sites', 'imports', 'referentiels', 'autorisations', 'finances', 'grilles', 'paiements', 'cautions', 'campagnes', 'attributions', 'demarches', 'identites'],
+        $this->assertSame(['sites', 'imports', 'referentiels', 'autorisations', 'finances', 'grilles', 'paiements', 'cautions', 'campagnes', 'attributions', 'demarches', 'identites', 'cartes'],
             array_map(fn ($e) => substr($e['cle'], strlen('a_valider_')), array_slice($aValider, 1)));
         $attendus = [
             'gestion_boutiques' => ['attributions_a_faire', 'cautions', 'boutiques', 'sites', 'boutiques_referentiel', 'imports_sites', 'imports_boutiques'],

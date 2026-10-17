@@ -123,6 +123,9 @@ enum Droit: string
     // Cartes d'accès : vérifier une carte scannée (photo, nom, type, statut), l'imprimer au guichet.
     case CartesVerifier = 'cartes.verifier';
     case CartesImprimer = 'cartes.imprimer';
+    // ADMIN : demande de révocation (motif), réémission après perte, photos du personnel ; VALIDATEUR : confirme la révocation.
+    case CartesGerer = 'cartes.gerer';
+    case CartesRevocationConfirmer = 'cartes.revocation_confirmer';
 
     case ConformiteVoir = 'conformite.voir';
     case ConformiteTraiter = 'conformite.traiter';
@@ -186,6 +189,7 @@ enum Droit: string
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter, self::KycAnnulationConfirmer,
+            self::CartesImprimer, self::CartesGerer, self::CartesRevocationConfirmer,
             self::SouscriptionsRapprocher, self::RemboursementsApprouver, self::RemboursementsSuivre, self::RelancesEnvoyer,
             self::PaiementsCorrectionsConfirmer,
             self::ObservationsRepondre,
@@ -211,7 +215,7 @@ enum Droit: string
     {
         return [self::TranchesConfirmer, self::TranchesPiloter, self::DividendesConfirmer, self::DividendesPayer, self::AllocationExecuter,
             self::ConventionsConfirmer, self::AppelsFondsRapprocher, self::KybVerifier, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::SitesConfirmer, self::UnitesConfirmer, self::MoyensPaiementConfirmer,
-            self::PaiementsCorrectionsConfirmer, self::RemboursementsApprouver, self::KycAnnulationConfirmer, self::AvancesDecider];
+            self::PaiementsCorrectionsConfirmer, self::RemboursementsApprouver, self::KycAnnulationConfirmer, self::AvancesDecider, self::CartesRevocationConfirmer];
     }
 
     /**
@@ -225,6 +229,7 @@ enum Droit: string
             [self::TranchesSaisir, self::TranchesConfirmer], [self::DividendesSaisir, self::DividendesConfirmer],
             [self::SouscriptionsRapprocher, self::PaiementsCorrectionsConfirmer], [self::RemboursementsSuivre, self::RemboursementsApprouver],
             [self::KycTraiter, self::KycAnnulationConfirmer], [self::AvancesProposer, self::AvancesDecider],
+            [self::CartesGerer, self::CartesRevocationConfirmer],
         ];
     }
 
@@ -295,7 +300,7 @@ enum Droit: string
             // que le SUPER_ADMIN n'a pas.
             Role::Admin => [...self::support(), self::InteretsVoir,
                 // Vérifications d'identité : voit la pièce, marque le dossier conforme ou douteux (aucun montant).
-                self::KycVoir, self::KycVoirPieces, self::KycTraiter, self::CartesVerifier],
+                self::KycVoir, self::KycVoirPieces, self::KycTraiter, self::CartesVerifier, self::CartesGerer],
             // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre. Droits recentrés le 16/10/2026 : plus
             // d'écran Démarches du site public, Référentiels, Capacités prévues, Grille tarifaire (décidés et consultés dans
             // « À valider »), ni Vérifications d'identité (ADMIN), Souscriptions et Remboursements (CONTRÔLEUR DES PAIEMENTS).
@@ -311,6 +316,8 @@ enum Droit: string
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
                 // KYC : confirme seulement l'annulation d'un dossier douteux, pièces vues depuis « À valider » (le dossier est à l'ADMIN).
                 self::KycVoirPieces, self::KycAnnulationConfirmer,
+                // Cartes d'accès : confirme ou rejette la révocation manuelle demandée par l'ADMIN.
+                self::CartesRevocationConfirmer,
                 self::ConformiteVoir, self::ConformiteTraiter,
                 // Corrections et remboursements : décidés dans « À valider » ; les écrans sont au CONTRÔLEUR DES PAIEMENTS.
                 self::PaiementsCorrectionsConfirmer, self::RemboursementsApprouver,

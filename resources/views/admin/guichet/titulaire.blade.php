@@ -37,6 +37,44 @@
         </section>
     </div>
 
+    @can('cartes.gerer')
+        {{-- ADMIN : révocation (confirmée par le VALIDATEUR), réémission après une perte, à la demande du titulaire. --}}
+        @php($k = __('admin.cartes'))
+        <section class="bo-carte" aria-labelledby="gestion-titre" data-gestion-cartes>
+            <h2 id="gestion-titre" class="!text-[1.15rem]">{{ $k['gestion'] }}</h2>
+            @foreach ($cartes->groupBy(fn ($c) => $c->type->value) as $parType)
+                @php($derniere = $parType->first())
+                <div class="mt-4 border-t border-ligne pt-4">
+                    <p class="font-semibold">{{ $derniere->type->label() }} · {{ $derniere->numero }} · {{ $derniere->statut->label() }}</p>
+                    @if ($derniere->courante)
+                        @if ($derniere->revocation_demandee_le)
+                            <p class="texte-carte mt-1" data-revocation-en-attente>{{ __('admin.cartes.revocation_en_attente', ['date' => $derniere->revocation_demandee_le->format('d/m/Y H:i'), 'motif' => $derniere->revocation_motif]) }}</p>
+                        @endif
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @unless ($derniere->revocation_demandee_le)
+                                <x-admin.confirmation id="revoquer-{{ $derniere->id }}" :titre="$k['revocation']" :message="$k['revocation_aide']"
+                                                      :action="route('admin.cartes.revocation', $derniere)" :bouton="$k['revocation']" motif danger taille="petit">
+                                    <x-slot:declencheur>{{ $k['revocation'] }}</x-slot:declencheur>
+                                </x-admin.confirmation>
+                            @endunless
+                            <x-admin.confirmation id="perte-{{ $derniere->id }}" :titre="$k['perte']" :message="$k['perte_aide']"
+                                                  :action="route('admin.cartes.reemettre', [$titulaire, strtolower($derniere->type->value)])" :bouton="$k['perte']" taille="petit">
+                                <x-slot:declencheur>{{ $k['perte'] }}</x-slot:declencheur>
+                                <p class="mt-2 font-semibold">{{ __('admin.cartes.perte_confirmation', ['numero' => $derniere->numero]) }}</p>
+                            </x-admin.confirmation>
+                        </div>
+                    @elseif ($derniere->motif === \App\Services\Cartes\Cartes::MOTIF_MANUEL)
+                        <p class="texte-carte mt-1">{{ $k['reemettre_aide'] }}</p>
+                        <form method="POST" action="{{ route('admin.cartes.reemettre', [$titulaire, strtolower($derniere->type->value)]) }}" class="mt-3">
+                            @csrf
+                            <x-admin.bouton type="submit" taille="petit" variante="secondaire">{{ $k['reemettre'] }}</x-admin.bouton>
+                        </form>
+                    @endif
+                </div>
+            @endforeach
+        </section>
+    @endcan
+
     <section class="bo-carte" aria-labelledby="emplacements-titre">
         <h2 id="emplacements-titre" class="!text-[1.15rem]">{{ $t['emplacements'] }}</h2>
         @if ($emplacements->isEmpty())

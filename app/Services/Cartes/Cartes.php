@@ -34,6 +34,9 @@ use Illuminate\Support\Str;
  */
 class Cartes
 {
+    /** Motif enregistré pour une révocation manuelle confirmée (le motif saisi par l'ADMIN reste dans revocation_motif). */
+    public const MOTIF_MANUEL = 'manuelle';
+
     public function __construct(private readonly Journal $journal) {}
 
     public static function courante(User $user, TypeCarte $type): ?Carte
@@ -60,6 +63,11 @@ class Cartes
             [$statut, $contenu, $validite] = $attendu;
 
             if ($courante === null) {
+                // Révoquée manuellement (ADMIN, confirmé par le VALIDATEUR) : plus d'émission automatique ; seule une
+                // réémission par l'ADMIN redonne une carte.
+                if (self::revoqueeManuellement($user, $type)) {
+                    return null;
+                }
                 $courante = $this->creer($user, $type, $statut, $contenu, $validite, $acteur);
                 $notifier = $statut === StatutCarte::Active ? $courante : null;
 
@@ -180,9 +188,43 @@ class Cartes
         return $bilan;
     }
 
+    /** Révocation manuelle demandée par l'ADMIN (motif) : la carte reste valide jusqu'à la décision du VALIDATEUR. */
+    public function demanderRevocation(Carte $carte, string $motif, User $admin): void
+    {
+        abort_unless($carte->courante && $carte->revocation_demandee_le === null, 409);
+        $carte->forceFill(['revocation_demandee_le' => now(), 'revocation_demandee_par' => $admin->id, 'revocation_motif' => $motif])->save();
+        $this->journal->ecrire($admin, 'carte.revocation_demandee', 'Carte', $carte->id, null, ['numero' => $carte->numero, 'motif' => $motif]);
+    }
+
+    /** Le VALIDATEUR confirme : révocation immédiate (refusée au scan dès maintenant). */
+    public function confirmerRevocation(Carte $carte, User $validateur): void
+    {
+        DB::transaction(function () use ($carte, $validateur) {
+            $carte = Carte::query()->lockForUpdate()->findOrFail($carte->id);
+            abort_if($carte->revocation_demandee_le === null, 409);
+            $carte->forceFill(['revocation_demandee_le' => null])->save();
+            if ($carte->courante) {
+                $this->revoquer($carte, self::MOTIF_MANUEL, $validateur);
+            }
+        });
+    }
+
+    public function rejeterRevocation(Carte $carte, User $validateur, string $motif): void
+    {
+        abort_if($carte->revocation_demandee_le === null, 409);
+        $carte->forceFill(['revocation_demandee_le' => null, 'revocation_demandee_par' => null, 'revocation_motif' => null])->save();
+        $this->journal->ecrire($validateur, 'carte.revocation_rejetee', 'Carte', $carte->id, null, ['numero' => $carte->numero, 'motif' => $motif]);
+    }
+
+    /** La dernière carte de ce type a-t-elle été révoquée manuellement (sans réémission depuis) ? */
+    public static function revoqueeManuellement(User $user, TypeCarte $type): bool
+    {
+        return Carte::query()->where('user_id', $user->id)->where('type', $type)->latest('id')->value('motif') === self::MOTIF_MANUEL;
+    }
+
     public function revoquer(Carte $carte, string $motif, ?User $acteur): void
     {
-        $carte->forceFill(['statut' => StatutCarte::Revoquee, 'courante' => null, 'revoquee_le' => now(), 'motif' => $motif])->save();
+        $carte->forceFill(['statut' => StatutCarte::Revoquee, 'courante' => null, 'revoquee_le' => now(), 'motif' => $motif, 'revocation_demandee_le' => null])->save();
         $this->journal->ecrire($acteur, 'carte.revoquee', 'Carte', $carte->id, null, ['numero' => $carte->numero, 'motif' => $motif]);
     }
 
