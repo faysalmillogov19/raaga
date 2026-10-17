@@ -206,6 +206,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/rechercher', 'rechercher')->name('.rechercher');
             Route::get('/cartes/{jeton}', 'carte')->where('jeton', '[A-Za-z0-9]{1,100}')->name('.carte');
             Route::get('/titulaires/{titulaire}', 'titulaire')->whereNumber('titulaire')->name('.titulaire');
+            Route::post('/cartes/{jeton}/imprimer', 'imprimer')->where('jeton', '[A-Za-z0-9]{1,100}')->middleware(['can:'.Droit::CartesImprimer->value, 'throttle:20,1'])->name('.imprimer');
         });
         Route::post('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::post('/profil/mot-de-passe', [ProfilController::class, 'motDePasse'])->middleware('throttle:10,1')->name('profil.mot-de-passe');

@@ -56,6 +56,21 @@
         </section>
     @endif
 
+    @if ($valide && $carte->courante)
+        @can('cartes.imprimer')
+            {{-- Impression au guichet : après contrôle de la pièce d'identité (PDF ouvert dans un nouvel onglet). --}}
+            <section class="bo-carte" aria-labelledby="imprimer-titre">
+                <h2 id="imprimer-titre" class="!text-[1.15rem]">{{ $g['imprimer'] }}</h2>
+                <p class="texte-carte mt-1">{{ $g['imprimer_aide'] }}</p>
+                <form method="POST" action="{{ route('admin.guichet.imprimer', $carte->jeton) }}" target="_blank" class="mt-3 space-y-3" data-imprimer>
+                    @csrf
+                    <x-admin.champ type="case" nom="piece_verifiee" :libelle="$g['piece_verifiee']" valeur="1" required />
+                    <x-admin.bouton type="submit" icone="exporter">{{ $g['imprimer'] }}</x-admin.bouton>
+                </form>
+            </section>
+        @endcan
+    @endif
+
     <div class="mt-[18px] flex flex-wrap gap-3">
         @if ($carte)
             <x-admin.bouton :href="route('admin.guichet.titulaire', $carte->user_id)" icone="utilisateur">{{ $g['dossier'] }}</x-admin.bouton>

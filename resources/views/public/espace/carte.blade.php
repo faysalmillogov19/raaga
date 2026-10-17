@@ -1,7 +1,7 @@
 {{--
     « Ma carte » du citoyen : un onglet par type (commerçant, actionnaire) ; carte active, suspendue, ou « En attente de
-    vérification d'identité » tant que le dossier n'est pas conforme. Affichage plein écran et téléchargements : étape
-    suivante.
+    vérification d'identité » tant que le dossier n'est pas conforme. Carte active : QR code, plein écran pour le scan,
+    téléchargement en PDF et en image PNG.
 --}}
 @php
     $m = __('public.cartes.ma_carte');
@@ -13,7 +13,7 @@
     <div class="conteneur max-w-3xl py-8 tab:py-12">
         <nav class="flex flex-wrap gap-2" aria-label="{{ $m['types'] }}">
             @foreach ($cartes as $cle => $c)
-                <a href="{{ route('espace.carte', ['type' => $cle]) }}" @class(['btn-secondaire', 'btn-primaire' => $cle === $choisi]) @if ($cle === $choisi) aria-current="page" @endif>
+                <a href="{{ route('espace.carte', ['type' => $cle]) }}" class="{{ $cle === $choisi ? 'btn-primaire' : 'btn-secondaire' }}" @if ($cle === $choisi) aria-current="page" @endif>
                     {{ \App\Enums\TypeCarte::from(strtoupper($cle))->label() }}
                 </a>
             @endforeach
@@ -28,7 +28,11 @@
                 @if ($carte->statut !== \App\Enums\StatutCarte::Active)
                     <x-public.alerte variante="attention" class="mb-4" :titre="$carte->statut->label()" data-carte-inactive>{{ $m['inactive'] }}</x-public.alerte>
                 @endif
-                <x-carte-raaga :carte="$carte" />
+                @if ($qr)
+                    <x-carte-actions :carte="$carte" :qr="$qr" />
+                @else
+                    <x-carte-raaga :carte="$carte" />
+                @endif
             @endif
         </section>
     </div>

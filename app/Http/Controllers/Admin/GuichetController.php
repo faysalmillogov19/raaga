@@ -8,9 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Carte;
 use App\Models\ReservationBoutique;
 use App\Models\User;
+use App\Notifications\CarteImprimee;
 use App\Services\Audit\Journal;
+use App\Services\Cartes\RenduCarte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -52,6 +55,28 @@ class GuichetController extends Controller
             ['numero' => $carte?->numero, 'resultat' => $carte?->estValide() ? 'valide' : 'non_valide']);
 
         return view('admin.guichet.carte', ['carte' => $carte]);
+    }
+
+    /**
+     * Impression au guichet, après contrôle de la pièce d'identité du titulaire : PDF au format carte bancaire (imprimante
+     * classique ou à cartes), impression tracée au journal d'audit, titulaire notifié.
+     */
+    public function imprimer(Request $request, string $jeton, RenduCarte $rendu): Response|RedirectResponse
+    {
+        Gate::authorize(Droit::CartesImprimer->value);
+        $request->validate(['piece_verifiee' => ['accepted']], ['piece_verifiee.accepted' => __('admin.guichet.erreurs.piece')]);
+        $carte = Carte::query()->where('jeton', $jeton)->with('user')->firstOrFail();
+        if (! $carte->courante || ! $carte->estValide()) {
+            return back()->withErrors(['piece_verifiee' => __('admin.guichet.erreurs.non_imprimable')]);
+        }
+        $this->journal->ecrire($request->user(), 'carte.imprimee', 'Carte', $carte->id, null, ['numero' => $carte->numero, 'version' => $carte->version]);
+        $carte->user->notify(new CarteImprimee($carte));
+
+        return response($rendu->pdf($carte), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$rendu->nomFichier($carte, 'pdf').'"',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     public function titulaire(User $titulaire): View

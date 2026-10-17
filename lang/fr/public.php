@@ -24,7 +24,9 @@ return [
     'cartes' => [
         'types' => ['COMMERCANT' => 'Commerçant', 'ACTIONNAIRE' => 'Actionnaire', 'PERSONNEL' => 'Personnel'],
         'statuts' => ['EN_ATTENTE' => 'En attente', 'ACTIVE' => 'Active', 'SUSPENDUE' => 'Suspendue', 'REVOQUEE' => 'Révoquée', 'EXPIREE' => 'Expirée'],
-        'carte' => ['numero' => 'Carte n°', 'valide_jusqu_au' => 'Valable jusqu’au', 'numero_actionnaire' => 'Actionnaire n°', 'photo' => 'Photo du titulaire'],
+        'carte' => ['numero' => 'Carte n°', 'valide_jusqu_au' => 'Valable jusqu’au', 'numero_actionnaire' => 'Actionnaire n°', 'photo' => 'Photo du titulaire',
+            'carte_acces' => 'Carte d’accès', 'autres_emplacements' => '+ :n autres boutiques', 'qr' => 'QR code de vérification de la carte'],
+        'actions' => ['plein_ecran' => 'Afficher en plein écran', 'pdf' => 'Télécharger en PDF', 'png' => 'Télécharger l’image', 'fermer' => 'Fermer'],
         'ma_carte' => [
             'titre' => 'Ma carte Raaga',
             'types' => 'Types de carte',
@@ -42,6 +44,8 @@ return [
             'message' => 'Votre carte :type n° :numero est disponible dans votre espace : affichez-la ou téléchargez-la.',
             'voir' => 'Voir ma carte',
             'piece_sujet' => 'Votre pièce d’identité expire bientôt',
+            'imprimee_sujet' => 'Votre carte Raaga a été imprimée',
+            'imprimee_message' => 'Votre carte n° :numero a été imprimée au guichet le :date, après contrôle de votre pièce d’identité. Si vous n’étiez pas présent, contactez l’assistance.',
             'piece_message' => 'Votre pièce d’identité expire le :date : votre carte Raaga ne sera plus valable après cette date. Déposez une pièce valide dans votre espace.',
         ],
         // Vérification sans connexion : aucune donnée personnelle.

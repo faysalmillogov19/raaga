@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Role;
+use App\Http\Controllers\CarteFichierController;
 use App\Http\Controllers\CartePhotoController;
 use App\Http\Controllers\Compte\AvanceController;
 use App\Http\Controllers\Compte\BoutiquesController;
@@ -147,6 +148,9 @@ Route::middleware(['actions.presentation', 'auth', 'role:citoyen'])->controller(
 Route::get('/espace/carte/{type?}', [CarteController::class, 'show'])
     ->whereIn('type', ['commercant', 'actionnaire'])->middleware(['auth', 'role:citoyen'])->name('espace.carte');
 Route::get('/cartes/{carte}/photo', CartePhotoController::class)->whereNumber('carte')->middleware('auth')->name('cartes.photo');
+// Téléchargement de sa carte par le titulaire (citoyen ou personnel) : PDF format carte bancaire ou image PNG.
+Route::get('/cartes/{carte}/fichier/{format}', CarteFichierController::class)->whereNumber('carte')->whereIn('format', ['pdf', 'png'])
+    ->middleware(['auth', 'throttle:30,1'])->name('cartes.fichier');
 
 Route::middleware(['auth', 'role:citoyen'])->controller(VerificationController::class)->prefix('espace/verification')->name('espace.verification')->group(function () {
     Route::get('/', 'show');

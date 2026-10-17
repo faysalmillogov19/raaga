@@ -9,7 +9,11 @@
             @if ($carte->statut !== \App\Enums\StatutCarte::Active)
                 <x-admin.message type="avertissement">{{ $carte->statut->label() }} : {{ $m['inactive'] }}</x-admin.message>
             @endif
-            <x-carte-raaga :carte="$carte" />
+            @if ($qr)
+                <x-carte-actions :carte="$carte" :qr="$qr" />
+            @else
+                <x-carte-raaga :carte="$carte" />
+            @endif
         @endif
     </div>
 </x-admin.layout>

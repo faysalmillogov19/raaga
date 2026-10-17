@@ -6,6 +6,7 @@ use App\Enums\StatutKyc;
 use App\Enums\TypeCarte;
 use App\Http\Controllers\Controller;
 use App\Services\Cartes\Cartes;
+use App\Services\Cartes\RenduCarte;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -15,7 +16,7 @@ use Illuminate\View\View;
  */
 class CarteController extends Controller
 {
-    public function show(Request $request, ?string $type = null): View
+    public function show(Request $request, RenduCarte $rendu, ?string $type = null): View
     {
         $user = $request->user();
         $cartes = collect([TypeCarte::Commercant, TypeCarte::Actionnaire])->mapWithKeys(fn (TypeCarte $t) => [strtolower($t->value) => Cartes::courante($user, $t)]);
@@ -25,6 +26,7 @@ class CarteController extends Controller
             'cartes' => $cartes,
             'choisi' => $choisi,
             'carte' => $cartes[$choisi],
+            'qr' => $cartes[$choisi]?->estValide() ? $rendu->qrSvg($cartes[$choisi], __('public.cartes.carte.qr')) : null,
             'kycConforme' => $user->statut_kyc === StatutKyc::Valide,
         ]);
     }
