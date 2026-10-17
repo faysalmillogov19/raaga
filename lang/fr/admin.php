@@ -379,7 +379,7 @@ return [
         'unites.gerer' => 'Ajouter, modifier ou désactiver une unité de loyer, puis la soumettre',
         'unites.confirmer' => 'Valider ou rejeter une unité de loyer',
         'moyens_paiement.voir' => 'Consulter les moyens de paiement',
-        'avances.voir' => 'Consulter les cautions à rembourser après une annulation faute d’avance (montants réservés aux profils des campagnes)',
+        'avances.voir' => 'Consulter les cautions à rembourser après une annulation faute d’avance',
         'avances.proposer' => 'Proposer la retenue sur une caution à rembourser (0 à 100 %)',
         'avances.decider' => 'Confirmer ou rejeter la retenue proposée sur une caution',
         'moyens_paiement.gerer' => 'Ajouter, modifier ou désactiver un moyen de paiement, puis le soumettre',

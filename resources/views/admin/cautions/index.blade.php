@@ -1,7 +1,7 @@
 {{--
     Cautions à rembourser : réservations annulées automatiquement faute d'avance, dont le remboursement de la caution
-    attend la retenue. RÉGULATEUR : propose la retenue ; VALIDATEUR : décide dans « À valider » ; GESTIONNAIRE DES
-    SITES ET BOUTIQUES : statuts seulement, aucun montant.
+    attend la retenue. RÉGULATEUR : propose la retenue ; VALIDATEUR : décide dans « À valider » ; le GESTIONNAIRE DES
+    SITES ET BOUTIQUES n'y a pas accès.
 --}}
 @php($a = __('admin.avances'))
 

@@ -78,8 +78,8 @@ final class MenuBackoffice
                     'liste' => 'moyens', 'sous_menu' => 'modalites'],
                 ['cle' => 'delais', 'route' => 'admin.parametres-paiements', 'droit' => Droit::ModalitesPaiementVoir, 'icone' => 'taches', 'etape' => 0, 'sous_menu' => 'modalites'],
                 ['cle' => 'boutiques', 'route' => 'admin.boutiques', 'droit' => Droit::BoutiquesVoir, 'icone' => 'boutiques', 'etape' => 0, 'masque_si' => $parametres],
-                // Cautions à rembourser après annulation faute d'avance (RÉGULATEUR propose la retenue ; VALIDATEUR et GESTIONNAIRE
-                // consultent, ce dernier sans montant).
+                // Cautions à rembourser après annulation faute d'avance (RÉGULATEUR propose la retenue, VALIDATEUR
+                // consulte et décide dans « À valider »).
                 ['cle' => 'cautions', 'route' => 'admin.cautions', 'droit' => Droit::AvancesVoir, 'icone' => 'remboursements', 'etape' => 0],
                 ['cle' => 'dividendes', 'route' => 'admin.dividendes', 'droit' => Droit::DividendesVoir, 'icone' => 'dividendes', 'etape' => 3, 'masque_si' => $parametres],
                 // RAAGA Invest : paramètres d'investissement, manifestations d'intérêt.

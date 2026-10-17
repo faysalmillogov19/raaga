@@ -334,8 +334,7 @@ enum Droit: string
             Role::GestionnaireSites => [
                 self::TableauDeBordVoir, self::BrouillonsVoir,
                 self::SitesVoir, self::CapacitesVoir, self::SitesGerer, self::ImportsVoir, self::ReferentielsBoutiquesVoir,
-                // Avances en retard : statuts seulement, aucun montant.
-                self::AvancesVoir,
+                // Pas de « Cautions à rembourser » (17/10/2026) : la retenue et le remboursement ne relèvent pas du référentiel.
             ],
             // Rapproche, marque les paiements manuels, relance, suit les remboursements ; aucune grille, aucun montant,
             // aucun moyen de paiement ; ses corrections et remboursements sont confirmés par le VALIDATEUR.

@@ -22,7 +22,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * Cautions à rembourser : réservations annulées automatiquement faute d'avance, dont le remboursement de la caution
  * attend la retenue. Le RÉGULATEUR propose la retenue (0 à 100 %, motif obligatoire) ; le VALIDATEUR la confirme ou la
  * rejette dans « À valider » ; le CONTRÔLEUR DES PAIEMENTS suit ensuite le remboursement. Le GESTIONNAIRE DES SITES ET
- * BOUTIQUES voit les statuts, sans aucun montant.
+ * BOUTIQUES n'y a pas accès.
  */
 class CautionsRembourserController extends Controller
 {

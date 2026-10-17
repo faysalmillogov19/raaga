@@ -24,6 +24,7 @@ use App\Notifications\DecisionRendue;
 use App\Notifications\RelancePaiement;
 use App\Services\Boutiques\AvancesBoutiques;
 use App\Services\Paiement\ServicePaiement;
+use App\Support\MenuBackoffice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -285,10 +286,10 @@ class AvanceBoutiquesTest extends TestCase
         Notification::assertSentTo($this->regulateur, DecisionRendue::class);
         $this->proposer($rb, 10)->assertSessionHas('succes');
 
-        // GESTIONNAIRE : statuts sans montant ni nom, aucune action ; VALIDATEUR : consulte ; autres profils : refus.
-        $page = $this->en($this->gestionnaire)->get(route('admin.cautions'))->assertOk()->assertSee($rb->reservation->reference)->assertSee('En attente de retenue');
-        $page->assertDontSee('FCFA')->assertDontSee($rb->user->name)->assertDontSee('Proposer la retenue');
+        // GESTIONNAIRE : aucun accès (ni onglet, ni action) ; VALIDATEUR : consulte ; autres profils : refus.
+        $this->en($this->gestionnaire)->get(route('admin.cautions'))->assertForbidden();
         $this->en($this->gestionnaire)->post(route('admin.cautions.proposer', $rb), ['retenue_pct' => 0, 'motif' => 'Essai du gestionnaire'])->assertForbidden();
+        $this->assertNotContains('cautions', collect(MenuBackoffice::pour($this->gestionnaire))->flatten(1)->pluck('cle')->all());
         $this->en($this->validateur)->get(route('admin.cautions'))->assertOk()->assertSee("540\u{00A0}000\u{00A0}FCFA")->assertDontSee('Proposer la retenue');
         foreach ([$this->controleur, $this->superAdmin, User::factory()->role(Role::Admin)->create()] as $profil) {
             $this->en($profil)->get(route('admin.cautions'))->assertForbidden();
