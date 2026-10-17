@@ -51,11 +51,16 @@
     @endif
 
     <main id="contenu" class="flex-1" tabindex="-1">
+        {{-- Page sans fil d'Ariane (accueil, espace, connexion…) : boutons Retour et Suivant en haut du contenu. --}}
+        @unless (\App\Support\NavigationHistorique::placee())
+            <div class="conteneur pt-4"><x-navigation-historique :parent="route('accueil')" /></div>
+        @endunless
         <x-public.encadre-demarche />
         {{ $slot }}
     </main>
 
     <x-public.bande-tricolore />
     <x-public.pied />
+    <x-notification />
 </body>
 </html>

@@ -23,6 +23,12 @@
         @case('fleche')
             <path d="M5 12h14M13 6l6 6-6 6"/>
             @break
+        @case('fleche-retour')
+            <path d="M19 12H5M11 6l-6 6 6 6"/>
+            @break
+        @case('erreur')
+            <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/>
+            @break
         @case('chevron')
             <path d="m9 6 6 6-6 6"/>
             @break

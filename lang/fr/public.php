@@ -6,6 +6,19 @@
  */
 
 return [
+    // Notifications en popup (succès, information, alerte, erreur) et boutons Retour / Suivant.
+    'popups' => [
+        'titres' => ['succes' => 'Enregistré', 'information' => 'Information', 'alerte' => 'Attention', 'erreur' => 'Erreur', 'formulaire' => 'Formulaire à corriger'],
+        'compris' => 'Compris',
+        'champs_a_corriger' => '{1} 1 champ à corriger : voir le message sous le champ.|[2,*] :n champs à corriger : voir les messages sous les champs.',
+    ],
+    'navigation_historique' => [
+        'retour' => 'Retour',
+        'retour_long' => 'Retour à la page précédente',
+        'suivant' => 'Suivant',
+        'suivant_long' => 'Aller à la page suivante',
+    ],
+
     // Champs obligatoires : texte lu par les lecteurs d'écran après l'astérisque, mention en haut des formulaires.
     'champs_obligatoires' => [
         'obligatoire' => 'obligatoire',

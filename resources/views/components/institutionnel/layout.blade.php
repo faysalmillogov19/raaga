@@ -87,6 +87,8 @@
                     </nav>
                 </div>
 
+                <div class="nav-fil">
+                <x-navigation-historique :parent="\App\Support\NavigationHistorique::parente($fil, route('institutionnel.tableau'))" />
                 <nav aria-label="{{ __('admin.fil') }}" class="bo-fil">
                     <ol>
                         <li><a href="{{ route('institutionnel.tableau') }}">{{ $institution->nomCourt() }}</a></li>
@@ -101,6 +103,7 @@
                         @endforeach
                     </ol>
                 </nav>
+                </div>
 
                 <div class="bo-compte">
                     <span class="bo-nom">{{ $user->name }}</span>
@@ -117,16 +120,10 @@
             <main id="contenu" class="bo-contenu">
                 <h1 class="bo-titre">{{ $titre }}</h1>
 
-                @if (session('succes'))
-                    <p class="bo-message" role="status">{{ session('succes') }}</p>
-                @endif
-                @if (session('erreur'))
-                    <p class="bo-message bo-message-erreur" role="alert">{{ session('erreur') }}</p>
-                @endif
-
                 {{ $slot }}
             </main>
         </div>
     </div>
+    <x-notification />
 </body>
 </html>

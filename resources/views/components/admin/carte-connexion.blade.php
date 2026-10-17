@@ -17,6 +17,7 @@
 
     <main class="compte-fond min-h-[calc(100vh-5px)]">
         <div class="compte-carte">
+            <x-navigation-historique :parent="url('/')" class="mb-4" />
             <div class="flex items-center gap-3">
                 <x-public.armoiries class="compte-armoiries !mb-0" />
                 <span class="font-extrabold text-vert-fonce">{{ $espace->nom() }}</span>
@@ -26,14 +27,11 @@
                 <p class="compte-intro">{{ $intro }}</p>
             @endif
 
-            @if (session('statut'))
-                <p class="alerte-compte alerte-compte-info" role="status">{{ session('statut') }}</p>
-            @endif
-
             {{ $slot }}
         </div>
 
         <p class="compte-aide"><a href="{{ route('accueil') }}">{{ __('admin.connexion.site_public') }}</a></p>
     </main>
+    <x-notification />
 </body>
 </html>

@@ -4,12 +4,6 @@
 
     <div class="conteneur grid gap-8 py-8 tab:py-12 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section aria-labelledby="formulaire-titre">
-            @if ($numero = session('contact.numero'))
-                <x-public.alerte variante="info" :titre="__('public.contact.formulaire.envoye_titre')" class="mb-6" role="status">
-                    {{ __('public.contact.formulaire.envoye', ['numero' => $numero]) }}
-                </x-public.alerte>
-            @endif
-
             <h2 id="formulaire-titre">{{ __('public.contact.formulaire.titre') }}</h2>
             <p class="mt-1 texte-carte">{{ __('public.contact.formulaire.intro') }}</p>
 

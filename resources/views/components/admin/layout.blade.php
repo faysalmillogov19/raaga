@@ -180,6 +180,8 @@
             </header>
 
             <main id="contenu" class="adm-contenu" tabindex="-1">
+                <div class="nav-fil">
+                <x-navigation-historique :parent="\App\Support\NavigationHistorique::parente($fil, route('admin.tableau'))" />
                 <nav aria-label="{{ __('admin.fil') }}" class="adm-fil">
                     <ol>
                         <li><a href="{{ route('admin.tableau') }}">{{ $c['racine'] }}</a></li>
@@ -199,6 +201,7 @@
                         @endforelse
                     </ol>
                 </nav>
+                </div>
 
                 <div class="adm-entete">
                     <div>
@@ -210,16 +213,10 @@
                     @endisset
                 </div>
 
-                @if (session('succes'))
-                    <x-admin.message type="ok">{{ session('succes') }}</x-admin.message>
-                @endif
-                @if (session('erreur'))
-                    <x-admin.message type="erreur">{{ session('erreur') }}</x-admin.message>
-                @endif
-
                 {{ $slot }}
             </main>
         </div>
     </div>
+    <x-notification />
 </body>
 </html>

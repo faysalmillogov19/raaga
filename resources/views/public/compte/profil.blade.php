@@ -17,10 +17,6 @@
 
     <div class="compte-fond !py-10">
         <div class="mx-auto max-w-[640px] space-y-6">
-            @if (session('succes'))
-                <p class="alerte-compte alerte-compte-info !mt-0" role="status">{{ session('succes') }}</p>
-            @endif
-
             {{-- Informations personnelles --}}
             <section class="compte-carte !max-w-none" aria-labelledby="identite-titre">
                 <h2 id="identite-titre">{{ __('public.compte.profil.identite') }}</h2>

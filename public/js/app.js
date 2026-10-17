@@ -907,3 +907,73 @@ document.querySelectorAll('[data-carrousel]').forEach((carrousel) => {
     majLecture();
 });
 })();
+
+/*
+ * Notifications en popup (<dialog data-notification>, composant x-notification) : affichées l'une après l'autre ; focus
+ * sur « Compris » ; Échap ferme (comportement natif du dialogue modal). Succès et information (data-fermeture-auto) se
+ * ferment seuls après 4 secondes ou au clic ; erreur et alerte restent ouvertes jusqu'à « Compris » ou Échap.
+ */
+(() => {
+    const afficher = () => {
+        const file = [...document.querySelectorAll('dialog[data-notification]')];
+        const suivante = () => {
+            const dialogue = file.shift();
+            if (!dialogue || typeof dialogue.showModal !== 'function') {
+                return;
+            }
+            dialogue.showModal();
+            dialogue.querySelector('[data-notification-fermer]')?.focus();
+            const delai = Number(dialogue.dataset.fermetureAuto || 0);
+            const minuteur = delai > 0 ? setTimeout(() => dialogue.close(), delai) : null;
+            if (delai > 0) {
+                dialogue.addEventListener('click', () => dialogue.close(), { once: true });
+            }
+            dialogue.addEventListener('close', () => {
+                clearTimeout(minuteur);
+                suivante();
+            }, { once: true });
+        };
+        suivante();
+    };
+
+    /*
+     * Boutons Retour et Suivant (composant x-navigation-historique). Retour : history.back(), ou la page parente du fil
+     * d'Ariane quand la page a été ouverte directement (aucune page précédente). Suivant : history.forward(), grisé
+     * quand le navigateur indique qu'il n'y a pas de page suivante (Navigation API, quand elle est disponible).
+     */
+    const navigationHistorique = () => {
+        const api = window.navigation;
+        document.querySelectorAll('[data-historique-retour]').forEach((bouton) => {
+            bouton.addEventListener('click', () => {
+                const precedente = api && 'canGoBack' in api ? api.canGoBack : window.history.length > 1;
+                if (precedente) {
+                    window.history.back();
+                } else {
+                    window.location.href = bouton.dataset.parent;
+                }
+            });
+        });
+        const suivants = [...document.querySelectorAll('[data-historique-suivant]')];
+        const actualiser = () => {
+            const possible = !(api && 'canGoForward' in api) || api.canGoForward;
+            suivants.forEach((bouton) => {
+                bouton.disabled = !possible;
+                bouton.setAttribute('aria-disabled', possible ? 'false' : 'true');
+            });
+        };
+        suivants.forEach((bouton) => bouton.addEventListener('click', () => window.history.forward()));
+        actualiser();
+        api?.addEventListener?.('currententrychange', actualiser);
+        window.addEventListener('pageshow', actualiser);
+    };
+
+    const demarrer = () => {
+        afficher();
+        navigationHistorique();
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', demarrer, { once: true });
+    } else {
+        demarrer();
+    }
+})();

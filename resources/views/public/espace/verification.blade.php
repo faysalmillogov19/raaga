@@ -18,10 +18,6 @@
     <x-public.page-entete :titre="$titre" :fil="[['libelle' => __('public.menu.espace'), 'url' => route('espace')], ['libelle' => $titre]]" />
 
     <div class="conteneur max-w-3xl py-8 tab:py-12">
-        @if (session('succes'))
-            <x-public.alerte variante="info" class="mb-6" role="status">{{ session('succes') }}</x-public.alerte>
-        @endif
-
         {{-- Statut --}}
         <section class="carte p-5" aria-labelledby="statut-titre">
             <div class="flex flex-wrap items-center gap-3">
