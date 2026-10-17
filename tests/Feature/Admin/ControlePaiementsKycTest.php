@@ -361,12 +361,15 @@ class ControlePaiementsKycTest extends TestCase
     public function test_profils_masques_et_compte_de_demonstration(): void
     {
         $this->en($this->superAdmin)->get(route('admin.utilisateurs', ['inviter' => 1]))->assertOk()
-            ->assertSee('Contrôleur des paiements')->assertDontSee('value="conformite"', false)->assertDontSee('value="agent_guichet"', false);
-        foreach (['conformite', 'agent_guichet'] as $role) {
-            $this->en($this->superAdmin)->post(route('admin.utilisateurs.store'), ['nom' => 'X', 'email' => $role.'@exemple.bf', 'role' => $role])
-                ->assertSessionHasErrors('role');
-        }
-        $this->assertSame([Role::Conformite, Role::AgentGuichet], Role::masques());
+            ->assertSee('Contrôleur des paiements')->assertDontSee('value="conformite"', false)
+            // Agent de guichet : profil du back-office depuis le 17/10/2026, proposé à l'invitation.
+            ->assertSee('value="agent_guichet"', false);
+        $this->en($this->superAdmin)->post(route('admin.utilisateurs.store'), ['nom' => 'X', 'email' => 'conformite@exemple.bf', 'role' => 'conformite'])
+            ->assertSessionHasErrors('role');
+        $this->en($this->superAdmin)->post(route('admin.utilisateurs.store'), ['nom' => 'Moussa KONÉ', 'email' => 'guichet@exemple.bf', 'role' => 'agent_guichet'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(Role::AgentGuichet, User::query()->where('email', 'guichet@exemple.bf')->sole()->codeRole());
+        $this->assertSame([Role::Conformite], Role::masques());
         $this->assertNotContains(Role::Conformite, Role::attribuablesBackoffice());
 
         $this->seed(ComptesDemoSeeder::class);

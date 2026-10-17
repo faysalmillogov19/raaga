@@ -44,6 +44,15 @@ return [
             'piece_sujet' => 'Votre pièce d’identité expire bientôt',
             'piece_message' => 'Votre pièce d’identité expire le :date : votre carte Raaga ne sera plus valable après cette date. Déposez une pièce valide dans votre espace.',
         ],
+        // Vérification sans connexion : aucune donnée personnelle.
+        'verification' => [
+            'titre' => 'Vérification d’une carte Raaga',
+            'valide' => 'Carte valide',
+            'non_valide' => 'Carte non valide',
+            'aide_valide' => 'Cette carte d’accès Raaga est active.',
+            'aide_non_valide' => 'Cette carte n’est pas acceptée : elle est inconnue, en attente, suspendue, révoquée ou expirée.',
+            'note' => 'Les agents de contrôle Raaga voient le détail de la carte après connexion.',
+        ],
     ],
 
     'navigation_historique' => [
@@ -1217,16 +1226,10 @@ return [
             'titre' => 'Le dépôt des pièces n’est pas encore ouvert',
             'texte' => 'Vous pourrez bientôt envoyer ici votre CNIB ou votre passeport. Votre dossier sera alors vérifié sous 48 heures.',
         ],
-        'guichet' => [
-            'page' => 'Guichet',
-            'titre' => 'Interface guichet en cours de mise en place',
-            'texte' => 'Les outils des agents de guichet ne sont pas encore disponibles.',
-        ],
         'liens' => [
             'offre' => 'Comprendre l’offre',
             'faq' => 'Aide & FAQ',
             'profil' => 'Mon profil',
-            'guichets' => 'Voir les guichets',
         ],
     ],
 

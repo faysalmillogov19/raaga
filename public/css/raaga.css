@@ -450,3 +450,98 @@ html:has(body.adm) {
         display: none !important;
     }
 }
+
+/* Agent de guichet (profil du back-office) : badge de rôle. */
+.bo-badge-guichet {
+    background: #0E6E74;
+}
+
+/* Vérification d'une carte Raaga sans connexion : résultat seul, en grand (aucune donnée personnelle). */
+.verif-carte {
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    border-radius: 16px;
+    border: 3px solid currentColor;
+    text-align: center;
+}
+.verif-carte-valide { color: #1A7F4B; background: #E5F4EC; }
+.verif-carte-invalide { color: #C0182A; background: #FCE8EA; }
+.verif-carte-icone {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto;
+    stroke-width: 2.5;
+}
+.verif-carte .verif-carte-resultat {
+    color: inherit;
+    margin-top: 1rem;
+    font-size: clamp(1.9rem, 7vw, 2.75rem);
+    font-weight: 700;
+    line-height: 1.15;
+}
+.verif-carte-aide {
+    margin-top: .75rem;
+    color: #1F2933;
+}
+.verif-carte-note {
+    max-width: 34rem;
+    margin: 1.25rem auto 0;
+    text-align: center;
+    color: #5A6672;
+    font-size: .95rem;
+}
+
+/* Guichet : verdict VALIDE (vert) ou NON VALIDE (rouge) en grand, puis le titulaire avec sa photo. */
+/* Plus spécifique que la carte du back-office (fond et couleur du thème). */
+.adm .bo-carte.guichet-verdict {
+    text-align: center;
+    border: 3px solid currentColor;
+}
+.adm .bo-carte.guichet-verdict-valide { color: #1A7F4B; background: #E5F4EC; }
+.adm .bo-carte.guichet-verdict-invalide { color: #C0182A; background: #FCE8EA; }
+.adm .guichet-verdict-texte {
+    color: inherit;
+    font-size: clamp(2.25rem, 9vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: .04em;
+    line-height: 1.1;
+}
+.adm .guichet-verdict-statut {
+    color: inherit;
+    margin-top: .5rem;
+    font-weight: 600;
+}
+.guichet-titulaire {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: flex-start;
+}
+.guichet-photo {
+    width: 140px;
+    height: 175px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--zebra, #F1F4F2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--muted, #5A6672);
+}
+.guichet-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.guichet-nom {
+    font-size: 1.5rem !important;
+    font-weight: 700;
+}
+.guichet-infos {
+    flex: 1 1 260px;
+    min-width: 0;
+}

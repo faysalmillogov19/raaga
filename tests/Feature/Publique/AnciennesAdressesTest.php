@@ -51,11 +51,10 @@ class AnciennesAdressesTest extends TestCase
         }
     }
 
-    public function test_l_agent_de_guichet_voit_un_etat_vide_honnete(): void
+    public function test_l_ancienne_adresse_du_guichet_renvoie_au_back_office(): void
     {
-        $this->actingAs(User::factory()->role(Role::AgentGuichet)->create())
-            ->get(route(Role::AgentGuichet->dashboardRoute()))
-            ->assertOk()
-            ->assertSee('Interface guichet en cours de mise en place');
+        // Agent de guichet : profil du back-office depuis le 17/10/2026.
+        $this->actingAs(User::factory()->role(Role::AgentGuichet)->create())->get('/guichet')->assertRedirect('/admin');
+        $this->assertSame('admin.tableau', Role::AgentGuichet->dashboardRoute());
     }
 }

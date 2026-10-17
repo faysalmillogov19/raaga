@@ -106,7 +106,7 @@ class MatriceDroitsTest extends TestCase
 
     public function test_les_autres_profils_n_ont_aucun_droit_back_office(): void
     {
-        foreach ([Role::Citoyen, Role::AgentGuichet, Role::Conformite, Role::Auditeur, Role::Investisseur, Role::PorteurProjet] as $role) {
+        foreach ([Role::Citoyen, Role::Conformite, Role::Auditeur, Role::Investisseur, Role::PorteurProjet] as $role) {
             $user = User::factory()->role($role)->create();
 
             foreach (Droit::cases() as $droit) {

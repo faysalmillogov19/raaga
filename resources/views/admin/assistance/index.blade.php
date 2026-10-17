@@ -14,15 +14,6 @@
                 <input id="q" name="q" type="search" value="{{ request('q') }}" class="champ" placeholder="{{ $a('recherche_aide') }}">
             </div>
             <div class="formulaire-champ">
-                <label for="type">{{ $a('type') }}</label>
-                <select id="type" name="type" class="champ">
-                    <option value="">{{ __('admin.utilisateurs.tous') }}</option>
-                    @foreach (['citoyen', 'agent'] as $type)
-                        <option value="{{ $type }}" @selected(request('type') === $type)>{{ $a('types.'.$type) }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="formulaire-champ">
                 <label for="statut">{{ __('admin.utilisateurs.colonnes.statut') }}</label>
                 <select id="statut" name="statut" class="champ">
                     <option value="">{{ __('admin.utilisateurs.tous') }}</option>

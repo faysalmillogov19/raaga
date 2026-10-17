@@ -85,14 +85,15 @@ class UtilisateursTest extends TestCase
         User::factory()->role(Role::AgentGuichet)->create(['name' => 'Moussa KONÉ']);
         User::factory()->role(Role::Investisseur)->create(['name' => 'Issa TRAORÉ']);
 
+        // L'Agent de guichet est un profil du back-office (17/10/2026).
         $this->get('/admin/utilisateurs')->assertOk()
-            ->assertSee('Aminata SAWADOGO')->assertSee('Clarisse SOMÉ')->assertSee('Rasmata OUÉDRAOGO')
+            ->assertSee('Aminata SAWADOGO')->assertSee('Clarisse SOMÉ')->assertSee('Rasmata OUÉDRAOGO')->assertSee('Moussa KONÉ')
             ->assertSee('bo-badge bo-badge-admin', false)
             ->assertDontSee('Awa OUÉDRAOGO')->assertDontSee('Grand public');
 
-        // Grand public = citoyens souscripteurs et agents de guichet, et rien d'autre.
+        // Grand public = citoyens souscripteurs, et rien d'autre.
         $this->get('/admin/assistance')->assertOk()
-            ->assertSee('Awa OUÉDRAOGO')->assertSee('Moussa KONÉ')->assertSee('+226 70 12 34 56')
+            ->assertSee('Awa OUÉDRAOGO')->assertDontSee('Moussa KONÉ')->assertSee('+226 70 12 34 56')
             ->assertDontSee('Issa TRAORÉ')->assertDontSee('Clarisse SOMÉ')
             ->assertDontSee('investisseurs')->assertDontSee('porteurs de projet');
     }
@@ -102,12 +103,10 @@ class UtilisateursTest extends TestCase
         $this->connecterBackoffice(Role::Admin);
         User::factory()->role(Role::Citoyen)->create(['name' => 'Awa OUÉDRAOGO', 'telephone' => '+22670123456', 'statut_kyc' => StatutKyc::Valide]);
         User::factory()->role(Role::Citoyen)->create(['name' => 'Ali ZONGO', 'telephone' => '+22665000000', 'statut_kyc' => StatutKyc::EnAttente]);
-        User::factory()->role(Role::AgentGuichet)->create(['name' => 'Moussa KONÉ']);
 
         $this->get('/admin/assistance?q=ouédraogo')->assertSee('Awa OUÉDRAOGO')->assertDontSee('Ali ZONGO');
         $this->get('/admin/assistance?q=70 12 34')->assertSee('Awa OUÉDRAOGO')->assertDontSee('Ali ZONGO');
         $this->get('/admin/assistance?kyc=EN_ATTENTE')->assertSee('Ali ZONGO')->assertDontSee('Awa OUÉDRAOGO');
-        $this->get('/admin/assistance?type=agent')->assertSee('Moussa KONÉ')->assertDontSee('Awa OUÉDRAOGO');
     }
 
     public function test_la_fiche_grand_public_est_en_lecture_seule_et_quitte_l_onglet_utilisateurs(): void

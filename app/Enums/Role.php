@@ -66,7 +66,7 @@ enum Role: string
             self::SuperAdmin => 'Support et assistance, comptes back-office, approbations, sécurité. Lecture seule sur les paramètres et le journal d’audit ; aucune décision financière.',
             self::Admin => 'Support et assistance : aide aux utilisateurs, demandes, contenus du site, préparation des textes légaux ; vérification d’identité (KYC) des citoyens, sans aucun montant. Aucune décision financière.',
             self::Citoyen => "S'inscrire, déposer ses pièces, souscrire, payer, consulter son espace.",
-            self::AgentGuichet => 'À venir : encaisser au guichet (le CONTRÔLEUR DES PAIEMENTS vérifie). Espace /guichet encore vide ; masqué des listes d’attribution.',
+            self::AgentGuichet => 'Profil du back-office : vérifie les cartes d’accès Raaga scannées, consulte le dossier du titulaire (sans aucun montant) et imprime sa carte après contrôle de sa pièce d’identité.',
             self::Regulateur => 'Saisit et soumet les paramètres de souscription des tranches et de distribution des dividendes, lance les simulations, exporte et émet des observations. Ne confirme ni n’exécute jamais.',
             self::Validateur => 'Confirme ou rejette les paramétrages, ouvre, prolonge et clôture les tranches, exécute l’allocation et la mise en paiement des dividendes ; confirme les corrections de paiement, les remboursements et les annulations pour identité douteuse. Ne saisit jamais un paramètre.',
             self::GestionnaireSites => 'Crée et met à jour les sites du marché et leurs boutiques (numéro, bloc, surface, type), puis les soumet au VALIDATEUR. Ne fixe ni cautions ni campagnes.',
@@ -122,7 +122,7 @@ enum Role: string
      */
     public static function backoffice(): array
     {
-        return [self::SuperAdmin, self::Admin, self::Validateur, self::Regulateur, self::GestionnaireSites, self::ControleurPaiements];
+        return [self::SuperAdmin, self::Admin, self::Validateur, self::Regulateur, self::GestionnaireSites, self::ControleurPaiements, self::AgentGuichet];
     }
 
     public function estBackoffice(): bool
@@ -179,18 +179,19 @@ enum Role: string
             self::Regulateur => 'bo-badge-regulateur',
             self::GestionnaireSites => 'bo-badge-sites',
             self::ControleurPaiements => 'bo-badge-paiements',
+            self::AgentGuichet => 'bo-badge-guichet',
             default => '',
         };
     }
 
     /**
-     * Comptes grand public : les citoyens souscripteurs et les agents de guichet.
+     * Comptes grand public : les citoyens souscripteurs (l'Agent de guichet est un profil du back-office depuis le 17/10/2026).
      *
      * @return list<self>
      */
     public static function grandPublic(): array
     {
-        return [self::Citoyen, self::AgentGuichet];
+        return [self::Citoyen];
     }
 
     /**
@@ -201,7 +202,7 @@ enum Role: string
      */
     public static function masques(): array
     {
-        return [self::Conformite, self::AgentGuichet];
+        return [self::Conformite];
     }
 
     /**

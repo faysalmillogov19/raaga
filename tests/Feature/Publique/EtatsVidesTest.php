@@ -30,19 +30,4 @@ class EtatsVidesTest extends TestCase
         $this->actingAs($citoyen)->get('/espace/verification')->assertOk()
             ->assertSee('Déposer mes pièces');
     }
-
-    public function test_le_guichet_remplace_le_tableau_de_bord_breeze(): void
-    {
-        $agent = User::factory()->role(Role::AgentGuichet)->create();
-
-        foreach (['/guichet', route(Role::AgentGuichet->dashboardRoute())] as $page) {
-            $this->actingAs($agent)->get($page)->assertOk()
-                ->assertSee('Interface guichet en cours de mise en place')
-                ->assertSee('href="'.route('guichets').'"', false)
-                ->assertDontSee('Dashboard')
-                ->assertDontSee("You're logged in");
-        }
-
-        $this->actingAs(User::factory()->role(Role::Citoyen)->create())->get('/guichet')->assertForbidden();
-    }
 }

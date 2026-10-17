@@ -23,6 +23,7 @@ use App\Http\Controllers\Publique\ImagePlateformeController;
 use App\Http\Controllers\Publique\InvestController;
 use App\Http\Controllers\Publique\PageController;
 use App\Http\Controllers\Publique\SmsRecetteController;
+use App\Http\Controllers\VerificationCarteController;
 use Illuminate\Support\Facades\Route;
 
 // Pages publiques
@@ -184,9 +185,15 @@ Route::middleware('guest')->group(function () {
     });
 });
 
+// Agent de guichet : profil du back-office depuis le 17/10/2026 ; l'ancienne adresse renvoie au back-office.
+Route::redirect('/guichet', '/admin')->name('guichet');
+
+// Carte d'accès Raaga : adresse du QR code (jeton seul, aucune donnée personnelle). Portiques : valide ou non valide,
+// avec la clé RAAGA_CLE_PORTIQUES (en-tête X-Cle-Portique).
+Route::get('/c/{jeton}', [VerificationCarteController::class, 'show'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:60,1')->name('cartes.verifier');
+Route::get('/portiques/cartes/{jeton}', [VerificationCarteController::class, 'portique'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:600,1')->name('cartes.portique');
+
 // Redirige chaque utilisateur vers le tableau de bord de son rôle.
-// Agent de guichet : état vide en attendant l'interface guichet.
-Route::view('/guichet', 'dashboards.show', ['role' => Role::AgentGuichet])->middleware(['auth', 'role:'.Role::AgentGuichet->value])->name('guichet');
 
 Route::get('/dashboard', function () {
     return redirect()->route(auth()->user()->codeRole()->dashboardRoute());

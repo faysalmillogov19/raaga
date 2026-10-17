@@ -122,6 +122,7 @@ enum Droit: string
     case KycTraiter = 'kyc.traiter';
     // Cartes d'accès : vérifier une carte scannée (photo, nom, type, statut), l'imprimer au guichet.
     case CartesVerifier = 'cartes.verifier';
+    case CartesImprimer = 'cartes.imprimer';
 
     case ConformiteVoir = 'conformite.voir';
     case ConformiteTraiter = 'conformite.traiter';
@@ -336,6 +337,9 @@ enum Droit: string
                 self::PaiementsVoir, self::SouscriptionsRapprocher, self::RelancesEnvoyer,
                 self::RemboursementsVoir, self::RemboursementsSuivre,
             ],
+            // Agent de guichet (profil du back-office) : vérifie les cartes scannées, consulte le dossier du titulaire
+            // (aucun montant) et imprime sa carte après contrôle de sa pièce d'identité.
+            Role::AgentGuichet => [self::TableauDeBordVoir, self::CartesVerifier, self::CartesImprimer],
             Role::Regulateur => [
                 self::TableauDeBordVoir, self::BrouillonsVoir, self::InteretsVoir,
                 self::PhaseVoir, self::PhaseProposer,

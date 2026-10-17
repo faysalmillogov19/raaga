@@ -29,7 +29,7 @@ class AssistanceController extends Controller
     private const TRIS = ['nom' => 'name', 'inscription' => 'created_at'];
 
     /** Type de compte (filtre) → rôle. */
-    private const TYPES = ['citoyen' => RoleEnum::Citoyen, 'agent' => RoleEnum::AgentGuichet];
+    private const TYPES = ['citoyen' => RoleEnum::Citoyen];
 
     public function __construct(private readonly GestionUtilisateurs $gestion) {}
 

@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\ImportsValidationController;
 use App\Http\Controllers\Admin\InstitutionsController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\KybController;
+use App\Http\Controllers\Admin\GuichetController;
 use App\Http\Controllers\Admin\MaCarteController;
 use App\Http\Controllers\Admin\ManifestationsInteretController;
 use App\Http\Controllers\Admin\NiveauxZonesController;
@@ -199,6 +200,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/profil', [ProfilController::class, 'show'])->name('profil');
         // Ma carte : carte PERSONNEL émise par le SUPER_ADMIN.
         Route::get('/ma-carte', [MaCarteController::class, 'show'])->name('carte');
+        // Guichet : carte scannée (chaque scan tracé), recherche par numéro, dossier du titulaire (aucun montant).
+        Route::controller(GuichetController::class)->prefix('guichet')->name('guichet')->middleware('can:'.Droit::CartesVerifier->value)->group(function () {
+            Route::get('/', 'index');
+            Route::post('/rechercher', 'rechercher')->name('.rechercher');
+            Route::get('/cartes/{jeton}', 'carte')->where('jeton', '[A-Za-z0-9]{1,100}')->name('.carte');
+            Route::get('/titulaires/{titulaire}', 'titulaire')->whereNumber('titulaire')->name('.titulaire');
+        });
         Route::post('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::post('/profil/mot-de-passe', [ProfilController::class, 'motDePasse'])->middleware('throttle:10,1')->name('profil.mot-de-passe');
 
@@ -398,7 +406,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{distribution}/avenants/{avenant}/rejeter', 'rejeterAvenant')->middleware('can:'.Droit::DividendesConfirmer->value)->name('.avenant.rejeter');
         });
 
-        // Assistance (ADMIN, SUPER_ADMIN) : citoyens souscripteurs et agents de guichet.
+        // Assistance (ADMIN, SUPER_ADMIN) : citoyens souscripteurs.
         Route::controller(AssistanceController::class)->prefix('assistance')->name('assistance')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::AssistanceVoir->value);
             Route::get('/{utilisateur}', 'show')->whereNumber('utilisateur')->middleware('can:'.Droit::AssistanceVoir->value)->name('.show');
