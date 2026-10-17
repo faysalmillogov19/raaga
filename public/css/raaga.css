@@ -296,3 +296,12 @@ body:not(.adm) .adm-requis {
     font-size: .8125rem;
     color: var(--texte-doux, #5B6B62);
 }
+
+/*
+ * Carte qui suit une grille de cartes (un div qui contient des cartes, par exemple « Importer » puis « Historique des
+ * imports ») : même écart de 18 px qu'entre deux cartes consécutives (.bo-carte + .bo-carte), au lieu de se toucher.
+ */
+div:has(> .bo-carte) + .bo-carte,
+div:has(> .bo-carte) + div:has(> .bo-carte) {
+    margin-top: 18px;
+}
