@@ -12,13 +12,14 @@ use Illuminate\Console\Command;
  *    prestataire de paiement simulé configuré ;
  *  - AVERTISSEMENT (code 0) : aucun opérateur réel (« paiements fermés »), coordonnées des comptes de destination
  *    manquantes (RAAGA_SEQUESTRE_*, RAAGA_COMPTE_LOCATION_*). Les paiements restent alors fermés (voir OuverturePaiements).
+ *    Clé des portiques (RAAGA_CLE_PORTIQUES) vide : l'interface de vérification des cartes pour les portiques refuse tout.
  * --strict : les avertissements deviennent bloquants (avant l'ouverture d'une campagne).
  */
 class VerifierProduction extends Command
 {
     protected $signature = 'raaga:verifier-production {--strict : Les avertissements deviennent bloquants (avant l’ouverture d’une campagne)}';
 
-    protected $description = 'Vérifie la configuration de production : bloquants (démo, paiement simulé) et avertissements (opérateur, comptes de destination).';
+    protected $description = 'Vérifie la configuration de production : bloquants (démo, paiement simulé) et avertissements (opérateur, comptes de destination, clé des portiques).';
 
     /** Variables des comptes de destination : clé de configuration => nom de la variable d'environnement. */
     public const VARIABLES = [
@@ -52,6 +53,10 @@ class VerifierProduction extends Command
             }
         }
 
+        if (blank(config('raaga.cartes.cle_portiques'))) {
+            $avertissements[] = 'Variable manquante : RAAGA_CLE_PORTIQUES (interface de vérification des cartes pour les portiques fermée : toute demande est refusée).';
+        }
+
         foreach ($bloquants as $message) {
             $this->error('✗ BLOQUANT : '.$message);
         }
@@ -67,8 +72,8 @@ class VerifierProduction extends Command
             return self::FAILURE;
         }
         $this->info($avertissements === []
-            ? '✓ Prêt pour la production : aucune démonstration, opérateur de paiement réel, comptes de destination renseignés.'
-            : '✓ Aucun point bloquant ('.count($avertissements).' avertissement(s) : paiements fermés tant qu’ils ne sont pas réglés).');
+            ? '✓ Prêt pour la production : aucune démonstration, opérateur de paiement réel, comptes de destination et clé des portiques renseignés.'
+            : '✓ Aucun point bloquant ('.count($avertissements).' avertissement(s) : services concernés fermés tant qu’ils ne sont pas réglés).');
 
         return self::SUCCESS;
     }

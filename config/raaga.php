@@ -218,6 +218,8 @@ return [
         'validite_personnel_mois' => 12,
         'avertissement_piece_jours' => 30,
         'cle_portiques' => env('RAAGA_CLE_PORTIQUES'),
+        // Vérifications par minute et par adresse IP, sur /c/{jeton} et /portiques/cartes/{jeton} (au-delà : 429).
+        'tentatives_par_minute' => (int) env('RAAGA_CARTES_TENTATIVES', 30),
     ],
 
 ];

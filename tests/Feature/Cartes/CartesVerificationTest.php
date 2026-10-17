@@ -172,6 +172,35 @@ class CartesVerificationTest extends TestCase
         $this->getJson(route('cartes.portique', Str::random(64)), ['X-Cle-Portique' => 'cle-secrete-des-portiques'])->assertExactJson(['valide' => false]);
     }
 
+    public function test_tentatives_limitees_par_adresse_ip_avec_message_clair(): void
+    {
+        config(['raaga.cartes.tentatives_par_minute' => 30, 'raaga.cartes.cle_portiques' => 'cle-secrete-des-portiques']);
+        $carte = $this->carte();
+
+        // QR code : 30 vérifications par minute et par adresse IP, puis 429 avec un message clair et le délai.
+        for ($i = 0; $i < 30; $i++) {
+            $this->get('/c/'.Str::random(64))->assertOk();
+        }
+        $this->get($carte->urlVerification())->assertStatus(429)->assertHeader('Retry-After')
+            ->assertSee('Trop de vérifications depuis cette connexion. Réessayez dans', false)->assertDontSee('Carte valide');
+        // Une autre adresse IP n'est pas concernée.
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.2'])->get($carte->urlVerification())->assertOk()->assertSee('Carte valide');
+
+        // Portiques : compteur distinct, même limite, réponse JSON.
+        $entete = ['X-Cle-Portique' => 'cle-secrete-des-portiques'];
+        for ($i = 0; $i < 30; $i++) {
+            $this->getJson(route('cartes.portique', $carte->jeton), $entete)->assertOk();
+        }
+        $this->getJson(route('cartes.portique', $carte->jeton), $entete)->assertStatus(429)->assertHeader('Retry-After')
+            ->assertJsonPath('erreur', 'trop_de_tentatives')->assertJsonMissingPath('valide');
+        // Les mauvaises clés comptent aussi (pas d'essais illimités de clés).
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.3']);
+        for ($i = 0; $i < 30; $i++) {
+            $this->getJson(route('cartes.portique', $carte->jeton), ['X-Cle-Portique' => 'mauvaise-'.$i])->assertUnauthorized();
+        }
+        $this->getJson(route('cartes.portique', $carte->jeton), $entete)->assertStatus(429);
+    }
+
     public function test_l_agent_de_guichet_est_un_profil_du_back_office(): void
     {
         $this->assertTrue(Role::AgentGuichet->estBackoffice());

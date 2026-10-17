@@ -193,9 +193,9 @@ Route::middleware('guest')->group(function () {
 Route::redirect('/guichet', '/admin')->name('guichet');
 
 // Carte d'accès Raaga : adresse du QR code (jeton seul, aucune donnée personnelle). Portiques : valide ou non valide,
-// avec la clé RAAGA_CLE_PORTIQUES (en-tête X-Cle-Portique).
-Route::get('/c/{jeton}', [VerificationCarteController::class, 'show'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:60,1')->name('cartes.verifier');
-Route::get('/portiques/cartes/{jeton}', [VerificationCarteController::class, 'portique'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:600,1')->name('cartes.portique');
+// avec la clé RAAGA_CLE_PORTIQUES (en-tête X-Cle-Portique). Tentatives limitées par adresse IP (AppServiceProvider).
+Route::get('/c/{jeton}', [VerificationCarteController::class, 'show'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:cartes-verification')->name('cartes.verifier');
+Route::get('/portiques/cartes/{jeton}', [VerificationCarteController::class, 'portique'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:cartes-portiques')->name('cartes.portique');
 
 // Redirige chaque utilisateur vers le tableau de bord de son rôle.
 

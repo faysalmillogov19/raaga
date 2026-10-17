@@ -20,13 +20,16 @@ use App\Support\TitreSucces;
 use App\Support\Verrou;
 use App\Support\VerrouEnvironnement;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
@@ -60,6 +63,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Vérification des cartes (QR code, portiques) : tentatives limitées par adresse IP, contre l'essai de jetons.
+        // Au-delà : 429, page claire (QR code) ou réponse JSON (portiques), avec le délai d'attente.
+        RateLimiter::for('cartes-verification', fn (Request $request) => Limit::perMinute((int) config('raaga.cartes.tentatives_par_minute'))
+            ->by('cartes:'.$request->ip())
+            ->response(fn (Request $request, array $entetes) => response()->view('errors.429', [
+                'message' => __('public.cartes.verification.trop_de_tentatives', ['secondes' => $entetes['Retry-After'] ?? 60]),
+            ], 429, $entetes)));
+        RateLimiter::for('cartes-portiques', fn (Request $request) => Limit::perMinute((int) config('raaga.cartes.tentatives_par_minute'))
+            ->by('portiques:'.$request->ip())
+            ->response(fn (Request $request, array $entetes) => response()->json([
+                'erreur' => 'trop_de_tentatives',
+                'message' => __('public.cartes.verification.trop_de_tentatives', ['secondes' => $entetes['Retry-After'] ?? 60]),
+            ], 429, $entetes)));
+
         // Cartes d'accès : attribution ou annulation d'une boutique (COMMERÇANT), inscription au registre (ACTIONNAIRE),
         // dossier d'identité conforme ou douteux, pièce d'identité, compte désactivé (PERSONNEL).
         ReservationBoutique::saved(function (ReservationBoutique $r) {

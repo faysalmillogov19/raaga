@@ -37,6 +37,7 @@ class VerrousProductionTest extends TestCase
     private const COMPTES = [
         'raaga.compte_sequestre' => ['titulaire' => 'Raaga SA', 'banque' => 'Banque A', 'numero' => 'BF00 1'],
         'raaga.compte_location' => ['titulaire' => 'Raaga SA location', 'banque' => 'Banque B', 'numero' => 'BF00 2'],
+        'raaga.cartes.cle_portiques' => 'cle-des-portiques',
     ];
 
     /** Opérateur de paiement réel (doublure). */
@@ -95,11 +96,13 @@ class VerrousProductionTest extends TestCase
 
     public function test_avertissements_sans_blocage_puis_strict(): void
     {
-        // Aucun opérateur réel, comptes de destination manquants : avertissements, code 0 (paiements fermés).
-        config(['raaga.demo' => false, 'raaga.paiement.fournisseur' => null, 'raaga.compte_sequestre' => [], 'raaga.compte_location' => ['titulaire' => 'Raaga SA']]);
+        // Aucun opérateur réel, comptes de destination et clé des portiques manquants : avertissements, code 0 (services fermés).
+        config(['raaga.demo' => false, 'raaga.paiement.fournisseur' => null, 'raaga.compte_sequestre' => [], 'raaga.compte_location' => ['titulaire' => 'Raaga SA'],
+            'raaga.cartes.cle_portiques' => '']);
         $commande = $this->artisan('raaga:verifier-production')->assertSuccessful()
             ->expectsOutputToContain('AVERTISSEMENT : Aucun opérateur de paiement réel configuré : paiements par opérateur fermés')
-            ->expectsOutputToContain('Aucun point bloquant (6 avertissement(s)');
+            ->expectsOutputToContain('AVERTISSEMENT : Variable manquante : RAAGA_CLE_PORTIQUES')
+            ->expectsOutputToContain('Aucun point bloquant (7 avertissement(s)');
         foreach (['RAAGA_SEQUESTRE_TITULAIRE', 'RAAGA_SEQUESTRE_BANQUE', 'RAAGA_SEQUESTRE_NUMERO', 'RAAGA_COMPTE_LOCATION_BANQUE', 'RAAGA_COMPTE_LOCATION_NUMERO'] as $variable) {
             $commande->expectsOutputToContain('Variable manquante : '.$variable);
         }
@@ -108,7 +111,14 @@ class VerrousProductionTest extends TestCase
         // --strict : les avertissements deviennent bloquants.
         $this->artisan('raaga:verifier-production --strict')->assertFailed()
             ->expectsOutputToContain('BLOQUANT (--strict) : Aucun opérateur de paiement réel')
-            ->expectsOutputToContain('Mise en production refusée : 6 point(s) bloquant(s).');
+            ->expectsOutputToContain('BLOQUANT (--strict) : Variable manquante : RAAGA_CLE_PORTIQUES')
+            ->expectsOutputToContain('Mise en production refusée : 7 point(s) bloquant(s).');
+
+        // Seule la clé des portiques manque : avertissement, bloquant avec --strict.
+        config([...self::COMPTES, 'raaga.cartes.cle_portiques' => null]);
+        $this->operateurReel();
+        $this->artisan('raaga:verifier-production')->assertSuccessful()->expectsOutputToContain('Aucun point bloquant (1 avertissement(s)');
+        $this->artisan('raaga:verifier-production --strict')->assertFailed()->expectsOutputToContain('Mise en production refusée : 1 point(s) bloquant(s).');
 
         // Tout est prêt : réussi, même en --strict.
         config(self::COMPTES);

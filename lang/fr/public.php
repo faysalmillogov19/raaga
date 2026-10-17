@@ -56,6 +56,7 @@ return [
             'aide_valide' => 'Cette carte d’accès Raaga est active.',
             'aide_non_valide' => 'Cette carte n’est pas acceptée : elle est inconnue, en attente, suspendue, révoquée ou expirée.',
             'note' => 'Les agents de contrôle Raaga voient le détail de la carte après connexion.',
+            'trop_de_tentatives' => 'Trop de vérifications depuis cette connexion. Réessayez dans :secondes secondes.',
         ],
     ],
 
@@ -158,6 +159,10 @@ return [
         '403' => [
             'titre' => 'Accès refusé',
             'message' => 'Vous n’avez pas l’autorisation d’accéder à cette page.',
+        ],
+        '429' => [
+            'titre' => 'Trop de tentatives',
+            'message' => 'Trop de demandes depuis cette connexion. Patientez une minute puis réessayez.',
         ],
         '419' => [
             'titre' => 'Session expirée',
