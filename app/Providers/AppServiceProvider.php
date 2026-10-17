@@ -14,6 +14,7 @@ use App\Services\Cartes\Cartes;
 use App\Services\Paiement\SimulatedProvider;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Services\Sms\LogSmsProvider;
+use App\Support\GardeFouBase;
 use App\Support\MemoRequete;
 use App\Support\Recherche;
 use App\Support\TitreSucces;
@@ -22,6 +23,7 @@ use App\Support\VerrouEnvironnement;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandFinished;
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\RedirectResponse;
@@ -119,6 +121,15 @@ class AppServiceProvider extends ServiceProvider
 
         // Données de démonstration et paiement simulé interdits en production : démarrage refusé.
         VerrouEnvironnement::verifier((string) $this->app->environment(), (bool) config('raaga.demo'));
+
+        // Base protégée : en test (ou --env=testing), seulement une base « _test » ; commandes qui effacent des données
+        // (migrate:fresh, db:wipe, db:seed…) refusées en production et confirmées ailleurs.
+        // En environnement de test, Laravel ne relaie pas les événements de commande : la base est vérifiée dès le
+        // démarrage (tests, et toute commande lancée avec --env=testing).
+        if ($this->app->runningInConsole() && $this->app->environment('testing')) {
+            GardeFouBase::exigerBaseDeTest();
+        }
+        Event::listen(CommandStarting::class, fn (CommandStarting $e) => GardeFouBase::avantCommande((string) $e->command, $e->input, $e->output));
 
         // Après chaque « php artisan migrate » réussi (même sans nouvelle migration) : table des rôles alignée
         // sur l'enum (RoleSeeder, sans effet de bord).

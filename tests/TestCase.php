@@ -4,6 +4,7 @@ namespace Tests;
 
 use App\Services\Documents\GenerateurPdf;
 use App\Services\Medias\ConversionWebp;
+use App\Support\GardeFouBase;
 use Database\Seeders\ParametresPlateformeSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Tests\Support\ConversionWebpFactice;
@@ -18,6 +19,15 @@ abstract class TestCase extends BaseTestCase
     protected bool $seed = true;
 
     protected string $seeder = ParametresPlateformeSeeder::class;
+
+    /** Base protégée : les tests refusent de s'exécuter sur une base qui ne se termine pas par « _test ». */
+    public function createApplication()
+    {
+        $app = parent::createApplication();
+        GardeFouBase::exigerBaseDeTest();
+
+        return $app;
+    }
 
     protected function setUp(): void
     {
