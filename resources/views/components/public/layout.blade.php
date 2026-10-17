@@ -51,8 +51,8 @@
     @endif
 
     <main id="contenu" class="flex-1" tabindex="-1">
-        {{-- Page sans fil d'Ariane (accueil, espace, connexion…) : boutons Retour et Suivant en haut du contenu. --}}
-        @unless (\App\Support\NavigationHistorique::placee())
+        {{-- Page sans fil d'Ariane (espace, connexion…) : boutons Retour et Suivant en haut du contenu ; jamais sur l'accueil. --}}
+        @unless (\App\Support\NavigationHistorique::placee() || request()->routeIs('accueil'))
             <div class="conteneur pt-4"><x-navigation-historique :parent="route('accueil')" /></div>
         @endunless
         <x-public.encadre-demarche />

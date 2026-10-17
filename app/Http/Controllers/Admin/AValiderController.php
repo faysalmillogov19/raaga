@@ -102,7 +102,8 @@ class AValiderController extends Controller
         $parametres = array_filter(['rubrique' => $rubrique, 'detail' => $suivant]);
         $retour = redirect()->route($rubrique ? 'admin.a-valider.rubrique' : 'admin.a-valider', $parametres);
 
-        return $refus ? $retour->with('erreur', $message) : $retour->with('succes', $message);
+        return $refus ? $retour->with('erreur', $message)
+            : $retour->with('succes', $message)->with('succes_titre', __('public.popups.titres_succes.'.($donnees['decision'] === 'confirmer' ? 'valide' : 'rejete')));
     }
 
     /** Nom d'un élément qui n'est plus dans la file (déjà traité) : lu dans la base, à défaut sa clé. */

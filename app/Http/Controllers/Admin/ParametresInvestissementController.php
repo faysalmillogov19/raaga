@@ -121,6 +121,6 @@ class ParametresInvestissementController extends Controller
             return redirect()->route('admin.investissement')->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.investissement')->with('succes', __($message));
+        return redirect()->route('admin.investissement')->avecSucces($message);
     }
 }

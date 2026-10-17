@@ -122,7 +122,7 @@ class CapacitesController extends Controller
         $capacite = CapaciteSite::create($donnees);
         $this->journal->ecrire($request->user(), 'capacite.creee', 'CapaciteSite', $capacite->id, null, $donnees);
 
-        return redirect()->route('admin.referencement.capacites', ['site' => $capacite->site_id])->with('succes', __('admin.referencement.capacites.messages.ajoutee'));
+        return redirect()->route('admin.referencement.capacites', ['site' => $capacite->site_id])->avecSucces('admin.referencement.capacites.messages.ajoutee');
     }
 
     /** Fenêtre de modification (en-tête X-Fenetre) ; sans JavaScript, la liste avec cette fenêtre ouverte. */
@@ -149,7 +149,7 @@ class CapacitesController extends Controller
         $capacite->fill($donnees)->save();
         $this->journal->ecrire($request->user(), 'capacite.modifiee', 'CapaciteSite', $capacite->id, $avant, $donnees);
 
-        return $this->retour($capacite->site)->with('succes', __('admin.referencement.capacites.messages.modifiee'));
+        return $this->retour($capacite->site)->avecSucces('admin.referencement.capacites.messages.modifiee');
     }
 
     public function destroy(Request $request, CapaciteSite $capacite): RedirectResponse
@@ -163,7 +163,7 @@ class CapacitesController extends Controller
             $capacite->only(['site_id', 'niveau', 'zone', 'type_boutique_id', 'nombre_prevu', 'surface_unitaire', 'surface_totale']));
         $capacite->delete();
 
-        return $this->retour($site)->with('succes', __('admin.referencement.capacites.messages.supprimee'));
+        return $this->retour($site)->avecSucces('admin.referencement.capacites.messages.supprimee');
     }
 
     /** Sites dont les capacités se modifient : brouillon ou révision. */

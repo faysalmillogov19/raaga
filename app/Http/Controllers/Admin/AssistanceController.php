@@ -127,7 +127,7 @@ class AssistanceController extends Controller
             return redirect()->route('admin.assistance.show', $utilisateur)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.assistance.show', $utilisateur)->with('succes', __($message));
+        return redirect()->route('admin.assistance.show', $utilisateur)->avecSucces($message);
     }
 
     private function motif(Request $request): string

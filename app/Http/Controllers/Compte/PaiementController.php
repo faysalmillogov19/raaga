@@ -96,7 +96,7 @@ class PaiementController extends Controller
         $souscription = $this->souscription($request, $reference);
         $this->deposerPreuve($request, $souscription);
 
-        return redirect()->route('paiement.show', $souscription->reference)->with('succes', __('public.paiement.manuel.preuve_envoyee'));
+        return redirect()->route('paiement.show', $souscription->reference)->avecSucces('public.paiement.manuel.preuve_envoyee');
     }
 
     public function changer(Request $request, string $reference): RedirectResponse

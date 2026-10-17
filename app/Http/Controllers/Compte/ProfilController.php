@@ -87,7 +87,7 @@ class ProfilController extends Controller
         $modifies = array_values(array_diff(array_keys($user->getDirty()), ['name']));
 
         if ($modifies === []) {
-            return redirect()->route('espace.profil')->with('succes', __('public.compte.profil.aucun_changement'));
+            return redirect()->route('espace.profil')->avecSucces('public.compte.profil.aucun_changement');
         }
 
         // L'identité vérifiée ne correspond plus : nouvelle vérification nécessaire.
@@ -171,7 +171,7 @@ class ProfilController extends Controller
 
         $this->journal->ecrire($user, 'profil.telephone_modifie', 'User', $user->id);
 
-        return redirect()->route('espace.profil')->with('succes', __('public.compte.profil.telephone_enregistre'));
+        return redirect()->route('espace.profil')->avecSucces('public.compte.profil.telephone_enregistre');
     }
 
     public function renvoyerCodeTelephone(Request $request): RedirectResponse

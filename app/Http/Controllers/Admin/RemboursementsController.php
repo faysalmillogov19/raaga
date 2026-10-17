@@ -60,7 +60,7 @@ class RemboursementsController extends Controller
         ], [], __('admin.remboursements.champs'));
         $this->remboursements->declarerExecution($remboursement, $donnees['mode'], $donnees['reference_operation'], $request->user());
 
-        return redirect()->route('admin.remboursements')->with('succes', __('admin.remboursements.messages.declare'));
+        return redirect()->route('admin.remboursements')->avecSucces('admin.remboursements.messages.declare');
     }
 
     public function confirmer(Request $request, Remboursement $remboursement): RedirectResponse
@@ -68,7 +68,7 @@ class RemboursementsController extends Controller
         Gate::authorize(Droit::RemboursementsApprouver->value);
         $this->remboursements->confirmer($remboursement, $request->user());
 
-        return redirect($this->retour($request))->with('succes', __('admin.remboursements.messages.confirme'));
+        return redirect($this->retour($request))->avecSucces('admin.remboursements.messages.confirme');
     }
 
     public function rejeter(Request $request, Remboursement $remboursement): RedirectResponse
@@ -77,7 +77,7 @@ class RemboursementsController extends Controller
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
         $this->remboursements->rejeter($remboursement, $request->user(), $motif);
 
-        return redirect($this->retour($request))->with('succes', __('admin.remboursements.messages.rejete'));
+        return redirect($this->retour($request))->avecSucces('admin.remboursements.messages.rejete');
     }
 
     /** Après une décision : la liste, ou « À valider › Paiements » pour le VALIDATEUR (sans l'écran des remboursements). */

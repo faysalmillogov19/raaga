@@ -158,7 +158,7 @@ class NiveauxZonesController extends Controller
         });
         $this->journal->ecrire($request->user(), $classe::typeReferentiel().'.cree', class_basename($classe), $element->id, null, $donnees);
 
-        return redirect()->route('admin.referencement.'.$liste)->with('succes', __($brouillon ? 'admin.zones.messages.creee_brouillon' : 'admin.zones.messages.creee'));
+        return redirect()->route('admin.referencement.'.$liste)->avecSucces($brouillon ? 'admin.zones.messages.creee_brouillon' : 'admin.zones.messages.creee');
     }
 
     /** Libellé, description, rang ou ordre : à tout moment, sans validation, sauf pour un élément « par défaut » (circuit). */
@@ -224,7 +224,7 @@ class NiveauxZonesController extends Controller
             return redirect()->route('admin.referencement.'.$liste)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.referencement.'.$liste)->with('succes', __('admin.zones.messages.supprimee'));
+        return redirect()->route('admin.referencement.'.$liste)->avecSucces('admin.zones.messages.supprimee');
     }
 
     /** Élément rejeté ou retiré de la validation (brouillon) : soumis de nouveau au VALIDATEUR. */
@@ -402,6 +402,6 @@ class NiveauxZonesController extends Controller
             return $fiche->with('erreur', $e->getMessage());
         }
 
-        return $fiche->with('succes', __($message));
+        return $fiche->avecSucces($message);
     }
 }

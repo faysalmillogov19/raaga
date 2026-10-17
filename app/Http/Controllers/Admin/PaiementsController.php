@@ -138,7 +138,7 @@ class PaiementsController extends Controller
         $message = $request->validate(['message' => ['nullable', 'string', 'max:500']], [], __('admin.paiements.champs'))['message'] ?? null;
         $this->relances->relancer($objet, Relance::MANUELLE, $request->user(), $message);
 
-        return redirect()->route('admin.paiements.dossier', [$type, $id])->with('succes', __('admin.paiements.messages.relance'));
+        return redirect()->route('admin.paiements.dossier', [$type, $id])->avecSucces('admin.paiements.messages.relance');
     }
 
     public function confirmerCorrection(Request $request, CorrectionPaiement $correction): RedirectResponse
@@ -146,7 +146,7 @@ class PaiementsController extends Controller
         Gate::authorize(Droit::PaiementsCorrectionsConfirmer->value);
         $this->controle->confirmerCorrection($correction, $request->user());
 
-        return redirect()->route('admin.a-valider.rubrique', 'paiements')->with('succes', __('admin.paiements.messages.correction_confirmee'));
+        return redirect()->route('admin.a-valider.rubrique', 'paiements')->avecSucces('admin.paiements.messages.correction_confirmee');
     }
 
     public function rejeterCorrection(Request $request, CorrectionPaiement $correction): RedirectResponse
@@ -155,7 +155,7 @@ class PaiementsController extends Controller
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
         $this->controle->rejeterCorrection($correction, $request->user(), $motif);
 
-        return redirect()->route('admin.a-valider.rubrique', 'paiements')->with('succes', __('admin.paiements.messages.correction_rejetee'));
+        return redirect()->route('admin.a-valider.rubrique', 'paiements')->avecSucces('admin.paiements.messages.correction_rejetee');
     }
 
     private function objet(string $type, int $id): Souscription|ReservationBoutique
@@ -170,6 +170,6 @@ class PaiementsController extends Controller
     private function retour(Paiement $paiement, string $message): RedirectResponse
     {
         return redirect()->route('admin.paiements.dossier', $paiement->souscription_id ? ['souscription', $paiement->souscription_id] : ['caution', $paiement->reservation_boutique_id])
-            ->with('succes', __($message));
+            ->avecSucces($message);
     }
 }

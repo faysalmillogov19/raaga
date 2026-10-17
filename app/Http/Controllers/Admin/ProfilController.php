@@ -47,7 +47,7 @@ class ProfilController extends Controller
             $this->journal->ecrire($user, 'profil.modifie', 'User', $user->id, null, ['champs' => $modifies]);
         }
 
-        return redirect()->route('admin.profil')->with('succes', __('admin.profil.enregistre'));
+        return redirect()->route('admin.profil')->avecSucces('admin.profil.enregistre');
     }
 
     public function motDePasse(Request $request): RedirectResponse
@@ -70,6 +70,6 @@ class ProfilController extends Controller
 
         $this->journal->ecrire($user, 'profil.mot_de_passe_modifie', 'User', $user->id);
 
-        return redirect()->route('admin.profil')->with('succes', __('admin.profil.mot_de_passe_enregistre'));
+        return redirect()->route('admin.profil')->avecSucces('admin.profil.mot_de_passe_enregistre');
     }
 }

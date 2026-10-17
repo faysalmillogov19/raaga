@@ -227,7 +227,7 @@ class ImportBoutiquesController extends Controller
         $message = __('admin.sites.excel.importe', ['creees' => format_nombre($compte['creees']), 'mises_a_jour' => format_nombre($compte['mises_a_jour'])])
             .($resultat['message'] ? ' '.$resultat['message'] : '');
 
-        return $this->retour($site)->with('succes', $message);
+        return $this->retour($site)->with('succes', $message)->with('succes_titre', __('public.popups.titres_succes.importe'));
     }
 
     /** Site soumis ou confirmé : import entièrement refusé (à remettre en révision). */

@@ -80,7 +80,7 @@ class DividendesController extends Controller
             return $distribution;
         });
 
-        return redirect()->route('admin.dividendes.show', $distribution)->with('succes', __('admin.dividendes.messages.creee'));
+        return redirect()->route('admin.dividendes.show', $distribution)->avecSucces('admin.dividendes.messages.creee');
     }
 
     public function show(DistributionDividende $distribution): View
@@ -132,7 +132,7 @@ class DividendesController extends Controller
             $this->journal->ecrire($request->user(), 'distribution.modifiee', 'DistributionDividende', $distribution->id, null, ['champs' => $modifies]);
         }
 
-        return redirect()->route('admin.dividendes.show', $distribution)->with('succes', __('admin.dividendes.messages.enregistree'));
+        return redirect()->route('admin.dividendes.show', $distribution)->avecSucces('admin.dividendes.messages.enregistree');
     }
 
     /**
@@ -299,6 +299,6 @@ class DividendesController extends Controller
             return redirect()->route('admin.dividendes.show', $distribution)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.dividendes.show', $distribution)->with('succes', __($message));
+        return redirect()->route('admin.dividendes.show', $distribution)->avecSucces($message);
     }
 }

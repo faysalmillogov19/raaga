@@ -27,7 +27,7 @@ class CadreController extends Controller
         $theme = $request->validate(['theme' => ['required', 'in:'.implode(',', self::THEMES)]])['theme'];
         $request->user()->forceFill(['theme_backoffice' => $theme])->save();
 
-        return $request->expectsJson() ? response()->json(['theme' => $theme]) : back()->with('succes', __('admin.cadre.theme_enregistre'));
+        return $request->expectsJson() ? response()->json(['theme' => $theme]) : back()->avecSucces('admin.cadre.theme_enregistre');
     }
 
     /** Menu dépliant de la barre latérale ouvert ou fermé : mémorisé pour l'utilisateur. */

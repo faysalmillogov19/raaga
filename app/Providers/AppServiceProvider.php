@@ -11,11 +11,13 @@ use App\Services\Plateforme\ParametresPlateforme;
 use App\Services\Sms\LogSmsProvider;
 use App\Support\MemoRequete;
 use App\Support\Recherche;
+use App\Support\TitreSucces;
 use App\Support\Verrou;
 use App\Support\VerrouEnvironnement;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -52,6 +54,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Message de succès en popup : texte traduit et titre (précisé, sinon déduit de la clé, sinon « Opération réussie »).
+        RedirectResponse::macro('avecSucces', function (string $cle, array $remplacements = [], ?string $titre = null) {
+            /** @var RedirectResponse $this */
+            return $this->with('succes', __($cle, $remplacements))->with('succes_titre', $titre ?? TitreSucces::pour($cle));
+        });
+
         // Derrière un proxy qui termine le HTTPS (APP_URL en https), la requête arrive en HTTP côté
         // Laravel : sans ça, asset()/url() génèrent des liens http:// bloqués en contenu mixte.
         if (str_starts_with((string) config('app.url'), 'https://')) {

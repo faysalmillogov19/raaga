@@ -65,6 +65,6 @@ class ConventionController extends Controleur
             return redirect()->route('institutionnel.convention')->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('institutionnel.convention')->with('succes', __($message));
+        return redirect()->route('institutionnel.convention')->avecSucces($message);
     }
 }

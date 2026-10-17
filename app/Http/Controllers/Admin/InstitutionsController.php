@@ -59,7 +59,7 @@ class InstitutionsController extends Controller
             $donnees['signataire_nom'], $donnees['signataire_email']);
 
         return redirect()->route('admin.institutions.show', $institution)
-            ->with('succes', __('institutionnel.bo.institutions.creee', ['email' => $donnees['signataire_email']]));
+            ->avecSucces('institutionnel.bo.institutions.creee', ['email' => $donnees['signataire_email']]);
     }
 
     public function show(Institution $institution): View
@@ -109,7 +109,7 @@ class InstitutionsController extends Controller
 
         $this->gestion->definirInterlocuteur($request->user(), $institution, $donnees);
 
-        return redirect()->route('admin.institutions.show', $institution)->with('succes', __('institutionnel.bo.institutions.interlocuteur_enregistre'));
+        return redirect()->route('admin.institutions.show', $institution)->avecSucces('institutionnel.bo.institutions.interlocuteur_enregistre');
     }
 
     public function suspendre(Request $request, Institution $institution): RedirectResponse

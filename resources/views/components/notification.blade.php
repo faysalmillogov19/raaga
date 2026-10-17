@@ -13,7 +13,8 @@
             $messages[] = ['type' => $type, 'titre' => $titre ?? $t['titres'][$type], 'texte' => $texte];
         }
     };
-    $ajouter('succes', session('succes'));
+    // Succès : titre précisé par le message (session « succes_titre »), sinon « Opération réussie ».
+    $ajouter('succes', session('succes'), session('succes_titre'));
     $ajouter('information', session('statut'));
     $ajouter('information', session('info'));
     $ajouter('alerte', session('avertissement'));

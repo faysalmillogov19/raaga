@@ -66,7 +66,7 @@ class OrganisationController extends Controleur
         $institution->forceFill($donnees)->save();
         $journal->ecrire($request->user(), 'institution.rib_modifie', 'Institution', $institution->id, $avant, $donnees);
 
-        return redirect()->route('institutionnel.organisation')->with('succes', __('institutionnel.organisation.rib_enregistre'));
+        return redirect()->route('institutionnel.organisation')->avecSucces('institutionnel.organisation.rib_enregistre');
     }
 
     public function inviter(Request $request): RedirectResponse
@@ -113,6 +113,6 @@ class OrganisationController extends Controleur
             return redirect()->route('institutionnel.organisation')->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('institutionnel.organisation')->with('succes', __($message));
+        return redirect()->route('institutionnel.organisation')->avecSucces($message);
     }
 }

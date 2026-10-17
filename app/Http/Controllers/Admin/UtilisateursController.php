@@ -128,7 +128,7 @@ class UtilisateursController extends Controller
         $user = $this->gestion->inviter($request->user(), $donnees['nom'], $donnees['email'], RoleEnum::from($donnees['role']));
 
         return redirect()->route('admin.utilisateurs.show', $user)
-            ->with('succes', __('admin.utilisateurs.messages.invite', ['email' => $user->email]));
+            ->avecSucces('admin.utilisateurs.messages.invite', ['email' => $user->email]);
     }
 
     public function modifierRole(Request $request, User $utilisateur): RedirectResponse
@@ -205,7 +205,7 @@ class UtilisateursController extends Controller
             return redirect()->route('admin.utilisateurs.show', $utilisateur)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.utilisateurs.show', $utilisateur)->with('succes', __($message));
+        return redirect()->route('admin.utilisateurs.show', $utilisateur)->avecSucces($message);
     }
 
     private function motif(Request $request): string

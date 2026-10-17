@@ -50,7 +50,7 @@ class VerificationController extends Controller
             array_filter($request->only(['recto', 'verso', 'rccm', 'selfie'])),
         );
 
-        return redirect()->route('espace.verification')->with('succes', __('public.verification.envoye'));
+        return redirect()->route('espace.verification')->avecSucces('public.verification.envoye');
     }
 
     /** Fichier d'une pièce : uniquement pour son titulaire (le VALIDATEUR passe par le back-office). */

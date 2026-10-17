@@ -85,7 +85,7 @@ class ConventionsController extends Controller
             return $convention;
         });
 
-        return redirect()->route('admin.conventions.show', $convention)->with('succes', __('institutionnel.bo.conventions.creee'));
+        return redirect()->route('admin.conventions.show', $convention)->avecSucces('institutionnel.bo.conventions.creee');
     }
 
     public function show(Convention $convention): View
@@ -137,7 +137,7 @@ class ConventionsController extends Controller
             $this->journal->ecrire($request->user(), 'convention.modifiee', 'Convention', $convention->id, null, ['champs' => $modifies]);
         }
 
-        return redirect()->route('admin.conventions.show', $convention)->with('succes', __('institutionnel.bo.conventions.enregistree'));
+        return redirect()->route('admin.conventions.show', $convention)->avecSucces('institutionnel.bo.conventions.enregistree');
     }
 
     public function soumettre(Request $request, Convention $convention): RedirectResponse
@@ -269,6 +269,6 @@ class ConventionsController extends Controller
             return redirect()->route('admin.conventions.show', $convention)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.conventions.show', $convention)->with('succes', __($message));
+        return redirect()->route('admin.conventions.show', $convention)->avecSucces($message);
     }
 }

@@ -103,7 +103,7 @@ class CampagnesBoutiquesController extends Controller
             return $campagne;
         });
 
-        return $this->puisSoumettre($request, redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree')),
+        return $this->puisSoumettre($request, redirect()->route('admin.boutiques.show', $campagne)->avecSucces('admin.boutiques.messages.enregistree'),
             'campagne', $campagne, route('admin.boutiques.edit', $campagne));
     }
 
@@ -177,7 +177,7 @@ class CampagnesBoutiquesController extends Controller
         $campagne->fill($request->parametres())->save();
         $this->journal->ecrire($request->user(), 'campagne_boutiques.modifiee', 'CampagneBoutiques', $campagne->id);
 
-        return $this->puisSoumettre($request, redirect()->route('admin.boutiques.show', $campagne)->with('succes', __('admin.boutiques.messages.enregistree')),
+        return $this->puisSoumettre($request, redirect()->route('admin.boutiques.show', $campagne)->avecSucces('admin.boutiques.messages.enregistree'),
             'campagne', $campagne, route('admin.boutiques.edit', $campagne));
     }
 
@@ -269,7 +269,7 @@ class CampagnesBoutiquesController extends Controller
         // Retour sur « Attributions à faire » quand l'attribution y a été faite.
         $retour = url()->previous() === route('admin.boutiques.attributions') ? route('admin.boutiques.attributions') : route('admin.boutiques.show', $campagne);
 
-        return redirect($retour)->with('succes', __('admin.boutiques.messages.attribuee'));
+        return redirect($retour)->avecSucces('admin.boutiques.messages.attribuee');
     }
 
     /** Sites confirmés qui ont des boutiques réservables. */
@@ -294,7 +294,7 @@ class CampagnesBoutiquesController extends Controller
             return redirect()->route('admin.boutiques.show', $campagne)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.boutiques.show', $campagne)->with('succes', __($message));
+        return redirect()->route('admin.boutiques.show', $campagne)->avecSucces($message);
     }
 
     /** Au moins un moyen de paiement de la caution réellement ouvert (compte de location renseigné ; opérateur réel pour un moyen par opérateur). @throws RegleGestionException */

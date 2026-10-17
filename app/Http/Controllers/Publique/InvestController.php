@@ -57,7 +57,7 @@ class InvestController extends Controller
             ['reference' => $manifestation->reference, 'nombre_actions' => $manifestation->nombre_actions, 'montant' => $manifestation->montant]);
 
         return redirect()->route('espace', ['onglet' => 'interets'])
-            ->with('succes', __('public.invest.messages.enregistree', ['reference' => $manifestation->reference]));
+            ->avecSucces('public.invest.messages.enregistree', ['reference' => $manifestation->reference]);
     }
 
     /** Nombre minimum d'actions (conditions publiques, 1 sinon) : valeur de départ du simulateur. */

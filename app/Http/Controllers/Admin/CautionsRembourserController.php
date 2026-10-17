@@ -69,7 +69,7 @@ class CautionsRembourserController extends Controller
         ], [], __('admin.avances.champs'));
         $this->avances->proposerRetenue($remboursement, (int) $donnees['retenue_pct'], $donnees['motif'], $request->user());
 
-        return redirect()->route('admin.cautions')->with('succes', __('admin.avances.messages.proposee'));
+        return redirect()->route('admin.cautions')->avecSucces('admin.avances.messages.proposee');
     }
 
     public function confirmer(Request $request, DecisionAvance $decision): RedirectResponse
@@ -77,7 +77,7 @@ class CautionsRembourserController extends Controller
         Gate::authorize(Droit::AvancesDecider->value);
         $this->avances->confirmer($decision, $request->user());
 
-        return redirect()->route('admin.a-valider')->with('succes', __('admin.avances.messages.confirmee'));
+        return redirect()->route('admin.a-valider')->avecSucces('admin.avances.messages.confirmee');
     }
 
     public function rejeter(Request $request, DecisionAvance $decision): RedirectResponse
@@ -86,6 +86,6 @@ class CautionsRembourserController extends Controller
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], [], ['motif' => __('admin.avances.champs.motif')])['motif'];
         $this->avances->rejeter($decision, $request->user(), $motif);
 
-        return redirect()->route('admin.a-valider')->with('succes', __('admin.avances.messages.rejetee'));
+        return redirect()->route('admin.a-valider')->avecSucces('admin.avances.messages.rejetee');
     }
 }

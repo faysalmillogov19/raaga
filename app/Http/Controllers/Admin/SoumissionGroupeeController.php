@@ -57,7 +57,8 @@ class SoumissionGroupeeController extends Controller
     {
         // Tout soumis : « n éléments soumis au VALIDATEUR. »
         if ($action === 'soumis' && $r['refus'] === [] && $r['soumis'] !== []) {
-            return back()->with('succes', trans_choice('admin.soumission.tous_soumis', count($r['soumis']), ['n' => count($r['soumis'])]).'.');
+            return back()->with('succes', trans_choice('admin.soumission.tous_soumis', count($r['soumis']), ['n' => count($r['soumis'])]).'.')
+                ->with('succes_titre', __('public.popups.titres_succes.soumis'));
         }
         $message = trans_choice('admin.soumission.resultat.'.$action, count($r['soumis']), ['n' => count($r['soumis'])]);
         if ($r['refus'] !== []) {

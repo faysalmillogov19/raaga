@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\TitreSucces;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Tests\Support\ActeursParametrage;
@@ -38,7 +39,7 @@ class NotificationsNavigationTest extends TestCase
             'avertissement' => 'Délai bientôt dépassé.', 'erreur' => 'Action impossible.'])->get(route('admin.tableau'))->assertOk()->getContent();
 
         $this->assertSame([
-            'succes' => ['Enregistré', 'Grille enregistrée.', true],
+            'succes' => ['Opération réussie', 'Grille enregistrée.', true],
             'information' => ['Information', 'Session prolongée.', true],
             'alerte' => ['Attention', 'Délai bientôt dépassé.', false],
             'erreur' => ['Erreur', 'Action impossible.', false],
@@ -48,6 +49,35 @@ class NotificationsNavigationTest extends TestCase
         // Plus aucune ancienne bannière dans la page.
         $this->assertStringNotContainsString('adm-message adm-message-ok', $page);
         $this->assertStringNotContainsString('adm-message adm-message-erreur', $page);
+    }
+
+    public function test_titre_du_succes_precise_par_le_message_ou_deduit_de_sa_cle(): void
+    {
+        // Titre déduit de la fin de la clé ; aucune famille reconnue : « Opération réussie ».
+        $this->assertSame('Soumis', TitreSucces::pour('admin.tranches.messages.soumise'));
+        $this->assertSame('Validé', TitreSucces::pour('admin.grilles.messages.avenant_confirme'));
+        $this->assertSame('Rejeté', TitreSucces::pour('admin.paiements.messages.correction_rejetee'));
+        $this->assertSame('Supprimé', TitreSucces::pour('admin.zones.messages.supprimee'));
+        $this->assertSame('Paiement reçu', TitreSucces::pour('admin.paiements.messages.controle_recu'));
+        $this->assertSame('Preuve envoyée', TitreSucces::pour('public.paiement.manuel.preuve_envoyee'));
+        $this->assertSame('Enregistré', TitreSucces::pour('admin.sites.messages.enregistre'));
+        $this->assertNull(TitreSucces::pour('public.compte.profil.aucun_changement'));
+
+        // avecSucces() : message traduit et titre, précisé ou déduit.
+        $reponse = redirect('/')->avecSucces('admin.zones.messages.supprimee');
+        $this->assertSame([__('admin.zones.messages.supprimee'), 'Supprimé'], [$reponse->getSession()->get('succes'), $reponse->getSession()->get('succes_titre')]);
+        $reponse = redirect('/')->avecSucces('public.compte.profil.aucun_changement', [], 'Paiement reçu');
+        $this->assertSame('Paiement reçu', $reponse->getSession()->get('succes_titre'));
+
+        // Popup : titre précisé, sinon « Opération réussie ».
+        $this->creerActeurs();
+        $page = $this->en($this->regulateur)->withSession(['succes' => 'Tranche soumise.', 'succes_titre' => 'Soumis'])->get(route('admin.tableau'))->getContent();
+        $this->assertSame(['Soumis', 'Tranche soumise.', true], $this->popups($page)['succes']);
+
+        // Message réel : proposition d'une démarche du site public par le RÉGULATEUR.
+        $page = $this->en($this->regulateur)->followingRedirects()->post(route('admin.phase.proposer'), ['presentation_actions' => 1, 'souscription_actions' => 0, 'motif' => 'Ouverture prochaine'])
+            ->assertOk()->getContent();
+        $this->assertSame(['Proposé', __('admin.phase.messages.proposee'), true], $this->popups($page)['succes']);
     }
 
     public function test_erreurs_de_formulaire_resumees_et_gardees_a_cote_des_champs(): void
@@ -106,9 +136,10 @@ class NotificationsNavigationTest extends TestCase
         $this->app['auth']->forgetGuards();
         $this->flushSession();
         $boutons($this->get(route('admin.connexion'))->assertOk()->getContent(), url('/'));
-        // Site public : page avec fil (contact) et sans fil (accueil).
+        // Site public : page avec fil (contact), page sans fil (connexion) ; jamais sur l'accueil (pas de bande au-dessus du bandeau).
         $boutons($this->get(route('contact'))->assertOk()->getContent(), route('accueil'));
-        $boutons($this->get(route('accueil'))->assertOk()->getContent(), route('accueil'));
+        $boutons($this->get(route('connexion'))->assertOk()->getContent(), route('accueil'));
+        $this->get(route('accueil'))->assertOk()->assertDontSee('data-navigation-historique', false)->assertDontSee('data-historique-retour', false);
 
         // Espace institutionnel.
         $this->en($this->superAdmin)->post(route('admin.institutions.store'), ['denomination' => 'Caisse nationale', 'sigle' => 'CN', 'rccm' => 'BF-OUA-2000-B-1',

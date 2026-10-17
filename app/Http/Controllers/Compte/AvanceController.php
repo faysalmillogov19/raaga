@@ -89,7 +89,7 @@ class AvanceController extends Controller
         $r = $this->reservation($request, $reference);
         $this->deposerPreuve($request, $r);
 
-        return redirect()->route('boutiques.avance.show', $r->reference)->with('succes', __('public.paiement.manuel.preuve_envoyee'));
+        return redirect()->route('boutiques.avance.show', $r->reference)->avecSucces('public.paiement.manuel.preuve_envoyee');
     }
 
     public function changer(Request $request, string $reference): RedirectResponse

@@ -35,12 +35,12 @@ trait EnregistreEtSoumet
 
         $raison = app(SoumissionGroupee::class)->soumettreUn($request, $entite, $ligne->fresh());
         if ($raison === null) {
-            return $reponse->with('succes', __('admin.soumission.enregistre_soumis'));
+            return $reponse->avecSucces('admin.soumission.enregistre_soumis');
         }
 
         return redirect()->to($echec)
             ->withErrors([SoumissionGroupee::champ($raison) => $raison])
             ->withInput($fenetre ? ['_fenetre' => $fenetre] : [])
-            ->with('succes', __('admin.soumission.brouillon_conserve'));
+            ->avecSucces('admin.soumission.brouillon_conserve');
     }
 }

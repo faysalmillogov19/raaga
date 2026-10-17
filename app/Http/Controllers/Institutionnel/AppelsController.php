@@ -65,6 +65,6 @@ class AppelsController extends Controleur
             return redirect()->route('institutionnel.appels.show', $appel)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('institutionnel.appels.show', $appel)->with('succes', __('institutionnel.appels.declare'));
+        return redirect()->route('institutionnel.appels.show', $appel)->avecSucces('institutionnel.appels.declare');
     }
 }

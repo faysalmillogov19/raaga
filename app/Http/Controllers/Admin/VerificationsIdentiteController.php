@@ -79,7 +79,7 @@ class VerificationsIdentiteController extends Controller
         $motif = $request->validate(['motif' => ['nullable', 'string', 'max:1000']], [], __('admin.kyc.champs'))['motif'] ?? null;
         $this->dossiers->conforme($citoyen, $request->user(), $motif);
 
-        return redirect()->route('admin.kyc.dossier', $citoyen)->with('succes', __('admin.kyc.messages.conforme'));
+        return redirect()->route('admin.kyc.dossier', $citoyen)->avecSucces('admin.kyc.messages.conforme');
     }
 
     public function douteux(Request $request, User $citoyen): RedirectResponse
@@ -88,7 +88,7 @@ class VerificationsIdentiteController extends Controller
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], [], __('admin.kyc.champs'))['motif'];
         $this->dossiers->douteux($citoyen, $request->user(), $motif);
 
-        return redirect()->route('admin.kyc.dossier', $citoyen)->with('succes', __('admin.kyc.messages.douteux'));
+        return redirect()->route('admin.kyc.dossier', $citoyen)->avecSucces('admin.kyc.messages.douteux');
     }
 
     public function confirmerAnnulation(Request $request, VerificationKyc $verification): RedirectResponse
@@ -96,7 +96,7 @@ class VerificationsIdentiteController extends Controller
         Gate::authorize(Droit::KycAnnulationConfirmer->value);
         $this->dossiers->confirmerAnnulation($verification, $request->user());
 
-        return redirect()->route('admin.a-valider.rubrique', 'identites')->with('succes', __('admin.kyc.messages.annulation_confirmee'));
+        return redirect()->route('admin.a-valider.rubrique', 'identites')->avecSucces('admin.kyc.messages.annulation_confirmee');
     }
 
     public function rejeterAnnulation(Request $request, VerificationKyc $verification): RedirectResponse
@@ -105,6 +105,6 @@ class VerificationsIdentiteController extends Controller
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
         $this->dossiers->rejeterAnnulation($verification, $request->user(), $motif);
 
-        return redirect()->route('admin.a-valider.rubrique', 'identites')->with('succes', __('admin.kyc.messages.annulation_rejetee'));
+        return redirect()->route('admin.a-valider.rubrique', 'identites')->avecSucces('admin.kyc.messages.annulation_rejetee');
     }
 }

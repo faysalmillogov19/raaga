@@ -116,7 +116,7 @@ class TypesBoutiqueController extends Controller
         });
         $this->journal->ecrire($request->user(), 'type_boutique.cree', 'TypeBoutique', $type->id, null, ['code' => $type->code, 'libelle' => $type->libelle]);
 
-        return redirect()->route('admin.sites.types')->with('succes', __($brouillon ? 'admin.types.messages.cree_brouillon' : 'admin.types.messages.cree'));
+        return redirect()->route('admin.sites.types')->avecSucces($brouillon ? 'admin.types.messages.cree_brouillon' : 'admin.types.messages.cree');
     }
 
     /**
@@ -199,7 +199,7 @@ class TypesBoutiqueController extends Controller
             $type->delete();
         });
 
-        return redirect()->route('admin.sites.types')->with('succes', __('admin.types.messages.supprime'));
+        return redirect()->route('admin.sites.types')->avecSucces('admin.types.messages.supprime');
     }
 
     // ------------------------------------------------------------------ VALIDATEUR
@@ -338,6 +338,6 @@ class TypesBoutiqueController extends Controller
             return $fiche->with('erreur', $e->getMessage());
         }
 
-        return $fiche->with('succes', __($message));
+        return $fiche->avecSucces($message);
     }
 }

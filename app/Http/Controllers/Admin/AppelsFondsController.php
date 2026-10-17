@@ -101,6 +101,6 @@ class AppelsFondsController extends Controller
             return redirect()->route('admin.appels-fonds.show', $declaration->appel_fonds_id)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.appels-fonds.show', $declaration->appel_fonds_id)->with('succes', __($message));
+        return redirect()->route('admin.appels-fonds.show', $declaration->appel_fonds_id)->avecSucces($message);
     }
 }

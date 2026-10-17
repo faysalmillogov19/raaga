@@ -135,6 +135,6 @@ class ParametresPaiementsController extends Controller
             return $page->with('erreur', $e->getMessage());
         }
 
-        return $page->with('succes', __($message));
+        return $page->avecSucces($message);
     }
 }

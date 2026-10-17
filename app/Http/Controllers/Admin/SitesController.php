@@ -107,7 +107,7 @@ class SitesController extends Controller
         $site = Site::create([...$this->valider($request), 'statut' => StatutSite::Brouillon, 'cree_par' => $request->user()->id]);
         $this->journal->ecrire($request->user(), 'site.cree', 'Site', $site->id, null, ['code' => $site->code, 'nom' => $site->nom]);
 
-        return $this->puisSoumettre($request, redirect()->route('admin.sites.show', $site)->with('succes', __('admin.sites.messages.enregistre')),
+        return $this->puisSoumettre($request, redirect()->route('admin.sites.show', $site)->avecSucces('admin.sites.messages.enregistre'),
             'site', $site, route('admin.sites.edit', $site));
     }
 
@@ -483,6 +483,6 @@ class SitesController extends Controller
             return $retour->with('erreur', $e->getMessage());
         }
 
-        return $retour->with('succes', __($message));
+        return $retour->avecSucces($message);
     }
 }

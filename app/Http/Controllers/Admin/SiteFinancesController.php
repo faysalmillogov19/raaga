@@ -150,6 +150,6 @@ class SiteFinancesController extends Controller
             return redirect()->route('admin.sites.finances', $site)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.sites.finances', $site)->with('succes', __($message));
+        return redirect()->route('admin.sites.finances', $site)->avecSucces($message);
     }
 }

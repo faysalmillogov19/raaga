@@ -8,7 +8,15 @@
 return [
     // Notifications en popup (succès, information, alerte, erreur) et boutons Retour / Suivant.
     'popups' => [
-        'titres' => ['succes' => 'Enregistré', 'information' => 'Information', 'alerte' => 'Attention', 'erreur' => 'Erreur', 'formulaire' => 'Formulaire à corriger'],
+        'titres' => ['succes' => 'Opération réussie', 'information' => 'Information', 'alerte' => 'Attention', 'erreur' => 'Erreur', 'formulaire' => 'Formulaire à corriger'],
+        // Titres précis des messages de succès (App\Support\TitreSucces, ou titre donné par le message).
+        'titres_succes' => [
+            'soumis' => 'Soumis', 'valide' => 'Validé', 'rejete' => 'Rejeté', 'supprime' => 'Supprimé', 'retire' => 'Retiré',
+            'reactive' => 'Réactivé', 'desactive' => 'Désactivé', 'propose' => 'Proposé', 'demande' => 'Demande envoyée', 'revision' => 'Remis en révision',
+            'ouvert' => 'Ouvert', 'cloture' => 'Clôturé', 'attribue' => 'Attribué', 'invitation' => 'Invitation envoyée', 'relance' => 'Relance envoyée',
+            'declare' => 'Déclaré', 'envoye' => 'Envoyé', 'signale' => 'Signalé', 'importe' => 'Importé', 'deverrouille' => 'Déverrouillé',
+            'enregistre' => 'Enregistré', 'paiement_recu' => 'Paiement reçu', 'paiement_incomplet' => 'Paiement incomplet', 'preuve' => 'Preuve envoyée',
+        ],
         'compris' => 'Compris',
         'champs_a_corriger' => '{1} 1 champ à corriger : voir le message sous le champ.|[2,*] :n champs à corriger : voir les messages sous les champs.',
     ],

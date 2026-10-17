@@ -78,7 +78,7 @@ class TranchesController extends Controller
             return $tranche;
         });
 
-        return redirect()->route('admin.tranches.show', $tranche)->with('succes', __('admin.tranches.messages.creee'));
+        return redirect()->route('admin.tranches.show', $tranche)->avecSucces('admin.tranches.messages.creee');
     }
 
     public function show(Request $request, Tranche $tranche): View
@@ -130,7 +130,7 @@ class TranchesController extends Controller
             $this->journal->ecrire($request->user(), 'tranche.modifiee', 'Tranche', $tranche->id, null, ['champs' => $modifies]);
         }
 
-        return redirect()->route('admin.tranches.show', $tranche)->with('succes', __('admin.tranches.messages.enregistree'));
+        return redirect()->route('admin.tranches.show', $tranche)->avecSucces('admin.tranches.messages.enregistree');
     }
 
     public function soumettre(Request $request, Tranche $tranche): RedirectResponse
@@ -304,6 +304,6 @@ class TranchesController extends Controller
             return redirect()->route('admin.tranches.show', $tranche)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.tranches.show', $tranche)->with('succes', __($message));
+        return redirect()->route('admin.tranches.show', $tranche)->avecSucces($message);
     }
 }

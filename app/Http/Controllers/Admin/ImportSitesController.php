@@ -97,7 +97,7 @@ class ImportSitesController extends Controller
         $request->session()->forget(self::CLE_SESSION);
 
         return redirect()->route('admin.sites')->with('succes', __('admin.sites.import.importe', array_map('format_nombre', $compte))
-            .($resultat['message'] ? ' '.$resultat['message'] : ''));
+            .($resultat['message'] ? ' '.$resultat['message'] : ''))->with('succes_titre', __('public.popups.titres_succes.importe'));
     }
 
     public function annuler(Request $request): RedirectResponse

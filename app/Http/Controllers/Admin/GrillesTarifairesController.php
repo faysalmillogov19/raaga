@@ -148,7 +148,7 @@ class GrillesTarifairesController extends Controller
             return redirect()->route('admin.boutiques.grilles.show', $site)->with('erreur', $e->getMessage());
         }
 
-        return $this->puisSoumettre($request, redirect()->route('admin.boutiques.grilles.show', $site)->with('succes', __('admin.grilles.messages.enregistree')),
+        return $this->puisSoumettre($request, redirect()->route('admin.boutiques.grilles.show', $site)->avecSucces('admin.grilles.messages.enregistree'),
             'grille', $site, route('admin.boutiques.grilles.edit', $site));
     }
 
@@ -221,7 +221,7 @@ class GrillesTarifairesController extends Controller
             return redirect($this->retour($site))->with('erreur', $e->getMessage());
         }
 
-        return redirect($this->retour($site))->with('succes', __($message));
+        return redirect($this->retour($site))->avecSucces($message);
     }
 
     /** Après une action : la grille, ou « À valider › Grilles » pour le VALIDATEUR (sans l'écran des grilles). */

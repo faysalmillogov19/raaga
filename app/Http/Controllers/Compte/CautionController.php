@@ -91,7 +91,7 @@ class CautionController extends Controller
         $reservation = $this->reservation($request, $reference);
         $this->deposerPreuve($request, $reservation);
 
-        return redirect()->route('boutiques.reservation.show', $reservation->reference)->with('succes', __('public.paiement.manuel.preuve_envoyee'));
+        return redirect()->route('boutiques.reservation.show', $reservation->reference)->avecSucces('public.paiement.manuel.preuve_envoyee');
     }
 
     public function changer(Request $request, string $reference): RedirectResponse

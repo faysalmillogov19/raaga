@@ -63,7 +63,7 @@ class PhaseController extends Controller
         ]);
         $this->journal->ecrire($request->user(), 'phase.proposee', 'DecisionPhase', $decision->id, null, $decision->only(['presentation_actions', 'souscription_actions', 'motif']));
 
-        return redirect()->route('admin.phase')->with('succes', __('admin.phase.messages.proposee'));
+        return redirect()->route('admin.phase')->avecSucces('admin.phase.messages.proposee');
     }
 
     public function confirmer(Request $request, int $decision): RedirectResponse
@@ -97,7 +97,7 @@ class PhaseController extends Controller
 
         return $erreur
             ? redirect()->route('admin.phase')->with('erreur', __('admin.phase.erreurs.'.$erreur))
-            : redirect()->route('admin.phase')->with('succes', __('admin.phase.messages.retiree'));
+            : redirect()->route('admin.phase')->avecSucces('admin.phase.messages.retiree');
     }
 
     private function decider(Request $request, int $id, string $statut, ?string $motif): RedirectResponse
@@ -125,6 +125,6 @@ class PhaseController extends Controller
 
         return $erreur
             ? redirect($retour)->with('erreur', __('admin.phase.erreurs.'.$erreur))
-            : redirect($retour)->with('succes', __('admin.phase.messages.'.($statut === DecisionPhase::CONFIRMEE ? 'confirmee' : 'rejetee')));
+            : redirect($retour)->avecSucces('admin.phase.messages.'.($statut === DecisionPhase::CONFIRMEE ? 'confirmee' : 'rejetee'));
     }
 }

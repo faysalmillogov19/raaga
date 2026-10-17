@@ -82,6 +82,6 @@ class KybController extends Controller
             return redirect()->route('admin.kyb.show', $document->institution_id)->with('erreur', $e->getMessage());
         }
 
-        return redirect()->route('admin.kyb.show', $document->institution_id)->with('succes', __($message));
+        return redirect()->route('admin.kyb.show', $document->institution_id)->avecSucces($message);
     }
 }
