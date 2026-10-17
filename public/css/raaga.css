@@ -305,3 +305,28 @@ div:has(> .bo-carte) + .bo-carte,
 div:has(> .bo-carte) + div:has(> .bo-carte) {
     margin-top: 18px;
 }
+
+/*
+ * Tableau de données à largeurs fixes (toutes les colonnes ont une largeur) : mêmes colonnes sur toutes les pages, quel
+ * que soit le contenu ; sous la largeur minimale, le tableau défile horizontalement dans son cadre au lieu de s'écraser.
+ */
+.bo-tableau-fixe,
+.adm .bo-tableau-donnees.bo-tableau-fixe {
+    table-layout: fixed;
+    min-width: 60rem;
+}
+
+.bo-tableau-fixe th,
+.bo-tableau-fixe td {
+    overflow-wrap: anywhere;
+}
+
+.bo-tableau-fixe .bo-col-selection {
+    width: 3rem;
+}
+
+/* Back-office : la place de la barre de défilement est toujours réservée ; une page courte (dernière page d'une liste)
+   ne décale plus la mise en page de quelques pixels. */
+html:has(body.adm) {
+    scrollbar-gutter: stable;
+}

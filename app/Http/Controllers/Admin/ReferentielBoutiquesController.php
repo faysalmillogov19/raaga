@@ -47,18 +47,18 @@ class ReferentielBoutiquesController extends Controller
         return Tableau::pour(Boutique::query()->with(['site', 'type']), 'boutiques')
             ->colonnes([
                 Colonne::make('code', $c['code'])->triable(fn ($q, $sens) => $q->orderByRaw('code IS NULL')->orderBy('code', $sens))->recherchable(['code', 'numero'])
-                    ->classe('whitespace-nowrap font-bold')->valeur(fn (Boutique $x) => $x->reference()),
+                    ->classe('whitespace-nowrap font-bold')->largeur('15%')->valeur(fn (Boutique $x) => $x->reference()),
                 Colonne::make('site', $c['site'])->triable('site_id')->recherchable(fn ($q, $terme) => $q->whereHas('site', fn ($s) => $s->whereContient('code', $terme)->orWhereContient('nom', $terme)))
-                    ->valeur(fn (Boutique $x) => $x->site->code ?? $x->site->nom),
-                Colonne::make('niveau', $c['niveau'])->triable()->valeur(fn (Boutique $x) => $x->niveau ?? '—'),
-                Colonne::make('zone', $c['zone'])->triable('bloc')->recherchable('bloc')->valeur(fn (Boutique $x) => $x->bloc ?: '—'),
-                Colonne::make('type', $c['type'])->triable('type_boutique_id')->valeur(fn (Boutique $x) => $x->type->code ?? $x->type->libelle),
-                Colonne::make('surface', $c['surface'])->numerique()->triable()
+                    ->largeur('8%')->valeur(fn (Boutique $x) => $x->site->code ?? $x->site->nom),
+                Colonne::make('niveau', $c['niveau'])->triable()->largeur('9%')->valeur(fn (Boutique $x) => $x->niveau ?? '—'),
+                Colonne::make('zone', $c['zone'])->triable('bloc')->recherchable('bloc')->largeur('7%')->valeur(fn (Boutique $x) => $x->bloc ?: '—'),
+                Colonne::make('type', $c['type'])->triable('type_boutique_id')->largeur('7%')->valeur(fn (Boutique $x) => $x->type->code ?? $x->type->libelle),
+                Colonne::make('surface', $c['surface'])->numerique()->triable()->largeur('11%')
                     ->valeur(fn (Boutique $x) => $x->surface !== null ? rtrim(rtrim(format_nombre((float) $x->surface, 2), '0'), ',') : '—')->texte(fn (Boutique $x) => $x->surface),
-                Colonne::make('etat', $c['etat'])->triable('etat_physique')
+                Colonne::make('etat', $c['etat'])->triable('etat_physique')->largeur('16%')
                     ->valeur(fn (Boutique $x) => BadgeStatut::html($x->etat_physique?->label() ?? $b['non_renseigne']))->texte(fn (Boutique $x) => $x->etat_physique?->label()),
-                Colonne::make('statut', $c['statut'])->triable()->valeur(fn (Boutique $x) => BadgeStatut::html($x->statut))->texte(fn (Boutique $x) => $x->statut->label()),
-                Colonne::make('actions', $c['actions'])->vue('admin.referencement._boutique-actions', 'boutique')->exportable(false),
+                Colonne::make('statut', $c['statut'])->triable()->largeur('17%')->valeur(fn (Boutique $x) => BadgeStatut::html($x->statut))->texte(fn (Boutique $x) => $x->statut->label()),
+                Colonne::make('actions', $c['actions'])->largeur('10%')->vue('admin.referencement._boutique-actions', 'boutique')->exportable(false),
             ])
             ->filtres([
                 Filtre::make('site', $b['site'], $sites->mapWithKeys(fn ($s) => [$s->id => ($s->code ? $s->code.' · ' : '').$s->nom])->all(), 'site_id'),

@@ -47,6 +47,9 @@ final class Colonne
 
     private string $classe = '';
 
+    /** Largeur de la colonne (« 15% », « 9rem ») : stable d'une page à l'autre quand toutes les colonnes en ont une. */
+    private ?string $largeur = null;
+
     private function __construct(public readonly string $cle, public readonly string $libelle) {}
 
     public static function make(string $cle, string $libelle): self
@@ -55,6 +58,19 @@ final class Colonne
     }
 
     /** Valeur affichée : texte (échappé) ou Htmlable. Par défaut, l'attribut du même nom. */
+    /** Largeur fixe de la colonne : la mise en page du tableau ne dépend plus du contenu de la page affichée. */
+    public function largeur(string $largeur): self
+    {
+        $this->largeur = $largeur;
+
+        return $this;
+    }
+
+    public function largeurCss(): ?string
+    {
+        return $this->largeur;
+    }
+
     public function valeur(Closure $valeur): self
     {
         $this->valeur = $valeur;

@@ -9,6 +9,9 @@
     $selection = $t->selection;
     $etats = $selection ? $t->lignes->mapWithKeys(fn ($ligne) => [$ligne->getKey() => \App\Services\Validation\SoumissionGroupee::etat($selection, $ligne, auth()->user())]) : collect();
     $filtreActif = isset($t->etat['filtres']['a_soumettre']);
+    // Largeurs déclarées pour toutes les colonnes : mise en page fixe, identique sur toutes les pages (pas de décalage
+    // des colonnes quand les contenus s'allongent d'une page à l'autre).
+    $fixe = $t->colonnes !== [] && collect($t->colonnes)->every(fn ($c) => $c->largeurCss() !== null);
 @endphp
 <div data-tableau-resultats data-export="{{ $t->exportable ? $t->urlExport() : '' }}">
     @if ($selection)
@@ -30,7 +33,13 @@
         </x-etat-vide>
     @else
         <div class="bo-donnees-cadre">
-            <table class="bo-tableau bo-tableau-donnees">
+            <table @class(['bo-tableau', 'bo-tableau-donnees', 'bo-tableau-fixe' => $fixe])>
+                @if ($fixe)
+                    <colgroup>
+                        @if ($selection)<col class="bo-col-selection">@endif
+                        @foreach ($t->colonnes as $c)<col style="width: {{ $c->largeurCss() }}">@endforeach
+                    </colgroup>
+                @endif
                 <thead>
                     <tr>
                         @if ($selection)
