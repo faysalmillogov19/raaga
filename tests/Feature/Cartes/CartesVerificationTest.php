@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Enums\StatutCarte;
 use App\Enums\StatutKyc;
 use App\Enums\TypeCarte;
+use App\Models\AuditLog;
 use App\Models\Carte;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -106,7 +107,7 @@ class CartesVerificationTest extends TestCase
 
         // Jeton inconnu : NON VALIDE, scan tracé quand même.
         $this->get(route('admin.guichet.carte', $inconnu = Str::random(64)))->assertOk()->assertSee('NON VALIDE')->assertSee('Carte inconnue');
-        $this->assertSame(3, \App\Models\AuditLog::query()->where('action', 'carte.scannee')->count());
+        $this->assertSame(3, AuditLog::query()->where('action', 'carte.scannee')->count());
 
         // Recherche par numéro de carte ou par adresse scannée.
         $this->post(route('admin.guichet.rechercher'), ['carte' => strtolower($carte->numero)])->assertRedirect(route('admin.guichet.carte', $carte->jeton));
