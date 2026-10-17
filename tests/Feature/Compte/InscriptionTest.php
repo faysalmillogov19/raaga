@@ -30,6 +30,7 @@ class InscriptionTest extends TestCase
     private function identite(array $modifs = []): array
     {
         return array_merge([
+            'type_titulaire' => 'PHYSIQUE',
             'nom' => 'Ouédraogo',
             'prenoms' => 'Awa Marie',
             'date_naissance' => now()->subYears(30)->toDateString(),
@@ -50,7 +51,7 @@ class InscriptionTest extends TestCase
         $this->get('/inscription')
             ->assertOk()
             ->assertSee('Créer mon compte')
-            ->assertSee('Munissez-vous de votre téléphone et de votre CNIB ou passeport.')
+            ->assertSee('Munissez-vous de votre téléphone et de votre CNIB, CIB-AES ou passeport', false)
             ->assertSee('class="stepper"', false)
             ->assertSeeInOrder(['Téléphone', 'Code', 'Identité'])
             ->assertSee('Vous avez déjà un compte ?');
@@ -94,7 +95,7 @@ class InscriptionTest extends TestCase
 
         $this->get('/inscription')
             ->assertSee('Votre compte est créé')
-            ->assertSee('Pour pouvoir souscrire, il vous reste à faire vérifier votre identité (CNIB ou passeport + selfie).')
+            ->assertSee('Pour pouvoir souscrire, il vous reste à faire vérifier votre identité (CNIB, CIB-AES ou passeport + selfie', false)
             ->assertSee(route('espace.verification'))
             ->assertSee('Plus tard');
     }

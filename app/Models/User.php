@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Role as RoleEnum;
 use App\Enums\StatutKyc;
+use App\Enums\TypeTitulaire;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -18,6 +19,7 @@ use Illuminate\Notifications\Notifiable;
     'name', 'nom', 'prenoms', 'email', 'telephone', 'password', 'role_id',
     'date_naissance', 'nationalite', 'pays_residence', 'region',
     'statut_kyc', 'niveau_kyc', 'actif', 'institution_id', 'piece_expire_le',
+    'type_titulaire', 'raison_sociale', 'forme_morale',
 ])]
 #[Hidden(['password', 'remember_token', 'totp_secret', 'codes_secours'])]
 class User extends Authenticatable
@@ -39,6 +41,7 @@ class User extends Authenticatable
      */
     protected $attributes = [
         'actif' => true,
+        'type_titulaire' => 'PHYSIQUE',
     ];
 
     /**
@@ -58,6 +61,8 @@ class User extends Authenticatable
             'actif' => 'boolean',
             // Carte Raaga : expiration de la pièce d'identité, avertissement envoyé, identité validée par l'ADMIN.
             'piece_expire_le' => 'date',
+            'type_titulaire' => TypeTitulaire::class,
+            'kyc_maj_demandee_le' => 'datetime',
             'piece_avertie_le' => 'datetime',
             'identite_validee' => 'array',
             // Secrets chiffrés en base avec la clé de l'application.
@@ -159,6 +164,12 @@ class User extends Authenticatable
     public function isCitoyen(): bool
     {
         return $this->hasRole(RoleEnum::Citoyen);
+    }
+
+    /** Personne morale (entreprise, association, institution) : le compte est tenu par son représentant légal. */
+    public function estPersonneMorale(): bool
+    {
+        return $this->type_titulaire === TypeTitulaire::Morale;
     }
 
     public function kycValide(): bool

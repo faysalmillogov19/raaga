@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Compte;
 use App\Enums\DocumentAccepte;
 use App\Enums\Role as RoleEnum;
 use App\Enums\StatutKyc;
+use App\Enums\TypeTitulaire;
 use App\Http\Controllers\Controller;
 use App\Models\Acceptation;
 use App\Models\AuditLog;
@@ -29,7 +30,7 @@ class InscriptionController extends Controller
 
     private const OBJET = 'inscription';
 
-    private const CHAMPS_IDENTITE = ['nom', 'prenoms', 'date_naissance', 'pays_residence', 'region'];
+    private const CHAMPS_IDENTITE = ['type_titulaire', 'raison_sociale', 'forme_morale', 'nom', 'prenoms', 'date_naissance', 'pays_residence', 'region'];
 
     public function __construct(private readonly OtpService $otp) {}
 
@@ -160,7 +161,12 @@ class InscriptionController extends Controller
         $age = (int) config('raaga.inscription.age_minimum');
         $messages = __('public.compte.inscription.erreurs');
 
+        $titulaires = __('public.titulaires.erreurs');
         $donnees = $request->validate([
+            // Personne physique, ou personne morale (raison sociale, forme) tenue par son représentant légal.
+            'type_titulaire' => ['required', Rule::enum(TypeTitulaire::class)],
+            'raison_sociale' => ['nullable', 'required_if:type_titulaire,MORALE', 'string', 'min:2', 'max:200'],
+            'forme_morale' => ['nullable', 'required_if:type_titulaire,MORALE', Rule::in(TypeTitulaire::FORMES)],
             'nom' => ['required', 'string', 'max:100'],
             'prenoms' => ['required', 'string', 'max:150'],
             'date_naissance' => ['required', 'date_format:Y-m-d', 'after:1900-01-01', 'before_or_equal:'.now()->subYears($age)->toDateString()],
@@ -168,6 +174,9 @@ class InscriptionController extends Controller
             'region' => ['nullable', 'required_if:pays_residence,BF', Rule::in(config('raaga.inscription.regions'))],
             'conditions' => ['accepted'],
         ], [
+            'type_titulaire.*' => $titulaires['type'],
+            'raison_sociale.*' => $titulaires['raison_sociale'],
+            'forme_morale.*' => $titulaires['forme'],
             'nom.*' => $messages['nom'],
             'prenoms.*' => $messages['prenoms'],
             'date_naissance.before_or_equal' => __('public.compte.inscription.erreurs.majeur', ['age' => $age]),
@@ -192,6 +201,9 @@ class InscriptionController extends Controller
                 'region' => $donnees['pays_residence'] === 'BF' ? $donnees['region'] : null,
                 'role_id' => Role::pour(RoleEnum::Citoyen)->id,
                 'statut_kyc' => StatutKyc::NonSoumis,
+                'type_titulaire' => $donnees['type_titulaire'],
+                'raison_sociale' => $donnees['type_titulaire'] === TypeTitulaire::Morale->value ? trim($donnees['raison_sociale']) : null,
+                'forme_morale' => $donnees['type_titulaire'] === TypeTitulaire::Morale->value ? $donnees['forme_morale'] : null,
             ]);
 
             Acceptation::create([
@@ -209,7 +221,7 @@ class InscriptionController extends Controller
                 'action' => 'compte.cree',
                 'entite_type' => 'User',
                 'entite_id' => (string) $user->id,
-                'nouvelle_valeur' => ['role' => RoleEnum::Citoyen->value, 'diaspora' => $donnees['pays_residence'] !== 'BF'],
+                'nouvelle_valeur' => ['role' => RoleEnum::Citoyen->value, 'diaspora' => $donnees['pays_residence'] !== 'BF', 'titulaire' => $donnees['type_titulaire']],
                 'ip' => $request->ip(),
                 'created_at' => now(),
             ]);

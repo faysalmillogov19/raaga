@@ -155,6 +155,7 @@ Route::get('/cartes/{carte}/fichier/{format}', CarteFichierController::class)->w
 Route::middleware(['auth', 'role:citoyen'])->controller(VerificationController::class)->prefix('espace/verification')->name('espace.verification')->group(function () {
     Route::get('/', 'show');
     Route::post('/', 'store')->middleware('throttle:10,1')->name('.store');
+    Route::post('/titulaire', 'titulaire')->middleware('throttle:10,1')->name('.titulaire');
     Route::get('/fichiers/{document}', 'fichier')->whereNumber('document')->name('.fichier');
 });
 

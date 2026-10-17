@@ -11,6 +11,12 @@
     $user = auth()->user();
     $traiter = $user->can(Droit::KycTraiter->value) && $proposition === null;
     $titre = __('admin.kyc.dossier.titre', ['nom' => $citoyen->name]);
+    $verif = app(\App\Services\Kyc\VerificationIdentite::class);
+    // Conforme seulement si toutes les pièces attendues sont présentes, avec leurs numéros.
+    $complet = $verif->complet($citoyen);
+    $manquants = $verif->manquants($citoyen);
+    $morale = $citoyen->estPersonneMorale();
+    $recto = $pieces->get('recto');
 @endphp
 
 <x-admin.layout :titre="$titre" :fil="[['libelle' => $k['titre'], 'url' => route('admin.kyc')], ['libelle' => $citoyen->name]]">
@@ -18,13 +24,13 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h2 id="identite-titre" class="!text-[1.15rem]">{{ $d['identite'] }}</h2>
             <div class="flex flex-wrap gap-3">
-                @if ($traiter && $citoyen->statut_kyc === StatutKyc::EnAttente)
+                @if ($traiter && $citoyen->statut_kyc === StatutKyc::EnAttente && $complet)
                     <x-admin.fenetre id="conforme" :titre="$k['actions']['conforme_titre']" :action="route('admin.kyc.conforme', $citoyen)" :bouton="$k['actions']['confirmer_conforme']">
                         <x-slot:declencheur>{{ $k['actions']['conforme'] }}</x-slot:declencheur>
                         <p class="texte-carte mb-4">{{ $k['aides']['conforme'] }}</p>
                         {{-- Date d'expiration lue sur la pièce : saisie par le citoyen, vérifiée ici (la carte Raaga ne la dépasse jamais). --}}
                         <x-admin.champ nom="piece_expire_le" :libelle="ucfirst($k['champs']['piece_expire_le'])" type="date" :valeur="$citoyen->piece_expire_le?->toDateString()"
-                                       :aide="$k['aides']['piece_expire_le']" :obligatoire="in_array(app(\App\Services\Kyc\VerificationIdentite::class)->typePiece($citoyen), [\App\Enums\TypeDocumentKyc::Cnib, \App\Enums\TypeDocumentKyc::Passeport], true)" />
+                                       :aide="$k['aides']['piece_expire_le']" obligatoire />
                         <x-admin.champ nom="motif" :libelle="ucfirst($k['champs']['motif'])" type="zone" maxlength="1000" />
                     </x-admin.fenetre>
                 @endif
@@ -38,6 +44,11 @@
                 @endif
             </div>
         </div>
+        @if ($citoyen->statut_kyc === StatutKyc::AMettreAJour)
+            <x-admin.message type="avertissement" class="mt-4 !mb-0" data-a-mettre-a-jour>{{ __('admin.kyc.a_mettre_a_jour', ['date' => $citoyen->kyc_maj_demandee_le?->format('d/m/Y') ?? '']) }}</x-admin.message>
+        @elseif ($citoyen->statut_kyc === StatutKyc::EnAttente && ! $complet)
+            <x-admin.message type="avertissement" class="mt-4 !mb-0" data-dossier-incomplet>{{ __('admin.kyc.manquantes', ['pieces' => implode(', ', array_map(fn ($c) => $k['emplacements'][$c], $manquants ?: ['numeros']))]) }}</x-admin.message>
+        @endif
         @if ($proposition)
             <x-admin.message type="info" class="mt-4 !mb-0">{{ $k['proposition_en_attente'] }} : {{ $proposition->motif }}</x-admin.message>
         @endif
@@ -47,6 +58,15 @@
             <div><dt class="texte-carte">{{ $d['champs']['email'] }}</dt><dd>{{ $citoyen->email }}</dd></div>
             <div><dt class="texte-carte">{{ $d['champs']['naissance'] }}</dt><dd>{{ $citoyen->date_naissance?->format('d/m/Y') }}</dd></div>
             <div><dt class="texte-carte">{{ $d['champs']['pays'] }}</dt><dd>{{ $citoyen->pays_residence }}</dd></div>
+            <div><dt class="texte-carte">{{ $k['titulaire'] }}</dt><dd>{{ __('public.titulaires.types.'.($citoyen->type_titulaire?->value ?? 'PHYSIQUE')) }}</dd></div>
+            @if ($morale)
+                <div><dt class="texte-carte">{{ $k['raison_sociale'] }}</dt><dd class="font-bold" data-raison-sociale>{{ $citoyen->raison_sociale }}</dd></div>
+                <div><dt class="texte-carte">{{ $k['forme'] }}</dt><dd>{{ $citoyen->forme_morale ? __('public.titulaires.formes.'.$citoyen->forme_morale) : '' }}</dd></div>
+                <div><dt class="texte-carte">{{ $k['numero_rccm'] }}</dt><dd class="font-mono">{{ $pieces->get('rccm')?->numero ?? $citoyen->rccm }}</dd></div>
+                <div><dt class="texte-carte">{{ $k['numero_ifu'] }}</dt><dd class="font-mono">{{ $pieces->get('ifu')?->numero ?? $citoyen->ifu }}</dd></div>
+            @endif
+            <div><dt class="texte-carte">{{ $k['numero_piece'] }}</dt><dd class="font-mono" data-numero-piece>{{ $recto?->numero ?? $citoyen->numero_piece }}</dd></div>
+            <div><dt class="texte-carte">{{ $k['expire_le'] }}</dt><dd>{{ ($recto?->expire_le ?? $citoyen->piece_expire_le)?->format('d/m/Y') }}</dd></div>
             <div><dt class="texte-carte">{{ $d['champs']['statut'] }}</dt><dd class="font-bold">{{ $k['statuts'][$citoyen->statut_kyc?->value ?? 'NON_SOUMIS'] }}</dd></div>
         </dl>
     </section>
@@ -60,6 +80,7 @@
                 @foreach ($pieces as $piece)
                     <li class="kyc-piece">
                         <p class="font-semibold">{{ $k['pieces'][strtolower($piece->type->value)] ?? $piece->type->value }}@if ($piece->face) · {{ $piece->face->value }}@endif</p>
+                        @if ($piece->numero)<p class="font-mono">{{ $piece->numero }}</p>@endif
                         @can(Droit::KycVoirPieces->value)
                             <a href="{{ route('admin.kyc.piece', $piece) }}" class="lien" target="_blank" rel="noopener">{{ $d['voir'] }}</a>
                         @endcan

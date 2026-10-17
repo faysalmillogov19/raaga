@@ -32,6 +32,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\Boutiques;
+use Tests\Support\DossierKyc;
 use Tests\TestCase;
 
 /**
@@ -140,7 +141,8 @@ class CartesEmissionTest extends TestCase
         Notification::assertNotSentTo($citoyen, CarteEmise::class);
         $this->actingAs($citoyen)->get(route('espace.carte'))->assertOk()->assertSee('En attente de vérification d’identité');
 
-        // L'ADMIN marque le dossier conforme : carte émise, identité validée figée, titulaire notifié.
+        // L'ADMIN marque le dossier conforme (dossier complet) : carte émise, identité validée figée, titulaire notifié.
+        DossierKyc::complet($citoyen);
         app(DossiersIdentite::class)->conforme($citoyen, $this->admin, null, now()->addYears(6)->toDateString());
         $carte = Cartes::courante($citoyen, TypeCarte::Commercant);
         $this->assertSame(StatutCarte::Active, $carte->statut);
@@ -184,7 +186,8 @@ class CartesEmissionTest extends TestCase
         $carte = Cartes::courante($citoyen, TypeCarte::Actionnaire);
         $this->assertSame(StatutCarte::Active, $carte->statut);
         $this->assertSame(sprintf('RG-A-%06d', $citoyen->id), $carte->contenu['numero_actionnaire']);
-        $this->assertStringNotContainsString('75', json_encode($carte->contenu));
+        // Ni nombre d'actions ni montant (le numéro d'actionnaire, tiré du compte, est écarté de la recherche).
+        $this->assertStringNotContainsString('75', json_encode(array_diff_key($carte->contenu, ['numero_actionnaire' => 1, 'photo' => 1])));
         $this->assertSame(now()->addYear()->toDateString(), $carte->valide_jusqu_au->toDateString());
 
         // Échéance : renouvelée d'un an tant qu'il détient des actions.

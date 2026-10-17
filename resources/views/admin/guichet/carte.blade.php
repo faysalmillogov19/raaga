@@ -30,7 +30,10 @@
                 @endif
             </div>
             <div class="guichet-infos">
-                <h2 id="titulaire-titre" class="guichet-nom">{{ $c['nom'] ?? $carte->user?->name }}</h2>
+                <h2 id="titulaire-titre" class="guichet-nom">{{ $c['raison_sociale'] ?? $c['nom'] ?? $carte->user?->name }}</h2>
+                @if (! empty($c['raison_sociale']))
+                    <p class="mt-1" data-representant>{{ __('public.cartes.carte.representant') }} <strong>{{ $c['nom'] ?? '' }}</strong></p>
+                @endif
                 <dl class="bo-definitions mt-3">
                     <dt>{{ $g['type'] }}</dt><dd>{{ $carte->type->label() }}</dd>
                     <dt>{{ $g['numero'] }}</dt><dd>{{ $carte->numero }}</dd>

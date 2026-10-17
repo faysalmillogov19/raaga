@@ -50,7 +50,7 @@
 
         @else
             @php
-                $valeurs = array_merge($saisie, array_filter(old() ?: [], fn ($cle) => in_array($cle, ['nom', 'prenoms', 'date_naissance', 'pays_residence', 'region'], true), ARRAY_FILTER_USE_KEY));
+                $valeurs = array_merge($saisie, array_filter(old() ?: [], fn ($cle) => in_array($cle, ['type_titulaire', 'raison_sociale', 'forme_morale', 'nom', 'prenoms', 'date_naissance', 'pays_residence', 'region'], true), ARRAY_FILTER_USE_KEY));
                 $messages = __('public.compte.inscription.erreurs');
                 $messages['majeur'] = __('public.compte.inscription.erreurs.majeur', ['age' => config('raaga.inscription.age_minimum')]);
             @endphp
@@ -58,6 +58,42 @@
                   x-data="formulaireIdentite(@js(['valeurs' => $valeurs, 'messages' => $messages, 'ageMinimum' => (int) config('raaga.inscription.age_minimum')]))"
                   @submit="valider($event)">
                 @csrf
+
+                {{-- Type de titulaire : choisi ici, modifiable ensuite seulement en repassant par la vérification d'identité. --}}
+                @php($t = __('public.titulaires'))
+                <div x-data="{ titulaire: @js($valeurs['type_titulaire'] ?? 'PHYSIQUE') }" class="space-y-4" data-type-titulaire>
+                    <fieldset class="formulaire-champ">
+                        <legend class="font-semibold text-encre"><x-requis /> {{ $t['titre'] }}</legend>
+                        <div class="mt-2 grid gap-3 sm:grid-cols-2">
+                            @foreach (\App\Enums\TypeTitulaire::cases() as $type)
+                                <label class="flex min-h-[56px] cursor-pointer items-start gap-3 rounded-charte border-2 p-3" :class="titulaire === '{{ $type->value }}' ? 'border-vert-fonce bg-vert-pale' : 'border-ligne'">
+                                    <input type="radio" name="type_titulaire" value="{{ $type->value }}" x-model="titulaire" @checked(($valeurs['type_titulaire'] ?? 'PHYSIQUE') === $type->value) class="mt-1 h-5 w-5 text-vert focus:ring-0">
+                                    <span><span class="block font-semibold text-encre">{{ $t['types'][$type->value] }}</span><span class="texte-carte">{{ $t['aides'][$type->value] }}</span></span>
+                                </label>
+                            @endforeach
+                        </div>
+                        @error('type_titulaire')<p class="message-erreur" role="alert">{{ $message }}</p>@enderror
+                    </fieldset>
+                    <div x-show="titulaire === 'MORALE'" x-cloak class="space-y-4">
+                        <div class="formulaire-champ">
+                            <label for="raison_sociale"><x-requis /> {{ $t['raison_sociale'] }}</label>
+                            <p class="texte-carte">{{ $t['raison_sociale_aide'] }}</p>
+                            <input id="raison_sociale" name="raison_sociale" type="text" maxlength="200" autocomplete="organization" value="{{ $valeurs['raison_sociale'] ?? '' }}"
+                                   :disabled="titulaire !== 'MORALE'" class="champ @error('raison_sociale') est-invalide @enderror" aria-describedby="raison_sociale-erreur">
+                            @error('raison_sociale')<p id="raison_sociale-erreur" class="message-erreur" role="alert">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="formulaire-champ">
+                            <label for="forme_morale"><x-requis /> {{ $t['forme'] }}</label>
+                            <select id="forme_morale" name="forme_morale" :disabled="titulaire !== 'MORALE'" class="champ @error('forme_morale') est-invalide @enderror">
+                                @foreach (\App\Enums\TypeTitulaire::FORMES as $forme)
+                                    <option value="{{ $forme }}" @selected(($valeurs['forme_morale'] ?? 'ENTREPRISE') === $forme)>{{ $t['formes'][$forme] }}</option>
+                                @endforeach
+                            </select>
+                            @error('forme_morale')<p class="message-erreur" role="alert">{{ $message }}</p>@enderror
+                        </div>
+                        <p class="texte-carte">{{ $t['representant'] }}</p>
+                    </div>
+                </div>
 
                 @foreach ([
                     ['nom', 'text', 'family-name'],

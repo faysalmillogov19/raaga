@@ -4,7 +4,6 @@ namespace Tests\Feature\Admin;
 
 use App\Domain\Dividendes\LigneDistribution;
 use App\Enums\CanalSouscription;
-use App\Enums\FaceDocument;
 use App\Enums\MethodeAllocation;
 use App\Enums\ModeSaisie;
 use App\Enums\PayeurFrais;
@@ -19,14 +18,12 @@ use App\Enums\StatutPaiement;
 use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
-use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
 use App\Models\BlocageActions;
 use App\Models\Boutique;
 use App\Models\CorrectionPaiement;
 use App\Models\DistributionDividende;
 use App\Models\Duree;
-use App\Models\KycDocument;
 use App\Models\LigneRegistre;
 use App\Models\Paiement;
 use App\Models\Relance;
@@ -48,6 +45,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\Boutiques;
+use Tests\Support\DossierKyc;
 use Tests\TestCase;
 
 /**
@@ -111,11 +109,7 @@ class ControlePaiementsKycTest extends TestCase
 
     private function dossierKyc(User $citoyen): void
     {
-        foreach ([[TypeDocumentKyc::Cnib, FaceDocument::Recto], [TypeDocumentKyc::Cnib, FaceDocument::Verso], [TypeDocumentKyc::Selfie, null]] as [$type, $face]) {
-            KycDocument::create(['user_id' => $citoyen->id, 'type' => $type, 'face' => $face, 'chemin_fichier' => 'kyc/test/'.$type->value.($face?->value ?? ''),
-                'mime' => 'image/jpeg', 'taille' => 1000, 'empreinte_sha256' => str_repeat('a', 64), 'statut' => StatutDocumentKyc::EnAttente,
-                'televerse_par' => $citoyen->id]);
-        }
+        DossierKyc::complet($citoyen);
     }
 
     public function test_droits_par_profil(): void

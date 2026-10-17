@@ -14,7 +14,6 @@ use App\Enums\StatutKyc;
 use App\Enums\StatutPaiement;
 use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
-use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
 use App\Models\Duree;
 use App\Models\Paiement;
@@ -37,7 +36,7 @@ use Tests\TestCase;
 /**
  * Paiements manuels côté citoyen (virement, versement, espèces) : aucun opérateur ; montant exact, compte de
  * destination selon l'usage, référence de paiement unique, délai restant ; preuve jointe, contrôlée par le
- * CONTRÔLEUR DES PAIEMENTS ; délai gelé pendant le contrôle. Et le NIF (avec le RCCM) parmi les pièces d'identité.
+ * CONTRÔLEUR DES PAIEMENTS ; délai gelé pendant le contrôle. Le NIF n'est plus une pièce d'identité.
  */
 class PaiementManuelTest extends TestCase
 {
@@ -200,30 +199,17 @@ class PaiementManuelTest extends TestCase
         $this->assertSame(StatutSouscription::Expiree, $autre->fresh()->statut);
     }
 
-    public function test_nif_et_rccm_acceptes(): void
+    public function test_le_nif_n_est_plus_une_piece_d_identite(): void
     {
+        // Pièces acceptées : CNIB, CIB-AES ou passeport, et rien d'autre (l'IFU est une pièce de la personne morale).
         $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::NonSoumis]);
-        $this->actingAs($citoyen)->get(route('espace.verification'))->assertOk()->assertSee('NIF (numéro d’identification fiscale)', false);
-
-        $this->actingAs($citoyen)->post(route('espace.verification.store'), [
-            'type_piece' => 'NIF',
-            'recto' => UploadedFile::fake()->create('attestation-nif.pdf', 300, 'application/pdf'),
-            'rccm' => UploadedFile::fake()->create('rccm.pdf', 300, 'application/pdf'),
-            'selfie' => UploadedFile::fake()->image('selfie.jpg'),
-        ])->assertSessionHasNoErrors()->assertRedirect(route('espace.verification'));
-
-        $this->assertSame(StatutKyc::EnAttente, $citoyen->fresh()->statut_kyc);
-        $this->assertEqualsCanonicalizing([TypeDocumentKyc::Nif, TypeDocumentKyc::Rccm, TypeDocumentKyc::Selfie], $citoyen->kycDocuments()->pluck('type')->all());
-
-        // RCCM facultatif : NIF et selfie suffisent.
-        $autre = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::NonSoumis]);
-        $this->actingAs($autre)->post(route('espace.verification.store'), [
-            'type_piece' => 'NIF', 'recto' => UploadedFile::fake()->image('nif.jpg'), 'selfie' => UploadedFile::fake()->image('selfie.jpg'),
-        ])->assertSessionHasNoErrors();
-        $this->assertSame(StatutKyc::EnAttente, $autre->fresh()->statut_kyc);
-
-        // L'ADMIN voit les pièces NIF et RCCM dans le dossier.
-        $admin = User::factory()->role(Role::Admin)->create();
-        $this->en($admin)->get(route('admin.kyc.dossier', $citoyen))->assertOk()->assertSee('NIF')->assertSee('RCCM');
+        $this->actingAs($citoyen)->get(route('espace.verification'))->assertOk()->assertSee('CIB-AES', false)->assertDontSee('NIF');
+        foreach (['NIF', 'IFU', 'RCCM'] as $type) {
+            $this->actingAs($citoyen)->post(route('espace.verification.store'), [
+                'type_piece' => $type, 'numero_piece' => 'B1234567', 'piece_expire_le' => now()->addYear()->toDateString(),
+                'recto' => UploadedFile::fake()->image('piece.jpg'), 'selfie' => UploadedFile::fake()->image('selfie.jpg'),
+            ])->assertSessionHasErrors('type_piece');
+        }
+        $this->assertSame(0, $citoyen->kycDocuments()->count());
     }
 }

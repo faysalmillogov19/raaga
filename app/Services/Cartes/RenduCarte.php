@@ -129,9 +129,16 @@ class RenduCarte
         $gris = $couleur(self::GRIS);
         $x = 276;
         $y = 196;
-        foreach ($this->couper((string) ($c['nom'] ?? ''), 30, 450, true) as $ligne) {
+        // Personne morale : raison sociale en titre, puis le représentant légal (nom et photo).
+        foreach ($this->couper((string) ($c['raison_sociale'] ?? $c['nom'] ?? ''), 30, 450, true) as $ligne) {
             $this->texte($img, $ligne, 30, $x, $y, $encre, true);
             $y += 42;
+        }
+        if (! empty($c['raison_sociale'])) {
+            foreach ($this->couper($t['representant'].' '.($c['nom'] ?? ''), 19, 450) as $ligne) {
+                $this->texte($img, $ligne, 19, $x, $y, $encre);
+                $y += 30;
+            }
         }
         $y += 8;
         $lignes = [];

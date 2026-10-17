@@ -1,7 +1,8 @@
 @props(['carte'])
 
 {{--
-    Carte d'accès Raaga (aperçu à l'écran) : logo et couleurs Raaga, type, nom (identité validée), photo (selfie validé),
+    Carte d'accès Raaga (aperçu à l'écran) : logo et couleurs Raaga, type, nom (identité validée ; personne morale : raison
+    sociale et représentant légal), photo (selfie validé),
     codes de boutique et site (commerçant), numéro d'actionnaire (actionnaire) ou fonction (personnel), numéro de carte,
     validité, QR code. Jamais de montant ni de nombre d'actions.
 --}}
@@ -24,7 +25,13 @@
             @endif
         </div>
         <div class="carte-raaga-infos">
-            <p class="carte-raaga-nom">{{ $c['nom'] ?? '' }}</p>
+            @if (! empty($c['raison_sociale']))
+                {{-- Personne morale : raison sociale, puis le représentant légal (nom et photo). --}}
+                <p class="carte-raaga-nom" data-raison-sociale>{{ $c['raison_sociale'] }}</p>
+                <p class="carte-raaga-representant">{{ $t['representant'] }} <strong>{{ $c['nom'] ?? '' }}</strong></p>
+            @else
+                <p class="carte-raaga-nom">{{ $c['nom'] ?? '' }}</p>
+            @endif
             @if (! empty($c['emplacements']))
                 <ul class="carte-raaga-emplacements" data-emplacements>
                     @foreach ($c['emplacements'] as $e)

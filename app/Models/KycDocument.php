@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'user_id', 'type', 'face', 'chemin_fichier', 'nom_original', 'mime', 'taille',
-    'empreinte_sha256', 'statut', 'commentaire', 'televerse_par', 'valide_par', 'valide_le',
+    'empreinte_sha256', 'statut', 'commentaire', 'televerse_par', 'valide_par', 'valide_le', 'numero', 'expire_le',
 ])]
 #[Hidden(['chemin_fichier'])]
 class KycDocument extends Model
@@ -25,6 +25,7 @@ class KycDocument extends Model
             'statut' => StatutDocumentKyc::class,
             'taille' => 'integer',
             'valide_le' => 'datetime',
+            'expire_le' => 'date',
         ];
     }
 

@@ -260,7 +260,7 @@ composant('pieceKyc', ({ maxOctets, messages }) => ({
         this.apercu = null;
         this.erreur = '';
         if (!fichier) return;
-        // Types acceptés : ceux du champ (le PDF est permis pour l'attestation NIF et le RCCM).
+        // Types acceptés : ceux du champ (le PDF est permis pour le RCCM, l'attestation IFU et le justificatif de pouvoir).
         const acceptes = (evenement.target.getAttribute('accept') || 'image/jpeg,image/png').split(',');
         if (!acceptes.includes(fichier.type)) {
             this.erreur = messages.format;

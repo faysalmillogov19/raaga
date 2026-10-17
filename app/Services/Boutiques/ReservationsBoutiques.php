@@ -50,8 +50,18 @@ class ReservationsBoutiques
         DocumentAccepte::OrigineLiciteFonds,
     ];
 
-    /** Pièces acceptées à la réservation (le RCCM s'ajoute au NIF, facultatif). */
-    public const PIECES = [TypeDocumentKyc::Cnib, TypeDocumentKyc::Passeport, TypeDocumentKyc::Nif];
+    /**
+     * Pièces acceptées à la réservation, selon le titulaire : personne physique, sa pièce d'identité (CNIB, CIB-AES ou
+     * passeport) ; personne morale, son IFU (attestation, RCCM facultatif). La limite par personne est contrôlée sur ce
+     * numéro : numéro de pièce, ou IFU.
+     */
+    public const PIECES = [TypeDocumentKyc::Cnib, TypeDocumentKyc::CibAes, TypeDocumentKyc::Passeport, TypeDocumentKyc::Ifu];
+
+    /** @return list<TypeDocumentKyc> */
+    public static function piecesPour(User $user): array
+    {
+        return $user->estPersonneMorale() ? [TypeDocumentKyc::Ifu] : TypeDocumentKyc::piecesIdentite();
+    }
 
     public function __construct(private readonly Journal $journal) {}
 
@@ -181,7 +191,8 @@ class ReservationsBoutiques
     }
 
     /**
-     * Pré-réservation d'une boutique disponible, avec la pièce d'identité (CNIB, passeport ou NIF ; RCCM facultatif).
+     * Pré-réservation d'une boutique disponible, avec la pièce d'identité (CNIB, CIB-AES ou passeport) d'une personne
+     * physique, ou l'IFU d'une personne morale (RCCM facultatif).
      *
      * @param  list<string>  $engagements  valeurs DocumentAccepte cochées
      *
@@ -195,7 +206,7 @@ class ReservationsBoutiques
         if (! $user->telephone) {
             $erreur('telephone');
         }
-        if (! in_array($typePiece, self::PIECES, true) || mb_strlen($numero) < 5) {
+        if (! in_array($typePiece, self::piecesPour($user), true) || mb_strlen($numero) < 5) {
             throw ValidationException::withMessages(['numero_piece' => __('public.boutiques.erreurs.piece')]);
         }
         if (array_diff(array_map(fn (DocumentAccepte $d) => $d->value, self::ENGAGEMENTS), $engagements)) {
@@ -221,7 +232,7 @@ class ReservationsBoutiques
                 $tarif = self::tarifer($boutique) ?? $erreur('sans_tarif');
 
                 // Limite par personne et par type : réservations actives de ce type dans la campagne, sur le compte et sur
-                // le numéro de pièce. Même transaction, campagne verrouillée : deux demandes simultanées sont traitées l'une
+                // le numéro de pièce (personne physique) ou l'IFU (personne morale). Même transaction, campagne verrouillée : deux demandes simultanées sont traitées l'une
                 // après l'autre et ne dépassent jamais la limite.
                 $limite = $campagne->limitePour($boutique->type_boutique_id);
                 if (self::activesDuType($campagne, $boutique->type_boutique_id, $user->id, [$numero]) >= $limite) {
@@ -254,9 +265,11 @@ class ReservationsBoutiques
                         'user_id' => $user->id, 'type' => $type, 'face' => $face, 'chemin_fichier' => $chemin,
                         'nom_original' => Str::limit($fichier->getClientOriginalName(), 200, ''), 'mime' => $fichier->getMimeType(),
                         'taille' => $fichier->getSize(), 'empreinte_sha256' => hash_file('sha256', $fichier->getRealPath()),
-                        'statut' => StatutDocumentKyc::EnAttente, 'televerse_par' => $user->id,
+                        'statut' => StatutDocumentKyc::EnAttente, 'televerse_par' => $user->id, 'numero' => $type === $typePiece ? $numero : null,
                     ]);
                 }
+                // Identifiant contrôlé du titulaire (numéro de pièce ou IFU), s'il n'est pas déjà connu.
+                $user->forceFill($typePiece === TypeDocumentKyc::Ifu ? ['ifu' => $user->ifu ?? $numero] : ['numero_piece' => $user->numero_piece ?? $numero])->save();
                 if (in_array($user->statut_kyc, [null, StatutKyc::NonSoumis, StatutKyc::Rejete], true)) {
                     $user->forceFill(['statut_kyc' => StatutKyc::EnAttente])->save();
                 }

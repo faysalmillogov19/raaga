@@ -45,6 +45,12 @@ class DossiersIdentite
     public function conforme(User $citoyen, User $admin, ?string $motif, ?string $pieceExpireLe = null): VerificationKyc
     {
         $this->examinable($citoyen, [StatutKyc::EnAttente]);
+        // Conforme seulement si toutes les pièces attendues sont présentes, avec leurs numéros (personne morale : RCCM,
+        // IFU, pièce du représentant légal, selfie, justificatif de pouvoir).
+        if (! $this->verification->complet($citoyen)) {
+            throw ValidationException::withMessages(['pieces' => __('admin.kyc.erreurs.incomplet', ['pieces' => implode(', ',
+                array_map(fn (string $c) => __('admin.kyc.emplacements.'.$c), $this->verification->manquants($citoyen) ?: ['numeros']))])]);
+        }
 
         return DB::transaction(function () use ($citoyen, $admin, $motif, $pieceExpireLe) {
             $this->verification->dossier($citoyen)->filter()->each(fn (KycDocument $d) => $d->forceFill([
@@ -53,7 +59,11 @@ class DossiersIdentite
             // Identité validée figée (seule affichée sur la carte Raaga) et date d'expiration vérifiée de la pièce.
             $citoyen->forceFill([
                 'statut_kyc' => StatutKyc::Valide, 'niveau_kyc' => max(1, (int) $citoyen->niveau_kyc),
-                'identite_validee' => ['nom' => $citoyen->nom, 'prenoms' => $citoyen->prenoms, 'validee_le' => now()->toIso8601String(), 'par' => $admin->id],
+                'identite_validee' => array_filter(['nom' => $citoyen->nom, 'prenoms' => $citoyen->prenoms,
+                    // Personne morale : raison sociale (la carte porte aussi le nom et la photo du représentant légal).
+                    'raison_sociale' => $citoyen->estPersonneMorale() ? $citoyen->raison_sociale : null,
+                    'type_titulaire' => VerificationIdentite::titulaire($citoyen)->value,
+                    'validee_le' => now()->toIso8601String(), 'par' => $admin->id]),
                 'piece_expire_le' => $pieceExpireLe ?? $citoyen->piece_expire_le,
             ])->save();
             $v = VerificationKyc::create(['user_id' => $citoyen->id, 'decision' => VerificationKyc::CONFORME, 'motif' => $motif,

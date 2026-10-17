@@ -1,7 +1,7 @@
 {{--
     Récapitulatif d'une boutique (code, site, niveau, bloc ou zone, type et sa description, surface, observations, loyer
     mensuel, caution, avance, total à payer) et confirmation de la réservation :
-    pièce d'identité (CNIB, passeport ou NIF ; RCCM facultatif), numéro, trois engagements. La boutique est alors
+    pièce d'identité (CNIB, CIB-AES ou passeport) d'une personne physique, ou IFU d'une personne morale (RCCM facultatif), numéro, trois engagements. La boutique est alors
     pré-réservée au nom du citoyen pour le délai de paiement de la caution.
 --}}
 @php
@@ -63,7 +63,7 @@
             <x-public.alerte variante="attention" class="mt-6">{{ $r['sans_tarif'] }}</x-public.alerte>
         @else
             <form method="POST" action="{{ route('boutiques.reserver', $boutique->code) }}" enctype="multipart/form-data" class="carte mt-6 p-5" novalidate
-                  x-data="{ piece: @js(old('type_piece', 'CNIB')) }" data-formulaire-reservation>
+                  x-data="{ piece: @js(old('type_piece', $pieces[0]->value)) }" data-formulaire-reservation>
                 @csrf
                 <fieldset>
                     <legend class="text-lg font-bold text-encre"><x-requis /> {{ $r['piece_titre'] }}</legend>
@@ -87,9 +87,9 @@
                            class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
                     <x-public.erreur :messages="$errors->get('piece')" id="piece-erreur" />
                 </div>
-                <div class="mt-4" x-show="piece === 'NIF'" x-cloak>
+                <div class="mt-4" x-show="piece === 'IFU'" x-cloak>
                     <label for="rccm" class="block font-semibold text-encre">{{ $r['rccm'] }}</label>
-                    <input id="rccm" name="rccm" type="file" accept="image/jpeg,image/png,application/pdf" :disabled="piece !== 'NIF'"
+                    <input id="rccm" name="rccm" type="file" accept="image/jpeg,image/png,application/pdf" :disabled="piece !== 'IFU'"
                            class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
                     <x-public.erreur :messages="$errors->get('rccm')" />
                 </div>

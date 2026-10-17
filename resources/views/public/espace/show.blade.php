@@ -10,7 +10,7 @@
         'RESERVEE' => 'bg-jaune-pale text-encre', 'PAYEE' => 'bg-vert-pale text-vert-fonce', 'ALLOUEE' => 'bg-vert-fonce text-white',
         'EXPIREE' => 'bg-fond text-gris', 'ANNULEE' => 'bg-fond text-gris', 'REMBOURSEE' => 'bg-fond text-encre',
     ];
-    $badgeKyc = ['NON_SOUMIS' => 'bg-fond text-encre', 'EN_ATTENTE' => 'bg-jaune-pale text-encre', 'VALIDE' => 'bg-vert-pale text-vert-fonce', 'REJETE' => 'bg-rouge-pale text-rouge'];
+    $badgeKyc = ['NON_SOUMIS' => 'bg-fond text-encre', 'EN_ATTENTE' => 'bg-jaune-pale text-encre', 'VALIDE' => 'bg-vert-pale text-vert-fonce', 'REJETE' => 'bg-rouge-pale text-rouge', 'A_METTRE_A_JOUR' => 'bg-jaune-pale text-encre'];
 @endphp
 
 <x-public.layout :titre="__('public.espace.titre')">

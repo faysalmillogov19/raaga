@@ -109,7 +109,7 @@ class BoutiquesController extends Controller
             'limites' => self::limites($campagne, $request->user()),
             'ouverte' => $campagne->accepteReservations(),
             'engagements' => ReservationsBoutiques::ENGAGEMENTS,
-            'pieces' => ReservationsBoutiques::PIECES,
+            'pieces' => ReservationsBoutiques::piecesPour($request->user()),
         ]);
     }
 
@@ -121,7 +121,7 @@ class BoutiquesController extends Controller
 
         $document = ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
         $donnees = $request->validate([
-            'type_piece' => ['required', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, ReservationsBoutiques::PIECES))],
+            'type_piece' => ['required', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, ReservationsBoutiques::piecesPour($request->user())))],
             'numero_piece' => ['required', 'string', 'min:5', 'max:40'],
             'piece' => ['required', ...$document],
             'rccm' => ['nullable', ...$document],

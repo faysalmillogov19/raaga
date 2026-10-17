@@ -638,6 +638,9 @@ html:has(body.adm) {
     line-height: 1.25;
     margin-bottom: 6px;
 }
+.carte-raaga-representant {
+    margin: -2px 0 6px;
+}
 .carte-raaga-emplacements {
     list-style: none;
     padding: 0;

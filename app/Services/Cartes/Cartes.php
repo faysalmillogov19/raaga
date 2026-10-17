@@ -294,6 +294,10 @@ class Cartes
             'nom' => trim(($identite['prenoms'] ?? $user->prenoms ?? '').' '.($identite['nom'] ?? $user->nom ?? '')) ?: $user->name,
             'photo' => $photo,
         ];
+        // Personne morale : raison sociale, avec le nom et la photo du représentant légal (identité validée).
+        if ($type !== TypeCarte::Personnel && filled($identite['raison_sociale'] ?? null)) {
+            $contenu = ['raison_sociale' => $identite['raison_sociale'], ...$contenu];
+        }
 
         return match ($type) {
             TypeCarte::Commercant => [...$contenu, 'emplacements' => ReservationBoutique::query()->where('user_id', $user->id)

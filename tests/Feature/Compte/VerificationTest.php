@@ -54,7 +54,7 @@ class VerificationTest extends TestCase
     {
         $this->actingAs($this->citoyen)->post('/espace/verification', [
             'type_piece' => 'CNIB', 'recto' => $this->photo('recto.jpg'), 'verso' => $this->photo('verso.png'), 'selfie' => $this->photo('selfie.jpg'),
-            'piece_expire_le' => now()->addYears(5)->toDateString(),
+            'numero_piece' => 'B 1234 5678', 'piece_expire_le' => now()->addYears(5)->toDateString(),
         ])->assertRedirect(route('espace.verification'))->assertSessionHasNoErrors();
     }
 
@@ -90,11 +90,11 @@ class VerificationTest extends TestCase
         $autre = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::NonSoumis]);
         // Date d'expiration de la pièce : obligatoire, dans le futur.
         $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo()])
-            ->assertSessionHasErrors('piece_expire_le');
+            ->assertSessionHasErrors(['piece_expire_le', 'numero_piece']);
         $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
-            'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
+            'numero_piece' => 'P0012345', 'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
         $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
-            'piece_expire_le' => now()->addYears(4)->toDateString()])->assertSessionHasNoErrors();
+            'numero_piece' => 'P0012345', 'piece_expire_le' => now()->addYears(4)->toDateString()])->assertSessionHasNoErrors();
         $this->assertSame(now()->addYears(4)->toDateString(), $autre->fresh()->piece_expire_le->toDateString());
         $this->assertSame(2, $autre->kycDocuments()->count());
     }
@@ -116,7 +116,7 @@ class VerificationTest extends TestCase
 
         // Pièce manquante : verso exigé pour une CNIB.
         $this->actingAs($this->citoyen)->post('/espace/verification', ['type_piece' => 'CNIB', 'recto' => $this->photo(), 'selfie' => $this->photo()])
-            ->assertSessionHasErrors(['verso' => 'Ajoutez cette photo.']);
+            ->assertSessionHasErrors(['verso' => 'Ajoutez cette pièce.']);
 
         $this->assertSame(0, KycDocument::count());
         $this->assertSame(StatutKyc::NonSoumis, $this->citoyen->fresh()->statut_kyc);

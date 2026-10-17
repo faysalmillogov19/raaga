@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compte;
 
 use App\Enums\TypeDocumentKyc;
+use App\Enums\TypeTitulaire;
 use App\Http\Controllers\Controller;
 use App\Models\KycDocument;
 use App\Services\Kyc\VerificationIdentite;
@@ -33,27 +34,45 @@ class VerificationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $fichier = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'mimetypes:image/jpeg,image/png', 'max:5120'];
-        // Attestation NIF et RCCM : souvent des PDF.
+        // RCCM, attestation IFU, justificatif de pouvoir : souvent des PDF.
         $document = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
+        $e = __('public.verification.erreurs');
 
         $donnees = $request->validate([
-            'type_piece' => ['nullable', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, VerificationIdentite::PIECES))],
-            'recto' => $request->input('type_piece') === TypeDocumentKyc::Nif->value ? $document : $fichier,
-            'verso' => $fichier,
-            'rccm' => $document,
-            'selfie' => $fichier,
-            // Date d'expiration de la pièce (CNIB, passeport) : la carte Raaga ne la dépasse jamais.
+            // CNIB, CIB-AES ou passeport, et rien d'autre.
+            'type_piece' => ['nullable', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, TypeDocumentKyc::piecesIdentite()))],
+            'numero_piece' => ['nullable', 'string', 'min:5', 'max:40'],
+            // Date d'expiration de la pièce : obligatoire ; la carte Raaga ne la dépasse jamais.
             'piece_expire_le' => ['nullable', 'date_format:Y-m-d', 'after:today'],
-        ], [...__('public.verification.erreurs.fichiers'), 'piece_expire_le.*' => __('public.verification.erreurs.expiration')], __('public.verification.attributs'));
+            'numero_rccm' => ['nullable', 'string', 'min:4', 'max:60'],
+            'numero_ifu' => ['nullable', 'string', 'min:5', 'max:40'],
+            'recto' => $fichier, 'verso' => $fichier, 'selfie' => $fichier,
+            'rccm' => $document, 'ifu' => $document, 'pouvoir' => $document,
+        ], [...$e['fichiers'], 'type_piece.*' => $e['type'], 'piece_expire_le.*' => $e['expiration'], 'numero_piece.*' => $e['numero_piece'],
+            'numero_rccm.*' => $e['numero_rccm'], 'numero_ifu.*' => $e['numero_ifu']], __('public.verification.attributs'));
 
         $this->verification->deposer(
             $request->user(),
             isset($donnees['type_piece']) ? TypeDocumentKyc::from($donnees['type_piece']) : null,
-            array_filter($request->only(['recto', 'verso', 'rccm', 'selfie'])),
-            $donnees['piece_expire_le'] ?? null,
+            array_filter($request->only(['recto', 'verso', 'selfie', 'rccm', 'ifu', 'pouvoir'])),
+            array_intersect_key($donnees, array_flip(['numero_piece', 'piece_expire_le', 'numero_rccm', 'numero_ifu'])),
         );
 
         return redirect()->route('espace.verification')->avecSucces('public.verification.envoye');
+    }
+
+    /** Type de titulaire (physique ou moral) : modifiable seulement en repassant par la vérification d'identité. */
+    public function titulaire(Request $request): RedirectResponse
+    {
+        $e = __('public.titulaires.erreurs');
+        $donnees = $request->validate([
+            'type_titulaire' => ['required', Rule::enum(TypeTitulaire::class)],
+            'raison_sociale' => ['nullable', 'required_if:type_titulaire,MORALE', 'string', 'min:2', 'max:200'],
+            'forme_morale' => ['nullable', 'required_if:type_titulaire,MORALE', Rule::in(TypeTitulaire::FORMES)],
+        ], ['type_titulaire.*' => $e['type'], 'raison_sociale.*' => $e['raison_sociale'], 'forme_morale.*' => $e['forme']]);
+        $this->verification->changerTitulaire($request->user(), TypeTitulaire::from($donnees['type_titulaire']), $donnees['raison_sociale'] ?? null, $donnees['forme_morale'] ?? null);
+
+        return redirect()->route('espace.verification')->avecSucces('public.titulaires.change');
     }
 
     /** Fichier d'une pièce : uniquement pour son titulaire (le VALIDATEUR passe par le back-office). */

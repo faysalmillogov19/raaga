@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Enums\Role;
 use App\Enums\StatutKyc;
-use App\Enums\TypeDocumentKyc;
 use App\Http\Controllers\Controller;
 use App\Models\ReservationBoutique;
 use App\Models\User;
@@ -51,7 +50,7 @@ class VerificationsIdentiteController extends Controller
                 Colonne::make('proposition', $c['proposition'])->valeur(fn (User $u) => DossiersIdentite::propositionEnAttente($u) ? __('admin.kyc.proposition_en_attente') : null),
                 Colonne::make('actions', $c['actions'])->vue('admin.kyc._actions', 'citoyen')->exportable(false),
             ])
-            ->filtres([Filtre::make('statut_kyc', $c['statut'], collect([StatutKyc::EnAttente, StatutKyc::Valide, StatutKyc::Rejete])
+            ->filtres([Filtre::make('statut_kyc', $c['statut'], collect([StatutKyc::EnAttente, StatutKyc::Valide, StatutKyc::Rejete, StatutKyc::AMettreAJour])
                 ->mapWithKeys(fn (StatutKyc $s) => [$s->value => __('admin.kyc.statuts.'.$s->value)])->all(), 'statut_kyc')])
             ->triParDefaut('depose', 'asc')
             ->unite(__('admin.kyc.unite'))
@@ -77,11 +76,10 @@ class VerificationsIdentiteController extends Controller
     public function conforme(Request $request, User $citoyen): RedirectResponse
     {
         Gate::authorize(Droit::KycTraiter->value);
-        $expirable = in_array(app(VerificationIdentite::class)->typePiece($citoyen), [TypeDocumentKyc::Cnib, TypeDocumentKyc::Passeport], true);
         $donnees = $request->validate([
             'motif' => ['nullable', 'string', 'max:1000'],
-            // Date d'expiration lue sur la pièce (CNIB, passeport) : saisie par le citoyen, vérifiée et corrigée ici.
-            'piece_expire_le' => [$expirable ? 'required' : 'nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
+            // Date d'expiration lue sur la pièce d'identité : saisie par le citoyen, vérifiée et corrigée ici.
+            'piece_expire_le' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
         ], ['piece_expire_le.*' => __('admin.kyc.erreurs.expiration')], __('admin.kyc.champs'));
         $this->dossiers->conforme($citoyen, $request->user(), $donnees['motif'] ?? null, $donnees['piece_expire_le'] ?? null);
 

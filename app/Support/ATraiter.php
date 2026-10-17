@@ -32,6 +32,7 @@ use App\Models\User;
 use App\Models\ZoneSite;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * Bloc « À traiter » du tableau de bord, selon les droits du profil :
@@ -174,6 +175,13 @@ class ATraiter
             foreach (User::query()->where('statut_kyc', StatutKyc::EnAttente)->whereIn('id', $attribues)->oldest('updated_at')->limit(self::KYC_MAX)->get() as $c) {
                 $e[] = [...self::element('kyc_commercant', 'CIT-'.$c->updated_at->format('Y').'-'.str_pad((string) $c->id, 5, '0', STR_PAD_LEFT), __('admin.tableau.a_traiter.citoyen'),
                     $c->updated_at, __('admin.tableau.a_traiter.prioritaire'), route('admin.kyc.dossier', $c)), 'prioritaire' => true];
+            }
+            // Dossiers anciens « pièces à mettre à jour » : signalés en une ligne (le titulaire doit déposer un dossier complet).
+            $aMettreAJour = User::query()->where('statut_kyc', StatutKyc::AMettreAJour)->selectRaw('count(*) as n, min(kyc_maj_demandee_le) as depuis')->first();
+            if ($aMettreAJour?->n) {
+                $e[] = self::element('kyc_a_mettre_a_jour', trans_choice('admin.tableau.a_traiter.dossiers_n', (int) $aMettreAJour->n, ['n' => $aMettreAJour->n]), null,
+                    $aMettreAJour->depuis ? Carbon::parse($aMettreAJour->depuis) : null,
+                    __('admin.tableau.a_traiter.attente_titulaire'), route('admin.kyc', ['statut_kyc' => StatutKyc::AMettreAJour->value]));
             }
             foreach (User::query()->where('statut_kyc', StatutKyc::EnAttente)->whereNotIn('id', $attribues)->oldest('updated_at')->limit(self::KYC_MAX)->get() as $c) {
                 $heures = (int) $c->updated_at->diffInHours(now());
