@@ -17,6 +17,7 @@ use App\Enums\StatutTranche;
 use App\Enums\StatutTypeBoutique;
 use App\Models\AppelFonds;
 use App\Models\Avenant;
+use App\Models\CampagneBoutiques;
 use App\Models\Convention;
 use App\Models\DeclarationVirement;
 use App\Models\DistributionDividende;
@@ -96,8 +97,10 @@ class ATraiter
             // Jamais ce que le validateur a saisi lui-même.
             $depuisFile(['grille' => 'grille', 'finances' => 'finances', 'campagne' => 'campagne'],
                 ['grille' => 'Soumise', 'finances' => 'Soumises', 'campagne' => 'Soumise'], true);
+            $e = [...$e, ...self::avenantsSoumis(CampagneBoutiques::class, $user)];
         }
         if ($user->can(Droit::BoutiquesSaisir->value)) {
+            $e = [...$e, ...self::avenantsRejetes(CampagneBoutiques::class, $user)];
             foreach (GrilleTarifaire::query()->where('statut', StatutGrilleTarifaire::Brouillon)->whereNotNull('motif_rejet')->with('site')->get() as $g) {
                 $e[] = self::element('grille', self::nomSite($g->site), $g->valide_par, $g->updated_at, 'Rejetée', route('admin.boutiques.grilles.show', $g->site_id), $g->motif_rejet);
             }
@@ -237,6 +240,7 @@ class ATraiter
         return match (true) {
             $a->avenantable instanceof Tranche => $a->avenantable->nom,
             $a->avenantable instanceof Convention => $a->avenantable->reference,
+            $a->avenantable instanceof CampagneBoutiques => $a->avenantable->nom,
             default => __('admin.dividendes.exercice', ['annee' => $a->avenantable?->exercice]),
         };
     }
@@ -246,6 +250,7 @@ class ATraiter
         return match (true) {
             $a->avenantable instanceof Tranche => route('admin.tranches.show', $a->avenantable),
             $a->avenantable instanceof Convention => route('admin.conventions.show', $a->avenantable),
+            $a->avenantable instanceof CampagneBoutiques => route('admin.boutiques.show', $a->avenantable),
             default => route('admin.dividendes.show', $a->avenantable),
         };
     }

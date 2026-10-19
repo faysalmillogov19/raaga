@@ -2521,6 +2521,10 @@ return [
             'delai_relance' => 'délai de nouvelle manifestation d’intérêt',
             'delai_kyc_valeur' => 'délai de correction de l’identité',
             'delai_relance_valeur' => 'délai de nouvelle manifestation d’intérêt',
+            'delai_kyc_duree_id' => 'délai de correction de l’identité (durée)',
+            'delai_kyc_secondes' => 'délai de correction de l’identité (secondes)',
+            'delai_relance_duree_id' => 'délai de nouvelle manifestation d’intérêt (durée)',
+            'delai_relance_secondes' => 'délai de nouvelle manifestation d’intérêt (secondes)',
         ],
         'aides' => [
             'description' => 'Mise en forme simple : « ## Titre », « - élément de liste » ou « 1. étape », « **gras** », « *italique* », une ligne vide entre deux paragraphes. Le code HTML n’est jamais interprété.',
@@ -2582,6 +2586,19 @@ return [
         'formulaire' => [
             'creation' => 'Nouvelle campagne de réservation',
             'modification' => 'Modifier la campagne',
+            'avenant' => 'Avenant à la campagne',
+        ],
+        'avenant' => [
+            'intro_confirmee' => 'La campagne n’est pas encore ouverte : tous ses paramètres peuvent être modifiés. L’avenant est soumis au VALIDATEUR ; rien ne change avant sa décision, et la campagne ne s’ouvre pas tant qu’il est en attente.',
+            'intro_ouverte' => 'Réservations en cours : vous pouvez modifier la date de clôture, la présentation, les délais des listes d’attente et les moyens de paiement, et élargir le périmètre (ajouter des sites ou des types, relever les limites par personne). Le nom, l’ouverture et les retraits ne sont plus possibles. L’avenant est soumis au VALIDATEUR.',
+            'soumettre' => 'Soumettre l’avenant au VALIDATEUR',
+            'erreurs' => [
+                'retrait_site' => 'Réservations en cours : un site ne peut plus être retiré, seulement ajouté.',
+                'retrait_type' => 'Réservations en cours : un type ne peut plus être retiré, seulement ajouté.',
+                'limite_baissee' => 'Réservations en cours : une limite par personne ne peut qu’être relevée.',
+                'cloture_passee' => 'La nouvelle date de clôture est déjà passée.',
+                'nom_ouverture' => 'Réservations en cours : le nom et la date d’ouverture ne changent plus.',
+            ],
         ],
         'actions' => [
             'cloturer' => 'Clôturer les réservations',

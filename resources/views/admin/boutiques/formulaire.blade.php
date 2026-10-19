@@ -10,19 +10,43 @@
         $fil[] = ['libelle' => $campagne->nom, 'url' => route('admin.boutiques.show', $campagne)];
     }
     $fil[] = ['libelle' => $titre];
+    // Avenant d'une campagne ouverte : nom et ouverture figés, périmètre élargi seulement.
+    $ouverte = $mode === 'avenant' && $campagne->statut === \App\Enums\StatutCampagneBoutiques::Ouverte;
+    $action = match ($mode) {
+        'avenant' => route('admin.boutiques.avenant.store', $campagne),
+        'modification' => route('admin.boutiques.update', $campagne),
+        default => route('admin.boutiques.store'),
+    };
 @endphp
 
 <x-admin.layout :titre="$titre" :fil="$fil">
-    <form method="POST" action="{{ $campagne->exists ? route('admin.boutiques.update', $campagne) : route('admin.boutiques.store') }}" class="space-y-[18px]" novalidate>
+    <form method="POST" action="{{ $action }}" class="space-y-[18px]" novalidate>
         @csrf
-        @if ($campagne->exists)
+        @if ($mode === 'modification')
             @method('PUT')
+        @endif
+
+        @if ($mode === 'avenant')
+            {{-- Avenant : motif obligatoire ; le VALIDATEUR confirme ou rejette, rien ne change avant. --}}
+            <div class="bo-carte !mt-0" data-avenant-campagne>
+                <p>{{ $ouverte ? __('admin.boutiques.avenant.intro_ouverte') : __('admin.boutiques.avenant.intro_confirmee') }}</p>
+                <div class="formulaire-champ mt-4">
+                    <label for="motif"><x-requis /> {{ __('admin.parametrage.actions.motif') }}</label>
+                    <textarea id="motif" name="motif" rows="2" required class="champ @error('motif') est-invalide @enderror">{{ old('motif') }}</textarea>
+                    @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+                </div>
+            </div>
         @endif
 
         <section class="bo-carte !mt-0" aria-labelledby="s-campagne">
             <h2 id="s-campagne" class="!text-[1.15rem]">{{ __('admin.boutiques.sections.campagne') }}</h2>
             <div class="mt-3 grid gap-4 lg:grid-cols-2">
-                <x-admin.champ nom="nom" :libelle="ucfirst($c['nom'])" :valeur="$campagne->nom" required maxlength="150" class="lg:col-span-2" />
+                @if ($ouverte)
+                    <x-admin.champ nom="nom" :libelle="ucfirst($c['nom'])" type="verrouille" :valeur="$campagne->nom" class="lg:col-span-2" />
+                    <input type="hidden" name="nom" value="{{ $campagne->nom }}">
+                @else
+                    <x-admin.champ nom="nom" :libelle="ucfirst($c['nom'])" :valeur="$campagne->nom" required maxlength="150" class="lg:col-span-2" />
+                @endif
                 {{-- Présentation : mise en forme simple (titres, listes, gras), aperçu rendu par le serveur (HTML neutralisé). --}}
                 <div class="formulaire-champ !mt-0 lg:col-span-2" x-data="apercuTexte(@js(route('admin.boutiques.apercu')))" data-apercu-description>
                     <label for="description">{{ ucfirst($c['description']) }}</label>
@@ -43,7 +67,12 @@
                     </div>
                     @error('description') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                 </div>
-                <x-admin.champ nom="date_ouverture" :libelle="ucfirst($c['date_ouverture'])" type="datetime-local" :valeur="$dateHeure($campagne->date_ouverture)" required />
+                @if ($ouverte)
+                    <x-admin.champ nom="date_ouverture" :libelle="ucfirst($c['date_ouverture'])" type="verrouille" :valeur="$campagne->date_ouverture?->format('d/m/Y H:i')" />
+                    <input type="hidden" name="date_ouverture" value="{{ $dateHeure($campagne->date_ouverture) }}">
+                @else
+                    <x-admin.champ nom="date_ouverture" :libelle="ucfirst($c['date_ouverture'])" type="datetime-local" :valeur="$dateHeure($campagne->date_ouverture)" required />
+                @endif
                 <x-admin.champ nom="date_cloture" :libelle="ucfirst($c['date_cloture'])" type="datetime-local" :valeur="$dateHeure($campagne->date_cloture)" required />
             </div>
         </section>
@@ -127,7 +156,11 @@
         </section>
 
         <div class="flex flex-wrap gap-3">
-            <x-admin.enregistrer-soumettre />
+            @if ($mode === 'avenant')
+                <x-admin.bouton variante="principal" type="submit">{{ __('admin.boutiques.avenant.soumettre') }}</x-admin.bouton>
+            @else
+                <x-admin.enregistrer-soumettre />
+            @endif
             <x-admin.bouton variante="contour" href="{{ $campagne->exists ? route('admin.boutiques.show', $campagne) : route('admin.boutiques') }}">{{ __('admin.tranches.formulaire.annuler') }}</x-admin.bouton>
         </div>
     </form>

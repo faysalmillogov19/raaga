@@ -41,6 +41,9 @@
                                           :action="route('admin.boutiques.soumettre', $campagne)" :bouton="__('admin.parametrage.actions.soumettre')">
                         <x-slot:declencheur>{{ __('admin.parametrage.actions.soumettre') }}</x-slot:declencheur>
                     </x-admin.confirmation>
+                @elseif ($campagne->champsAvenantAutorises() !== [] && ! $campagne->avenants()->where('statut', \App\Enums\StatutAvenant::EnAttente)->exists())
+                    {{-- Campagne confirmée ou ouverte : modification par avenant, confirmé par le VALIDATEUR. --}}
+                    <x-admin.bouton variante="contour" :href="route('admin.boutiques.avenant', $campagne)" data-proposer-avenant>{{ __('admin.parametrage.actions.avenant') }}</x-admin.bouton>
                 @endif
             @endcan
 
@@ -229,6 +232,14 @@
             </ul>
         </section>
     @endif
+
+    {{-- Avenants : différentiel lisible (sites, types, limites et moyens en clair). --}}
+    @include('admin.parametrage._avenants', [
+        'avenants' => $avenants, 'libelles' => __('admin.boutiques.champs'), 'objet' => $campagne,
+        'droitConfirmer' => Droit::BoutiquesConfirmer->value,
+        'routeConfirmer' => 'admin.boutiques.avenant.confirmer', 'routeRejeter' => 'admin.boutiques.avenant.rejeter',
+        'apres' => fn ($a) => array_intersect_key((clone $campagne)->fill($a->nouvelle_valeur)->snapshotParametres(), $a->nouvelle_valeur),
+    ])
 
     @include('admin.parametrage._historique', ['versions' => $versions, 'decisions' => $decisions])
 </x-admin.layout>

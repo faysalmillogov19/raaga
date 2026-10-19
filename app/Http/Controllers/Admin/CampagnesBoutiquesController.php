@@ -9,6 +9,7 @@ use App\Enums\StatutReservationBoutique;
 use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CampagneBoutiquesRequest;
+use App\Models\Avenant;
 use App\Models\CampagneBoutiques;
 use App\Models\InscriptionBoutique;
 use App\Models\MoyenPaiement;
@@ -21,6 +22,7 @@ use App\Services\Audit\Journal;
 use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Boutiques\EcheancesCampagnes;
+use App\Services\Boutiques\ListesAttente;
 use App\Services\Boutiques\RelancesInteret;
 use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Parametrage\WorkflowParametrage;
@@ -30,6 +32,7 @@ use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
 use App\Support\Tableau\ResultatTableau;
 use App\Support\Tableau\Tableau;
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -37,6 +40,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\HtmlString;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -162,6 +166,7 @@ class CampagnesBoutiquesController extends Controller
                 'campagne' => $campagne,
                 'tableau' => $t,
                 'compteurs' => $campagne->compteurs(),
+                'avenants' => $campagne->avenants()->with(['auteur', 'decideur'])->get(),
                 // Listes d'attente : inscriptions en attente, liste générale (souscripteurs non attributaires), relances.
                 'listes' => [
                     'en_attente' => InscriptionBoutique::query()->where('campagne_boutiques_id', $campagne->id)->where('statut', StatutInscriptionBoutique::EnAttente)->count(),
@@ -237,6 +242,106 @@ class CampagnesBoutiquesController extends Controller
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
 
         return $this->executer($campagne, fn () => $this->workflow->rejeter($campagne, $request->user(), $motif), 'admin.parametrage.messages.rejete');
+    }
+
+    // ---------------------------------------------------------------- Avenants
+
+    /** Formulaire d'avenant : tous les paramètres d'une campagne confirmée ; ceux autorisés d'une campagne ouverte. */
+    public function avenant(CampagneBoutiques $campagne): View|RedirectResponse
+    {
+        Gate::authorize(Droit::BoutiquesSaisir->value);
+
+        if ($campagne->champsAvenantAutorises() === []) {
+            return redirect()->route('admin.boutiques.show', $campagne)->with('erreur', __('admin.parametrage.regles.avenant_impossible'));
+        }
+
+        return view('admin.boutiques.formulaire', ['campagne' => $campagne, 'sitesDisponibles' => $this->sitesDisponibles(),
+            'typesDisponibles' => TypeBoutique::query()->proposables()->orderBy('ordre')->orderBy('libelle')->get(), 'mode' => 'avenant']);
+    }
+
+    public function proposerAvenant(CampagneBoutiquesRequest $request, CampagneBoutiques $campagne): RedirectResponse
+    {
+        Gate::authorize(Droit::BoutiquesSaisir->value);
+        $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
+        $valeurs = $request->parametres();
+        // Dates saisies à la minute : inchangées si elles tombent sur la même minute que les dates en vigueur.
+        foreach (['date_ouverture', 'date_cloture'] as $champ) {
+            if (Carbon::parse($valeurs[$champ])->format('Y-m-d H:i') === $campagne->{$champ}?->format('Y-m-d H:i')) {
+                $valeurs[$champ] = $campagne->{$champ};
+            }
+        }
+        if ($campagne->statut === StatutCampagneBoutiques::Ouverte) {
+            $this->verifierAjoutsSeulement($campagne, $valeurs);
+        }
+
+        return $this->executer($campagne, function () use ($request, $campagne, $valeurs, $motif) {
+            // Moyens de paiement retenus : au moins un moyen de la caution réellement ouvert.
+            $this->exigerPaiementsOuverts((clone $campagne)->fill(['canaux_actifs' => $valeurs['canaux_actifs']]));
+            $this->workflow->proposerAvenant($campagne, $request->user(), $valeurs, $motif);
+        }, 'admin.parametrage.messages.avenant_soumis');
+    }
+
+    public function confirmerAvenant(Request $request, CampagneBoutiques $campagne, Avenant $avenant): RedirectResponse
+    {
+        Gate::authorize(Droit::BoutiquesConfirmer->value);
+        $this->verifierAvenant($campagne, $avenant);
+
+        return $this->executer($campagne, function () use ($request, $avenant, $campagne) {
+            $this->workflow->confirmerAvenant($avenant, $request->user());
+            // Nouvelles dates : échéances appliquées aussitôt ; limites relevées ou périmètre élargi : listes d'attente réévaluées.
+            $this->echeances->appliquer();
+            app(ListesAttente::class)->reevaluer($campagne->id);
+        }, 'admin.parametrage.messages.avenant_confirme');
+    }
+
+    public function rejeterAvenant(Request $request, CampagneBoutiques $campagne, Avenant $avenant): RedirectResponse
+    {
+        Gate::authorize(Droit::BoutiquesConfirmer->value);
+        $this->verifierAvenant($campagne, $avenant);
+        $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
+
+        return $this->executer($campagne, fn () => $this->workflow->rejeterAvenant($avenant, $request->user(), $motif), 'admin.parametrage.messages.avenant_rejete');
+    }
+
+    /**
+     * Campagne ouverte : le périmètre ne peut que s'élargir (sites et types ajoutés, limites relevées), la clôture ne
+     * peut pas être fixée dans le passé ; le nom et l'ouverture ne changent plus.
+     *
+     * @param  array<string, mixed>  $valeurs
+     *
+     * @throws ValidationException
+     */
+    private function verifierAjoutsSeulement(CampagneBoutiques $campagne, array $valeurs): void
+    {
+        $e = __('admin.boutiques.avenant.erreurs');
+        $erreurs = [];
+        if (array_diff(array_map('intval', (array) $campagne->sites), $valeurs['sites'])) {
+            $erreurs['sites'] = $e['retrait_site'];
+        }
+        if (array_diff(array_map('intval', (array) $campagne->types), $valeurs['types'])) {
+            $erreurs['types'] = $e['retrait_type'];
+        }
+        foreach ((array) $campagne->types as $id) {
+            // Type retiré : déjà signalé ci-dessus.
+            if ((((array) $valeurs['limites'])[(string) $id] ?? PHP_INT_MAX) < $campagne->limitePour((int) $id)) {
+                $erreurs['limites.'.$id] = $e['limite_baissee'];
+            }
+        }
+        $minute = fn ($d) => Carbon::parse($d)->format('Y-m-d H:i');
+        if ($minute($valeurs['date_cloture']) !== $minute($campagne->date_cloture) && Carbon::parse($valeurs['date_cloture'])->isPast()) {
+            $erreurs['date_cloture'] = $e['cloture_passee'];
+        }
+        if ($valeurs['nom'] !== $campagne->nom || $minute($valeurs['date_ouverture']) !== $minute($campagne->date_ouverture)) {
+            $erreurs['nom'] = $e['nom_ouverture'];
+        }
+        if ($erreurs !== []) {
+            throw ValidationException::withMessages($erreurs);
+        }
+    }
+
+    private function verifierAvenant(CampagneBoutiques $campagne, Avenant $avenant): void
+    {
+        abort_unless($avenant->avenantable_type === $campagne->getMorphClass() && $avenant->avenantable_id === $campagne->id, 404);
     }
 
     public function cloturer(Request $request, CampagneBoutiques $campagne): RedirectResponse

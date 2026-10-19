@@ -2,6 +2,7 @@
 
 namespace App\Services\Boutiques;
 
+use App\Enums\StatutAvenant;
 use App\Enums\StatutCampagneBoutiques;
 use App\Models\CampagneBoutiques;
 use App\Models\GrilleTarifaire;
@@ -54,6 +55,10 @@ class EcheancesCampagnes
     /** Raison qui empêche l'ouverture automatique de la campagne, ou null si rien ne l'empêche. */
     public function blocage(CampagneBoutiques $campagne): ?string
     {
+        // Avenant en attente : pas d'ouverture avant la décision du VALIDATEUR.
+        if ($campagne->avenants()->where('statut', StatutAvenant::EnAttente)->exists()) {
+            return __('admin.parametrage.regles.avenant_en_cours');
+        }
         if ($raison = $campagne->raisonPaiementsFermes()) {
             return __('admin.boutiques.regles.paiements_fermes', ['raison' => $raison]);
         }

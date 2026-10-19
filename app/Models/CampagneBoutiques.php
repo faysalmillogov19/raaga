@@ -32,7 +32,15 @@ use Illuminate\Support\Collection;
 ])]
 class CampagneBoutiques extends Model implements Parametrable
 {
-    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'types', 'limites', 'canaux_actifs', 'delai_kyc', 'delai_relance'];
+    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'types', 'limites', 'canaux_actifs',
+        'delai_kyc_valeur', 'delai_kyc_duree_id', 'delai_kyc_secondes', 'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes'];
+
+    /**
+     * Avenant d'une campagne ouverte (réservations en cours) : date de clôture, présentation, délais des listes
+     * d'attente, moyens de paiement, et ajouts au périmètre (sites, types, limites relevées ; jamais de retrait).
+     */
+    public const AVENANT_OUVERTE = ['date_cloture', 'description', 'canaux_actifs', 'sites', 'types', 'limites',
+        'delai_kyc_valeur', 'delai_kyc_duree_id', 'delai_kyc_secondes', 'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes'];
 
     /**
      * Délais des listes d'attente : clé => [valeur, durée] par défaut. « kyc » : correction de l'identité d'un
@@ -175,13 +183,23 @@ class CampagneBoutiques extends Model implements Parametrable
         $this->forceFill(['statut' => StatutCampagneBoutiques::Brouillon, 'motif_rejet' => $motif])->save();
     }
 
-    /** Pas d'avenant : une campagne confirmée se rejette ou se recrée. */
+    /**
+     * Avenant : confirmée (aucune réservation), tous les paramètres ; ouverte, ceux de AVENANT_OUVERTE (les ajouts au
+     * périmètre sont contrôlés par le contrôleur) ; ensuite, aucun.
+     */
     public function champsAvenantAutorises(): ?array
     {
-        return [];
+        return match ($this->statut) {
+            StatutCampagneBoutiques::Confirmee => self::PARAMETRES,
+            StatutCampagneBoutiques::Ouverte => self::AVENANT_OUVERTE,
+            default => [],
+        };
     }
 
-    public function appliquerAvenant(array $valeurs): void {}
+    public function appliquerAvenant(array $valeurs): void
+    {
+        $this->fill(array_intersect_key($valeurs, array_flip(self::PARAMETRES)))->save();
+    }
 
     public function creerVersion(User $auteur, ?string $motif = null): CampagneBoutiquesVersion
     {
@@ -216,9 +234,6 @@ class CampagneBoutiques extends Model implements Parametrable
         $snapshot['sites'] = $this->sitesConcernes()->map(fn (Site $s) => ($s->code ? $s->code.' · ' : '').$s->nom)->implode(', ');
         // Types proposés, lisibles dans le différentiel du VALIDATEUR (« BOUT · Boutique, PP · Pôle : préparation… »).
         $snapshot['types'] = $this->typesConcernes()->map(fn (TypeBoutique $t) => ($t->code ? $t->code.' · ' : '').$t->libelle)->implode(', ');
-        // Délais des listes d'attente, lisibles (« 7 jours »).
-        $snapshot['delai_kyc'] = $this->libelleDelaiListe('kyc');
-        $snapshot['delai_relance'] = $this->libelleDelaiListe('relance');
         // Limites par type, lisibles dans le différentiel du VALIDATEUR (« BOUT : 1, PV : 1 »).
         $snapshot['limites'] = $this->typesConcernes()->map(fn (TypeBoutique $t) => ($t->code ?? $t->libelle).' : '.$this->limitePour($t->id))->implode(', ');
 

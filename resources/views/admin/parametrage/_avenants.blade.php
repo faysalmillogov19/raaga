@@ -1,4 +1,5 @@
-{{-- Avenants d'un paramétrage. Variables : $avenants, $libelles, $droitConfirmer, $routeConfirmer, $routeRejeter, $objet. --}}
+{{-- Avenants d'un paramétrage. Variables : $avenants, $libelles, $droitConfirmer, $routeConfirmer, $routeRejeter, $objet ;
+     $apres (facultatif) : nouvelles valeurs lisibles d'un avenant, quand elles sont saisies en identifiants. --}}
 <section class="bo-carte" aria-labelledby="avenants-titre">
     <h2 id="avenants-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.avenants') }}</h2>
     @forelse ($avenants as $avenant)
@@ -10,7 +11,7 @@
             </div>
             <p class="mt-1">{{ $avenant->motif }}</p>
             <div class="mt-2">
-                <x-admin.differentiel :differentiel="collect($avenant->nouvelle_valeur)->mapWithKeys(fn ($v, $k) => [$k => [$avenant->ancienne_valeur[$k] ?? null, $v]])->all()" :libelles="$libelles" />
+                <x-admin.differentiel :differentiel="collect(isset($apres) ? $apres($avenant) : $avenant->nouvelle_valeur)->mapWithKeys(fn ($v, $k) => [$k => [$avenant->ancienne_valeur[$k] ?? null, $v]])->all()" :libelles="$libelles" />
             </div>
             @if ($avenant->motif_decision)
                 <p class="texte-carte mt-2">{{ __('admin.parametrage.motif') }} : {{ $avenant->motif_decision }} ({{ $avenant->decideur?->name }})</p>

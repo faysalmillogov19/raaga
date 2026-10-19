@@ -200,7 +200,7 @@ class CampagnesBoutiquesTest extends TestCase
         $this->en($this->regulateur)->get(route('admin.boutiques.show', $c))->assertOk()
             ->assertSee('data-delai-liste="kyc"', false)->assertSee('2 jours')->assertSee('48 heures');
         $this->en($this->regulateur)->get(route('admin.boutiques.edit', $c))->assertOk()->assertSee('data-delais-listes', false);
-        $this->assertSame('2 jours', $c->snapshotParametres()['delai_kyc']);
+        $this->assertSame([2, 172_800], [$c->snapshotParametres()['delai_kyc_valeur'], $c->snapshotParametres()['delai_kyc_secondes']]);
 
         // Valeur sans durée : refusée.
         $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire(['delai_kyc_valeur' => 3]))->assertSessionHasErrors('delai_kyc_duree');

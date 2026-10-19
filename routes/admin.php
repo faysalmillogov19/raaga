@@ -381,6 +381,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{campagne}/confirmer', 'confirmer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.confirmer');
             Route::post('/{campagne}/rejeter', 'rejeter')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.rejeter');
             Route::post('/{campagne}/cloturer', 'cloturer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.cloturer');
+            // Avenant d'une campagne confirmée ou ouverte : RÉGULATEUR propose, VALIDATEUR confirme ou rejette.
+            Route::get('/{campagne}/avenant', 'avenant')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.avenant');
+            Route::post('/{campagne}/avenant', 'proposerAvenant')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.avenant.store');
+            Route::post('/{campagne}/avenants/{avenant}/confirmer', 'confirmerAvenant')->whereNumber(['campagne', 'avenant'])->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.avenant.confirmer');
+            Route::post('/{campagne}/avenants/{avenant}/rejeter', 'rejeterAvenant')->whereNumber(['campagne', 'avenant'])->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.avenant.rejeter');
             Route::post('/{campagne}/reservations/{reservation}/attribuer', 'attribuer')->whereNumber(['campagne', 'reservation'])->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.attribuer');
         });
 
