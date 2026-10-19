@@ -99,7 +99,8 @@
                 <dl class="bo-definitions mt-3">
                     @foreach ($champs as $champ)
                         <dt>{{ ucfirst($libelles[$champ]) }}</dt>
-                        <dd>{{ AffichageParametres::valeur($champ, $snapshot[$champ]) }}</dd>
+                        <dd>{{ $champ === 'pourcentage_depassement_max' && $snapshot[$champ] === null && $snapshot['regle_arret'] === \App\Enums\RegleArret::DepassementAutorise->value
+                            ? __('admin.tranches.sans_limite') : AffichageParametres::valeur($champ, $snapshot[$champ]) }}</dd>
                     @endforeach
                 </dl>
             </section>

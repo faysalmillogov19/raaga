@@ -203,7 +203,7 @@ class Tranche extends Model implements Parametrable
             objectifMontant: $this->objectif_montant,
             methode: $methode ?? $this->methode_allocation,
             regleArret: $this->regle_arret,
-            pourcentageDepassementMax: $this->pourcentage_depassement_max ?? 0,
+            pourcentageDepassementMax: $this->pourcentage_depassement_max,
             seuilGarantiPetits: $this->seuil_garanti_petits ?? 0,
             plafondActionsParPersonne: $this->plafond_actions_par_personne,
             plafondConcentrationPct: $this->plafond_concentration_pct,

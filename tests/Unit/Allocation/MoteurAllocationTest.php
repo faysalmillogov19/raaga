@@ -289,6 +289,25 @@ class MoteurAllocationTest extends TestCase
         $this->assertSame(100, $sansDepassement->capacite());
     }
 
+    public function test_depassement_autorise_sans_pourcentage_sert_toutes_les_demandes(): void
+    {
+        $parametres = $this->parametres(MethodeAllocation::Prorata, 100, [
+            'regleArret' => RegleArret::DepassementAutorise,
+            'pourcentageDepassementMax' => null,
+        ]);
+
+        $resultat = $this->allouer($parametres, [$this->demande('a', 150, 1), $this->demande('b', 90, 2)]);
+
+        $this->assertTrue($parametres->depassementSansLimite());
+        $this->assertSame(['a' => 150, 'b' => 90], $this->allouees($resultat));
+        $this->assertSame(0, array_sum(array_map(fn ($a) => $a->montantARembourser, $resultat->allocations)));
+
+        // En « Arrêt à l'objectif », un pourcentage vide ne change rien : capacité de l'objectif.
+        $arret = $this->parametres(MethodeAllocation::Prorata, 100, ['pourcentageDepassementMax' => null]);
+        $this->assertFalse($arret->depassementSansLimite());
+        $this->assertSame(100, array_sum($this->allouees($this->allouer($arret, [$this->demande('a', 150, 1), $this->demande('b', 90, 2)]))));
+    }
+
     public function test_capacite_arrondie_a_l_action_inferieure(): void
     {
         $parametres = new ParametresAllocation(self::VALEUR, 1_005_000, MethodeAllocation::Prorata);

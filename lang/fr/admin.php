@@ -2675,6 +2675,8 @@ return [
             'seuil_revue_conformite' => 'seuil de revue conformité (FCFA)',
         ],
         'sans_plafond' => 'Aucun plafond',
+        'sans_limite' => 'Sans limite',
+        'aide_depassement' => 'Utilisé seulement avec « Dépassement autorisé ». Facultatif : vide = dépassement sans limite.',
         'oui' => 'Oui',
         'non' => 'Non',
         'actions' => [

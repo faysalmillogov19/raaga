@@ -16,7 +16,8 @@ final readonly class ParametresAllocation
         public int $objectifMontant,
         public MethodeAllocation $methode,
         public RegleArret $regleArret = RegleArret::ArretAObjectif,
-        public int $pourcentageDepassementMax = 0,
+        /** Dépassement autorisé au-delà de l'objectif, en % ; null avec « Dépassement autorisé » = sans limite. */
+        public ?int $pourcentageDepassementMax = 0,
         public int $seuilGarantiPetits = 0,
         public ?int $plafondActionsParPersonne = null,
         public ?int $plafondConcentrationPct = null,
@@ -30,7 +31,7 @@ final readonly class ParametresAllocation
             throw new InvalidArgumentException("L'objectif de collecte ne peut pas être négatif.");
         }
 
-        if ($pourcentageDepassementMax < 0) {
+        if ($pourcentageDepassementMax !== null && $pourcentageDepassementMax < 0) {
             throw new InvalidArgumentException('Le pourcentage de dépassement ne peut pas être négatif.');
         }
 
@@ -47,14 +48,22 @@ final readonly class ParametresAllocation
         }
     }
 
+    /** Dépassement autorisé sans pourcentage maximal : toutes les demandes retenues sont servies. */
+    public function depassementSansLimite(): bool
+    {
+        return $this->regleArret === RegleArret::DepassementAutorise && $this->pourcentageDepassementMax === null;
+    }
+
     /**
      * Nombre maximal d'actions à allouer : objectif (+ dépassement autorisé) / valeur unitaire, arrondi inférieur.
+     * Dépassement sans limite : capacité de l'objectif seul (base du plafond de concentration), relevée par le moteur
+     * au total des demandes retenues.
      */
     public function capacite(): int
     {
         $montantMax = $this->objectifMontant;
 
-        if ($this->regleArret === RegleArret::DepassementAutorise) {
+        if ($this->regleArret === RegleArret::DepassementAutorise && $this->pourcentageDepassementMax !== null) {
             $montantMax = intdiv($this->objectifMontant * (100 + $this->pourcentageDepassementMax), 100);
         }
 

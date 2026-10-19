@@ -96,7 +96,7 @@
                 <h2 id="s-sur" class="!text-[1.15rem]">{{ __('admin.tranches.sections.sursouscription') }}</h2>
                 <div class="mt-3 grid gap-4 lg:grid-cols-2">
                     <x-admin.liste nom="regle_arret" :libelle="ucfirst($c['regle_arret'])" :options="$options(RegleArret::class)" :valeur="$t->regle_arret" />
-                    <x-admin.champ nom="pourcentage_depassement_max" :libelle="ucfirst($c['pourcentage_depassement_max'])" type="number" min="1" max="100" :valeur="$t->pourcentage_depassement_max" />
+                    <x-admin.champ nom="pourcentage_depassement_max" :libelle="ucfirst($c['pourcentage_depassement_max'])" type="number" min="1" max="100" :valeur="$t->pourcentage_depassement_max" :aide="__('admin.tranches.aide_depassement')" />
                     <x-admin.liste nom="methode_allocation" :libelle="ucfirst($c['methode_allocation'])" :options="$options(MethodeAllocation::class)" :valeur="$t->methode_allocation" />
                     <x-admin.champ nom="seuil_garanti_petits" :libelle="ucfirst($c['seuil_garanti_petits'])" type="number" min="1" :valeur="$t->seuil_garanti_petits" />
                     <x-admin.champ nom="plafond_concentration_pct" :libelle="ucfirst($c['plafond_concentration_pct'])" type="number" min="1" max="100" :valeur="$t->plafond_concentration_pct" />

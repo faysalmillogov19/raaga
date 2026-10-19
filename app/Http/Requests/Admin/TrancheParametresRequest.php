@@ -56,7 +56,8 @@ class TrancheParametresRequest extends FormRequest
 
             // Sursouscription
             'regle_arret' => ['required', $enum(RegleArret::class)],
-            'pourcentage_depassement_max' => ['nullable', 'required_if:regle_arret,DEPASSEMENT_AUTORISE', 'integer', 'min:1', 'max:100'],
+            // Facultatif, même en « Dépassement autorisé » : vide = dépassement sans limite.
+            'pourcentage_depassement_max' => ['nullable', 'integer', 'min:1', 'max:100'],
             'methode_allocation' => ['required', $enum(MethodeAllocation::class)],
             'seuil_garanti_petits' => ['nullable', 'required_if:methode_allocation,PRIORITE_PETITS', 'integer', 'min:1'],
             'plafond_concentration_pct' => ['nullable', 'integer', 'min:1', 'max:100'],

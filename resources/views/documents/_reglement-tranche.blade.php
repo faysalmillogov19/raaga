@@ -34,7 +34,11 @@
     <p>La souscription est ouverte du {{ A::valeur('date_ouverture', $t->date_ouverture) }} au {{ A::valeur('date_cloture', $t->date_cloture) }} (heure de Ouagadougou). Une souscription non payée dans un délai de {{ $t->libelleDelaiPaiement() }} expire automatiquement.</p></section>
 
 <section><h3>Article 4 : Si la demande dépasse l’offre</h3>
-    <p>{{ $t->regle_arret === RegleArret::DepassementAutorise ? 'L’objectif peut être dépassé de '.$t->pourcentage_depassement_max.' % au plus.' : 'La collecte s’arrête à l’objectif.' }}
+    <p>{{ match (true) {
+        $t->regle_arret !== RegleArret::DepassementAutorise => 'La collecte s’arrête à l’objectif.',
+        $t->pourcentage_depassement_max === null => 'L’objectif peut être dépassé, sans limite.',
+        default => 'L’objectif peut être dépassé de '.$t->pourcentage_depassement_max.' % au plus.',
+    } }}
         {{ $methode }}
         {{ $t->plafond_concentration_pct ? 'Aucune personne ne peut recevoir plus de '.$t->plafond_concentration_pct.' % des actions de la tranche.' : '' }}
         Les sommes payées pour des actions non attribuées sont remboursées dans un délai de {{ $t->delai_remboursement_jours }} jours.</p></section>

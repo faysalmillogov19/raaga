@@ -305,6 +305,20 @@ class TranchesWorkflowTest extends TestCase
         $this->assertSame([StatutTranche::Cloturee, StatutTranche::Ouverte], [$premiere->refresh()->statut, $seconde->refresh()->statut]);
     }
 
+    public function test_depassement_maximal_facultatif_meme_en_depassement_autorise(): void
+    {
+        $this->en($this->regulateur)->post(route('admin.tranches.store'), $this->formulaire([
+            'nom' => 'Sans limite', 'regle_arret' => 'DEPASSEMENT_AUTORISE', 'pourcentage_depassement_max' => '',
+        ]))->assertSessionHasNoErrors();
+        $tranche = Tranche::query()->where('nom', 'Sans limite')->sole();
+        $this->assertNull($tranche->pourcentage_depassement_max);
+        $this->assertTrue($tranche->parametresAllocation()->depassementSansLimite());
+
+        $this->en($this->regulateur)->get(route('admin.tranches.show', $tranche))->assertSee('Sans limite');
+        $this->en($this->regulateur)->get(route('admin.tranches.reglement', $tranche))->assertSee('L’objectif peut être dépassé, sans limite.', false);
+        $this->en($this->regulateur)->get(route('admin.tranches.create'))->assertSee('vide = dépassement sans limite');
+    }
+
     public function test_la_commande_des_tranches_est_planifiee(): void
     {
         $this->artisan('schedule:list')->assertSuccessful()->expectsOutputToContain('raaga:tranches');

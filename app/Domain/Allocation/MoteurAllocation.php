@@ -31,8 +31,9 @@ final class MoteurAllocation
         $personnes = $this->regrouperParPersonne($demandes, $parametres->souscriptionsMultiples);
         $this->appliquerPlafond($personnes, $parametres->plafondIndividuel());
 
-        $capacite = $parametres->capacite();
         $retenues = array_map(fn (array $p) => $p['retenu'], $personnes);
+        // Dépassement sans limite : la capacité suit la demande retenue, tout le monde est servi.
+        $capacite = $parametres->depassementSansLimite() ? max($parametres->capacite(), array_sum($retenues)) : $parametres->capacite();
 
         $allouees = array_sum($retenues) <= $capacite
             ? $retenues
