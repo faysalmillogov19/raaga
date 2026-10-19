@@ -10,8 +10,8 @@
     };
 @endphp
 
-<x-public.layout :titre="$titre">
-    <x-public.page-entete :titre="$titre" :fil="[['libelle' => $titre]]" />
+<x-public.layout :titre="$titre" :sombre="true">
+    <x-public.page-entete :titre="$titre" :fil="[['libelle' => $titre]]" :sombre="true" />
 
     <div class="conteneur py-8 tab:py-12">
         <x-etat-vide :icone="$icone" :titre="__('public.etats_vides.'.$page.'.titre')" :lien="$lien" :libelle-lien="$libelleLien">

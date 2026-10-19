@@ -1262,6 +1262,9 @@ html,
 .theme-nuit .notification::backdrop {
     background: rgba(4, 12, 22, .7);
 }
+.theme-nuit .notification-titre {
+    color: var(--notif);
+}
 .theme-nuit .notification-texte {
     color: var(--nuit-texte-2);
 }
@@ -2559,4 +2562,148 @@ html,
         right: 0;
         bottom: 0;
     }
+}
+
+/* ------------------------------------------------------------------ Thème « nuit », lot 2 : formulaires, alertes et boutons sur fond sombre */
+/* Champs : fond carte, bordure #24476B, texte blanc, 48 px de haut (spécificité basse : l'état d'erreur l'emporte). */
+.theme-nuit .nuit-page :where(input:not([type="checkbox"], [type="radio"], [type="file"], [type="hidden"], [type="submit"], [type="button"]), select, textarea) {
+    min-height: 48px;
+    border-color: var(--nuit-bordure);
+    background-color: var(--nuit-carte);
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page :where(input, textarea)::placeholder {
+    color: #8FA3B8;
+}
+.theme-nuit .nuit-page input[type="file"] {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-page :is(input[type="checkbox"], input[type="radio"]) {
+    accent-color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page [aria-invalid="true"],
+.theme-nuit .nuit-page .border-rouge,
+.theme-nuit .nuit-page .est-invalide {
+    border-color: var(--nuit-erreur);
+}
+.theme-nuit .nuit-page .text-rouge,
+.theme-nuit .nuit-page .message-erreur {
+    color: var(--nuit-erreur);
+}
+.theme-nuit .nuit-page .text-texte {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .bg-vert-pale {
+    background: var(--nuit-bouton);
+}
+.theme-nuit .nuit-page .border-vert-fonce,
+.theme-nuit .nuit-page .border-vert {
+    border-color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .bg-jaune-pale {
+    background: #3A3210;
+}
+.theme-nuit .nuit-page .lien-fort {
+    color: var(--nuit-vif);
+}
+
+/* Choix (pièce, moyen de paiement) : pilules, vert vif quand choisi. */
+.theme-nuit .nuit-page .nuit-choix {
+    border-radius: 999px;
+    border-color: var(--nuit-bordure);
+    background: transparent;
+}
+.theme-nuit .nuit-page .nuit-choix:has(input:checked) {
+    border-color: var(--nuit-vif);
+    background: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .nuit-choix:has(input:checked) .text-encre {
+    color: var(--nuit-encre);
+}
+.theme-nuit .nuit-page .nuit-choix:has(input:focus-visible) {
+    outline: 3px solid var(--nuit-jaune);
+    outline-offset: 2px;
+}
+
+/* Alertes (x-public.alerte) : cartes sombres, filet de couleur à gauche. */
+.theme-nuit .nuit-page .encadre {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .encadre-info {
+    border-color: var(--nuit-vif);
+    background: var(--nuit-carte);
+}
+.theme-nuit .nuit-page .encadre-info .encadre-symbole {
+    color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .encadre-attention {
+    border-color: var(--nuit-jaune);
+    background: #2A2A1A;
+}
+.theme-nuit .nuit-page .encadre-attention .encadre-symbole {
+    color: var(--nuit-jaune);
+}
+.theme-nuit .nuit-page .encadre-danger {
+    border-color: var(--nuit-erreur);
+    background: #2E1A1F;
+}
+.theme-nuit .nuit-page .encadre-danger .encadre-symbole {
+    color: var(--nuit-erreur);
+}
+
+/* Boutons historiques : pilules du thème. */
+.theme-nuit .nuit-page .btn-primaire {
+    border: 2px solid var(--nuit-bouton);
+    border-radius: 999px;
+    background: var(--nuit-bouton);
+    color: #FFFFFF;
+    font-weight: 700;
+}
+.theme-nuit .nuit-page .btn-primaire:hover {
+    border-color: var(--nuit-vert);
+    background: var(--nuit-vert);
+}
+.theme-nuit .nuit-page .btn-secondaire {
+    border: 2px solid var(--nuit-texte);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--nuit-texte);
+    font-weight: 700;
+}
+.theme-nuit .nuit-page .btn-secondaire:hover {
+    border-color: var(--nuit-vif);
+    color: var(--nuit-vif);
+}
+
+/* Fiche blanche : les classes historiques reprennent leurs couleurs sur fond clair. */
+.theme-nuit .nuit-page .nuit-fiche .text-encre,
+.theme-nuit .nuit-page .nuit-fiche .text-texte {
+    color: var(--nuit-encre);
+}
+.theme-nuit .nuit-page .nuit-fiche .text-vert-fonce {
+    color: var(--nuit-vert);
+}
+.theme-nuit .nuit-page .nuit-fiche .texte-carte,
+.theme-nuit .nuit-page .nuit-fiche .text-gris {
+    color: var(--nuit-gris-clair);
+}
+.theme-nuit .nuit-page .nuit-fiche .border-ligne {
+    border-color: var(--nuit-ligne-claire);
+}
+.theme-nuit .nuit-fiche .nuit-rebours {
+    margin-top: 16px;
+}
+.theme-nuit .nuit-fiche .nuit-rebours-titre {
+    font-size: 15px;
+}
+.theme-nuit .nuit-fiche .nuit-rebours-unite {
+    color: var(--nuit-gris-clair);
+}
+
+/* Suivi de réservation : frise du parcours. */
+.theme-nuit .nuit-suivi-frise {
+    margin-top: 24px;
+}
+.theme-nuit .nuit-page .border-gris-inactif {
+    border-color: var(--nuit-bordure);
 }

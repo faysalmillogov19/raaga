@@ -10,10 +10,12 @@
     $titre = __('public.boutiques.reservation.titre', ['code' => $boutique->code]);
     $disponible = $boutique->statut->reservable();
     $limiteAtteinte = $limites['restants'] !== null && ($limites['restants'][$boutique->type_boutique_id] ?? 0) === 0;
+    // Thème « nuit » : page en fond sombre, récapitulatif en fiche blanche.
+    $nuit = \App\Support\ThemePublic::nuit();
 @endphp
 
-<x-public.layout :titre="$titre">
-    <x-public.page-entete :titre="$titre" :fil="[['libelle' => $b['titre'], 'url' => route('boutiques', ['site' => $boutique->site_id, 'niveau' => $boutique->niveau, 'bloc' => $boutique->bloc])], ['libelle' => $boutique->code]]" />
+<x-public.layout :titre="$titre" :sombre="true">
+    <x-public.page-entete :titre="$titre" :fil="[['libelle' => $b['titre'], 'url' => route('boutiques', ['site' => $boutique->site_id, 'niveau' => $boutique->niveau, 'bloc' => $boutique->bloc])], ['libelle' => $boutique->code]]" :sombre="true" />
 
     <div class="conteneur max-w-3xl py-8 tab:py-12">
         @if ($errors->has('boutique'))
@@ -22,7 +24,7 @@
 
         <p class="mb-4 font-semibold text-encre" data-limites>{{ $limites['resume'] }}</p>
 
-        <section class="carte p-5" aria-labelledby="recap-titre" data-recapitulatif>
+        <section class="{{ $nuit ? 'nuit-fiche' : 'carte p-5' }}" aria-labelledby="recap-titre" data-recapitulatif>
             <h2 id="recap-titre" class="!text-lg">{{ $r['recapitulatif'] }}</h2>
             <dl class="mt-3 grid gap-x-6 gap-y-2 text-[0.95rem] tab:grid-cols-2">
                 <div class="flex justify-between gap-3"><dt>{{ $r['boutique'] }}</dt><dd class="font-bold tracking-wide text-encre">{{ $boutique->code }}</dd></div>
@@ -70,7 +72,7 @@
                     <p class="texte-carte">{{ $r['piece_aide'] }}</p>
                     <div class="mt-3 grid gap-3 sm:grid-cols-3">
                         @foreach ($pieces as $type)
-                            <label class="flex min-h-[48px] cursor-pointer items-center gap-3 rounded-charte border-2 p-3" :class="piece === @js($type->value) ? 'border-vert-fonce bg-vert-pale' : 'border-ligne'">
+                            <label class="nuit-choix flex min-h-[48px] cursor-pointer items-center gap-3 rounded-charte border-2 p-3" :class="piece === @js($type->value) ? 'border-vert-fonce bg-vert-pale' : 'border-ligne'">
                                 <input type="radio" name="type_piece" value="{{ $type->value }}" x-model="piece" class="h-5 w-5 text-vert focus:ring-0">
                                 <span class="font-semibold text-encre">{{ $r['types'][$type->value] }}</span>
                             </label>

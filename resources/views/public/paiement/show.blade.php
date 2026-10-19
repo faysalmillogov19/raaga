@@ -8,10 +8,12 @@
     use App\Support\Telephone;
 
     $s = $objet;
+    // Thème « nuit » : page en fond sombre, récapitulatif en fiche blanche.
+    $nuit = \App\Support\ThemePublic::nuit();
 @endphp
 
-<x-public.layout :titre="$titre">
-    <x-public.page-entete :titre="$titre" :fil="$fil" />
+<x-public.layout :titre="$titre" :sombre="true">
+    <x-public.page-entete :titre="$titre" :fil="$fil" :sombre="true" />
 
     <div class="conteneur max-w-3xl py-8 tab:py-12">
         @if ($simule)
@@ -26,7 +28,7 @@
         @endif
 
         {{-- Récapitulatif de la réservation --}}
-        <section class="carte p-5" aria-labelledby="reservation-titre">
+        <section class="{{ $nuit ? 'nuit-fiche' : 'carte p-5' }}" aria-labelledby="reservation-titre">
             <h2 id="reservation-titre" class="!text-lg">{{ __('public.paiement.reservation') }}</h2>
             <dl class="mt-3 grid gap-x-6 gap-y-2 text-[0.95rem] tab:grid-cols-2">
                 <div class="flex justify-between gap-3"><dt>{{ __('public.paiement.reference') }}</dt><dd class="whitespace-nowrap font-bold tracking-wide text-encre">{{ $s->reference }}</dd></div>
@@ -40,7 +42,10 @@
             @endforeach
             @if ($etat !== 'expiree')
                 <p class="mt-3 texte-carte">{{ __($avant ?? 'public.paiement.avant', ['date' => $s->echeancePaiement()->translatedFormat('j F Y \à H\hi')]) }}</p>
-                @if (($compteRebours ?? false) && $etat !== 'controle')
+                @if (($compteRebours ?? false) && $etat !== 'controle' && $nuit)
+                    {{-- Thème « nuit » : cases jours, heures, minutes, secondes. --}}
+                    <x-public.compte-a-rebours :cible="$s->echeancePaiement()" :titre="__('public.paiement.compte_rebours')" data-compte-rebours />
+                @elseif (($compteRebours ?? false) && $etat !== 'controle')
                     {{-- Compte à rebours du délai de paiement (pré-réservation d'une boutique) ; texte calculé au serveur si JavaScript manque. --}}
                     <p class="compte-rebours mt-2" role="timer" aria-live="off" data-compte-rebours
                        x-data="{ fin: {{ $s->echeancePaiement()->getTimestampMs() }}, maintenant: Date.now(), init() { setInterval(() => this.maintenant = Date.now(), 1000) },
@@ -127,7 +132,7 @@
                             <legend class="text-lg font-bold text-encre"><x-requis /> {{ __('public.paiement.choisir') }}</legend>
                             <div class="mt-3 grid gap-3 tab:grid-cols-2">
                                 @foreach ($canaux as $c)
-                                    <label class="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-charte border-2 p-3"
+                                    <label class="nuit-choix flex min-h-[56px] cursor-pointer items-center gap-3 rounded-charte border-2 p-3"
                                            :class="canal === @js($c->value) ? 'border-vert-fonce bg-vert-pale' : 'border-ligne'">
                                         <input type="radio" name="canal" value="{{ $c->value }}" x-model="canal" class="h-5 w-5 text-vert focus:ring-0">
                                         <span class="font-semibold text-encre">{{ $c->label() }}</span>

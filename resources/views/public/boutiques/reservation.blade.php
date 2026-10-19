@@ -11,10 +11,20 @@
         StatutReservationBoutique::Annulee => $c->annulation_motif === \App\Models\ReservationBoutique::ANNULATION_AVANCE ? $r['annulee_avance'] : $r['annulee'],
         default => null,
     };
+    // Thème « nuit » : frise du parcours (étapes de « Comment ça marche »), selon le statut de la réservation.
+    $nuit = \App\Support\ThemePublic::nuit();
+    $faites = match ($c->statut) {
+        StatutReservationBoutique::PreReservee => 2,
+        StatutReservationBoutique::Reservee => 3,
+        StatutReservationBoutique::Attribuee => 4,
+        default => null,
+    };
+    $parcours = $faites === null ? [] : array_map(fn ($e, $i) => ['titre' => $e['titre'], 'detail' => $e['texte'],
+        'statut' => $i < $faites ? 'fait' : ($i === $faites ? 'en_cours' : 'a_venir')], __('public.boutiques.etapes'), array_keys(__('public.boutiques.etapes')));
 @endphp
 
-<x-public.layout :titre="$r['suivi_titre']">
-    <x-public.page-entete :titre="$r['suivi_titre']" :fil="[['libelle' => __('public.boutiques.titre'), 'url' => route('boutiques')], ['libelle' => $c->reference]]" />
+<x-public.layout :titre="$r['suivi_titre']" :sombre="true">
+    <x-public.page-entete :titre="$r['suivi_titre']" :fil="[['libelle' => __('public.boutiques.titre'), 'url' => route('boutiques')], ['libelle' => $c->reference]]" :sombre="true" />
 
     <div class="conteneur max-w-3xl py-8 tab:py-12">
         <section class="carte p-5" data-reservation>
@@ -53,5 +63,11 @@
                 </div>
             @endif
         </section>
+        @if ($nuit && $parcours)
+            <section class="carte nuit-suivi-frise p-5" aria-labelledby="parcours-titre" data-parcours>
+                <h2 id="parcours-titre" class="!text-lg">{{ __('public.boutiques.comment_titre') }}</h2>
+                <x-public.frise class="mt-4" :etapes="$parcours" />
+            </section>
+        @endif
     </div>
 </x-public.layout>
