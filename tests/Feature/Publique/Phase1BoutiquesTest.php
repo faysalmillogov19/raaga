@@ -27,6 +27,8 @@ class Phase1BoutiquesTest extends TestCase
 
     public function test_l_accueil_est_centre_sur_les_boutiques(): void
     {
+        // Rendu historique de l'accueil (thème « clair ») ; le thème « nuit » est couvert par ThemeNuitAccueilBoutiquesTest.
+        config(['raaga.theme_public' => 'clair']);
         $page = $this->get('/')->assertOk()
             ->assertSee('Votre boutique au marché Raaga')->assertSee('Réservations ouvertes jusqu’au', false)
             ->assertSee('Je réserve')->assertSee('boutiques référencées')

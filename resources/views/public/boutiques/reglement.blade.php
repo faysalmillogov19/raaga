@@ -2,13 +2,15 @@
 @php
     $c = $campagne;
     $titre = __('public.boutiques.reglement.titre');
+    // Thème « nuit » : bandeau sombre, chaque article dans une carte sombre (même texte).
+    $nuit = \App\Support\ThemePublic::nuit();
 @endphp
 
-<x-public.layout :titre="$titre">
-    <x-public.page-entete :titre="$titre" :fil="[['libelle' => __('public.boutiques.titre'), 'url' => route('boutiques')], ['libelle' => $titre]]" />
+<x-public.layout :titre="$titre" :sombre="$nuit">
+    <x-public.page-entete :titre="$titre" :fil="[['libelle' => __('public.boutiques.titre'), 'url' => route('boutiques')], ['libelle' => $titre]]" :sombre="$nuit" />
 
     <div class="conteneur max-w-3xl py-8 tab:py-12">
-        <article class="carte space-y-4 p-5 leading-relaxed tab:p-8">
+        <article @class(['space-y-4 leading-relaxed', $nuit ? 'nuit-reglement' : 'carte p-5 tab:p-8'])>
             @include('documents._entete')
             <header>
                 <p class="surtitre">Réservation des boutiques du marché</p>
@@ -42,6 +44,10 @@
             <section class="encadre encadre-danger"><h3>Article 6 : Indépendance des actions</h3>
                 <p>L’achat d’actions <strong>ne donne aucun droit ni aucune priorité</strong> pour obtenir une boutique. La réservation et la caution ne donnent aucun droit sur les actions de Raaga.</p></section>
         </article>
-        <a href="{{ route('boutiques') }}" class="btn-secondaire mt-6">{{ __('public.boutiques.titre') }}</a>
+        @if ($nuit)
+            <a href="{{ route('boutiques') }}" class="nuit-pilule nuit-pilule-contour mt-6">{{ __('public.boutiques.titre') }}</a>
+        @else
+            <a href="{{ route('boutiques') }}" class="btn-secondaire mt-6">{{ __('public.boutiques.titre') }}</a>
+        @endif
     </div>
 </x-public.layout>

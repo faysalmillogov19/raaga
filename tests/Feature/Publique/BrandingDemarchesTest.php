@@ -53,6 +53,8 @@ class BrandingDemarchesTest extends TestCase
 
     public function test_code_visuel_sur_les_deux_parcours(): void
     {
+        // Rendu historique de l'accueil (thème « clair ») ; le thème « nuit » est couvert par ThemeNuitAccueilBoutiquesTest.
+        config(['raaga.theme_public' => 'clair']);
         $accueil = $this->get('/')->assertOk();
         $accueil->assertSee('Raaga, le marché que nous bâtissons et possédons ensemble.')
             ->assertSee('acc-demarche demarche-investir', false)->assertSee('acc-demarche demarche-boutiques', false)

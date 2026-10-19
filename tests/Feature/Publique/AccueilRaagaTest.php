@@ -23,6 +23,8 @@ class AccueilRaagaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Rendu historique de l'accueil (thème « clair ») ; le thème « nuit » est couvert par ThemeNuitAccueilBoutiquesTest.
+        config(['raaga.theme_public' => 'clair']);
 
         config(['raaga.phase.presentation_actions' => false]);
         Cache::flush();

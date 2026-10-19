@@ -24,6 +24,8 @@ class AnnonceInvestissementTest extends TestCase
 
     public function test_annonce_visible_quand_la_presentation_est_desactivee(): void
     {
+        // Rendu historique de l'accueil (thème « clair ») ; le thème « nuit » est couvert par ThemeNuitAccueilBoutiquesTest.
+        config(['raaga.theme_public' => 'clair']);
         $page = $this->get('/')->assertOk();
         $page->assertSee('data-annonce-investir', false)->assertSee('Investir dans Raaga : bientôt')->assertSee(self::TEXTE, false)
             ->assertSee('Être prévenu par SMS')->assertSee('action="'.route('souscription.bientot.store').'"', false)
@@ -46,6 +48,8 @@ class AnnonceInvestissementTest extends TestCase
 
     public function test_remplacee_par_la_carte_normale_quand_la_presentation_est_activee(): void
     {
+        // Rendu historique de l'accueil (thème « clair ») ; le thème « nuit » est couvert par ThemeNuitAccueilBoutiquesTest.
+        config(['raaga.theme_public' => 'clair']);
         config(['raaga.phase.presentation_actions' => true]);
 
         $this->get('/')->assertOk()->assertDontSee('data-annonce-investir', false)->assertDontSee('Investir dans Raaga : bientôt')

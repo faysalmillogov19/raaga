@@ -76,6 +76,8 @@ class DeuxDemarchesTest extends TestCase
 
     public function test_souscription_impossible_sans_parametre_confirme_ni_tranche_ouverte(): void
     {
+        // Rendu historique de l'accueil (thème « clair ») ; le thème « nuit » est couvert par ThemeNuitAccueilBoutiquesTest.
+        config(['raaga.theme_public' => 'clair']);
         $this->tranche();
         $citoyen = $this->citoyen();
 

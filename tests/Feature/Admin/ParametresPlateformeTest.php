@@ -119,7 +119,10 @@ class ParametresPlateformeTest extends TestCase
 
         // En-tête et pied de page (accueil), page contact (FAQ), page de connexion.
         $accueil = $this->get('/')->assertOk()->getContent();
-        $this->assertSame(3, substr_count($accueil, '81 23 45 67'), 'en-tête, « Besoin d’aide ? » et pied de page');
+        $this->assertSame(2, substr_count($accueil, '81 23 45 67'), 'thème « nuit » : en-tête et pied de page');
+        config(['raaga.theme_public' => 'clair']);
+        $this->assertSame(3, substr_count($this->get('/')->getContent(), '81 23 45 67'), 'thème « clair » : en-tête, « Besoin d’aide ? » et pied de page');
+        config(['raaga.theme_public' => 'nuit']);
         $this->get('/faq')->assertSee('81 23 45 67');
         $this->assertStringNotContainsString('80 00 00 00', $this->get('/faq')->getContent());
 

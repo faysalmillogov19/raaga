@@ -1,9 +1,16 @@
-@props(['titre', 'intro' => null, 'fil' => []])
+@props(['titre', 'intro' => null, 'fil' => [], 'sombre' => false])
 
-{{-- En-tête des pages internes : fil d'Ariane, titre, introduction. $fil = [['libelle' => …, 'url' => …|null], …] --}}
-@php($demarche = \App\Support\Demarche::courante())
-<div @class(['border-b border-ligne bg-fond', 'entete-demarche demarche-'.$demarche => $demarche])>
-    <div class="conteneur py-6 tab:py-9">
+{{--
+    En-tête des pages internes : fil d'Ariane, titre, introduction. $fil = [['libelle' => …, 'url' => …|null], …]
+    Thème « nuit », page convertie (« sombre ») : bandeau bleu nuit, titre « léger + gras » (dernier mot en vert vif).
+--}}
+@php
+    $demarche = \App\Support\Demarche::courante();
+    $nuit = $sombre && \App\Support\ThemePublic::nuit();
+    [$leger, $fort] = \App\Support\TitreNuit::decouper($titre);
+@endphp
+<div @class([$nuit ? 'nuit-bandeau' : 'border-b border-ligne bg-fond', 'entete-demarche demarche-'.$demarche => $demarche])>
+    <div @class(['conteneur', $nuit ? 'nuit-bandeau-corps' : 'py-6 tab:py-9'])>
         <div class="nav-fil">
         <x-navigation-historique :parent="\App\Support\NavigationHistorique::parente($fil, route('accueil'))" />
         <nav aria-label="{{ __('public.fil.libelle') }}">
@@ -22,9 +29,14 @@
             </ol>
         </nav>
         </div>
-        <h1 class="mt-3">{{ $titre }}</h1>
-        @if ($intro)
-            <p class="mt-3 max-w-3xl text-lg text-gris">{{ $intro }}</p>
+        @if ($nuit)
+            <h1 class="nuit-bandeau-titre">{{ $leger }}{{ $leger !== '' ? ' ' : '' }}<strong>{{ $fort }}</strong></h1>
+            @if ($intro)<p class="nuit-bandeau-intro">{{ $intro }}</p>@endif
+        @else
+            <h1 class="mt-3">{{ $titre }}</h1>
+            @if ($intro)
+                <p class="mt-3 max-w-3xl text-lg text-gris">{{ $intro }}</p>
+            @endif
         @endif
     </div>
 </div>

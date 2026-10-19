@@ -29,7 +29,7 @@ class ThemeNuitSocleTest extends TestCase
 
     public function test_gabarit_nuit_entete_blanc_menu_et_pilule(): void
     {
-        $page = $this->get(route('boutiques'))->assertOk();
+        $page = $this->get(route('faq'))->assertOk();
 
         $page->assertSee('theme-nuit', false)->assertSee('class="nuit-entete"', false)
             ->assertSee('aria-controls="menu-principal"', false)

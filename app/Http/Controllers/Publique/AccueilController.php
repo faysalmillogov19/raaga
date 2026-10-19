@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\CampagneBoutiques;
 use App\Services\Invest\RaagaInvest;
 use App\Services\Publique\AccueilBoutiques;
+use App\Services\Publique\AccueilNuit;
 use App\Support\Diapositives;
 use App\Support\Phase;
+use App\Support\ThemePublic;
 use Illuminate\View\View;
 
 /**
@@ -25,7 +27,7 @@ class AccueilController extends Controller
         $ouverte = $campagne && $campagne->accepteReservations();
         $questions = __('public.faq.groupes.boutiques.questions');
 
-        return view('public.accueil-boutiques', [
+        $donnees = [
             'campagne' => $campagne,
             'ouverte' => $ouverte,
             'chiffres' => $accueil->chiffres(),
@@ -37,6 +39,23 @@ class AccueilController extends Controller
             'urlCandidater' => $ouverte || auth()->check() ? route('boutiques') : route('inscription'),
             'investir' => Phase::presentationActions() ? $this->investir() : null,
             // Présentation des actions désactivée : annonce « Investir dans Raaga : bientôt » (alerte SMS seulement).
+        ];
+        if (! ThemePublic::nuit()) {
+            return view('public.accueil-boutiques', $donnees);
+        }
+
+        // Thème « nuit » (maquette docs/maquettes/maquette-accueil-theme-nuit.html) : sections lues en base.
+        $nuit = app(AccueilNuit::class);
+        $affichee = $nuit->campagneAffichee();
+
+        return view('public.nuit.accueil', [...$donnees,
+            'campagneAffichee' => $affichee,
+            'infoCampagne' => $affichee ? $nuit->campagne($affichee) : null,
+            'niveaux' => $nuit->niveaux(),
+            'tarifs' => $nuit->tarifs(),
+            'exemple' => $nuit->exemple($affichee),
+            'frise' => $nuit->frise($affichee),
+            'sitePrincipal' => $nuit->sitePrincipal(),
         ]);
     }
 

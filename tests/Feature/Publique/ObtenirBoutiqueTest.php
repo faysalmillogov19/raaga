@@ -63,6 +63,8 @@ class ObtenirBoutiqueTest extends TestCase
 
     public function test_le_plan_vient_juste_apres_le_resume_et_le_reste_est_repliable(): void
     {
+        // Rendu historique de l'accueil (thème « clair ») ; le thème « nuit » est couvert par ThemeNuitAccueilBoutiquesTest.
+        config(['raaga.theme_public' => 'clair']);
         $this->campagne(StatutCampagneBoutiques::Ouverte, now()->subDay(), now()->addMonth());
         $page = $this->get(route('boutiques'))->assertOk();
 

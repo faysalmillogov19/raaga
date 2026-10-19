@@ -15,6 +15,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\Boutiques\AvancesBoutiques;
 use App\Services\Boutiques\ReservationsBoutiques;
+use App\Support\ThemePublic;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -52,7 +53,8 @@ class BoutiquesController extends Controller
         $bloc = in_array($request->query('bloc'), $blocs, true) ? (string) $request->query('bloc') : ($blocs[0] ?? null);
         $user = $request->user();
 
-        return view('public.boutiques.index', [
+        // Thème « nuit » : même données, présentation des maquettes (public.boutiques.index-nuit).
+        return view(ThemePublic::nuit() ? 'public.boutiques.index-nuit' : 'public.boutiques.index', [
             'campagne' => $campagne,
             'ouverte' => $campagne?->accepteReservations() ?? false,
             'sites' => $sites, 'site' => $site, 'niveaux' => $niveaux, 'niveau' => $niveau, 'blocs' => $blocs, 'bloc' => $bloc,

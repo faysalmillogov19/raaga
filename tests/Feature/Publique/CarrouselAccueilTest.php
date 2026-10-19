@@ -48,6 +48,8 @@ class CarrouselAccueilTest extends TestCase
 
     public function test_diapositive_par_defaut_sans_diapositive_active(): void
     {
+        // Rendu historique de l'accueil (thème « clair ») ; le thème « nuit » est couvert par ThemeNuitAccueilBoutiquesTest.
+        config(['raaga.theme_public' => 'clair']);
         $page = $this->get('/')->assertOk();
 
         $page->assertSee('class="acc-diapo acc-diapo-defaut"', false)->assertSee('aria-label="1 sur 1"', false)
@@ -121,6 +123,8 @@ class CarrouselAccueilTest extends TestCase
 
     public function test_ordre_activation_et_periode_d_affichage(): void
     {
+        // Rendu historique de l'accueil (thème « clair ») ; le thème « nuit » est couvert par ThemeNuitAccueilBoutiquesTest.
+        config(['raaga.theme_public' => 'clair']);
         $this->connecterBackoffice(Role::Admin);
         $this->travelTo('2026-10-14 10:00');
 
