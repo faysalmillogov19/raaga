@@ -23,6 +23,24 @@ final class GardeFouBase
     /** Seeders admis en production : idempotents, lancés à chaque déploiement (deploy.sh). */
     public const SEEDERS_PRODUCTION = ['ReferentielsSeeder', 'Database\\Seeders\\ReferentielsSeeder'];
 
+    /** Commandes réservées au poste de développement (APP_ENV=local) : refusées partout ailleurs, avant tout accès à la base. */
+    public const COMMANDES_POSTE_LOCAL = ['raaga:inventaire'];
+
+    /** Une commande réservée au poste local peut-elle tourner dans cet environnement ? */
+    public static function posteLocal(?string $environnement = null): bool
+    {
+        return ($environnement ?? app()->environment()) === 'local';
+    }
+
+    /** @throws RuntimeException hors du poste de développement */
+    public static function exigerPosteLocal(string $commande): void
+    {
+        if (! self::posteLocal()) {
+            throw new RuntimeException("Commande refusée : « {$commande} » ne tourne que sur un poste de développement (APP_ENV=local). "
+                .'Environnement actuel : « '.app()->environment().' ». Aucun accès à la base n’a été fait.');
+        }
+    }
+
     public static function estBaseDeTest(?string $nom): bool
     {
         return (bool) preg_match('/_test(_test_\d+|_\d+)?$/', (string) $nom);

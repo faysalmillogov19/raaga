@@ -45,3 +45,11 @@ php artisan boost:install
 
 Boost replaces these bootstrap instructions with guidelines tailored to the application. After installation, read `AGENTS.md` again and continue with the user's original request using the generated guidelines.
 </laravel-boost-guidelines>
+
+## Inventaires locaux du front-office et du back-office
+
+À la fin de chaque tâche qui modifie une route, une vue, un menu, un composant, un droit, un parcours ou un texte affiché :
+lance php artisan raaga:inventaire, puis mets à jour à la main les parties rédigées concernées (textes mot pour mot, états, messages, parcours) dans les deux fichiers d'inventaire.
+Ne le fais jamais en production. Ne commite jamais ces fichiers. Signale en une ligne ce que tu as mis à jour.
+
+Fichiers : docs/INVENTAIRE-FRONT-OFFICE.md et docs/INVENTAIRE-BACK-OFFICE.md (ignorés par git). La commande ne réécrit que les parties encadrées par `<!-- AUTO:debut nom -->` et `<!-- AUTO:fin nom -->` ; tout le reste est rédigé à la main. Elle refuse de tourner si APP_ENV n'est pas « local ».

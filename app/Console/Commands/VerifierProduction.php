@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\Paiement\OuverturePaiements;
 use App\Services\Securite\ComptesDemo;
+use App\Support\GardeFouBase;
 use Illuminate\Console\Command;
 
 /**
@@ -14,6 +15,7 @@ use Illuminate\Console\Command;
  *    manquantes (RAAGA_SEQUESTRE_*, RAAGA_COMPTE_LOCATION_*). Les paiements restent alors fermés (voir OuverturePaiements).
  *    Clé des portiques (RAAGA_CLE_PORTIQUES) vide : l'interface de vérification des cartes pour les portiques refuse tout.
  * --strict : les avertissements deviennent bloquants (avant l'ouverture d'une campagne).
+ * Contrôle aussi que les commandes du poste de développement (raaga:inventaire) refusent de tourner ici : BLOQUANT sinon.
  */
 class VerifierProduction extends Command
 {
@@ -51,6 +53,13 @@ class VerifierProduction extends Command
             if (blank(config($cle))) {
                 $avertissements[] = 'Variable manquante : '.$variable.' (tous les paiements fermés vers ce compte, manuels compris).';
             }
+        }
+
+        // Inventaires locaux : la commande doit refuser de tourner en production (et ici, si ce n'est pas un poste local).
+        if (GardeFouBase::posteLocal('production')) {
+            $bloquants[] = 'raaga:inventaire serait autorisée en production : elle est réservée au poste de développement (APP_ENV=local).';
+        } elseif (! GardeFouBase::posteLocal() && $this->callSilently('raaga:inventaire', ['--dossier' => storage_path('framework/inventaire-refuse')]) !== self::FAILURE) {
+            $bloquants[] = 'raaga:inventaire ne refuse pas de tourner dans cet environnement ('.app()->environment().').';
         }
 
         if (blank(config('raaga.cartes.cle_portiques'))) {

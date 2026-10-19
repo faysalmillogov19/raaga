@@ -27,3 +27,7 @@ Thumbs.db
 
 # Vidéos de démonstration : gardées en local, jamais dans le dépôt.
 /docs/video/
+
+# Inventaires du front-office et du back-office : régénérés sur le poste (php artisan raaga:inventaire), jamais commités ni déployés.
+/docs/INVENTAIRE-FRONT-OFFICE.md
+/docs/INVENTAIRE-BACK-OFFICE.md
