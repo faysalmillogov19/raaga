@@ -41,8 +41,11 @@ class Remboursement extends Model
     /** Désistement du citoyen attributaire : caution remboursée moins la retenue décidée ; avance remboursée en entier. */
     public const DESISTEMENT = 'DESISTEMENT';
 
+    /** Identité de l'attributaire non corrigée dans le délai : caution remboursée moins la retenue ; avance en entier. */
+    public const KYC_NON_CORRIGE = 'KYC_NON_CORRIGE';
+
     /** Origines dont la caution attend une décision de retenue (RÉGULATEUR propose, VALIDATEUR décide). */
-    public const ORIGINES_RETENUE = [self::ANNULATION_AVANCE, self::DESISTEMENT];
+    public const ORIGINES_RETENUE = [self::ANNULATION_AVANCE, self::DESISTEMENT, self::KYC_NON_CORRIGE];
 
     protected function casts(): array
     {

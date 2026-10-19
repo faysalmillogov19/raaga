@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'reference', 'user_id', 'campagne_boutiques_id', 'boutique_id', 'caution', 'avance',
     'loyer_mensuel', 'mois_caution', 'mois_avance', 'statut', 'expire_le', 'payee_le',
-    'type_piece', 'numero_piece', 'reservee_le', 'avance_due_le', 'avance_payee_le', 'annulation_motif', 'attribuee_le', 'reference_avance', 'contrat_signe_le',
+    'type_piece', 'numero_piece', 'reservee_le', 'avance_due_le', 'avance_payee_le', 'annulation_motif', 'attribuee_le', 'reference_avance', 'contrat_signe_le', 'kyc_a_corriger_avant',
 ])]
 class ReservationBoutique extends Model implements Payable
 {
@@ -48,6 +48,7 @@ class ReservationBoutique extends Model implements Payable
             'avance_payee_le' => 'datetime',
             'attribuee_le' => 'datetime',
             'contrat_signe_le' => 'date',
+            'kyc_a_corriger_avant' => 'datetime',
         ];
     }
 
@@ -145,6 +146,9 @@ class ReservationBoutique extends Model implements Payable
     /** Motif d'annulation : désistement du citoyen (la boutique passe au suivant de sa liste d'attente). */
     public const ANNULATION_DESISTEMENT = 'DESISTEMENT';
 
+    /** Motif d'annulation : identité de l'attributaire non corrigée dans le délai de la campagne. */
+    public const ANNULATION_KYC = 'KYC_NON_CORRIGE';
+
     /** Avance attendue et date limite dépassée, sans preuve en contrôle : la réservation est à annuler. */
     public function avanceEchue(): bool
     {
@@ -172,6 +176,7 @@ class ReservationBoutique extends Model implements Payable
         return match (true) {
             $this->statut === StatutReservationBoutique::Annulee && $this->annulation_motif === self::ANNULATION_AVANCE => __('public.boutiques.statuts.annulee_avance'),
             $this->statut === StatutReservationBoutique::Annulee && $this->annulation_motif === self::ANNULATION_DESISTEMENT => __('public.boutiques.statuts.annulee_desistement'),
+            $this->statut === StatutReservationBoutique::Annulee && $this->annulation_motif === self::ANNULATION_KYC => __('public.boutiques.statuts.annulee_identite'),
             $this->statut === StatutReservationBoutique::Reservee && $this->avance_payee_le !== null => __('public.boutiques.statuts.avance_payee'),
             default => $this->statut->label(),
         };

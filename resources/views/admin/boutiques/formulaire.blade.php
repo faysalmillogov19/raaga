@@ -107,6 +107,25 @@
             </div>
         </section>
 
+        {{-- Listes d'attente : délai de correction de l'identité d'un attributaire, délai de relance de la liste générale. --}}
+        <section class="bo-carte !mt-0" aria-labelledby="s-listes" data-delais-listes>
+            <h2 id="s-listes" class="!text-[1.15rem]">{{ __('admin.boutiques.sections.listes') }}</h2>
+            <div class="mt-3 grid gap-4 lg:grid-cols-2">
+                @foreach (array_keys(CampagneBoutiques::DELAIS_LISTES) as $delai)
+                    @php([$defaut, $dureeDefaut] = CampagneBoutiques::DELAIS_LISTES[$delai])
+                    <fieldset class="adm-fenetre-grille" data-delai="{{ $delai }}">
+                        <legend class="adm-plein adm-libelle">{{ ucfirst($c['delai_'.$delai]) }}</legend>
+                        <x-admin.champ :nom="'delai_'.$delai.'_valeur'" :libelle="__('admin.delais.valeur')" type="number" min="1" max="999999"
+                                       :valeur="$campagne->getAttribute('delai_'.$delai.'_valeur') ?? $defaut" />
+                        <x-admin.champ :nom="'delai_'.$delai.'_duree'" :libelle="__('admin.delais.duree')" type="liste" :vide="__('admin.delais.choisir_duree')"
+                                       :options="App\Models\Duree::toutes()->mapWithKeys(fn ($d) => [$d->code => ucfirst($d->libelle_pluriel)])->all()"
+                                       :valeur="App\Models\Duree::parId($campagne->getAttribute('delai_'.$delai.'_duree_id'))?->code ?? $dureeDefaut" />
+                        <p class="adm-plein texte-carte">{{ __('admin.boutiques.aides.delai_'.$delai) }}</p>
+                    </fieldset>
+                @endforeach
+            </div>
+        </section>
+
         <div class="flex flex-wrap gap-3">
             <x-admin.enregistrer-soumettre />
             <x-admin.bouton variante="contour" href="{{ $campagne->exists ? route('admin.boutiques.show', $campagne) : route('admin.boutiques') }}">{{ __('admin.tranches.formulaire.annuler') }}</x-admin.bouton>

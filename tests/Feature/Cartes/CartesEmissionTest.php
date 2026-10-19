@@ -30,6 +30,7 @@ use App\Services\Cartes\Cartes;
 use App\Services\Kyc\DossiersIdentite;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\Boutiques;
 use Tests\Support\DossierKyc;
@@ -132,18 +133,19 @@ class CartesEmissionTest extends TestCase
         Notification::assertSentToTimes($citoyen, PieceBientotExpiree::class, 1);
     }
 
-    public function test_en_attente_du_kyc_puis_emise_quand_l_admin_marque_le_dossier_conforme(): void
+    public function test_attribution_apres_le_dossier_conforme_puis_carte_emise(): void
     {
         $citoyen = $this->citoyen(StatutKyc::EnAttente);
         Boutiques::campagneOuverte();
-        $this->attribuer($citoyen, Boutiques::boutique('A', 1), now()->toDateString());
-        $this->assertSame(StatutCarte::EnAttente, Cartes::courante($citoyen, TypeCarte::Commercant)->statut);
+        // Identité en cours de vérification : pas d'attribution, donc pas de carte de commerçant.
+        $this->assertThrows(fn () => $this->attribuer($citoyen, Boutiques::boutique('A', 1), now()->toDateString()), ValidationException::class);
+        $this->assertNull(Cartes::courante($citoyen, TypeCarte::Commercant));
         Notification::assertNotSentTo($citoyen, CarteEmise::class);
-        $this->actingAs($citoyen)->get(route('espace.carte'))->assertOk()->assertSee('En attente de vérification d’identité');
 
-        // L'ADMIN marque le dossier conforme (dossier complet) : carte émise, identité validée figée, titulaire notifié.
+        // L'ADMIN marque le dossier conforme (dossier complet) : attribution possible, carte émise, identité validée figée, titulaire notifié.
         DossierKyc::complet($citoyen);
         app(DossiersIdentite::class)->conforme($citoyen, $this->admin, null, now()->addYears(6)->toDateString());
+        app(ReservationsBoutiques::class)->attribuer(ReservationBoutique::query()->where('user_id', $citoyen->id)->sole(), now()->toDateString(), $this->validateur);
         $carte = Cartes::courante($citoyen, TypeCarte::Commercant);
         $this->assertSame(StatutCarte::Active, $carte->statut);
         $this->assertSame(['nom' => 'OUEDRAOGO', 'prenoms' => 'Awa'], array_intersect_key($citoyen->fresh()->identite_validee, ['nom' => 1, 'prenoms' => 1]));

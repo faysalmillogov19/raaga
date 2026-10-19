@@ -26,12 +26,19 @@ use Illuminate\Support\Collection;
 #[Table(name: 'campagnes_boutiques')]
 #[Fillable([
     'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes', 'canaux_actifs', 'sites', 'types', 'limites',
+    'delai_kyc_valeur', 'delai_kyc_duree_id', 'delai_kyc_secondes', 'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes',
     'version', 'cree_par', 'soumis_par', 'soumise_le', 'valide_par', 'validee_le', 'motif_rejet',
     'ouverte_le', 'cloturee_le', 'attribuee_le',
 ])]
 class CampagneBoutiques extends Model implements Parametrable
 {
-    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'types', 'limites', 'canaux_actifs'];
+    public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'types', 'limites', 'canaux_actifs', 'delai_kyc', 'delai_relance'];
+
+    /**
+     * Délais des listes d'attente : clé => [valeur, durée] par défaut. « kyc » : correction de l'identité d'un
+     * attributaire ; « relance » : nouvelle manifestation d'intérêt de la liste d'attente générale.
+     */
+    public const DELAIS_LISTES = ['kyc' => [7, 'JOUR'], 'relance' => [7, 'JOUR']];
 
     /** Valeurs par défaut d'une nouvelle campagne. */
     /** Nombre maximum d'emplacements par personne, pour chaque type coché (par défaut). */
@@ -71,6 +78,24 @@ class CampagneBoutiques extends Model implements Parametrable
         $duree = Duree::parId($this->delai_paiement_duree_id);
 
         return $duree && $this->delai_paiement_valeur ? $duree->libelle($this->delai_paiement_valeur) : ParametresPaiements::libelleEnVigueur('caution');
+    }
+
+    /** Délai d'une liste d'attente (kyc, relance), en secondes : celui saisi pour la campagne, sinon la valeur par défaut. */
+    public function delaiListeSecondes(string $delai): int
+    {
+        [$valeur, $duree] = self::DELAIS_LISTES[$delai];
+
+        return (int) $this->getAttribute('delai_'.$delai.'_secondes') ?: Duree::parCode($duree)->enSecondes($valeur);
+    }
+
+    /** Délai d'une liste d'attente, lisible (« 7 jours »). */
+    public function libelleDelaiListe(string $delai): string
+    {
+        [$valeur, $duree] = self::DELAIS_LISTES[$delai];
+        $saisie = Duree::parId($this->getAttribute('delai_'.$delai.'_duree_id'));
+        $n = (int) $this->getAttribute('delai_'.$delai.'_valeur');
+
+        return $saisie && $n ? $saisie->libelle($n) : Duree::parCode($duree)->libelle($valeur);
     }
 
     /** La campagne garde son propre délai (ancien paramètre de campagne, converti). */
@@ -191,6 +216,9 @@ class CampagneBoutiques extends Model implements Parametrable
         $snapshot['sites'] = $this->sitesConcernes()->map(fn (Site $s) => ($s->code ? $s->code.' · ' : '').$s->nom)->implode(', ');
         // Types proposés, lisibles dans le différentiel du VALIDATEUR (« BOUT · Boutique, PP · Pôle : préparation… »).
         $snapshot['types'] = $this->typesConcernes()->map(fn (TypeBoutique $t) => ($t->code ? $t->code.' · ' : '').$t->libelle)->implode(', ');
+        // Délais des listes d'attente, lisibles (« 7 jours »).
+        $snapshot['delai_kyc'] = $this->libelleDelaiListe('kyc');
+        $snapshot['delai_relance'] = $this->libelleDelaiListe('relance');
         // Limites par type, lisibles dans le différentiel du VALIDATEUR (« BOUT : 1, PV : 1 »).
         $snapshot['limites'] = $this->typesConcernes()->map(fn (TypeBoutique $t) => ($t->code ?? $t->libelle).' : '.$this->limitePour($t->id))->implode(', ');
 

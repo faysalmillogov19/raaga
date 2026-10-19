@@ -199,10 +199,11 @@ class CartesGestionTest extends TestCase
         // Le plus ancien dossier en attente : un citoyen sans boutique.
         $simple = $this->citoyen(StatutKyc::EnAttente);
         $simple->forceFill(['updated_at' => now()->subDays(3)])->saveQuietly();
-        // Plus récent, mais commerçant déjà attribué : en tête.
-        $commercant = $this->citoyen(StatutKyc::EnAttente);
+        // Plus récent, mais commerçant déjà attribué (identité validée à l'attribution, pièces renvoyées depuis) : en tête.
+        $commercant = $this->citoyen(StatutKyc::Valide);
         Boutiques::campagneOuverte();
         $this->attribuer($commercant, Boutiques::boutique('A', 1));
+        $commercant->forceFill(['statut_kyc' => StatutKyc::EnAttente])->save();
 
         $kyc = collect(ATraiter::pour($this->admin))->filter(fn ($e) => str_contains($e['element'], 'KYC'))->values();
         $this->assertCount(2, $kyc);

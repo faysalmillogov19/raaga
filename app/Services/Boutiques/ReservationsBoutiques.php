@@ -273,6 +273,10 @@ class ReservationsBoutiques
             if (! $reservation->avanceReglee()) {
                 throw ValidationException::withMessages(['contrat_signe_le' => __('admin.boutiques.erreurs.avance_non_confirmee')]);
             }
+            // Attribution définitive : identité de l'attributaire validée.
+            if (! $reservation->user->kycValide()) {
+                throw ValidationException::withMessages(['contrat_signe_le' => __('admin.boutiques.erreurs.identite_non_validee')]);
+            }
             $reservation->forceFill(['statut' => StatutReservationBoutique::Attribuee, 'attribuee_le' => now(), 'contrat_signe_le' => $contratSigneLe])->save();
             $reservation->boutique->changerStatut(StatutBoutique::Attribuee, 'attribution', $reservation, $validateur);
             $this->journal->ecrire($validateur, 'reservation_boutique.attribuee', 'ReservationBoutique', $reservation->id, null,

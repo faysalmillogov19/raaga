@@ -1316,6 +1316,9 @@ return [
             'avance_payee' => 'Avance payée le :date : la boutique vous sera attribuée à la signature du contrat.',
             'avance_controle' => 'La date limite de paiement de l’avance (:date) est passée : votre preuve de paiement est en cours de contrôle. Si elle est rejetée, la réservation sera annulée.',
             'annulee_avance' => 'Réservation annulée : l’avance n’a pas été payée dans le délai. La boutique est redevenue disponible ; votre caution vous sera remboursée, moins une éventuelle retenue.',
+            'annulee_identite' => 'Réservation annulée : votre identité n’a pas été corrigée dans le délai. La boutique est passée au suivant de sa liste d’attente ; ce que vous avez payé vous sera remboursé selon le règlement, moins une éventuelle retenue sur la caution.',
+            'identite_a_corriger' => 'Votre identité doit être corrigée pour garder cette boutique : renvoyez vos pièces avant le :date. Sans correction à cette date, la réservation sera annulée et la boutique passera au suivant de sa liste d’attente.',
+            'identite_lien' => 'Vérifier mon identité',
             'annulee_desistement' => 'Réservation annulée à votre demande (désistement). La boutique est passée au suivant de sa liste d’attente ; ce que vous avez payé vous sera remboursé selon le règlement.',
             'attributs' => ['type_piece' => 'type de pièce', 'numero_piece' => 'numéro de la pièce', 'piece' => 'pièce d’identité', 'rccm' => 'RCCM'],
         ],
@@ -1327,7 +1330,7 @@ return [
         ],
         'paiement_caution' => 'Paiement de la caution',
         'paiement_avance' => 'Paiement de l’avance',
-        'statuts' => ['annulee_avance' => 'Annulée : avance non payée dans le délai', 'avance_payee' => 'Réservée : avance payée', 'annulee_desistement' => 'Annulée : désistement'],
+        'statuts' => ['annulee_avance' => 'Annulée : avance non payée dans le délai', 'avance_payee' => 'Réservée : avance payée', 'annulee_desistement' => 'Annulée : désistement', 'annulee_identite' => 'Annulée : identité non corrigée dans le délai'],
         'avance' => [
             'montant' => 'Avance à payer',
             'caution_payee' => 'Caution (déjà payée)',
@@ -1352,6 +1355,8 @@ return [
         'sms' => [
             'avance_payee' => '{nomPlateforme} : avance reçue. Reçu n° {recu}, réservation {reference}, boutique {boutique}, {montant}. La boutique vous sera attribuée à la signature du contrat.',
             'caution_payee' => '{nomPlateforme} : caution reçue. Reçu n° {recu}, réservation {reference}, boutique {boutique}, {montant}. La boutique est réservée à votre nom ; l’avance sera due avant la signature du contrat.',
+            'identite_a_corriger' => '{nomPlateforme} : votre identité doit être corrigée pour garder la boutique {boutique}. Renvoyez vos pièces avant le {date} dans Mon espace, sinon la boutique passera au suivant.[ Aide : {numeroVert}]',
+            'identite_annulee' => '{nomPlateforme} : votre identité n’a pas été corrigée à temps. La réservation de la boutique {boutique} est annulée ; ce que vous avez payé vous sera remboursé selon le règlement.',
             'retenue' => '{nomPlateforme} : la boutique {boutique} vous est proposée (liste d’attente). Payez la caution de {montant} avant le {date}, sinon elle passera au suivant. Détails dans Mon espace.',
         ],
         'reglement' => [
@@ -1370,6 +1375,15 @@ return [
             'piece_fichier' => 'Joignez la photo ou le scan de votre pièce d’identité.',
             'deja_attribuee' => 'Cette boutique est déjà attribuée : choisissez-en une autre sur le plan.',
             'deja_inscrit' => 'Vous êtes déjà inscrit sur cette boutique.',
+        ],
+        // Identité de l'attributaire : à corriger dans le délai de la campagne, sinon la boutique passe au suivant.
+        'identite' => [
+            'bouton' => 'Vérifier mon identité',
+            'notifications' => [
+                'sujet' => 'Boutique :boutique : votre identité est à corriger',
+                'a_corriger' => 'Votre identité doit être corrigée pour garder la boutique :boutique : renvoyez vos pièces avant le :date dans « Vérifier mon identité ». Sans correction, la réservation sera annulée et la boutique passera au suivant de sa liste d’attente.',
+                'annulee' => 'Votre identité n’a pas été corrigée dans le délai : la réservation de la boutique :boutique est annulée et la boutique est passée au suivant de sa liste d’attente. Ce que vous avez payé vous sera remboursé selon le règlement.',
+            ],
         ],
         // Listes d'attente : plusieurs boutiques par personne, au premier arrivé, premier servi.
         'attente' => [

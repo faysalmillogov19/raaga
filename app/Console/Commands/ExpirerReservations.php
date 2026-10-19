@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Boutiques\IdentitesAttributaires;
 use App\Services\Boutiques\ListesAttente;
 use App\Services\Paiement\ServicePaiement;
 use Illuminate\Console\Command;
@@ -9,7 +10,8 @@ use Illuminate\Console\Command;
 /**
  * Expiration des souscriptions RÉSERVÉES non payées dans le délai de la tranche (valeur + durée, en secondes), et des
  * boutiques pré-réservées dont la caution n'est pas payée ; puis chaque boutique libre qui a une liste d'attente passe
- * au premier inscrit qui peut être retenu.
+ * au premier inscrit qui peut être retenu. Identité des attributaires : délai de correction fixé, levé ou dépassé
+ * (IdentitesAttributaires).
  */
 class ExpirerReservations extends Command
 {
@@ -17,12 +19,14 @@ class ExpirerReservations extends Command
 
     protected $description = 'Expire les réservations de souscription non payées dans le délai';
 
-    public function handle(ServicePaiement $paiements, ListesAttente $listes): int
+    public function handle(ServicePaiement $paiements, ListesAttente $listes, IdentitesAttributaires $identites): int
     {
         $nombre = $paiements->expirerReservations();
+        $kyc = $identites->surveiller();
         $retenus = $listes->reevaluer();
 
-        $this->info("{$nombre} réservation(s) expirée(s). {$retenus} attributaire(s) retenu(s) sur liste d'attente.");
+        $this->info("{$nombre} réservation(s) expirée(s). {$retenus} attributaire(s) retenu(s) sur liste d'attente. "
+            ."Identités à corriger : {$kyc['signalees']} signalée(s), {$kyc['levees']} corrigée(s), {$kyc['annulees']} réservation(s) annulée(s).");
 
         return self::SUCCESS;
     }

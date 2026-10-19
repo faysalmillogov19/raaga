@@ -136,6 +136,12 @@
                 <h3 class="campagne-fiche-titre mt-5">{{ $f['delai'] }}</h3>
                 <p class="campagne-fiche-delai" data-delai-caution>{{ $campagne->libelleDelaiPaiement() }}
                     <span class="texte-carte">({{ __($campagne->aSonPropreDelai() ? 'admin.boutiques.aides.delai_propre_court' : 'admin.boutiques.aides.delai_parametre_court') }})</span></p>
+
+                {{-- Listes d'attente : correction de l'identité d'un attributaire, relance de la liste générale. --}}
+                @foreach (['kyc', 'relance'] as $delai)
+                    <h3 class="campagne-fiche-titre mt-5">{{ $f['delai_'.$delai] }}</h3>
+                    <p class="campagne-fiche-delai" data-delai-liste="{{ $delai }}">{{ $campagne->libelleDelaiListe($delai) }}</p>
+                @endforeach
             </div>
             <div>
                 <h3 class="campagne-fiche-titre">{{ $f['types'] }}</h3>

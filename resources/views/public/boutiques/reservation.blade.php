@@ -11,6 +11,7 @@
         StatutReservationBoutique::Annulee => match ($c->annulation_motif) {
             \App\Models\ReservationBoutique::ANNULATION_AVANCE => $r['annulee_avance'],
             \App\Models\ReservationBoutique::ANNULATION_DESISTEMENT => $r['annulee_desistement'],
+            \App\Models\ReservationBoutique::ANNULATION_KYC => $r['annulee_identite'],
             default => $r['annulee'],
         },
         default => null,
@@ -42,6 +43,13 @@
                 @endforeach
             </dl>
             @if ($message)<p class="mt-4 font-semibold text-encre">{{ $message }}</p>@endif
+            {{-- Identité à corriger avant la date limite, sinon la boutique passe au suivant de sa liste d'attente. --}}
+            @if ($c->kyc_a_corriger_avant && in_array($c->statut, [StatutReservationBoutique::PreReservee, StatutReservationBoutique::Reservee], true))
+                <x-public.alerte variante="attention" class="mt-4" data-identite-a-corriger>
+                    {{ __('public.boutiques.reservation.identite_a_corriger', ['date' => $c->kyc_a_corriger_avant->translatedFormat('j F Y à H\hi')]) }}
+                    <a href="{{ route('espace.verification') }}" class="font-semibold">{{ $r['identite_lien'] }}</a>
+                </x-public.alerte>
+            @endif
             @if ($c->naturePaiementAttendue() === \App\Models\Paiement::CAUTION)
                 <p class="mt-4 texte-carte">{{ __('public.boutiques.reservation.payer_avant', ['date' => $c->expire_le->translatedFormat('j F Y à H\hi')]) }}</p>
                 <a href="{{ route('boutiques.reservation.show', $c->reference) }}" class="btn-primaire mt-3">{{ $r['payer'] }}</a>

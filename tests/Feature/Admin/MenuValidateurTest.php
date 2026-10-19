@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Enums\Role;
 use App\Enums\StatutBoutique;
+use App\Enums\StatutKyc;
 use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSite;
 use App\Models\AuditLog;
@@ -55,7 +56,7 @@ class MenuValidateurTest extends TestCase
         $boutique = Boutiques::boutique('A', 1);
         $boutique->forceFill(['statut' => StatutBoutique::Reservee])->save();
 
-        return ReservationBoutique::create(['reference' => 'BTQ-PRETE001', 'user_id' => User::factory()->create()->id, 'campagne_boutiques_id' => $campagne->id,
+        return ReservationBoutique::create(['reference' => 'BTQ-PRETE001', 'user_id' => User::factory()->create(['statut_kyc' => StatutKyc::Valide])->id, 'campagne_boutiques_id' => $campagne->id,
             'boutique_id' => $boutique->id, 'caution' => 540_000, 'avance' => 135_000, 'statut' => StatutReservationBoutique::Reservee, 'expire_le' => now()->subDay(),
             'avance_payee_le' => now(), 'reference_avance' => 'PAY-AVANCE01']);
     }
