@@ -837,3 +837,15 @@ html:has(body.adm) {
     color: var(--muted, #5A6672);
     margin-bottom: 6px;
 }
+/* Grille tarifaire : étapes « Remplir avec Excel ». */
+.grille-excel-etapes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    list-style: none;
+    padding: 0;
+    font-weight: 600;
+}/* Écart avec le formulaire de la grille qui suit (même écart qu'entre deux cartes). */
+.grille-excel + .bo-carte {
+    margin-top: 18px !important;
+}

@@ -7,6 +7,47 @@
 @endphp
 
 <x-admin.layout :titre="$titre" :fil="[['libelle' => __('admin.boutiques.titre'), 'url' => route('admin.boutiques')], ['libelle' => $g['titre'], 'url' => route('admin.boutiques.grilles')], ['libelle' => $site->nom, 'url' => route('admin.boutiques.grilles.show', $site)], ['libelle' => $g['modifier']]]">
+    {{-- Remplir avec Excel : fichier à compléter (une ligne par niveau et type), puis import du fichier rempli. --}}
+    @php
+        $x = $g['excel'];
+    @endphp
+    <section class="bo-carte grille-excel !mt-0" aria-labelledby="excel-titre" data-grille-excel>
+        <h2 id="excel-titre" class="!text-[1.15rem]">{{ $x['titre'] }}</h2>
+        <p class="texte-carte mt-1 max-w-3xl">{{ $x['intro'] }}</p>
+        <ol class="grille-excel-etapes mt-3">
+            @foreach ($x['etapes'] as $etape)
+                <li>{{ $etape }}</li>
+            @endforeach
+        </ol>
+        <div class="mt-4 flex flex-wrap items-end gap-4">
+            <x-admin.bouton variante="secondaire" icone="exporter" :href="route('admin.boutiques.grilles.excel', $site)">{{ $x['telecharger'] }}</x-admin.bouton>
+            <form method="POST" action="{{ route('admin.boutiques.grilles.importer', $site) }}" enctype="multipart/form-data" class="flex flex-wrap items-end gap-3" data-import-grille>
+                @csrf
+                <div class="formulaire-champ adm-champ !mt-0">
+                    <label for="fichier-grille" class="adm-libelle"><x-requis /> {{ $x['fichier'] }}</label>
+                    <input id="fichier-grille" name="fichier" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required class="champ">
+                </div>
+                <x-admin.bouton type="submit" icone="importer">{{ $x['importer'] }}</x-admin.bouton>
+            </form>
+        </div>
+        <p class="texte-carte mt-2">{{ $x['remplace'] }}</p>
+        @if (session('erreurs_import'))
+            <div class="mt-4" role="alert" data-erreurs-import>
+                <p class="font-semibold text-rouge">{{ $x['erreurs_titre'] }}</p>
+                <div class="mt-2 overflow-x-auto">
+                    <table class="bo-tableau">
+                        <thead><tr>@foreach ($x['erreurs_colonnes'] as $libelle)<th scope="col">{{ $libelle }}</th>@endforeach</tr></thead>
+                        <tbody>
+                            @foreach (session('erreurs_import') as $e)
+                                <tr><td>{{ $e['ligne'] ?? '' }}</td><td>{{ $e['colonne'] ?? '' }}</td><td>{{ $e['message'] }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+    </section>
+
     <form method="POST" action="{{ route('admin.boutiques.grilles.update', $site) }}" class="bo-carte !mt-0" novalidate>
         @csrf @method('PUT')
         <p class="texte-carte max-w-3xl">{{ __('admin.grilles.formulaire_aide', [

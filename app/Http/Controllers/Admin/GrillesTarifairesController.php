@@ -14,8 +14,10 @@ use App\Models\ParametrageDecision;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
+use App\Models\User;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\RegleGestionException;
+use App\Services\Boutiques\GrilleTarifaireExcel;
 use App\Services\Parametrage\WorkflowParametrage;
 use App\Support\BadgeStatut;
 use App\Support\Tableau\Colonne;
@@ -42,7 +44,7 @@ class GrillesTarifairesController extends Controller
 {
     use EnregistreEtSoumet;
 
-    public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal) {}
+    public function __construct(private readonly WorkflowParametrage $workflow, private readonly Journal $journal, private readonly GrilleTarifaireExcel $excel) {}
 
     /** Grilles des sites confirmés ; le RÉGULATEUR coche les brouillons et rejetées pour les soumettre ensemble. */
     public function index(Request $request): Response|StreamedResponse|View
@@ -124,32 +126,89 @@ class GrillesTarifairesController extends Controller
         $donnees = $request->validate($regles, [], __('admin.grilles.attributs'));
 
         try {
-            DB::transaction(function () use ($request, $site, $combinaisons, $donnees) {
-                $grille = $site->grilleTarifaire ?? GrilleTarifaire::create([
-                    'site_id' => $site->id, 'statut' => StatutGrilleTarifaire::Brouillon, 'cree_par' => $request->user()->id,
-                ]);
-                if (! $grille->estModifiable()) {
-                    throw new RegleGestionException(__('admin.parametrage.regles.non_modifiable'));
-                }
-                $grille->lignes()->delete();
-                foreach ($combinaisons as $c) {
-                    $saisie = $donnees['lignes'][$c['niveau']->code][$c['type']->id] ?? [];
-                    if (($saisie['loyer_m2'] ?? null) === null) {
-                        continue; // Pas de loyer : pas de ligne (les boutiques concernées ne pourront pas entrer en campagne).
-                    }
-                    $grille->lignes()->create([
-                        'niveau' => $c['niveau']->code, 'type_boutique_id' => $c['type']->id, 'unite_id' => (int) $saisie['unite_id'], 'loyer_m2' => (int) $saisie['loyer_m2'],
-                        'mois_caution' => (int) $saisie['mois_caution'], 'mois_avance' => (int) $saisie['mois_avance'],
-                    ]);
-                }
-                $this->journal->ecrire($request->user(), 'grille_tarifaire.modifiee', 'GrilleTarifaire', $grille->id, null, $grille->snapshotParametres()['lignes']);
-            });
+            $this->enregistrer($site, $combinaisons, $donnees['lignes'] ?? [], $request->user());
         } catch (RegleGestionException $e) {
             return redirect()->route('admin.boutiques.grilles.show', $site)->with('erreur', $e->getMessage());
         }
 
         return $this->puisSoumettre($request, redirect()->route('admin.boutiques.grilles.show', $site)->avecSucces('admin.grilles.messages.enregistree'),
             'grille', $site, route('admin.boutiques.grilles.edit', $site));
+    }
+
+    /**
+     * Fichier Excel de la grille du site, à compléter hors ligne : une ligne par niveau et type présents, valeurs en
+     * vigueur ou proposées, onglet de contrôle des montants de chaque boutique.
+     */
+    public function exporter(Site $site): StreamedResponse
+    {
+        Gate::authorize(Droit::GrilleVoir->value);
+
+        return $this->excel->telecharger($site, $this->combinaisons($site));
+    }
+
+    /**
+     * Import de la grille remplie : contrôle complet du fichier (aucune écriture si une seule erreur), puis
+     * remplacement du brouillon, à relire et soumettre au VALIDATEUR comme une saisie à l'écran.
+     */
+    public function importer(Request $request, Site $site): RedirectResponse
+    {
+        Gate::authorize(Droit::BoutiquesSaisir->value);
+        $fichier = $request->validate(['fichier' => ['required', 'file', 'mimes:xlsx', 'max:5120']],
+            ['fichier.*' => __('admin.grilles.excel.erreurs.fichier')])['fichier'];
+        if ($site->grilleTarifaire && ! $site->grilleTarifaire->estModifiable()) {
+            return redirect()->route('admin.boutiques.grilles.show', $site)->with('erreur', __('admin.grilles.excel.erreurs.non_modifiable'));
+        }
+        $combinaisons = $this->combinaisons($site);
+        $analyse = $this->excel->analyser($fichier->getRealPath(), $combinaisons);
+        if ($analyse['erreurs'] !== []) {
+            return redirect()->route('admin.boutiques.grilles.edit', $site)->with('erreurs_import', $analyse['erreurs'])
+                ->with('erreur', trans_choice('admin.grilles.excel.messages.refuse', count($analyse['erreurs']), ['n' => count($analyse['erreurs'])]));
+        }
+
+        try {
+            $this->enregistrer($site, $combinaisons, $analyse['saisies'], $request->user());
+        } catch (RegleGestionException $e) {
+            return redirect()->route('admin.boutiques.grilles.show', $site)->with('erreur', $e->getMessage());
+        }
+        $this->journal->ecrire($request->user(), 'grille_tarifaire.importee', 'GrilleTarifaire', $site->grilleTarifaire()->value('id'), null,
+            ['fichier' => mb_substr($fichier->getClientOriginalName(), 0, 150), 'lignes' => $analyse['lignes']]);
+
+        return redirect()->route('admin.boutiques.grilles.edit', $site)
+            ->avecSucces('admin.grilles.excel.messages.importee', ['n' => $analyse['lignes']]);
+    }
+
+    /**
+     * Remplace les lignes du brouillon de la grille (saisie à l'écran ou import Excel) : une ligne par combinaison
+     * qui a un loyer ; sans loyer, pas de ligne (ces boutiques ne pourront pas entrer en campagne).
+     *
+     * @param  Collection<int, array>  $combinaisons
+     * @param  array<string, array<int, array<string, mixed>>>  $saisies
+     *
+     * @throws RegleGestionException grille soumise ou confirmée
+     */
+    private function enregistrer(Site $site, Collection $combinaisons, array $saisies, User $auteur): void
+    {
+        DB::transaction(function () use ($site, $combinaisons, $saisies, $auteur) {
+            $grille = $site->grilleTarifaire ?? GrilleTarifaire::create([
+                'site_id' => $site->id, 'statut' => StatutGrilleTarifaire::Brouillon, 'cree_par' => $auteur->id,
+            ]);
+            if (! $grille->estModifiable()) {
+                throw new RegleGestionException(__('admin.parametrage.regles.non_modifiable'));
+            }
+            $grille->lignes()->delete();
+            foreach ($combinaisons as $c) {
+                $saisie = $saisies[$c['niveau']->code][$c['type']->id] ?? [];
+                if (($saisie['loyer_m2'] ?? null) === null) {
+                    continue; // Pas de loyer : pas de ligne (les boutiques concernées ne pourront pas entrer en campagne).
+                }
+                $grille->lignes()->create([
+                    'niveau' => $c['niveau']->code, 'type_boutique_id' => $c['type']->id, 'unite_id' => (int) $saisie['unite_id'], 'loyer_m2' => (int) $saisie['loyer_m2'],
+                    'mois_caution' => (int) $saisie['mois_caution'], 'mois_avance' => (int) $saisie['mois_avance'],
+                ]);
+            }
+            $this->journal->ecrire($auteur, 'grille_tarifaire.modifiee', 'GrilleTarifaire', $grille->id, null, $grille->snapshotParametres()['lignes']);
+        });
+        $site->unsetRelation('grilleTarifaire');
     }
 
     public function soumettre(Request $request, Site $site): RedirectResponse

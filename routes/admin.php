@@ -356,6 +356,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/{site}', 'show')->whereNumber('site')->middleware('can:'.Droit::GrilleVoir->value)->name('.show');
             Route::get('/{site}/modifier', 'edit')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.edit');
             Route::put('/{site}', 'update')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.update');
+            // Fichier Excel de la grille : export à compléter, import du fichier rempli (brouillon, à soumettre ensuite).
+            Route::get('/{site}/excel', 'exporter')->whereNumber('site')->middleware('can:'.Droit::GrilleVoir->value)->name('.excel');
+            Route::post('/{site}/excel', 'importer')->whereNumber('site')->middleware(['can:'.Droit::BoutiquesSaisir->value, 'throttle:20,1'])->name('.importer');
             Route::post('/{site}/soumettre', 'soumettre')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.soumettre');
             Route::post('/{site}/reviser', 'reviser')->whereNumber('site')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.reviser');
             Route::post('/{site}/confirmer', 'confirmer')->whereNumber('site')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.confirmer');

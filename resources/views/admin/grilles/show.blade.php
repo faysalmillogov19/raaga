@@ -34,6 +34,9 @@
                 </x-admin.confirmation>
             @endif
 
+            {{-- Fichier Excel de la grille (valeurs en vigueur ou proposées, montants de chaque boutique). --}}
+            <x-admin.bouton variante="contour" icone="exporter" :href="route('admin.boutiques.grilles.excel', $site)">{{ $g['excel']['telecharger'] }}</x-admin.bouton>
+
             @can(Droit::BoutiquesConfirmer->value)
                 @if ($grille?->estSoumis())
                     <x-admin.confirmation etape="confirmer" id="confirmer" :titre="__('admin.parametrage.actions.confirmer')" :message="__('admin.parametrage.confirmations.confirmer')"
