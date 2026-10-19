@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Droit;
 use App\Enums\StatutCampagneBoutiques;
+use App\Enums\StatutInscriptionBoutique;
 use App\Enums\StatutReservationBoutique;
 use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CampagneBoutiquesRequest;
 use App\Models\CampagneBoutiques;
+use App\Models\InscriptionBoutique;
 use App\Models\MoyenPaiement;
 use App\Models\ParametrageDecision;
+use App\Models\RelanceInteret;
 use App\Models\ReservationBoutique;
 use App\Models\Site;
 use App\Models\TypeBoutique;
@@ -18,6 +21,7 @@ use App\Services\Audit\Journal;
 use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Boutiques\EcheancesCampagnes;
+use App\Services\Boutiques\RelancesInteret;
 use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Parametrage\WorkflowParametrage;
 use App\Support\BadgeStatut;
@@ -158,6 +162,12 @@ class CampagnesBoutiquesController extends Controller
                 'campagne' => $campagne,
                 'tableau' => $t,
                 'compteurs' => $campagne->compteurs(),
+                // Listes d'attente : inscriptions en attente, liste générale (souscripteurs non attributaires), relances.
+                'listes' => [
+                    'en_attente' => InscriptionBoutique::query()->where('campagne_boutiques_id', $campagne->id)->where('statut', StatutInscriptionBoutique::EnAttente)->count(),
+                    'generale' => RelancesInteret::listeGenerale($campagne)->count(),
+                    'relances' => RelanceInteret::query()->where('campagne_boutiques_id', $campagne->id)->latest('id')->get(),
+                ],
                 'versions' => $versions->reverse()->values(),
                 'decisions' => ParametrageDecision::query()->where('objet_type', $campagne->typeParametrage())->where('objet_id', $campagne->id)
                     ->with('decideur')->orderByDesc('id')->get(),

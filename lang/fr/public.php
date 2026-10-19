@@ -1357,6 +1357,7 @@ return [
             'caution_payee' => '{nomPlateforme} : caution reçue. Reçu n° {recu}, réservation {reference}, boutique {boutique}, {montant}. La boutique est réservée à votre nom ; l’avance sera due avant la signature du contrat.',
             'identite_a_corriger' => '{nomPlateforme} : votre identité doit être corrigée pour garder la boutique {boutique}. Renvoyez vos pièces avant le {date} dans Mon espace, sinon la boutique passera au suivant.[ Aide : {numeroVert}]',
             'identite_annulee' => '{nomPlateforme} : votre identité n’a pas été corrigée à temps. La réservation de la boutique {boutique} est annulée ; ce que vous avez payé vous sera remboursé selon le règlement.',
+            'relance' => '{nomPlateforme} : {n} boutique(s) de nouveau libre(s). Vous pouvez manifester à nouveau votre intérêt jusqu’au {date} : le premier inscrit est retenu. Voir le plan des boutiques.',
             'retenue' => '{nomPlateforme} : la boutique {boutique} vous est proposée (liste d’attente). Payez la caution de {montant} avant le {date}, sinon elle passera au suivant. Détails dans Mon espace.',
         ],
         'reglement' => [
@@ -1383,6 +1384,15 @@ return [
                 'sujet' => 'Boutique :boutique : votre identité est à corriger',
                 'a_corriger' => 'Votre identité doit être corrigée pour garder la boutique :boutique : renvoyez vos pièces avant le :date dans « Vérifier mon identité ». Sans correction, la réservation sera annulée et la boutique passera au suivant de sa liste d’attente.',
                 'annulee' => 'Votre identité n’a pas été corrigée dans le délai : la réservation de la boutique :boutique est annulée et la boutique est passée au suivant de sa liste d’attente. Ce que vous avez payé vous sera remboursé selon le règlement.',
+            ],
+        ],
+        // Relance de la liste d'attente générale : boutiques de nouveau libres, nouvelle manifestation d'intérêt.
+        'relance' => [
+            'bouton' => 'Voir le plan des boutiques',
+            'bandeau' => '{1} Une boutique est de nouveau libre pour vous : inscrivez-vous avant la fin du délai, le premier inscrit est retenu.|[2,*] :n boutiques sont de nouveau libres pour vous : inscrivez-vous avant la fin du délai, le premier inscrit est retenu.',
+            'notifications' => [
+                'sujet' => 'Des boutiques sont de nouveau libres',
+                'message' => 'Des boutiques sont de nouveau libres : :codes. Vous pouvez manifester à nouveau votre intérêt jusqu’au :date ; le premier inscrit sur une boutique en devient l’attributaire.',
             ],
         ],
         // Listes d'attente : plusieurs boutiques par personne, au premier arrivé, premier servi.

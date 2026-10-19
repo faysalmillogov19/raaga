@@ -114,7 +114,8 @@ class ListesAttente
         try {
             $inscription = DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $rccm, $deja, $ip, $userAgent, $erreur, &$chemins) {
                 $campagne = CampagneBoutiques::query()->lockForUpdate()->findOrFail($campagne->id);
-                if (! $campagne->accepteReservations()) {
+                // Réservations ouvertes, ou relance en cours de cette boutique pour ce membre de la liste générale.
+                if (! $campagne->accepteReservations() && RelancesInteret::ouvertePour($boutique, $user)?->campagne_boutiques_id !== $campagne->id) {
                     $erreur('fermee');
                 }
                 $boutique = Boutique::query()->lockForUpdate()->with('type')->findOrFail($boutique->id);

@@ -180,6 +180,38 @@
         </div>
     </section>
 
+    {{-- Listes d'attente : inscrits en attente, liste générale (non attributaires), relances et boutiques restées libres. --}}
+    @php($la = __('admin.boutiques.relances'))
+    <section class="bo-carte" aria-labelledby="sec-listes" data-listes-attente>
+        <h2 id="sec-listes" class="!text-[1.05rem]">{{ $la['titre'] }}</h2>
+        <p class="texte-carte mt-1">{{ $la['intro'] }}</p>
+        <div class="adm-cartes mt-3">
+            <div class="adm-indicateur" data-en-attente><span class="adm-indicateur-libelle">{{ $la['en_attente'] }}</span><span class="adm-indicateur-valeur">{{ format_nombre($listes['en_attente']) }}</span></div>
+            <div class="adm-indicateur" data-liste-generale><span class="adm-indicateur-libelle">{{ $la['generale'] }}</span><span class="adm-indicateur-valeur">{{ format_nombre($listes['generale']) }}</span></div>
+        </div>
+        @if ($listes['relances']->isEmpty())
+            <p class="texte-carte mt-3">{{ $la['aucune'] }}</p>
+        @else
+            <div class="mt-3 overflow-x-auto">
+                <table class="bo-tableau" data-relances>
+                    <thead><tr>@foreach ($la['colonnes'] as $libelle)<th scope="col">{{ $libelle }}</th>@endforeach</tr></thead>
+                    <tbody>
+                        @foreach ($listes['relances'] as $rel)
+                            <tr>
+                                <td class="whitespace-nowrap">{{ $rel->ouverte_le->format('d/m/Y H:i') }}</td>
+                                <td class="whitespace-nowrap">{{ $rel->fin_le->format('d/m/Y H:i') }}</td>
+                                <td class="montant">{{ format_nombre(count($rel->boutiques)) }}</td>
+                                <td class="montant">{{ format_nombre($rel->destinataires) }}</td>
+                                <td>{{ $rel->cloturee_le ? (\App\Models\Boutique::query()->whereIn('id', (array) $rel->restantes)->orderBy('code')->pluck('code')->implode(', ') ?: $la['toutes_reprises']) : $la['en_cours'] }}</td>
+                                <td>{{ $rel->regulateur_notifie_le ? $la['oui'] : '' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </section>
+
     <section class="bo-carte" aria-labelledby="sec-reservations">
         <h2 id="sec-reservations" class="!text-[1.05rem]">{{ $r['titre'] }}</h2>
         <p class="texte-carte mt-1">{{ $r['intro'] }}</p>

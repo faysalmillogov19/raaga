@@ -2543,6 +2543,22 @@ return [
             'paiement' => 'Réservation et paiement',
             'listes' => 'Listes d’attente',
         ],
+        'relances' => [
+            'titre' => 'Listes d’attente',
+            'intro' => 'Chaque boutique a sa liste d’attente, dans l’ordre d’arrivée. Une boutique libérée sans personne à retenir est relancée auprès de la liste générale (souscripteurs non attributaires), qui peut manifester à nouveau son intérêt pendant le délai de relance ; ensuite, les boutiques restées libres d’une campagne close vous sont signalées.',
+            'en_attente' => 'Inscriptions en attente',
+            'generale' => 'Liste générale (non attributaires)',
+            'aucune' => 'Aucune relance pour le moment.',
+            'colonnes' => ['ouverte' => 'Relance le', 'fin' => 'Fin du délai', 'boutiques' => 'Boutiques', 'destinataires' => 'Souscripteurs prévenus', 'restantes' => 'Restées libres', 'regulateur' => 'RÉGULATEUR prévenu'],
+            'en_cours' => 'Relance en cours',
+            'toutes_reprises' => 'Aucune : toutes reprises',
+            'oui' => 'Oui',
+            'notification' => [
+                'sujet' => 'Boutiques non attribuées : :campagne',
+                'bouton' => 'Voir la campagne',
+                'message' => '{1} Campagne « :campagne » : la boutique :codes est restée libre après la relance de la liste d’attente. Ouvrez une nouvelle campagne pour la proposer.|[2,*] Campagne « :campagne » : :n boutiques sont restées libres après la relance de la liste d’attente (:codes). Ouvrez une nouvelle campagne pour les proposer.',
+            ],
+        ],
         'fiche' => [
             'ouverture' => 'Ouverture',
             'cloture' => 'Clôture',

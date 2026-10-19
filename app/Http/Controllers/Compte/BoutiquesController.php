@@ -16,6 +16,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\Boutiques\AvancesBoutiques;
 use App\Services\Boutiques\ListesAttente;
+use App\Services\Boutiques\RelancesInteret;
 use App\Services\Boutiques\ReservationsBoutiques;
 use App\Support\ThemePublic;
 use Illuminate\Http\RedirectResponse;
@@ -59,6 +60,8 @@ class BoutiquesController extends Controller
         return view(ThemePublic::nuit() ? 'public.boutiques.index-nuit' : 'public.boutiques.index', [
             'campagne' => $campagne,
             'ouverte' => $campagne?->accepteReservations() ?? false,
+            // Relance en cours : boutiques de nouveau ouvertes à ce membre de la liste d'attente générale.
+            'relance' => $campagne ? RelancesInteret::boutiquesOuvertesA($campagne, $user) : [],
             'sites' => $sites, 'site' => $site, 'niveaux' => $niveaux, 'niveau' => $niveau, 'blocs' => $blocs, 'bloc' => $bloc,
             'types' => $types, 'type' => $type,
             // Limites par type : ce qui reste au citoyen connecté (null pour un visiteur : les limites seules).
@@ -99,11 +102,20 @@ class BoutiquesController extends Controller
         return view('public.boutiques.reglement', ['campagne' => $campagne]);
     }
 
+    /**
+     * Campagne d'une boutique pour ce citoyen : la campagne ouverte, ou celle d'une relance en cours qui lui ouvre la
+     * boutique (liste d'attente générale, même après la clôture des réservations).
+     */
+    private static function campagnePour(Boutique $boutique, ?User $user): ?CampagneBoutiques
+    {
+        return CampagneBoutiques::ouverte() ?? RelancesInteret::ouvertePour($boutique, $user)?->campagne;
+    }
+
     /** Récapitulatif d'une boutique (code, type, surface, loyer, caution, avance) et formulaire de réservation. */
     public function boutique(Request $request, string $code): View
     {
-        $campagne = CampagneBoutiques::ouverte();
         $boutique = Boutique::query()->where('code', $code)->with(['type', 'site', 'niveauRef'])->firstOrFail();
+        $campagne = self::campagnePour($boutique, $request->user());
         abort_unless($campagne && in_array($boutique->site_id, (array) $campagne->sites) && in_array($boutique->type_boutique_id, (array) $campagne->types), 404);
 
         $user = $request->user();
@@ -119,7 +131,7 @@ class BoutiquesController extends Controller
             'tarif' => ReservationsBoutiques::tarifer($boutique),
             'detail' => ReservationsBoutiques::detail($boutique),
             'limites' => self::limites($campagne, $request->user()),
-            'ouverte' => $campagne->accepteReservations(),
+            'ouverte' => $campagne->accepteReservations() || RelancesInteret::ouvertePour($boutique, $user) !== null,
             'engagements' => ReservationsBoutiques::ENGAGEMENTS,
             'pieces' => ReservationsBoutiques::piecesPour($request->user()),
         ]);
@@ -131,8 +143,8 @@ class BoutiquesController extends Controller
      */
     public function reserver(Request $request, string $code): RedirectResponse
     {
-        $campagne = CampagneBoutiques::ouverte();
         $boutique = Boutique::query()->where('code', $code)->firstOrFail();
+        $campagne = self::campagnePour($boutique, $request->user());
         abort_unless($campagne, 404);
         $premiere = ListesAttente::pieceFournie($campagne, $request->user()) === null;
 

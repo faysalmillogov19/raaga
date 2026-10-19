@@ -69,6 +69,10 @@
                 </section>
             @endif
 
+            @if ($relance)
+                {{-- Relance de la liste d'attente générale : boutiques de nouveau ouvertes à ce citoyen. --}}
+                <x-public.alerte variante="info" class="mt-6" data-relance>{{ trans_choice('public.boutiques.relance.bandeau', count($relance), ['n' => count($relance)]) }}</x-public.alerte>
+            @endif
             <section class="mt-10" aria-labelledby="plan-titre" data-plan x-data="{ d: null }">
                 <h2 id="plan-titre" class="!text-xl">{{ $p['titre'] }}</h2>
 
@@ -123,7 +127,7 @@
                                 $detail = [...\App\Services\Boutiques\ReservationsBoutiques::detail($boutique), 'statut' => $p['statuts'][$statut],
                                     'limite' => $limiteAtteinte && $statut === 'disponible' ? $b['limites']['atteinte'] : null,
                                     // Libre, pré-réservée ou réservée : on peut s'y inscrire (réservation ou liste d'attente).
-                                    'lien' => in_array($statut, ['disponible', 'pre_reservee', 'reservee'], true) && $ouverte ? route('boutiques.boutique', $boutique->code) : null,
+                                    'lien' => in_array($statut, ['disponible', 'pre_reservee', 'reservee'], true) && ($ouverte || in_array($boutique->id, $relance, true)) ? route('boutiques.boutique', $boutique->code) : null,
                                     'action' => $statut === 'disponible' ? $p['detail']['reserver'] : $p['detail']['inscrire']];
                                 $survol = $boutique->code.' · '.$boutique->type?->libelle.($boutique->surface ? ' · '.format_nombre((float) $boutique->surface, 1).' m²' : '');
                             @endphp

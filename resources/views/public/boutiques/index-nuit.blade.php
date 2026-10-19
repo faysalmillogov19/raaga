@@ -95,14 +95,14 @@
         {{-- Plan : choix en pilules, légende, cases, fiche blanche de l'emplacement survolé ou choisi. --}}
         @php
             $disponibles = $plan->filter(fn ($bt) => $bt->statut->surPlan() === 'disponible')->count();
-            $details = $plan->mapWithKeys(function ($boutique) use ($limites, $p, $b, $ouverte) {
+            $details = $plan->mapWithKeys(function ($boutique) use ($limites, $p, $b, $ouverte, $relance) {
                 $statut = $boutique->statut->surPlan();
                 $limiteAtteinte = $limites['restants'] !== null && ($limites['restants'][$boutique->type_boutique_id] ?? 0) === 0;
 
                 return [$boutique->code => [...ReservationsBoutiques::detail($boutique), 'statut' => $p['statuts'][$statut],
                     'limite' => $limiteAtteinte && $statut === 'disponible' ? $b['limites']['atteinte'] : null,
                     // Libre, pré-réservée ou réservée : on peut s'y inscrire (réservation ou liste d'attente).
-                    'lien' => in_array($statut, ['disponible', 'pre_reservee', 'reservee'], true) && $ouverte ? route('boutiques.boutique', $boutique->code) : null,
+                    'lien' => in_array($statut, ['disponible', 'pre_reservee', 'reservee'], true) && ($ouverte || in_array($boutique->id, $relance, true)) ? route('boutiques.boutique', $boutique->code) : null,
                     'action' => $statut === 'disponible' ? $p['detail']['reserver'] : $p['detail']['inscrire']]];
             });
             $premier = $plan->first(fn ($bt) => $bt->statut->surPlan() === 'disponible') ?? $plan->first();
@@ -110,6 +110,10 @@
         <section class="conteneur nuit-page-section" aria-labelledby="plan-titre" data-plan x-data="{ d: @js($premier ? $details[$premier->code] : null) }">
             <p class="nuit-surtitre">{{ $p['titre'] }}</p>
             <h2 id="plan-titre" class="nuit-titre">{{ $n['boutiques']['plan_titre'] }} <strong>{{ $n['boutiques']['plan_fort'] }}</strong></h2>
+            @if ($relance)
+                {{-- Relance de la liste d'attente générale : boutiques de nouveau ouvertes à ce citoyen. --}}
+                <x-public.alerte variante="info" class="mt-4" data-relance>{{ trans_choice('public.boutiques.relance.bandeau', count($relance), ['n' => count($relance)]) }}</x-public.alerte>
+            @endif
 
             <div class="nuit-plan-choix">
                 @foreach ([['site', $p['site'], $sites->mapWithKeys(fn ($s) => [$s->id => ($s->code ? $s->code.' · ' : '').$s->nom]), $site?->id],
