@@ -1,11 +1,9 @@
 @php
     use App\Enums\Droit;
     use App\Enums\StatutCampagneBoutiques;
-    use App\Support\AffichageParametres;
 
     $libelles = __('admin.boutiques.champs');
     $r = __('admin.boutiques.reservations');
-    $snapshot = $campagne->snapshotParametres();
 @endphp
 
 <x-admin.layout :titre="$campagne->nom" :fil="[['libelle' => __('admin.boutiques.titre'), 'url' => route('admin.boutiques')], ['libelle' => $campagne->nom]]">
@@ -64,33 +62,93 @@
         </section>
     @endif
 
-    <div class="my-[18px] grid gap-[18px] xl:grid-cols-2">
-        <section class="bo-carte !mt-0" aria-labelledby="sec-campagne">
-            <h2 id="sec-campagne" class="!text-[1.05rem]">{{ __('admin.boutiques.sections.campagne') }}</h2>
-            <dl class="bo-definitions mt-3">
-                <dt>{{ ucfirst($libelles['nom']) }}</dt><dd>{{ $campagne->nom }}</dd>
-                <dt>{{ ucfirst($libelles['date_ouverture']) }}</dt><dd>{{ $campagne->date_ouverture->format('d/m/Y H:i') }}</dd>
-                <dt>{{ ucfirst($libelles['date_cloture']) }}</dt><dd>{{ $campagne->date_cloture->format('d/m/Y H:i') }}</dd>
-                @if ($campagne->description)
-                    <dt>{{ ucfirst($libelles['description']) }}</dt><dd class="texte-riche">{{ \App\Support\MarkdownLeger::html($campagne->description) }}</dd>
-                @endif
-            </dl>
-        </section>
-        <section class="bo-carte !mt-0" aria-labelledby="sec-paiement">
-            <h2 id="sec-paiement" class="!text-[1.05rem]">{{ __('admin.boutiques.sections.paiement') }}</h2>
-            <dl class="bo-definitions mt-3">
-                <dt>{{ ucfirst($libelles['sites']) }}</dt><dd>{{ $snapshot['sites'] ?: '' }}</dd>
-                <dt>{{ ucfirst($libelles['types']) }}</dt><dd data-types-campagne>{{ $snapshot['types'] ?: '' }}</dd>
-                <dt>{{ ucfirst($libelles['limites']) }}</dt><dd data-limites-campagne>{{ $snapshot['limites'] ?: '' }}</dd>
-                <dt>{{ ucfirst($libelles['canaux_actifs']) }}</dt><dd>{{ AffichageParametres::valeur('canaux_actifs', $snapshot['canaux_actifs']) }}</dd>
-                <dt>{{ ucfirst($libelles['delai_paiement']) }}</dt><dd data-delai-caution>{{ $campagne->libelleDelaiPaiement() }}
-                    <span class="texte-carte">({{ __($campagne->aSonPropreDelai() ? 'admin.boutiques.aides.delai_propre_court' : 'admin.boutiques.aides.delai_parametre_court') }})</span></dd>
-            </dl>
-            @if ($sitesSansGrille)
-                <x-admin.message type="avertissement" class="mt-3 !mb-0">{{ __('admin.boutiques.regles.sans_grille', ['lots' => implode(', ', $sitesSansGrille)]) }}</x-admin.message>
-            @endif
-        </section>
-    </div>
+    @php
+        $f = __('admin.boutiques.fiche');
+        $jours = max(1, (int) ceil($campagne->date_ouverture->diffInHours($campagne->date_cloture) / 24));
+        $typesCampagne = $campagne->typesConcernes();
+        $moyens = collect((array) $campagne->canaux_actifs)->map(fn ($code) => \App\Models\MoyenPaiement::libelleDe((string) $code));
+    @endphp
+    {{-- Campagne : période en tuiles lisibles, puis la présentation telle que la voient les citoyens. --}}
+    <section class="bo-carte" aria-labelledby="sec-campagne">
+        <h2 id="sec-campagne" class="!text-[1.05rem]">{{ __('admin.boutiques.sections.campagne') }}</h2>
+        <p class="campagne-fiche-nom mt-2">{{ $campagne->nom }}</p>
+        <dl class="campagne-fiche-periode mt-3" data-periode-campagne>
+            <div>
+                <dt>{{ $f['ouverture'] }}</dt>
+                <dd>{{ $campagne->date_ouverture->translatedFormat('l j F Y') }}<span>{{ __('admin.boutiques.fiche.a_heure', ['h' => $campagne->date_ouverture->format('H:i')]) }}</span></dd>
+            </div>
+            <div>
+                <dt>{{ $f['cloture'] }}</dt>
+                <dd>{{ $campagne->date_cloture->translatedFormat('l j F Y') }}<span>{{ __('admin.boutiques.fiche.a_heure', ['h' => $campagne->date_cloture->format('H:i')]) }}</span></dd>
+            </div>
+            <div>
+                <dt>{{ $f['duree'] }}</dt>
+                <dd>{{ trans_choice('admin.boutiques.fiche.jours', $jours, ['n' => $jours]) }}</dd>
+            </div>
+        </dl>
+        @if ($campagne->description)
+            <div class="campagne-fiche-presentation mt-4" x-data="{ ouvert: false }" data-presentation-campagne>
+                <button type="button" class="campagne-fiche-repli" aria-controls="presentation-campagne" aria-expanded="false" :aria-expanded="ouvert ? 'true' : 'false'" @click="ouvert = ! ouvert">
+                    {{ $f['presentation'] }}
+                    <span x-text="ouvert ? @js($f['masquer']) : @js($f['afficher'])">{{ $f['afficher'] }}</span>
+                </button>
+                <div id="presentation-campagne" class="texte-riche" x-show="ouvert" style="display: none">{{ \App\Support\MarkdownLeger::html($campagne->description) }}</div>
+            </div>
+        @else
+            <p class="texte-carte mt-4">{{ $f['sans_presentation'] }}</p>
+        @endif
+    </section>
+
+    {{-- Réservation et paiement : sites, types avec leur maximum par personne, moyens et délai de la caution. --}}
+    <section class="bo-carte" aria-labelledby="sec-paiement">
+        <h2 id="sec-paiement" class="!text-[1.05rem]">{{ __('admin.boutiques.sections.paiement') }}</h2>
+        <div class="campagne-fiche-grille mt-3">
+            <div>
+                <h3 class="campagne-fiche-titre">{{ $f['sites'] }}</h3>
+                <ul class="campagne-fiche-puces" data-sites-campagne>
+                    @forelse ($campagne->sitesConcernes() as $site)
+                        <li>@if ($site->code)<strong>{{ $site->code }}</strong> @endif{{ $site->nom }}</li>
+                    @empty
+                        <li>{{ $f['aucun'] }}</li>
+                    @endforelse
+                </ul>
+
+                <h3 class="campagne-fiche-titre mt-5">{{ $f['moyens'] }}</h3>
+                <ul class="campagne-fiche-puces">
+                    @forelse ($moyens as $moyen)
+                        <li>{{ $moyen }}</li>
+                    @empty
+                        <li>{{ $f['aucun'] }}</li>
+                    @endforelse
+                </ul>
+
+                <h3 class="campagne-fiche-titre mt-5">{{ $f['delai'] }}</h3>
+                <p class="campagne-fiche-delai" data-delai-caution>{{ $campagne->libelleDelaiPaiement() }}
+                    <span class="texte-carte">({{ __($campagne->aSonPropreDelai() ? 'admin.boutiques.aides.delai_propre_court' : 'admin.boutiques.aides.delai_parametre_court') }})</span></p>
+            </div>
+            <div>
+                <h3 class="campagne-fiche-titre">{{ $f['types'] }}</h3>
+                <div class="overflow-x-auto">
+                    <table class="bo-tableau campagne-fiche-types" data-types-campagne data-limites-campagne>
+                        <thead><tr><th scope="col">{{ $f['type'] }}</th><th scope="col" class="montant">{{ $f['maximum'] }}</th></tr></thead>
+                        <tbody>
+                            @forelse ($typesCampagne as $type)
+                                <tr>
+                                    <th scope="row">@if ($type->code)<span class="campagne-fiche-code">{{ $type->code }}</span> @endif{{ $type->libelle }}</th>
+                                    <td class="montant">{{ $campagne->limitePour($type->id) }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="2">{{ $f['aucun'] }}</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        @if ($sitesSansGrille)
+            <x-admin.message type="avertissement" class="mt-4 !mb-0">{{ __('admin.boutiques.regles.sans_grille', ['lots' => implode(', ', $sitesSansGrille)]) }}</x-admin.message>
+        @endif
+    </section>
 
     {{-- Boutiques des sites de la campagne, par statut (au premier arrivé). --}}
     <section class="bo-carte" aria-labelledby="sec-compteurs">

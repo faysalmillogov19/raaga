@@ -845,7 +845,135 @@ html:has(body.adm) {
     list-style: none;
     padding: 0;
     font-weight: 600;
-}/* Écart avec le formulaire de la grille qui suit (même écart qu'entre deux cartes). */
+}
+
+/* Écart avec le formulaire de la grille qui suit (même écart qu'entre deux cartes). */
 .grille-excel + .bo-carte {
     margin-top: 18px !important;
+}
+
+/* Fiche d'une campagne de boutiques : période en tuiles, sites et moyens en puces, types en tableau. */
+.campagne-fiche-nom {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--encre, #16201A);
+    overflow-wrap: anywhere;
+}
+.campagne-fiche-periode {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+}
+.campagne-fiche-periode > div {
+    padding: 12px 14px;
+    border: 1px solid var(--ligne, #D9E0DB);
+    border-radius: 10px;
+    background: var(--fond, #F5F7F5);
+}
+.campagne-fiche-periode dt {
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--gris, #5E6B63);
+}
+.campagne-fiche-periode dd {
+    margin-top: 4px;
+    font-weight: 700;
+    color: var(--encre, #16201A);
+}
+.campagne-fiche-periode dd::first-letter { text-transform: uppercase; }
+.campagne-fiche-periode dd span {
+    display: block;
+    font-weight: 500;
+    color: var(--texte, #2E3A33);
+}
+.campagne-fiche-presentation {
+    border: 1px solid #DCE5DF;
+    border-radius: 12px;
+    background: #fff;
+}
+.campagne-fiche-repli {
+    width: 100%;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    font-weight: 700;
+    text-align: left;
+    color: #18201C;
+    cursor: pointer;
+}
+.campagne-fiche-repli:focus-visible {
+    outline: 3px solid var(--charte-vert, #00843D);
+    outline-offset: 2px;
+}
+.campagne-fiche-repli span {
+    margin-left: auto;
+    font-weight: 600;
+    font-size: .875rem;
+    color: var(--vert-fonce, #005C2B);
+}
+.campagne-fiche-presentation .texte-riche {
+    max-width: 72ch;
+    margin: 0 16px;
+    padding: 14px 0 16px;
+    border-top: 1px solid #DCE5DF;
+}
+.campagne-fiche-grille {
+    display: grid;
+    gap: 20px 32px;
+}
+@media (min-width: 1024px) {
+    .campagne-fiche-grille { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+}
+.bo-carte .campagne-fiche-titre {
+    margin-bottom: 8px;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--gris, #5E6B63);
+}
+.campagne-fiche-puces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.campagne-fiche-puces li {
+    padding: 4px 12px;
+    border: 1px solid var(--ligne, #D9E0DB);
+    border-radius: 999px;
+    background: #fff;
+    font-size: .9rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+.campagne-fiche-delai { font-weight: 700; }
+.campagne-fiche-types { width: 100%; }
+.bo-tableau.campagne-fiche-types thead th { white-space: normal; }
+.bo-tableau.campagne-fiche-types thead th:last-child { width: 1%; white-space: nowrap; }
+@media (max-width: 640px) {
+    .bo-tableau.campagne-fiche-types thead th:last-child { width: 7rem; white-space: normal; }
+}
+.bo-tableau.campagne-fiche-types tbody th {
+    font-size: .93rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--encre, #16201A);
+    border-bottom-width: 1px;
+}
+.campagne-fiche-code {
+    display: inline-block;
+    min-width: 2.6rem;
+    margin-right: 6px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--vert-pale, #E8F4EC);
+    color: var(--vert-fonce, #005C2B);
+    font-size: .78rem;
+    font-weight: 700;
+    text-align: center;
 }

@@ -176,7 +176,10 @@ class LimitesParTypeTest extends TestCase
         $this->assertSame([2, 1], [$c->limitePour($pv), $c->limitePour($pp)]);
         $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $c))->assertSessionHas('succes');
         $this->assertSame('PV : 2, PP : 1', $c->versions()->latest('numero')->value('parametres')['limites']);
-        $this->en($this->validateur)->get(route('admin.boutiques.show', $c))->assertOk()->assertSee('PV : 2, PP : 1');
+        // Fiche : une ligne par type, avec son maximum par personne.
+        $fiche = preg_replace('/\s+/', ' ', $this->en($this->validateur)->get(route('admin.boutiques.show', $c))->assertOk()->getContent());
+        $this->assertMatchesRegularExpression('/campagne-fiche-code">PV<\/span>[^<]*<\/th> <td class="montant">2<\/td>/', $fiche);
+        $this->assertMatchesRegularExpression('/campagne-fiche-code">PP<\/span>[^<]*<\/th> <td class="montant">1<\/td>/', $fiche);
     }
 
     public function test_conversion_des_campagnes_existantes(): void

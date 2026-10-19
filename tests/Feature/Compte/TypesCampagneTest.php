@@ -87,7 +87,9 @@ class TypesCampagneTest extends TestCase
         $c = CampagneBoutiques::query()->where('nom', 'Pôle boucherie 2027')->sole();
         $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $c))->assertSessionHas('succes');
         $this->assertStringContainsString('PP · Pôle : préparation et découpe privative', $c->versions()->latest('numero')->value('parametres')['types']);
-        $this->en($this->validateur)->get(route('admin.boutiques.show', $c))->assertOk()->assertSee('PP · Pôle : préparation et découpe privative')->assertSee('MAG · Magasin');
+        $this->en($this->validateur)->get(route('admin.boutiques.show', $c))->assertOk()
+            ->assertSee('<span class="campagne-fiche-code">PP</span> Pôle : préparation et découpe privative', false)
+            ->assertSee('<span class="campagne-fiche-code">MAG</span> Magasin', false);
     }
 
     public function test_plan_filtre_par_site_et_par_type_avec_legende(): void
