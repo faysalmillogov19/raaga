@@ -5,10 +5,10 @@ namespace App\Services\Publique;
 use App\Domain\Allocation\StatistiquesAllocation;
 use App\Enums\StatutPaiement;
 use App\Enums\StatutSouscription;
-use App\Enums\StatutTranche;
 use App\Models\Paiement;
 use App\Models\Souscription;
 use App\Models\Tranche;
+use App\Support\Phase;
 use App\Support\VerrouEnvironnement;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -91,10 +91,7 @@ class CollectePublique
 
     private function trancheOuverte(): ?Tranche
     {
-        return Tranche::query()
-            ->where('statut', StatutTranche::Ouverte)
-            ->latest('date_ouverture')
-            ->first();
+        return Phase::trancheOuverte();
     }
 
     private function depuisLaBase(): ?EtatCollecte

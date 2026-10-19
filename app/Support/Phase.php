@@ -8,6 +8,7 @@ use App\Enums\StatutTranche;
 use App\Models\DecisionPhase;
 use App\Models\DistributionDividende;
 use App\Models\Tranche;
+use App\Services\Souscriptions\EcheancesTranches;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 
@@ -41,8 +42,11 @@ final class Phase
         return self::souscriptionParametre() && self::trancheOuverte() !== null;
     }
 
+    /** Tranche ouverte, après application des échéances (ouverture et clôture automatiques à leurs dates). */
     public static function trancheOuverte(): ?Tranche
     {
+        app(EcheancesTranches::class)->appliquer();
+
         return Tranche::query()->where('statut', StatutTranche::Ouverte)->latest('date_ouverture')->first();
     }
 

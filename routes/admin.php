@@ -384,7 +384,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{campagne}/reservations/{reservation}/attribuer', 'attribuer')->whereNumber(['campagne', 'reservation'])->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.attribuer');
         });
 
-        // Tranches : RÉGULATEUR saisit et soumet, VALIDATEUR confirme puis ouvre, prolonge, clôture.
+        // Tranches : RÉGULATEUR saisit et soumet, VALIDATEUR confirme ; ouverture et clôture automatiques aux dates, clôture anticipée possible.
         Route::controller(TranchesController::class)->prefix('tranches')->name('tranches')->group(function () {
             Route::get('/', 'index')->middleware('can:'.Droit::TranchesVoir->value);
             Route::get('/creer', 'create')->middleware('can:'.Droit::TranchesSaisir->value)->name('.create');
@@ -400,7 +400,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{tranche}/rejeter', 'rejeter')->middleware('can:'.Droit::TranchesConfirmer->value)->name('.rejeter');
             Route::post('/{tranche}/avenants/{avenant}/confirmer', 'confirmerAvenant')->middleware('can:'.Droit::TranchesConfirmer->value)->name('.avenant.confirmer');
             Route::post('/{tranche}/avenants/{avenant}/rejeter', 'rejeterAvenant')->middleware('can:'.Droit::TranchesConfirmer->value)->name('.avenant.rejeter');
-            Route::post('/{tranche}/ouvrir', 'ouvrir')->middleware('can:'.Droit::TranchesPiloter->value)->name('.ouvrir');
             Route::post('/{tranche}/cloturer', 'cloturer')->middleware('can:'.Droit::TranchesPiloter->value)->name('.cloturer');
         });
 

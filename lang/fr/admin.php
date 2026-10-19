@@ -2679,24 +2679,26 @@ return [
         'non' => 'Non',
         'actions' => [
             'reglement' => 'Aperçu du règlement',
-            'ouvrir' => 'Ouvrir la tranche',
             'cloturer' => 'Clôturer la tranche',
             'prolonger' => 'Avenant de prolongation',
         ],
+        'echeances' => [
+            'ouverture_prevue' => 'Ouverture automatique de la souscription le :date à :heure, sans autre action. Les paramètres sont alors verrouillés ; seule la date de clôture pourra évoluer par avenant.',
+            'ouverture_attente' => 'Ouverture automatique en attente : :raison',
+            'a_regler' => 'À régler avant cette date : :raison',
+            'cloture_prevue' => 'Souscription ouverte depuis le :ouverte. Clôture automatique le :date à :heure (prolongeable par avenant) ; vous pouvez clôturer plus tôt.',
+        ],
         'confirmations' => [
-            'ouvrir' => 'La tranche devient visible et ouverte à la souscription des citoyens. Ses paramètres sont verrouillés ; seule la date de clôture pourra évoluer par avenant.',
             'cloturer' => 'Plus aucune souscription ne sera acceptée. Cette action est irréversible ; l’allocation pourra ensuite être exécutée.',
         ],
         'messages' => [
             'creee' => 'Tranche créée en brouillon.',
             'enregistree' => 'Paramètres enregistrés.',
-            'ouverte' => 'Tranche ouverte à la souscription.',
             'cloturee' => 'Tranche clôturée.',
         ],
         'regles' => [
-            'ouverture_confirmee' => 'Seule une tranche confirmée peut être ouverte.',
             'cloture_ouverte' => 'Seule une tranche ouverte peut être clôturée.',
-            'une_seule_ouverte' => 'Une autre tranche est déjà ouverte : clôturez-la d’abord.',
+            'une_seule_ouverte' => 'Une autre tranche est déjà ouverte : celle-ci s’ouvrira dès que l’autre sera clôturée.',
         ],
         'erreurs' => [
             'cloture_apres_ouverture' => 'La date de clôture doit être postérieure à la date d’ouverture.',

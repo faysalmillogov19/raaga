@@ -22,3 +22,6 @@ Schedule::command('raaga:cartes')->dailyAt('06:30');
 
 // Campagnes de boutiques : ouverture à la date d'ouverture, clôture à la date de clôture.
 Schedule::command('raaga:campagnes-boutiques')->everyMinute()->withoutOverlapping();
+
+// Tranches d'actions : ouverture à la date d'ouverture, clôture à la date de clôture (prolongeable par avenant).
+Schedule::command('raaga:tranches')->everyMinute()->withoutOverlapping();

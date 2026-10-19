@@ -60,7 +60,7 @@ class ProfilsSupportTest extends TestCase
             ['put', route('admin.tranches.update', $tranche)],
             ['post', route('admin.tranches.soumettre', $tranche)],
             ['post', route('admin.tranches.confirmer', $tranche)],
-            ['post', route('admin.tranches.ouvrir', $tranche)],
+            ['post', route('admin.tranches.cloturer', $tranche)],
             ['post', route('admin.tranches.avenant.store', $tranche)],
             ['get', route('admin.dividendes.create')],
             ['post', route('admin.dividendes.store')],

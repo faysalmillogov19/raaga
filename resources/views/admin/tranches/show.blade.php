@@ -26,6 +26,20 @@
             <x-admin.bouton variante="contour" href="{{ route('admin.tranches.reglement', $tranche) }}">{{ __('admin.tranches.actions.reglement') }}</x-admin.bouton>
         </div>
 
+        {{-- Ouverture et clôture automatiques aux dates de la tranche (EcheancesTranches). --}}
+        @if ($tranche->statut === StatutTranche::Confirmee)
+            @if ($blocageOuverture && $tranche->date_ouverture->isPast())
+                <x-admin.message type="avertissement" class="mt-4 !mb-0" data-ouverture-attente>{{ __('admin.tranches.echeances.ouverture_attente', ['raison' => $blocageOuverture]) }}</x-admin.message>
+            @else
+                <x-admin.message type="info" class="mt-4 !mb-0" data-ouverture-prevue>{{ __('admin.tranches.echeances.ouverture_prevue', ['date' => $tranche->date_ouverture->translatedFormat('l j F Y'), 'heure' => $tranche->date_ouverture->format('H:i')]) }}</x-admin.message>
+                @if ($blocageOuverture)
+                    <x-admin.message type="avertissement" class="mt-3 !mb-0" data-ouverture-a-regler>{{ __('admin.tranches.echeances.a_regler', ['raison' => $blocageOuverture]) }}</x-admin.message>
+                @endif
+            @endif
+        @elseif ($tranche->statut === StatutTranche::Ouverte)
+            <x-admin.message type="info" class="mt-4 !mb-0" data-cloture-prevue>{{ __('admin.tranches.echeances.cloture_prevue', ['ouverte' => ($tranche->ouverte_le ?? $tranche->date_ouverture)->format('d/m/Y H:i'), 'date' => $tranche->date_cloture->translatedFormat('l j F Y'), 'heure' => $tranche->date_cloture->format('H:i')]) }}</x-admin.message>
+        @endif
+
         @if ($tranche->motif_rejet && $tranche->statut === StatutTranche::Brouillon)
             <x-admin.message type="erreur" class="mt-4 !mb-0">{{ __('admin.parametrage.motif_rejet', ['motif' => $tranche->motif_rejet]) }}</x-admin.message>
         @endif
@@ -60,10 +74,7 @@
                 @endif
             @endcan
             @can(Droit::TranchesPiloter->value)
-                @if ($tranche->statut === StatutTranche::Confirmee)
-                    <x-admin.confirmation-renforcee id="ouvrir" :titre="__('admin.tranches.actions.ouvrir')" :message="__('admin.tranches.confirmations.ouvrir')"
-                                                    :action="route('admin.tranches.ouvrir', $tranche)" :bouton="__('admin.tranches.actions.ouvrir')" :totp="$totpExige" />
-                @elseif ($tranche->statut === StatutTranche::Ouverte)
+                @if ($tranche->statut === StatutTranche::Ouverte)
                     <x-admin.confirmation-renforcee id="cloturer" :titre="__('admin.tranches.actions.cloturer')" :message="__('admin.tranches.confirmations.cloturer')"
                                                     :action="route('admin.tranches.cloturer', $tranche)" :bouton="__('admin.tranches.actions.cloturer')" :totp="$totpExige" />
                 @endif

@@ -9,7 +9,6 @@ use App\Enums\PayeurFrais;
 use App\Enums\PublicAutorise;
 use App\Enums\RegleArret;
 use App\Enums\RegleSiEchec;
-use App\Enums\StatutAvenant;
 use App\Enums\StatutTranche;
 use App\Enums\TypeFraisSouscription;
 use App\Http\Controllers\Controller;
@@ -24,6 +23,7 @@ use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
 use App\Services\Invest\RaagaInvest;
 use App\Services\Parametrage\WorkflowParametrage;
+use App\Services\Souscriptions\EcheancesTranches;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,8 +32,9 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 /**
- * Tranches : le RÉGULATEUR saisit et soumet, le VALIDATEUR confirme ou rejette, puis ouvre,
- * prolonge (avenant) et clôture. Chaque action vérifie son droit côté serveur.
+ * Tranches : le RÉGULATEUR saisit et soumet, le VALIDATEUR confirme ou rejette ; la tranche confirmée s'ouvre et se
+ * clôture seule à ses dates (EcheancesTranches), prolongeable par avenant ; le VALIDATEUR peut la clôturer plus tôt.
+ * Chaque action vérifie son droit côté serveur.
  */
 class TranchesController extends Controller
 {
@@ -41,11 +42,13 @@ class TranchesController extends Controller
         private readonly WorkflowParametrage $workflow,
         private readonly Journal $journal,
         private readonly ConfirmationRenforcee $confirmation,
+        private readonly EcheancesTranches $echeances,
     ) {}
 
     public function index(): View
     {
         Gate::authorize(Droit::TranchesVoir->value);
+        $this->echeances->appliquer();
 
         return view('admin.tranches.index', [
             'tranches' => Tranche::query()->withCount('souscriptions')->orderByDesc('id')->paginate(25),
@@ -84,6 +87,8 @@ class TranchesController extends Controller
     public function show(Request $request, Tranche $tranche): View
     {
         Gate::authorize(Droit::TranchesVoir->value);
+        $this->echeances->appliquer();
+        $tranche->refresh();
 
         $versions = $tranche->versions()->with('auteur')->get();
         $soumise = $versions->last();
@@ -100,6 +105,8 @@ class TranchesController extends Controller
             'premiereVersion' => $precedente === null,
             'avenants' => $tranche->avenants()->with(['auteur', 'decideur'])->get(),
             'totpExige' => ConfirmationRenforcee::totpExige($request->user()),
+            // Ouverture automatique empêchée (avenant en attente, autre tranche ouverte) : affichée sur la fiche.
+            'blocageOuverture' => $tranche->statut === StatutTranche::Confirmee ? $this->echeances->blocage($tranche) : null,
         ]);
     }
 
@@ -144,7 +151,11 @@ class TranchesController extends Controller
     {
         Gate::authorize(Droit::TranchesConfirmer->value);
 
-        return $this->executer($tranche, fn () => $this->workflow->confirmer($tranche, $request->user()), 'admin.parametrage.messages.confirme');
+        return $this->executer($tranche, function () use ($request, $tranche) {
+            $this->workflow->confirmer($tranche, $request->user());
+            // Date d'ouverture déjà atteinte : la tranche s'ouvre aussitôt.
+            $this->echeances->appliquer();
+        }, 'admin.parametrage.messages.confirme');
     }
 
     public function rejeter(Request $request, Tranche $tranche): RedirectResponse
@@ -199,7 +210,11 @@ class TranchesController extends Controller
         Gate::authorize(Droit::TranchesConfirmer->value);
         $this->verifierAvenant($tranche, $avenant);
 
-        return $this->executer($tranche, fn () => $this->workflow->confirmerAvenant($avenant, $request->user()), 'admin.parametrage.messages.avenant_confirme');
+        return $this->executer($tranche, function () use ($request, $avenant) {
+            $this->workflow->confirmerAvenant($avenant, $request->user());
+            // Nouvelles dates ou avenant qui bloquait l'ouverture : échéances appliquées aussitôt.
+            $this->echeances->appliquer();
+        }, 'admin.parametrage.messages.avenant_confirme');
     }
 
     public function rejeterAvenant(Request $request, Tranche $tranche, Avenant $avenant): RedirectResponse
@@ -212,28 +227,6 @@ class TranchesController extends Controller
     }
 
     // ---------------------------------------------------------------- Ouverture, clôture
-
-    public function ouvrir(Request $request, Tranche $tranche): RedirectResponse
-    {
-        Gate::authorize(Droit::TranchesPiloter->value);
-
-        return $this->executer($tranche, function () use ($request, $tranche) {
-            $this->confirmation->verifier($request, $request->user());
-
-            if ($tranche->statut !== StatutTranche::Confirmee) {
-                throw new RegleGestionException(__('admin.tranches.regles.ouverture_confirmee'));
-            }
-            if ($tranche->avenants()->where('statut', StatutAvenant::EnAttente)->exists()) {
-                throw new RegleGestionException(__('admin.parametrage.regles.avenant_en_cours'));
-            }
-            if (Tranche::query()->where('statut', StatutTranche::Ouverte)->exists()) {
-                throw new RegleGestionException(__('admin.tranches.regles.une_seule_ouverte'));
-            }
-
-            $tranche->forceFill(['statut' => StatutTranche::Ouverte, 'ouverte_le' => now()])->save();
-            $this->journal->ecrire($request->user(), 'tranche.ouverte', 'Tranche', $tranche->id, ['statut' => 'CONFIRMEE'], ['statut' => 'OUVERTE']);
-        }, 'admin.tranches.messages.ouverte');
-    }
 
     public function cloturer(Request $request, Tranche $tranche): RedirectResponse
     {

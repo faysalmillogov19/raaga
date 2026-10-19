@@ -8,7 +8,6 @@ use App\Enums\PublicAutorise;
 use App\Enums\StatutDocumentKyc;
 use App\Enums\StatutRevue;
 use App\Enums\StatutSouscription;
-use App\Enums\StatutTranche;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
 use App\Models\Acceptation;
@@ -17,6 +16,7 @@ use App\Models\Souscription;
 use App\Models\Tranche;
 use App\Models\User;
 use App\Services\Audit\Journal;
+use App\Support\Phase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -43,7 +43,7 @@ class PreparationSouscription
 
     public static function trancheOuverte(): ?Tranche
     {
-        return Tranche::query()->where('statut', StatutTranche::Ouverte)->latest('date_ouverture')->first();
+        return Phase::trancheOuverte();
     }
 
     public static function frais(Tranche $tranche, int $montant): int

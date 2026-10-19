@@ -93,7 +93,7 @@ class TranchesWorkflowTest extends TestCase
 
         $this->en($this->regulateur)->post(route('admin.tranches.confirmer', $tranche))->assertForbidden();
         $this->en($this->regulateur)->post(route('admin.tranches.rejeter', $tranche), ['motif' => 'Essai de rejet'])->assertForbidden();
-        $this->en($this->regulateur)->post(route('admin.tranches.ouvrir', $tranche), ['confirmation' => 'CONFIRMER'])->assertForbidden();
+        $this->en($this->regulateur)->post(route('admin.tranches.cloturer', $tranche), ['confirmation' => 'CONFIRMER'])->assertForbidden();
         $this->assertSame(StatutTranche::Soumise, $tranche->refresh()->statut);
     }
 
@@ -163,7 +163,6 @@ class TranchesWorkflowTest extends TestCase
         $this->en($sa)->post(route('admin.tranches.confirmer', $tranche))->assertForbidden();
         $this->en($sa)->post(route('admin.tranches.rejeter', $tranche), ['motif' => 'Essai de rejet'])->assertForbidden();
         $this->en($sa)->post(route('admin.tranches.avenant.store', $tranche), ['motif' => 'Essai'])->assertForbidden();
-        $this->en($sa)->post(route('admin.tranches.ouvrir', $tranche), ['confirmation' => 'CONFIRMER'])->assertForbidden();
         $this->en($sa)->post(route('admin.tranches.cloturer', $tranche), ['confirmation' => 'CONFIRMER'])->assertForbidden();
 
         $this->assertSame(StatutTranche::Soumise, $tranche->refresh()->statut);
@@ -252,16 +251,25 @@ class TranchesWorkflowTest extends TestCase
         $this->assertSame(1, $tranche->version);
     }
 
-    public function test_l_ouverture_exige_la_confirmation_renforcee_et_seule_la_date_de_cloture_reste_modifiable(): void
+    public function test_ouverture_automatique_a_la_date_puis_seule_la_date_de_cloture_reste_modifiable(): void
     {
         $tranche = $this->trancheConfirmee();
-        $code = $this->activerTotp($this->validateur);
 
-        $this->en($this->validateur)->post(route('admin.tranches.ouvrir', $tranche), ['confirmation' => 'confirmer', 'code_totp' => $code])->assertSessionHas('erreur');
-        $this->en($this->validateur)->post(route('admin.tranches.ouvrir', $tranche), ['confirmation' => 'CONFIRMER', 'code_totp' => '000000'])->assertSessionHas('erreur');
-        $this->assertSame(StatutTranche::Confirmee, $tranche->refresh()->statut);
+        // Confirmée avant sa date : elle attend son ouverture automatique ; plus de bouton « Ouvrir la tranche ».
+        $this->assertSame(StatutTranche::Confirmee, $tranche->statut);
+        $this->en($this->validateur)->get(route('admin.tranches.show', $tranche))->assertOk()
+            ->assertSee('data-ouverture-prevue', false)->assertDontSee('Ouvrir la tranche');
 
-        $this->en($this->validateur)->post(route('admin.tranches.ouvrir', $tranche), ['confirmation' => 'CONFIRMER', 'code_totp' => $code])->assertSessionHas('succes');
+        $this->travelTo($tranche->date_ouverture->copy()->addMinute());
+        $this->artisan('raaga:tranches')->assertSuccessful()->expectsOutputToContain('1 tranche(s) ouverte(s), 0 tranche(s) clôturée(s).');
+        $this->assertSame(StatutTranche::Ouverte, $tranche->refresh()->statut);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'tranche.ouverte', 'entite_id' => $tranche->id, 'acteur_id' => null]);
+        $this->en($this->validateur)->get(route('admin.tranches.show', $tranche))->assertSee('data-cloture-prevue', false);
+
+        // La clôture anticipée exige la confirmation renforcée (mot et code TOTP).
+        $this->activerTotp($this->validateur);
+        $this->en($this->validateur)->post(route('admin.tranches.cloturer', $tranche), ['confirmation' => 'confirmer', 'code_totp' => '000000'])->assertSessionHas('erreur');
+        $this->en($this->validateur)->post(route('admin.tranches.cloturer', $tranche), ['confirmation' => 'CONFIRMER', 'code_totp' => '000000'])->assertSessionHas('erreur');
         $this->assertSame(StatutTranche::Ouverte, $tranche->refresh()->statut);
 
         // Sur une tranche ouverte, l'avenant ne porte que sur la date de clôture.
@@ -271,5 +279,34 @@ class TranchesWorkflowTest extends TestCase
         ])->assertSessionHas('succes');
 
         $this->assertSame(['date_cloture'], array_keys(Avenant::query()->firstOrFail()->nouvelle_valeur));
+
+        // À sa date de clôture, la tranche se clôture d'elle-même.
+        $this->travelTo($tranche->date_cloture->copy()->addMinute());
+        $this->artisan('raaga:tranches')->assertSuccessful()->expectsOutputToContain('0 tranche(s) ouverte(s), 1 tranche(s) clôturée(s).');
+        $this->assertSame(StatutTranche::Cloturee, $tranche->refresh()->statut);
+    }
+
+    public function test_confirmee_apres_sa_date_d_ouverture_elle_s_ouvre_aussitot_et_une_seule_a_la_fois(): void
+    {
+        $premiere = $this->trancheSoumise();
+        $premiere->forceFill(['date_ouverture' => now()->subHour()])->save();
+        $this->en($this->validateur)->post(route('admin.tranches.confirmer', $premiere))->assertSessionHas('succes');
+        $this->assertSame(StatutTranche::Ouverte, $premiere->refresh()->statut);
+
+        // Une seconde tranche dont la date est atteinte attend la clôture de la première.
+        $seconde = $this->trancheSoumise();
+        $seconde->forceFill(['date_ouverture' => now()->subMinute(), 'date_cloture' => $premiere->date_cloture->copy()->addMonth()])->save();
+        $this->en($this->validateur)->post(route('admin.tranches.confirmer', $seconde))->assertSessionHas('succes');
+        $this->assertSame(StatutTranche::Confirmee, $seconde->refresh()->statut);
+        $this->en($this->validateur)->get(route('admin.tranches.show', $seconde))->assertSee('data-ouverture-attente', false)->assertSee('Une autre tranche est déjà ouverte');
+
+        $this->travelTo($premiere->date_cloture->copy()->addMinute());
+        $this->artisan('raaga:tranches')->assertSuccessful()->expectsOutputToContain('1 tranche(s) ouverte(s), 1 tranche(s) clôturée(s).');
+        $this->assertSame([StatutTranche::Cloturee, StatutTranche::Ouverte], [$premiere->refresh()->statut, $seconde->refresh()->statut]);
+    }
+
+    public function test_la_commande_des_tranches_est_planifiee(): void
+    {
+        $this->artisan('schedule:list')->assertSuccessful()->expectsOutputToContain('raaga:tranches');
     }
 }

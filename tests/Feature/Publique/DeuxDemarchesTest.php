@@ -99,9 +99,9 @@ class DeuxDemarchesTest extends TestCase
         $this->actingAs($citoyen)->post(route('souscrire.store'), ['nb_actions' => 5])->assertForbidden();
         $this->get('/')->assertSee('Souscription bientôt ouverte')->assertSee('href="'.route('souscription.bientot').'"', false);
 
-        // Souscription ouverte, mais aucune tranche ouverte (seulement confirmée) : toujours fermée.
+        // Souscription ouverte, mais aucune tranche ouverte (confirmée, date d'ouverture à venir) : toujours fermée.
         $this->decider(true, true);
-        Tranche::query()->update(['statut' => StatutTranche::Confirmee]);
+        Tranche::query()->update(['statut' => StatutTranche::Confirmee, 'date_ouverture' => now()->addDay()]);
         $this->actingAs($citoyen)->get(route('souscrire'))->assertRedirect(route('souscription.bientot'));
 
         // Paramètre ouvert ET tranche ouverte : souscription possible.
