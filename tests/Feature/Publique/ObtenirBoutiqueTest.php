@@ -40,10 +40,10 @@ class ObtenirBoutiqueTest extends TestCase
             ->assertSee('Les réservations ouvrent bientôt.')->assertSee('Bientôt ouverte')->assertSee('data-compte-a-rebours', false)
             ->assertSee('Ouverture le '.$c->date_ouverture->translatedFormat('j F Y à H\hi'))->assertDontSee('est terminée');
 
-        // Confirmée, date passée mais pas encore ouverte par le VALIDATEUR : jamais « terminée ».
+        // Confirmée, date d'ouverture atteinte : la campagne s'ouvre d'elle-même, sans action du VALIDATEUR.
         $c->forceFill(['date_ouverture' => now()->subDays(2)])->save();
-        $this->get(route('boutiques'))->assertSee('Les réservations ouvrent bientôt.')->assertSee('La date d’ouverture sera annoncée', false)
-            ->assertDontSee('data-compte-a-rebours', false)->assertDontSee('est terminée');
+        $this->get(route('boutiques'))->assertSee('data-etat-campagne="ouverte"', false)->assertDontSee('est terminée');
+        $this->assertSame(StatutCampagneBoutiques::Ouverte, $c->refresh()->statut);
 
         // Ouverte, avant sa date : bientôt, avec compte à rebours.
         $c->forceFill(['statut' => StatutCampagneBoutiques::Ouverte, 'date_ouverture' => now()->addHours(5)])->save();

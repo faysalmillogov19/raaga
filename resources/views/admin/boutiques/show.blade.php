@@ -15,6 +15,20 @@
         <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} : <x-admin.badge-statut :statut="$campagne->statut" /></h2>
         <p class="texte-carte mt-1">{{ $campagne->version ? __('admin.parametrage.version', ['n' => $campagne->version]) : __('admin.parametrage.aucune_version') }}</p>
 
+        {{-- Ouverture et clôture automatiques aux dates de la campagne (EcheancesCampagnes). --}}
+        @if ($campagne->statut === StatutCampagneBoutiques::Confirmee)
+            @if ($blocageOuverture && $campagne->date_ouverture->isPast())
+                <x-admin.message type="avertissement" class="mt-4 !mb-0" data-ouverture-attente>{{ __('admin.boutiques.echeances.ouverture_attente', ['raison' => $blocageOuverture]) }}</x-admin.message>
+            @else
+                <x-admin.message type="info" class="mt-4 !mb-0" data-ouverture-prevue>{{ __('admin.boutiques.echeances.ouverture_prevue', ['date' => $campagne->date_ouverture->translatedFormat('l j F Y'), 'heure' => $campagne->date_ouverture->format('H:i')]) }}</x-admin.message>
+                @if ($blocageOuverture)
+                    <x-admin.message type="avertissement" class="mt-3 !mb-0" data-ouverture-a-regler>{{ __('admin.boutiques.echeances.a_regler', ['raison' => $blocageOuverture]) }}</x-admin.message>
+                @endif
+            @endif
+        @elseif ($campagne->statut === StatutCampagneBoutiques::Ouverte)
+            <x-admin.message type="info" class="mt-4 !mb-0" data-cloture-prevue>{{ __('admin.boutiques.echeances.cloture_prevue', ['ouverte' => ($campagne->ouverte_le ?? $campagne->date_ouverture)->format('d/m/Y H:i'), 'date' => $campagne->date_cloture->translatedFormat('l j F Y'), 'heure' => $campagne->date_cloture->format('H:i')]) }}</x-admin.message>
+        @endif
+
         @if ($campagne->motif_rejet && $campagne->statut === StatutCampagneBoutiques::Brouillon)
             <x-admin.message type="erreur" class="mt-4 !mb-0">{{ __('admin.parametrage.motif_rejet', ['motif' => $campagne->motif_rejet]) }}</x-admin.message>
         @endif
@@ -43,10 +57,7 @@
                 @endif
             @endcan
             @can(Droit::BoutiquesPiloter->value)
-                @if ($campagne->statut === StatutCampagneBoutiques::Confirmee)
-                    <x-admin.confirmation-renforcee id="ouvrir" :titre="__('admin.boutiques.actions.ouvrir')" :message="__('admin.boutiques.confirmations.ouvrir')"
-                                                    :action="route('admin.boutiques.ouvrir', $campagne)" :bouton="__('admin.boutiques.actions.ouvrir')" :totp="$totpExige" />
-                @elseif ($campagne->statut === StatutCampagneBoutiques::Ouverte)
+                @if ($campagne->statut === StatutCampagneBoutiques::Ouverte)
                     <x-admin.confirmation-renforcee id="cloturer" :titre="__('admin.boutiques.actions.cloturer')" :message="__('admin.boutiques.confirmations.cloturer')"
                                                     :action="route('admin.boutiques.cloturer', $campagne)" :bouton="__('admin.boutiques.actions.cloturer')" :totp="$totpExige" />
                 @endif
@@ -145,7 +156,7 @@
                 </div>
             </div>
         </div>
-        @if ($sitesSansGrille)
+        @if ($sitesSansGrille && $campagne->statut !== StatutCampagneBoutiques::Confirmee)
             <x-admin.message type="avertissement" class="mt-4 !mb-0">{{ __('admin.boutiques.regles.sans_grille', ['lots' => implode(', ', $sitesSansGrille)]) }}</x-admin.message>
         @endif
     </section>

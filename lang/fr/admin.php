@@ -2557,23 +2557,25 @@ return [
             'modification' => 'Modifier la campagne',
         ],
         'actions' => [
-            'ouvrir' => 'Ouvrir les réservations',
             'cloturer' => 'Clôturer les réservations',
         ],
+        'echeances' => [
+            'ouverture_prevue' => 'Ouverture automatique des réservations le :date à :heure, sans autre action.',
+            'ouverture_attente' => 'Ouverture automatique en attente : :raison',
+            'a_regler' => 'À régler avant cette date : :raison',
+            'cloture_prevue' => 'Réservations ouvertes depuis le :ouverte. Clôture automatique le :date à :heure ; vous pouvez clôturer plus tôt.',
+        ],
         'confirmations' => [
-            'ouvrir' => 'Les citoyens pourront réserver une boutique, au premier arrivé, pendant la période de la campagne.',
             'cloturer' => 'Plus aucune réservation ne sera acceptée. Les pré-réservations en cours gardent leur délai de paiement.',
         ],
         'messages' => [
             'enregistree' => 'Campagne enregistrée.',
-            'ouverte' => 'Réservations ouvertes.',
             'cloturee' => 'Réservations clôturées.',
             'attribuee' => 'Boutique attribuée : avance payée et contrat signé.',
         ],
         'regles' => [
             'paiements_fermes' => 'Paiements fermés : :raison. Aucune campagne ne peut être proposée ni ouverte tant qu’au moins un moyen de paiement de la caution n’est pas ouvert.',
-            'ouverture_confirmee' => 'Seule une campagne confirmée peut être ouverte.',
-            'une_seule_ouverte' => 'Une autre campagne est déjà ouverte : clôturez-la d’abord.',
+            'une_seule_ouverte' => 'Une autre campagne est déjà ouverte : celle-ci s’ouvrira dès que l’autre sera clôturée.',
             'cloture_ouverte' => 'Seule une campagne ouverte peut être clôturée.',
             'sans_grille' => 'Ouverture impossible : ces sites n’ont pas de grille tarifaire confirmée : :lots.',
         ],

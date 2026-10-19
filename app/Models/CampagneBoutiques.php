@@ -6,6 +6,7 @@ use App\Contracts\Parametrable;
 use App\Enums\CompteDestination;
 use App\Enums\StatutCampagneBoutiques;
 use App\Enums\UsageMoyenPaiement;
+use App\Services\Boutiques\EcheancesCampagnes;
 use App\Services\Paiement\OuverturePaiements;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -78,8 +79,11 @@ class CampagneBoutiques extends Model implements Parametrable
         return (bool) $this->delai_paiement_secondes;
     }
 
+    /** Campagne ouverte, après application des échéances (ouverture et clôture automatiques à leurs dates). */
     public static function ouverte(): ?self
     {
+        app(EcheancesCampagnes::class)->appliquer();
+
         return self::query()->where('statut', StatutCampagneBoutiques::Ouverte)->latest('date_ouverture')->first();
     }
 

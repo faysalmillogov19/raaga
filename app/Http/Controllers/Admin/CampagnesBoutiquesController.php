@@ -9,7 +9,6 @@ use App\Http\Controllers\Admin\Concerns\EnregistreEtSoumet;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CampagneBoutiquesRequest;
 use App\Models\CampagneBoutiques;
-use App\Models\GrilleTarifaire;
 use App\Models\MoyenPaiement;
 use App\Models\ParametrageDecision;
 use App\Models\ReservationBoutique;
@@ -18,6 +17,7 @@ use App\Models\TypeBoutique;
 use App\Services\Audit\Journal;
 use App\Services\Backoffice\ConfirmationRenforcee;
 use App\Services\Backoffice\RegleGestionException;
+use App\Services\Boutiques\EcheancesCampagnes;
 use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Parametrage\WorkflowParametrage;
 use App\Support\BadgeStatut;
@@ -39,8 +39,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Campagnes de réservation des boutiques, au premier arrivé : le RÉGULATEUR saisit et soumet (période, sites, nombre
- * maximum par personne, délai de paiement de la caution, moyens de paiement), le VALIDATEUR confirme ou rejette, puis
- * ouvre et clôture ; il attribue ensuite les boutiques réservées (avance payée, contrat signé). Montants : grille tarifaire.
+ * maximum par personne, délai de paiement de la caution, moyens de paiement), le VALIDATEUR confirme ou rejette ; la
+ * campagne confirmée s'ouvre et se clôture seule à ses dates (EcheancesCampagnes), le VALIDATEUR peut la clôturer plus tôt ;
+ * il attribue ensuite les boutiques réservées (avance payée, contrat signé). Montants : grille tarifaire.
  */
 class CampagnesBoutiquesController extends Controller
 {
@@ -51,12 +52,14 @@ class CampagnesBoutiquesController extends Controller
         private readonly Journal $journal,
         private readonly ConfirmationRenforcee $confirmation,
         private readonly ReservationsBoutiques $reservations,
+        private readonly EcheancesCampagnes $echeances,
     ) {}
 
     /** Campagnes, les plus récentes d'abord ; le RÉGULATEUR coche les brouillons et rejetées pour les soumettre ensemble. */
     public function index(Request $request): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::BoutiquesVoir->value);
+        $this->echeances->appliquer();
         $c = __('admin.boutiques.colonnes');
 
         return Tableau::pour(CampagneBoutiques::query()->withCount(['reservations' => fn ($q) => $q->whereIn('statut', StatutReservationBoutique::actifs())]), 'campagnes')
@@ -121,6 +124,8 @@ class CampagnesBoutiquesController extends Controller
     public function show(Request $request, CampagneBoutiques $campagne): Response|StreamedResponse|View
     {
         Gate::authorize(Droit::BoutiquesVoir->value);
+        $this->echeances->appliquer();
+        $campagne->refresh();
 
         $versions = $campagne->versions()->with('auteur')->get();
         $soumise = $versions->last();
@@ -159,7 +164,9 @@ class CampagnesBoutiquesController extends Controller
                 'differentiel' => $campagne->estSoumis() && $soumise ? WorkflowParametrage::differentiel($precedente?->parametres ?? [], $soumise->parametres) : [],
                 'premiereVersion' => $precedente === null,
                 'totpExige' => ConfirmationRenforcee::totpExige($request->user()),
-                'sitesSansGrille' => $this->sitesSansGrille($campagne),
+                'sitesSansGrille' => EcheancesCampagnes::sitesSansGrille($campagne),
+                // Ouverture automatique empêchée (grille, paiements, autre campagne ouverte) : affichée sur la fiche.
+                'blocageOuverture' => $campagne->statut === StatutCampagneBoutiques::Confirmee ? $this->echeances->blocage($campagne) : null,
                 // Ancien tirage au sort : conservé en lecture seule (tables en ajout seul).
                 'historiqueTirages' => DB::table('tirages_boutiques')->where('campagne_boutiques_id', $campagne->id)->orderBy('id')->get(),
             ]));
@@ -207,7 +214,11 @@ class CampagnesBoutiquesController extends Controller
     {
         Gate::authorize(Droit::BoutiquesConfirmer->value);
 
-        return $this->executer($campagne, fn () => $this->workflow->confirmer($campagne, $request->user()), 'admin.parametrage.messages.confirme');
+        return $this->executer($campagne, function () use ($request, $campagne) {
+            $this->workflow->confirmer($campagne, $request->user());
+            // Date d'ouverture déjà atteinte : la campagne s'ouvre aussitôt.
+            $this->echeances->appliquer();
+        }, 'admin.parametrage.messages.confirme');
     }
 
     public function rejeter(Request $request, CampagneBoutiques $campagne): RedirectResponse
@@ -216,29 +227,6 @@ class CampagnesBoutiquesController extends Controller
         $motif = $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], ['motif.*' => __('admin.utilisateurs.erreurs.motif')])['motif'];
 
         return $this->executer($campagne, fn () => $this->workflow->rejeter($campagne, $request->user(), $motif), 'admin.parametrage.messages.rejete');
-    }
-
-    public function ouvrir(Request $request, CampagneBoutiques $campagne): RedirectResponse
-    {
-        Gate::authorize(Droit::BoutiquesPiloter->value);
-
-        return $this->executer($campagne, function () use ($request, $campagne) {
-            $this->confirmation->verifier($request, $request->user());
-
-            if ($campagne->statut !== StatutCampagneBoutiques::Confirmee) {
-                throw new RegleGestionException(__('admin.boutiques.regles.ouverture_confirmee'));
-            }
-            $this->exigerPaiementsOuverts($campagne);
-            if ($sans = $this->sitesSansGrille($campagne)) {
-                throw new RegleGestionException(__('admin.boutiques.regles.sans_grille', ['lots' => implode(', ', $sans)]));
-            }
-            if (CampagneBoutiques::query()->where('statut', StatutCampagneBoutiques::Ouverte)->exists()) {
-                throw new RegleGestionException(__('admin.boutiques.regles.une_seule_ouverte'));
-            }
-
-            $campagne->forceFill(['statut' => StatutCampagneBoutiques::Ouverte, 'ouverte_le' => now()])->save();
-            $this->journal->ecrire($request->user(), 'campagne_boutiques.ouverte', 'CampagneBoutiques', $campagne->id, ['statut' => 'CONFIRMEE'], ['statut' => 'OUVERTE']);
-        }, 'admin.boutiques.messages.ouverte');
     }
 
     public function cloturer(Request $request, CampagneBoutiques $campagne): RedirectResponse
@@ -291,12 +279,6 @@ class CampagnesBoutiquesController extends Controller
     }
 
     /** Sites de la campagne sans grille tarifaire confirmée : aucune boutique n'y serait réservable. @return list<string> */
-    private function sitesSansGrille(CampagneBoutiques $campagne): array
-    {
-        return $campagne->sitesConcernes()->filter(fn (Site $s) => GrilleTarifaire::query()->where('site_id', $s->id)->first()?->confirmee() === null)
-            ->map(fn (Site $s) => $s->nom)->values()->all();
-    }
-
     private function executer(CampagneBoutiques $campagne, Closure $action, string $message): RedirectResponse
     {
         try {

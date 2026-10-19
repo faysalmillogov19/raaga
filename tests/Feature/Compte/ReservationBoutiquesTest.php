@@ -155,11 +155,10 @@ class ReservationBoutiquesTest extends TestCase
         $this->travel(61)->minutes();
         Boutiques::reserver($this, $citoyen, Boutiques::boutique('A'))->assertSessionHasNoErrors();
 
-        // Après la fermeture, puis clôturée : refusé.
+        // Date de clôture passée : la campagne se clôture d'elle-même, plus aucune réservation.
         $this->campagne->forceFill(['date_cloture' => now()->subMinute()])->save();
-        Boutiques::reserver($this, $this->citoyen(), Boutiques::boutique('A', 2), 'C7654321')->assertSessionHasErrors($fermee);
-        $this->campagne->forceFill(['date_cloture' => now()->addDay(), 'statut' => StatutCampagneBoutiques::Cloturee])->save();
         $this->actingAs($citoyen)->post(route('boutiques.reserver', Boutiques::boutique('A', 2)->code))->assertNotFound();
+        $this->assertSame(StatutCampagneBoutiques::Cloturee, $this->campagne->refresh()->statut);
         $this->assertSame(1, ReservationBoutique::count());
     }
 

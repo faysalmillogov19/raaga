@@ -19,3 +19,6 @@ Schedule::command('raaga:relancer-paiements')->everyFifteenMinutes()->withoutOve
 
 // Cartes Raaga : renouvellement, expiration, avertissement avant la fin de la pièce d'identité.
 Schedule::command('raaga:cartes')->dailyAt('06:30');
+
+// Campagnes de boutiques : ouverture à la date d'ouverture, clôture à la date de clôture.
+Schedule::command('raaga:campagnes-boutiques')->everyMinute()->withoutOverlapping();

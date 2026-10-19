@@ -20,7 +20,6 @@ use Database\Seeders\ReferentielsSeeder;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use PragmaRX\Google2FA\Google2FA;
 use RuntimeException;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\Boutiques;
@@ -135,17 +134,15 @@ class VerrousProductionTest extends TestCase
         $mobile = Boutiques::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Mobile 2027', 'canaux_actifs' => ['ORANGE_MONEY']]);
         $virement = Boutiques::campagneOuverte(['statut' => StatutCampagneBoutiques::Brouillon, 'nom' => 'Virement 2027', 'canaux_actifs' => ['VIREMENT']]);
         $confirmee = Boutiques::campagneOuverte(['statut' => StatutCampagneBoutiques::Confirmee, 'nom' => 'Confirmée 2027', 'canaux_actifs' => ['ORANGE_MONEY']]);
-        $google2fa = new Google2FA;
-        $this->validateur->forceFill(['totp_secret' => $google2fa->generateSecretKey(32), 'totp_active_le' => now()])->save();
-        $code = fn () => $google2fa->oathTotp($this->validateur->fresh()->totp_secret, $google2fa->getTimestamp());
         $message = 'Paiements fermés : aucun opérateur de paiement réel n’est configuré.';
 
         // Sans opérateur réel, une campagne qui n'accepte que le mobile money ne se propose ni ne s'ouvre ; message sur la fiche.
         $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $mobile))->assertSessionHas('erreur', fn ($m) => str_starts_with($m, $message));
         $this->assertSame(StatutCampagneBoutiques::Brouillon, $mobile->fresh()->statut);
-        $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $confirmee), ['confirmation' => 'CONFIRMER', 'code_totp' => $code()])
-            ->assertSessionHas('erreur', fn ($m) => str_starts_with($m, $message));
+        // Date d'ouverture passée : l'ouverture automatique attend, la fiche affiche la raison.
+        $this->artisan('raaga:campagnes-boutiques')->assertSuccessful();
         $this->assertSame(StatutCampagneBoutiques::Confirmee, $confirmee->fresh()->statut);
+        $this->en($this->validateur)->get(route('admin.boutiques.show', $confirmee))->assertSee('data-ouverture-attente', false)->assertSee($message);
         $this->en($this->regulateur)->get(route('admin.boutiques.show', $mobile))->assertSee('data-paiements-fermes', false)->assertSee('aucun opérateur de paiement réel');
 
         // Avec le virement (paiement manuel, compte de location renseigné), la campagne est ouvrable même sans opérateur.

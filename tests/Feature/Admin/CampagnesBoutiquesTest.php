@@ -121,7 +121,7 @@ class CampagnesBoutiquesTest extends TestCase
         $this->assertSame(0, CampagneBoutiques::count());
     }
 
-    public function test_rejet_confirmation_ouverture_et_cloture_par_le_validateur(): void
+    public function test_rejet_et_confirmation_par_le_validateur_puis_ouverture_automatique(): void
     {
         $campagne = $this->campagneSoumise();
 
@@ -133,25 +133,32 @@ class CampagnesBoutiquesTest extends TestCase
         $this->en($this->regulateur)->post(route('admin.boutiques.soumettre', $campagne));
         $this->en($this->validateur)->post(route('admin.boutiques.confirmer', $campagne))->assertSessionHas('succes');
 
-        // Sans grille confirmée sur le site, l'ouverture est refusée.
-        $code = $this->activerTotp($this->validateur);
-        $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $code])
-            ->assertSessionHas('erreur', fn ($m) => str_contains($m, 'grille tarifaire confirmée'));
+        // Confirmée avant sa date : elle attend son ouverture automatique ; plus de bouton « Ouvrir les réservations ».
+        $this->assertSame(StatutCampagneBoutiques::Confirmee, $campagne->refresh()->statut);
+        $this->en($this->validateur)->get(route('admin.boutiques.show', $campagne))->assertOk()
+            ->assertSee('data-ouverture-prevue', false)->assertDontSee('Ouvrir les réservations');
+
+        // Date atteinte sans grille confirmée sur le site : l'ouverture attend, la fiche dit pourquoi.
+        $this->travel(2)->days();
+        $this->artisan('raaga:campagnes-boutiques')->assertSuccessful()->expectsOutputToContain('0 campagne(s) ouverte(s)');
+        $this->assertSame(StatutCampagneBoutiques::Confirmee, $campagne->refresh()->statut);
+        $this->en($this->validateur)->get(route('admin.boutiques.show', $campagne))->assertSee('data-ouverture-attente', false)->assertSee('grille tarifaire confirmée');
 
         $this->grilleConfirmee($this->site, ['R1' => [$this->petite->id => [2000, 12, 36]], 'RC' => [$this->grande->id => [2000, 12, 60]]]);
-        $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => '000000'])->assertSessionHas('erreur');
-        $this->en($this->validateur)->post(route('admin.boutiques.ouvrir', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $this->codeTotp($this->validateur, 1)])->assertSessionHas('succes');
+        $this->artisan('raaga:campagnes-boutiques')->assertSuccessful()->expectsOutputToContain('1 campagne(s) ouverte(s)');
         $this->assertSame(StatutCampagneBoutiques::Ouverte, $campagne->refresh()->statut);
+        $this->en($this->validateur)->get(route('admin.boutiques.show', $campagne))->assertSee('data-cloture-prevue', false);
 
         // Aucune boutique n'est engagée en bloc : elles restent disponibles jusqu'à leur réservation.
         $this->assertSame(15, Boutique::query()->where('statut', StatutBoutique::Disponible)->count());
         $this->assertSame(['disponible' => 15, 'pre_reservee' => 0, 'reservee' => 0, 'attribuee' => 0], $campagne->compteurs());
 
-        // Nouvelle saisie du code pour la clôture (l'anti-rejeu est remis à zéro pour rester dans la fenêtre tolérée).
-        $this->validateur->forceFill(['totp_dernier_pas' => null])->save();
-        $this->en($this->validateur)->post(route('admin.boutiques.cloturer', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $this->codeTotp($this->validateur)])->assertSessionHas('succes');
+        // Clôture anticipée par le VALIDATEUR : confirmation renforcée (mot et code TOTP).
+        $this->activerTotp($this->validateur);
+        $this->en($this->validateur)->post(route('admin.boutiques.cloturer', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => '000000'])->assertSessionHas('erreur');
+        $this->en($this->validateur)->post(route('admin.boutiques.cloturer', $campagne), ['confirmation' => 'CONFIRMER', 'code_totp' => $this->codeTotp($this->validateur, 1)])->assertSessionHas('succes');
         $this->assertSame(StatutCampagneBoutiques::Cloturee, $campagne->refresh()->statut);
-        $this->assertDatabaseHas('audit_logs', ['action' => 'campagne_boutiques.ouverte', 'entite_id' => $campagne->id]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'campagne_boutiques.ouverte', 'entite_id' => $campagne->id, 'acteur_id' => null]);
     }
 
     public function test_les_profils_de_support_consultent_sans_rien_modifier(): void

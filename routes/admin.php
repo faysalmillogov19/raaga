@@ -380,7 +380,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{campagne}/soumettre', 'soumettre')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesSaisir->value)->name('.soumettre');
             Route::post('/{campagne}/confirmer', 'confirmer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.confirmer');
             Route::post('/{campagne}/rejeter', 'rejeter')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesConfirmer->value)->name('.rejeter');
-            Route::post('/{campagne}/ouvrir', 'ouvrir')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.ouvrir');
             Route::post('/{campagne}/cloturer', 'cloturer')->whereNumber('campagne')->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.cloturer');
             Route::post('/{campagne}/reservations/{reservation}/attribuer', 'attribuer')->whereNumber(['campagne', 'reservation'])->middleware('can:'.Droit::BoutiquesPiloter->value)->name('.attribuer');
         });
