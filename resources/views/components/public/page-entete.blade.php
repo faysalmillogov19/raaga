@@ -1,15 +1,18 @@
-@props(['titre', 'intro' => null, 'fil' => [], 'sombre' => false])
+@props(['titre', 'intro' => null, 'fil' => [], 'sombre' => true])
 
 {{--
     En-tête des pages internes : fil d'Ariane, titre, introduction. $fil = [['libelle' => …, 'url' => …|null], …]
-    Thème « nuit », page convertie (« sombre ») : bandeau bleu nuit, titre « léger + gras » (dernier mot en vert vif).
+    Thème « nuit » (« sombre », vrai par défaut) : bandeau bleu nuit, titre « léger + gras » (dernier mot en vert vif ;
+    en jaune sur la démarche « Investir »).
 --}}
 @php
     $demarche = \App\Support\Demarche::courante();
     $nuit = $sombre && \App\Support\ThemePublic::nuit();
+    // Démarche « Investir » (et son simulateur) : accents jaunes en thème « nuit ».
+    $investir = $nuit && ($demarche === 'investir' || request()->routeIs('invest.*'));
     [$leger, $fort] = \App\Support\TitreNuit::decouper($titre);
 @endphp
-<div @class([$nuit ? 'nuit-bandeau' : 'border-b border-ligne bg-fond', 'entete-demarche demarche-'.$demarche => $demarche])>
+<div @class([$nuit ? 'nuit-bandeau' : 'border-b border-ligne bg-fond', 'entete-demarche demarche-'.$demarche => $demarche, 'nuit-investir' => $investir])>
     <div @class(['conteneur', $nuit ? 'nuit-bandeau-corps' : 'py-6 tab:py-9'])>
         <div class="nav-fil">
         <x-navigation-historique :parent="\App\Support\NavigationHistorique::parente($fil, route('accueil'))" />

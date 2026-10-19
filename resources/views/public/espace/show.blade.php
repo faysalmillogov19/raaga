@@ -10,13 +10,21 @@
         'RESERVEE' => 'bg-jaune-pale text-encre', 'PAYEE' => 'bg-vert-pale text-vert-fonce', 'ALLOUEE' => 'bg-vert-fonce text-white',
         'EXPIREE' => 'bg-fond text-gris', 'ANNULEE' => 'bg-fond text-gris', 'REMBOURSEE' => 'bg-fond text-encre',
     ];
+    // Thème « nuit » : en-tête en bandeau sombre, titre « léger + gras » (prénom en vert vif).
+    $nuit = \App\Support\ThemePublic::nuit();
+    $bonjour = __('public.espace.bonjour', ['prenom' => $prenom]);
+    [$leger, $fort] = \App\Support\TitreNuit::decouper($bonjour);
     $badgeKyc = ['NON_SOUMIS' => 'bg-fond text-encre', 'EN_ATTENTE' => 'bg-jaune-pale text-encre', 'VALIDE' => 'bg-vert-pale text-vert-fonce', 'REJETE' => 'bg-rouge-pale text-rouge', 'A_METTRE_A_JOUR' => 'bg-jaune-pale text-encre'];
 @endphp
 
 <x-public.layout :titre="__('public.espace.titre')">
-    <div class="border-b border-ligne bg-fond">
-        <div class="conteneur py-6 tab:py-9">
-            <h1>{{ __('public.espace.bonjour', ['prenom' => $prenom]) }}</h1>
+    <div class="{{ $nuit ? 'nuit-bandeau' : 'border-b border-ligne bg-fond' }}">
+        <div class="conteneur {{ $nuit ? 'nuit-bandeau-corps' : 'py-6 tab:py-9' }}">
+            @if ($nuit)
+                <h1 class="nuit-bandeau-titre">{{ $leger }} <strong>{{ $fort }}</strong></h1>
+            @else
+                <h1>{{ $bonjour }}</h1>
+            @endif
             <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                 <span class="texte-carte">{{ __('public.espace.identite') }}</span>
                 <span class="rounded-full px-3 py-1 text-sm font-bold {{ $badgeKyc[$kyc->value] }}">{{ __('public.espace.kyc.'.$kyc->value) }}</span>

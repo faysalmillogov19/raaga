@@ -83,7 +83,7 @@ class EspaceTest extends TestCase
         $this->souscription($awa, 'RAA-B-EXPIREE1', StatutSouscription::Expiree, 50);
 
         $page = $this->actingAs($awa)->get('/espace')->assertOk()
-            ->assertSee('Bonjour, Awa')
+            ->assertSee('Bonjour, <strong>Awa</strong>', false)
             ->assertSee('Validée')
             ->assertDontSee('Vérifier mon identité')
             // Total investi = 250 000 (payée) + 100 000 − 20 000 remboursés (allouée) ; la réservation et l'expirée ne comptent pas.

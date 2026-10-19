@@ -43,7 +43,7 @@
             </x-etat-vide>
         @else
             <form method="POST" action="{{ route('souscrire.store') }}" enctype="multipart/form-data" novalidate
-                  x-data="souscription(@js($parametres))" class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+                  x-data="souscription(@js($parametres))" class="nuit-investir grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
                 @csrf
 
                 <div class="space-y-8">

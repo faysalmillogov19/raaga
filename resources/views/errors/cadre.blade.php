@@ -10,6 +10,8 @@
     $nom = rescue(fn () => plateforme('identite.nomPlateforme'), null, false) ?: 'Raaga';
     $armoiries = rescue(fn () => ImagesPlateforme::url('armoiries'), null, false) ?: asset(ImagesPlateforme::DEFAUTS['armoiries'][0]);
     $numeroVert = rescue(fn () => plateforme('contacts.numeroVert'), null, false);
+    // Thème « nuit » du site public (lu dans la configuration, sans base de données).
+    $nuit = rescue(fn () => \App\Support\ThemePublic::nuit(), false, false);
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -21,10 +23,10 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <x-assets :scripts="false" />
 </head>
-<body class="site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased">
+<body @class(['site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased', 'theme-nuit' => $nuit])>
     <div class="bande-tricolore" aria-hidden="true"></div>
 
-    <header class="border-b border-gris-clair">
+    <header class="cadre-erreur-entete border-b border-gris-clair">
         <div class="conteneur flex min-h-[72px] items-center">
             {{-- Comme sur le site : armoiries seules dans l'en-tête. --}}
             <a href="{{ url('/') }}" class="inline-flex min-h-[44px] items-center">
@@ -33,7 +35,7 @@
         </div>
     </header>
 
-    <main id="contenu" class="flex flex-1 items-center">
+    <main id="contenu" @class(['flex flex-1 items-center', 'nuit-page' => $nuit])>
         <div class="conteneur max-w-2xl py-16 text-center">
             <p class="text-sm font-bold uppercase tracking-wide text-vert-fonce">{{ __('public.erreurs.code', ['code' => $code]) }}</p>
             <h1 class="mt-3">{{ $titre }}</h1>

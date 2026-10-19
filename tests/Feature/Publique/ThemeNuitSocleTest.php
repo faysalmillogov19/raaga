@@ -37,8 +37,8 @@ class ThemeNuitSocleTest extends TestCase
             ->assertSee('href="'.route('connexion').'" class="nuit-pilule nuit-pilule-plein nuit-entete-compte"', false)
             ->assertSee('class="nuit-menu-lien est-actif"', false)
             ->assertSee('pied-public', false)
-            // Contenu pas encore converti : fond clair conservé.
-            ->assertDontSee('nuit-page', false)
+            // Contenu en fond sombre (option « sombre », vraie par défaut).
+            ->assertSee('nuit-page', false)
             // Ancien en-tête absent.
             ->assertDontSee('class="bg-vert-fonce"', false);
     }

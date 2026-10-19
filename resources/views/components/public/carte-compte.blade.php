@@ -1,12 +1,17 @@
 @props(['titre', 'intro' => null])
 
-{{-- Gabarit des pages Connexion / Inscription : carte centrée sur fond gris, aide sous la carte. --}}
+{{-- Gabarit des pages Connexion / Inscription : carte centrée sur fond gris (sombre en thème « nuit »), aide sous la carte. --}}
 <x-public.layout :titre="$titre">
     <div class="compte-fond">
         <div class="compte-carte">
             {{ $avant ?? '' }}
 
-            <x-logo class="mx-auto mb-5 h-12" :alt="plateforme('identite.nomPlateforme')" />
+            @if (\App\Support\ThemePublic::nuit())
+                {{-- Thème « nuit » : carte sombre, logo pour fond foncé (ou logo couleur sur sa plaque blanche). --}}
+                <div class="mb-5 text-center"><x-logo variante="blanc" class="h-12" :alt="plateforme('identite.nomPlateforme')" /></div>
+            @else
+                <x-logo class="mx-auto mb-5 h-12" :alt="plateforme('identite.nomPlateforme')" />
+            @endif
             <h1>{{ $titre }}</h1>
             @if ($intro)
                 <p class="compte-intro">{{ $intro }}</p>

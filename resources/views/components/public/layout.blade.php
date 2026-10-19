@@ -1,11 +1,11 @@
-@props(['titre' => null, 'description' => null, 'portail' => null, 'sombre' => false])
+@props(['titre' => null, 'description' => null, 'portail' => null, 'sombre' => true])
 
 @php
     // RAAGA Invest : nom du portail sur les seules pages d'investissement ; ailleurs, le nom de la plateforme.
     $portail ??= request()->routeIs(...config('raaga.invest.routes')) ? config('raaga.invest.nom') : null;
     $nom = $portail ?? plateforme('identite.nomPlateforme');
-    // Thème « nuit » (config raaga.theme_public) : habillage commun sombre ; le contenu d'une page passe en fond sombre
-    // quand la page le demande (« sombre »), au fil de sa conversion. Thème « clair » : rendu historique, inchangé.
+    // Thème « nuit » (config raaga.theme_public) : habillage et contenu en fond sombre (« sombre », vrai par défaut ;
+    // une page peut le refuser). Thème « clair » : rendu historique, inchangé.
     $nuit = \App\Support\ThemePublic::nuit();
 @endphp
 

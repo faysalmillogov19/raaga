@@ -2707,3 +2707,216 @@ html,
 .theme-nuit .nuit-page .border-gris-inactif {
     border-color: var(--nuit-bordure);
 }
+
+/* ------------------------------------------------------------------ Thème « nuit », lot 3 : compte, espace citoyen, Invest, pages d'information */
+/* Connexion, inscription (x-public.carte-compte) : carte sombre centrée. */
+.theme-nuit .nuit-page .compte-fond {
+    background: var(--nuit-fond);
+}
+.theme-nuit .nuit-page .compte-carte {
+    border-color: var(--nuit-bordure);
+    background: var(--nuit-carte);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .35);
+}
+.theme-nuit.site-public .nuit-page .compte-carte h1 {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page :is(.compte-intro, .compte-pied, .compte-aide, .aide-champ) {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-page .compte-pied {
+    border-top-color: var(--nuit-bordure);
+}
+.theme-nuit .nuit-page :is(.compte-pied, .compte-aide, .alerte-compte) a,
+.theme-nuit .nuit-page .lien-action {
+    color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .lien-action:disabled {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-page .compte-aide strong {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .formulaire-champ :is(label, legend) {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page :is(.champ, .otp) {
+    border-color: var(--nuit-bordure);
+    background: var(--nuit-fond-alt);
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page :is(.champ, .otp).est-invalide {
+    border-color: var(--nuit-erreur);
+}
+.theme-nuit .nuit-page .prefixe > span {
+    border-color: var(--nuit-bordure);
+    background: var(--nuit-fond);
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-page .btn-plein {
+    border-radius: 999px;
+    background: var(--nuit-vert);
+}
+.theme-nuit .nuit-page .btn-plein:hover {
+    background: #006B32;
+}
+.theme-nuit .nuit-page .btn-plein:disabled {
+    background: #2A3F57;
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-page .btn-contour {
+    border-color: var(--nuit-vif);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .stepper li {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-page .stepper li::before {
+    background: var(--nuit-bordure);
+}
+.theme-nuit .nuit-page .stepper li.fait::before {
+    background: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .stepper li.en-cours::before {
+    background: var(--nuit-jaune);
+}
+.theme-nuit .nuit-page .stepper li.en-cours {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .alerte-compte {
+    background: #3D1714;
+    border-left-color: var(--nuit-erreur);
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .alerte-compte-info {
+    background: var(--nuit-bouton);
+    border-left-color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .pastille-succes {
+    background: var(--nuit-vif);
+    color: var(--nuit-encre);
+}
+
+/* Aide & FAQ : questions en cartes sombres. */
+.theme-nuit .nuit-page .faq-item {
+    border-color: var(--nuit-bordure);
+    background: var(--nuit-carte);
+}
+.theme-nuit .nuit-page .faq-item summary {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .faq-item summary::after {
+    color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .faq-reponse {
+    color: var(--nuit-texte-2);
+}
+
+/* Pages d'erreur (errors/cadre) : en-tête blanc, comme l'en-tête du site. */
+.theme-nuit .cadre-erreur-entete {
+    background: #FFFFFF;
+}
+
+/* Contrôles natifs (calendrier, listes) en version sombre. */
+.theme-nuit .nuit-page {
+    color-scheme: dark;
+}
+.theme-nuit .nuit-page input[type="file"]::file-selector-button {
+    border-color: var(--nuit-vif);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .lien {
+    color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .divide-ligne > * + * {
+    border-color: var(--nuit-bordure);
+}
+.theme-nuit .nuit-page .ring-ligne {
+    --tw-ring-color: var(--nuit-bordure);
+}
+/* Pastilles de statut : fond pâle rouge assombri ; pastille neutre cerclée (même fond que le bandeau). */
+.theme-nuit .nuit-page .bg-rouge-pale {
+    background: #3D1714;
+}
+.theme-nuit .nuit-page .rounded-full.bg-fond {
+    box-shadow: inset 0 0 0 1px var(--nuit-bordure);
+}
+
+/* Mon espace : onglets sur fond sombre (onglet actif souligné de la couleur de sa démarche). */
+.theme-nuit .nuit-page .onglet-espace.border-transparent {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-page .onglet-espace.est-actif {
+    border-color: var(--nuit-vif);
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .onglet-espace.est-actif.demarche-investir {
+    border-color: var(--nuit-jaune);
+}
+
+/* Jauge de collecte (transparence) : carte sombre. */
+.theme-nuit .nuit-page .carte-blanche {
+    border-color: var(--nuit-bordure);
+    background: var(--nuit-carte);
+    color: var(--nuit-texte);
+    box-shadow: none;
+}
+.theme-nuit .nuit-page :is(.jauge-entete, .jauge-chiffres dt) {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-page :is(.jauge-montant, .jauge-chiffres dd) {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .jauge-barre {
+    background: var(--nuit-fond-alt);
+    box-shadow: inset 0 0 0 1px var(--nuit-bordure);
+}
+.theme-nuit .nuit-page .jauge-barre > span {
+    background: linear-gradient(90deg, var(--nuit-vert), var(--nuit-vif));
+}
+.theme-nuit .nuit-page .jauge-pct strong {
+    color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page .jauge-chiffres {
+    border-top-color: var(--nuit-bordure);
+}
+
+/* Offre : pastille « PDF » des documents. */
+.theme-nuit .nuit-page .bg-\[\#FFF6CC\] {
+    background: var(--nuit-jaune);
+    color: var(--nuit-encre);
+}
+
+/* Vérification d'une carte : note sous le résultat. */
+.theme-nuit .nuit-page .verif-carte-note {
+    color: var(--nuit-texte-2);
+}
+
+/* Démarche « Investir » : accents jaunes (#FCD116) au lieu du vert vif. */
+.theme-nuit .nuit-bandeau.nuit-investir .nuit-bandeau-titre strong {
+    color: var(--nuit-jaune);
+}
+.theme-nuit .nuit-page form.nuit-investir .bg-vert-fonce {
+    border-color: var(--nuit-jaune);
+    background: var(--nuit-jaune);
+    color: var(--nuit-encre);
+}
+.theme-nuit .nuit-page form.nuit-investir :is(.text-vert-fonce, a:not([class*="btn-"])) {
+    color: var(--nuit-jaune);
+}
+.theme-nuit .nuit-page form.nuit-investir input[type="checkbox"] {
+    color: var(--nuit-jaune);
+    accent-color: var(--nuit-jaune);
+}
+.theme-nuit .nuit-page form.nuit-investir .btn-primaire {
+    border-color: var(--nuit-jaune);
+    background: var(--nuit-jaune);
+    color: var(--nuit-encre);
+}
+.theme-nuit .nuit-page .btn-demarche {
+    border-radius: 999px;
+}
