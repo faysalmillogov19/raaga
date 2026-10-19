@@ -19,10 +19,17 @@ class LogoTest extends TestCase
 {
     use ConnexionBackoffice, RefreshDatabase;
 
-    public function test_l_en_tete_n_affiche_que_les_armoiries_et_le_logo_reste_au_pied_de_page_et_a_la_connexion(): void
+    public function test_armoiries_en_tete_logo_en_tete_nuit_au_pied_de_page_et_a_la_connexion(): void
     {
         $logo = e(ImagesPlateforme::url('logoHorizontal'));
 
+        // Thème « nuit » (défaut) : en-tête blanc avec les armoiries et le logo (maquettes du thème).
+        preg_match('/<header.*?<\/header>/s', $this->get('/')->assertOk()->getContent(), $enteteNuit);
+        $this->assertStringContainsString(e(ImagesPlateforme::url('armoiries')), $enteteNuit[0]);
+        $this->assertStringContainsString($logo, $enteteNuit[0]);
+
+        // Thème « clair » (rendu historique) : armoiries seules dans l'en-tête.
+        config(['raaga.theme_public' => 'clair']);
         $accueil = $this->get('/')->assertOk();
         preg_match('/<header.*?<\/header>/s', $accueil->getContent(), $entete);
         $this->assertStringContainsString(e(ImagesPlateforme::url('armoiries')), $entete[0]);

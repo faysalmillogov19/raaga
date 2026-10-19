@@ -7,13 +7,16 @@
     $titulaire = plateforme('mentions.denominationSociale') ?: $identite['nomPlateforme'];
 @endphp
 
-<footer class="bg-encre text-gris-clair">
+<footer class="pied-public bg-encre text-gris-clair">
     <div class="conteneur pied-grille py-10">
         <div>
             <a href="{{ route('accueil') }}" class="inline-flex min-h-[44px] items-center">
                 <x-logo variante="blanc" class="h-[52px]" :alt="$identite['nomPlateforme'].' – '.__('public.menu.accueil')" />
             </a>
-            <p class="mt-2 leading-relaxed">{{ __('public.pied.presentation') }}</p>
+            {{-- Phrase sur la souscription populaire (actions) : seulement quand la présentation des actions est activée. --}}
+            @if (\App\Support\Phase::presentationActions())
+                <p class="mt-2 leading-relaxed">{{ __('public.pied.presentation') }}</p>
+            @endif
             @if ($identite['mentionTutelle'])
                 <p class="mt-2 leading-relaxed">{{ $identite['mentionTutelle'] }}</p>
             @endif

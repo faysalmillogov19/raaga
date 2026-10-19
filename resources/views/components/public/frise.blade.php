@@ -1,6 +1,24 @@
-@props(['etapes'])
+@props(['etapes', 'variante' => 'verticale'])
 
-{{-- Frise verticale. $etapes = [['titre' => …, 'detail' => …|null, 'statut' => 'fait'|'en_cours'|'a_venir'], …] --}}
+{{--
+    « verticale » (défaut) : $etapes = [['titre' => …, 'detail' => …|null, 'statut' => 'fait'|'en_cours'|'a_venir'], …].
+    « dates » (thème « nuit ») : étapes en colonnes, pastille de date colorée, trait pointillé, carte sombre :
+    $etapes = [['date' => texte de la pastille, 'titre' => …, 'detail' => …|null, 'couleur' => …|null], …].
+--}}
+@if ($variante === 'dates')
+    <ol {{ $attributes->class(['nuit-frise']) }}>
+        @foreach (array_values($etapes) as $i => $etape)
+            <li class="nuit-frise-etape nuit-c-{{ \App\Support\CouleursNuit::nom($etape['couleur'] ?? null, $i) }}">
+                <span class="nuit-frise-date">{{ $etape['date'] }}</span>
+                <span class="nuit-frise-trait" aria-hidden="true"></span>
+                <div class="nuit-carte nuit-frise-carte">
+                    <p class="nuit-frise-titre">{{ $etape['titre'] }}</p>
+                    @if (! empty($etape['detail']))<p class="nuit-frise-detail">{{ $etape['detail'] }}</p>@endif
+                </div>
+            </li>
+        @endforeach
+    </ol>
+@else
 <ol {{ $attributes->merge(['class' => 'relative']) }}>
     @foreach ($etapes as $etape)
         <li class="relative flex gap-4 pb-6 last:pb-0">
@@ -27,3 +45,4 @@
         </li>
     @endforeach
 </ol>
+@endif

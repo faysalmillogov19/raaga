@@ -19,7 +19,10 @@ if [ "$(env_val APP_ENV)" != "production" ]; then
 fi
 
 # 1. Code
+# Fichiers de travail du poste, ignorés par git donc jamais déployés : docs/maquettes/ (maquettes de référence),
+# docs/INVENTAIRE-*.md (inventaires locaux), docs/video/, docs/captures/. Par précaution, retirés s'ils existaient.
 git pull --ff-only
+rm -rf docs/maquettes docs/INVENTAIRE-FRONT-OFFICE.md docs/INVENTAIRE-BACK-OFFICE.md
 
 # 2. Dépendances PHP
 composer install --no-dev --optimize-autoloader --no-interaction

@@ -60,6 +60,12 @@ return [
         ],
     ],
 
+    // Thème « nuit » : libellés des composants nouveaux (compte à rebours en cases, tableaux équivalents des graphiques).
+    'nuit' => [
+        'compte_a_rebours' => ['jours' => 'Jours', 'heures' => 'Heures', 'minutes' => 'Min', 'secondes' => 'Sec', 'echeance' => 'Échéance : :date'],
+        'graphique' => ['libelle' => 'Libellé', 'valeur' => 'Valeur', 'part' => 'Part'],
+    ],
+
     'navigation_historique' => [
         'retour' => 'Retour',
         'retour_long' => 'Retour à la page précédente',

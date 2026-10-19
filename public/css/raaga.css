@@ -977,3 +977,787 @@ html:has(body.adm) {
     font-weight: 700;
     text-align: center;
 }
+
+/* ================================================================== Corrections communes aux deux thèmes */
+/* Variable attendue par plusieurs règles (repli jusqu'ici). */
+:root {
+    --texte-doux: #5B6B62;
+}
+/* Figtree (reste de Tailwind) est déclarée dans le fichier figé sans aucun fichier de police : Public Sans partout. */
+html,
+.font-sans {
+    font-family: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ================================================================== Thème « nuit » du site public (config raaga.theme_public)
+ * Maquettes de référence : docs/maquettes (non déployées). Tous les styles sont sous .theme-nuit (classe du body) :
+ * le thème « clair » garde le rendu historique. Habillage commun (en-tête, pied, bandeau, notifications) dès le socle ;
+ * le contenu d'une page passe en fond sombre avec .nuit-page (option « sombre » du gabarit).
+ * Contraste : texte foncé (#0B1A2C) sur les pastilles de couleur (le blanc n'atteint pas 4,5:1 sur la plupart). */
+.theme-nuit {
+    --nuit-fond: #0B1A2C;
+    --nuit-fond-alt: #0D2036;
+    --nuit-carte: #13263D;
+    --nuit-pied: #071322;
+    --nuit-texte: #FFFFFF;
+    --nuit-texte-2: #B5C4D4;
+    --nuit-bordure: #24476B;
+    --nuit-vif: #3DDC97;
+    --nuit-vert: #00843D;
+    --nuit-bouton: #0E3B2A;
+    --nuit-jaune: #FCD116;
+    --nuit-encre: #0B1A2C;
+    --nuit-gris-clair: #4A5868;
+    --nuit-ligne-claire: #E3E8EE;
+    --nuit-erreur: #FF9A90;
+    --texte-doux: #B5C4D4;
+    background: var(--nuit-fond);
+}
+.theme-nuit .nuit-c-vert { --c: #00A86B; }
+.theme-nuit .nuit-c-bleu { --c: #1E9BF0; }
+.theme-nuit .nuit-c-orange { --c: #F7931E; }
+.theme-nuit .nuit-c-rose { --c: #E04FB0; }
+.theme-nuit .nuit-c-cyan { --c: #18B4C9; }
+.theme-nuit .nuit-c-rouge { --c: #E8453C; }
+.theme-nuit .nuit-c-jaune { --c: #FCD116; }
+.theme-nuit .nuit-c-vif { --c: #3DDC97; }
+.theme-nuit .nuit-c-gris { --c: #8FA3B8; }
+
+/* Focus jaune bien visible, sur fond clair comme sombre. */
+.theme-nuit a:focus-visible,
+.theme-nuit button:focus-visible,
+.theme-nuit summary:focus-visible,
+.theme-nuit input:focus-visible,
+.theme-nuit select:focus-visible,
+.theme-nuit textarea:focus-visible,
+.theme-nuit [tabindex]:focus-visible {
+    outline: 3px solid var(--nuit-jaune);
+    outline-offset: 2px;
+}
+.theme-nuit .nuit-entete a:focus-visible,
+.theme-nuit .nuit-entete button:focus-visible {
+    outline-color: var(--nuit-encre);
+    box-shadow: 0 0 0 5px var(--nuit-jaune);
+}
+
+/* ------------------------------------------------------------------ En-tête blanc */
+.theme-nuit .nuit-entete {
+    position: relative;
+    z-index: 30;
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--nuit-ligne-claire);
+    color: var(--nuit-encre);
+}
+.theme-nuit .nuit-entete-corps {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 22px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+.theme-nuit .nuit-entete-logo {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-right: auto;
+}
+.theme-nuit .nuit-entete-logo {
+    gap: 12px;
+}
+.theme-nuit .nuit-entete-logo-image {
+    height: 36px;
+}
+.theme-nuit .nuit-entete-armoiries {
+    display: none;
+    height: 44px;
+    width: auto;
+}
+.theme-nuit .nuit-entete-telephone {
+    display: none;
+    order: 2;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    color: var(--nuit-encre);
+    font-weight: 700;
+    text-decoration: none;
+}
+.theme-nuit .nuit-entete-telephone svg {
+    color: var(--nuit-vert);
+}
+.theme-nuit .nuit-entete-telephone:hover {
+    color: var(--nuit-vert);
+    text-decoration: underline;
+}
+.theme-nuit .nuit-menu-lien {
+    gap: 8px;
+}
+.theme-nuit .nuit-menu-lien .menu-picto {
+    margin-right: 0;
+}
+.theme-nuit .nuit-menu {
+    display: none;
+    order: 4;
+    flex-basis: 100%;
+}
+.theme-nuit .nuit-menu.est-ouvert {
+    display: block;
+}
+.theme-nuit .nuit-menu-liste {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.theme-nuit .nuit-menu-lien {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 4px;
+    border-bottom: 2px solid transparent;
+    color: var(--nuit-encre);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+}
+.theme-nuit .nuit-menu-lien:hover {
+    color: var(--nuit-vert);
+}
+.theme-nuit .nuit-menu-lien.est-actif {
+    color: var(--nuit-vert);
+    border-bottom-color: var(--nuit-vert);
+}
+.theme-nuit .nuit-entete-compte {
+    position: relative;
+    order: 2;
+}
+.theme-nuit .nuit-burger {
+    order: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--nuit-bouton);
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: var(--nuit-bouton);
+}
+.theme-nuit .nuit-menu-compte {
+    position: absolute;
+    right: 0;
+    z-index: 40;
+    min-width: 210px;
+    margin: 8px 0 0;
+    padding: 6px 0;
+    list-style: none;
+    border: 1px solid var(--nuit-bordure);
+    border-radius: 12px;
+    background: var(--nuit-carte);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .35);
+}
+.theme-nuit .nuit-menu-compte a,
+.theme-nuit .nuit-menu-compte button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 0;
+    background: transparent;
+    color: var(--nuit-texte);
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+.theme-nuit .nuit-menu-compte a:hover,
+.theme-nuit .nuit-menu-compte button:hover {
+    background: var(--nuit-fond-alt);
+    color: var(--nuit-vif);
+}
+@media (max-width: 759px) {
+    .theme-nuit .nuit-entete-corps {
+        gap: 10px;
+    }
+    .theme-nuit .nuit-entete-corps > .nuit-pilule,
+    .theme-nuit .nuit-entete-compte > .nuit-pilule {
+        padding: 0 16px;
+        font-size: 15px;
+    }
+}
+@media (min-width: 1024px) {
+    .theme-nuit .nuit-entete-telephone {
+        display: inline-flex;
+    }
+}
+@media (min-width: 760px) {
+    .theme-nuit .nuit-entete-logo {
+        margin-right: 0;
+    }
+    .theme-nuit .nuit-entete-armoiries {
+        display: block;
+    }
+    .theme-nuit .nuit-entete-logo-image {
+        height: 40px;
+    }
+    .theme-nuit .nuit-menu {
+        display: block;
+        order: 1;
+        flex-basis: auto;
+        margin-right: auto;
+    }
+    .theme-nuit .nuit-menu-liste {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0 22px;
+    }
+    .theme-nuit .nuit-burger {
+        display: none;
+    }
+}
+
+/* ------------------------------------------------------------------ Habillage commun */
+.theme-nuit .portail-invest {
+    background: var(--nuit-fond-alt);
+    color: var(--nuit-jaune);
+    border-bottom: 1px solid var(--nuit-bordure);
+}
+.theme-nuit .bandeau-annonce-information {
+    background: var(--nuit-fond-alt);
+    color: var(--nuit-texte);
+    border-bottom: 1px solid var(--nuit-bordure);
+}
+.theme-nuit .bandeau-annonce-alerte {
+    background: var(--nuit-jaune);
+    color: var(--nuit-encre);
+}
+.theme-nuit .bandeau-annonce-maintenance {
+    background: #7A1A16;
+    color: #FFFFFF;
+}
+.theme-nuit .pied-public {
+    background: var(--nuit-pied);
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .pied-public .pied-lien {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .pied-public .pied-lien:hover {
+    color: var(--nuit-jaune);
+}
+.theme-nuit .pied-public .border-white\/10 {
+    border-color: var(--nuit-bordure);
+}
+
+/* Notifications en popup : carte sombre, couleurs éclaircies pour le contraste. */
+.theme-nuit .notification {
+    background: var(--nuit-carte);
+    color: var(--nuit-texte);
+    border: 1px solid var(--nuit-bordure);
+}
+.theme-nuit .notification::backdrop {
+    background: rgba(4, 12, 22, .7);
+}
+.theme-nuit .notification-texte {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .notification-bouton {
+    color: var(--nuit-encre);
+}
+.theme-nuit .notification-succes { --notif: #3DDC97; --notif-pale: #0E3B2A; }
+.theme-nuit .notification-information { --notif: #6CC4FF; --notif-pale: #0F2E4D; }
+.theme-nuit .notification-alerte { --notif: #FCD116; --notif-pale: #3A3210; }
+.theme-nuit .notification-erreur { --notif: #FF9A90; --notif-pale: #3D1714; }
+
+/* ------------------------------------------------------------------ Contenu en fond sombre (.nuit-page) */
+/* Page pas encore convertie : son contenu garde le fond blanc historique. */
+.theme-nuit main:not(.nuit-page) {
+    background: #FFFFFF;
+}
+.theme-nuit .nuit-page {
+    background: var(--nuit-fond);
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page a:not([class*="btn-"]):not(.nuit-pilule) {
+    color: var(--nuit-vif);
+}
+.theme-nuit .nuit-page a:not([class*="btn-"]):not(.nuit-pilule):hover {
+    color: var(--nuit-jaune);
+}
+.theme-nuit .nuit-page .nav-historique-bouton {
+    border-color: var(--nuit-bordure);
+    background: var(--nuit-carte);
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .nav-historique-bouton:hover:not(:disabled) {
+    background: var(--nuit-fond-alt);
+}
+.theme-nuit .nuit-page .encadre-demarche {
+    background: var(--nuit-carte);
+    border-bottom-color: var(--accent);
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .demarche-investir {
+    --accent: #FCD116;
+}
+.theme-nuit .nuit-page .demarche-boutiques {
+    --accent: #3DDC97;
+}
+/* Classes historiques reprises dans les pages converties : couleurs du thème. */
+.theme-nuit .nuit-page .text-encre,
+.theme-nuit .nuit-page .text-texte,
+.theme-nuit .nuit-page .text-vert-fonce {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .texte-carte,
+.theme-nuit .nuit-page .text-gris,
+.theme-nuit .nuit-page .surtitre {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-page .carte {
+    border-color: var(--nuit-bordure);
+    background: var(--nuit-carte);
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .bg-white {
+    background: var(--nuit-carte);
+}
+.theme-nuit .nuit-page .bg-fond,
+.theme-nuit .nuit-page .section-grise {
+    background: var(--nuit-fond-alt);
+}
+.theme-nuit .nuit-page .border-ligne {
+    border-color: var(--nuit-bordure);
+}
+
+/* ------------------------------------------------------------------ Composants (x-public.*) */
+.theme-nuit .nuit-section {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-section-principal { background: var(--nuit-fond); }
+.theme-nuit .nuit-section-alterne { background: var(--nuit-fond-alt); }
+.theme-nuit .nuit-section-blanc { background: #FFFFFF; color: var(--nuit-encre); }
+.theme-nuit .nuit-section-corps {
+    padding-top: 72px;
+    padding-bottom: 72px;
+}
+.theme-nuit .nuit-section-entete {
+    margin-bottom: 36px;
+}
+.theme-nuit .nuit-section-entete.est-centre {
+    text-align: center;
+}
+.theme-nuit .nuit-surtitre {
+    margin: 0;
+    color: var(--nuit-vif);
+    font-weight: 600;
+}
+.theme-nuit .nuit-titre {
+    margin: 6px 0 0;
+    font-size: 34px;
+    line-height: 1.2;
+    font-weight: 400;
+}
+.theme-nuit .nuit-titre strong {
+    font-weight: 800;
+}
+.theme-nuit .nuit-carte {
+    border-radius: 10px;
+    background: var(--nuit-carte);
+    color: var(--nuit-texte);
+    padding: 24px;
+}
+.theme-nuit .nuit-carte-titre {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 700;
+}
+.theme-nuit .nuit-secondaire {
+    color: var(--nuit-texte-2);
+}
+.theme-nuit .nuit-pastille {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--c, #00A86B);
+    color: var(--nuit-encre);
+    font-weight: 800;
+}
+.theme-nuit .nuit-pastille-normale { width: 64px; height: 64px; font-size: 22px; }
+.theme-nuit .nuit-pastille-normale svg { width: 28px; height: 28px; }
+.theme-nuit .nuit-pastille-moyenne { width: 52px; height: 52px; font-size: 20px; }
+.theme-nuit .nuit-pastille-moyenne svg { width: 24px; height: 24px; }
+.theme-nuit .nuit-pastille-petite { width: 30px; height: 30px; font-size: 12px; }
+.theme-nuit .nuit-pastille-petite svg { width: 16px; height: 16px; }
+
+.theme-nuit .nuit-pilule {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 24px;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+}
+.theme-nuit .nuit-pilule-plein,
+.theme-nuit .nuit-page a.nuit-pilule-plein {
+    border-color: var(--nuit-bouton);
+    background: var(--nuit-bouton);
+    color: #FFFFFF;
+}
+.theme-nuit .nuit-pilule-plein:hover,
+.theme-nuit .nuit-page a.nuit-pilule-plein:hover {
+    border-color: var(--nuit-vert);
+    background: var(--nuit-vert);
+    color: #FFFFFF;
+}
+.theme-nuit .nuit-pilule-contour,
+.theme-nuit .nuit-page a.nuit-pilule-contour {
+    border-color: currentColor;
+    background: transparent;
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-section-blanc .nuit-pilule-contour,
+.theme-nuit .nuit-page .nuit-section-blanc a.nuit-pilule-contour {
+    color: var(--nuit-bouton);
+}
+.theme-nuit .nuit-pilule-choix {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--nuit-bordure);
+    background: transparent;
+    color: var(--nuit-texte);
+    font-size: 15px;
+    font-weight: 600;
+}
+.theme-nuit .nuit-page a.nuit-pilule-choix {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-pilule-choix:hover {
+    border-color: var(--nuit-vif);
+}
+.theme-nuit .nuit-pilule-choix[aria-pressed="true"],
+.theme-nuit .nuit-pilule-choix[aria-current="page"],
+.theme-nuit .nuit-page a.nuit-pilule-choix[aria-current="page"] {
+    border-color: var(--nuit-vif);
+    background: var(--nuit-vif);
+    color: var(--nuit-encre);
+    font-weight: 800;
+}
+.theme-nuit .nuit-pilule-etiquette {
+    padding: 0 16px;
+    border: 0;
+    background: var(--nuit-bouton);
+    color: #FFFFFF;
+    font-size: 15px;
+    cursor: default;
+}
+
+/* Compte à rebours : quatre cases de couleur (jours, heures, minutes, secondes). */
+.theme-nuit .nuit-rebours {
+    text-align: center;
+}
+.theme-nuit .nuit-rebours-titre {
+    margin: 0 0 14px;
+    font-size: 18px;
+    font-weight: 600;
+}
+.theme-nuit .nuit-rebours-cases {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+.theme-nuit .nuit-rebours-chiffre {
+    display: block;
+    width: 56px;
+    height: 56px;
+    border-radius: 6px;
+    background: var(--c);
+    color: var(--nuit-encre);
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 56px;
+    font-variant-numeric: tabular-nums;
+}
+.theme-nuit .nuit-rebours-unite {
+    display: block;
+    margin-top: 4px;
+    color: var(--nuit-texte-2);
+    font-size: 13px;
+}
+
+/* Jauge. */
+.theme-nuit .nuit-jauge-libelle {
+    margin: 0 0 8px;
+    color: var(--nuit-texte-2);
+    font-size: 14px;
+    text-align: left;
+}
+.theme-nuit .nuit-jauge-piste {
+    height: 10px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--nuit-bordure);
+}
+.theme-nuit .nuit-jauge-barre {
+    display: block;
+    width: var(--pct, 0%);
+    height: 100%;
+    border-radius: 6px;
+    background: var(--c, #3DDC97);
+}
+
+/* Frise à dates colorées. */
+.theme-nuit .nuit-frise {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.theme-nuit .nuit-frise-etape {
+    text-align: center;
+}
+.theme-nuit .nuit-frise-date {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: var(--c);
+    color: var(--nuit-encre);
+    font-size: 14px;
+    font-weight: 700;
+}
+.theme-nuit .nuit-frise-trait {
+    display: block;
+    margin: 18px 0;
+    border-top: 2px dashed var(--c);
+}
+.theme-nuit .nuit-frise-carte {
+    padding: 20px;
+}
+.theme-nuit .nuit-frise-titre {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 700;
+}
+.theme-nuit .nuit-frise-detail {
+    margin: 0;
+    color: var(--nuit-texte-2);
+    font-size: 14px;
+    line-height: 1.55;
+}
+/* Frise verticale historique (x-public.frise) dans une page sombre. */
+.theme-nuit .nuit-page .bg-ligne {
+    background: var(--nuit-bordure);
+}
+.theme-nuit .nuit-page .border-gris-inactif.bg-white {
+    background: var(--nuit-fond);
+}
+
+/* Fiche blanche (montants) sur fond sombre. */
+.theme-nuit .nuit-fiche {
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: var(--nuit-encre);
+    padding: 22px;
+}
+.theme-nuit .nuit-fiche-surtitre {
+    margin: 0;
+    color: var(--nuit-gris-clair);
+    font-size: 13px;
+}
+.theme-nuit .nuit-fiche-titre {
+    margin: 2px 0 14px;
+    font-size: 22px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+.theme-nuit .nuit-fiche-lignes {
+    margin: 0;
+}
+.theme-nuit .nuit-fiche-ligne {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 15px;
+}
+.theme-nuit .nuit-fiche-ligne dt {
+    color: var(--nuit-gris-clair);
+}
+.theme-nuit .nuit-fiche-ligne dd {
+    margin: 0;
+    font-weight: 700;
+    text-align: right;
+}
+.theme-nuit .nuit-fiche-ligne.est-montant dt {
+    color: var(--nuit-encre);
+}
+.theme-nuit .nuit-fiche-ligne.est-separee {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--nuit-ligne-claire);
+}
+.theme-nuit .nuit-fiche-total-libelle {
+    margin: 12px 0 2px;
+    font-size: 14px;
+    font-weight: 700;
+}
+.theme-nuit .nuit-fiche-total {
+    margin: 0 0 16px;
+    color: var(--nuit-vert);
+    font-size: 26px;
+    font-weight: 800;
+}
+.theme-nuit .nuit-page .nuit-fiche a:not(.nuit-pilule) {
+    color: var(--nuit-vert);
+}
+.theme-nuit .nuit-fiche .nuit-pilule {
+    width: 100%;
+}
+
+/* Tableau sombre : lignes zébrées, défilement horizontal dans son cadre (jamais celui de la page). */
+.theme-nuit .nuit-tableau-cadre {
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--nuit-bordure);
+    border-radius: 6px;
+}
+.theme-nuit .nuit-tableau {
+    width: 100%;
+    min-width: var(--largeur-min, 760px);
+    border-collapse: collapse;
+    font-size: 16px;
+}
+.theme-nuit .nuit-tableau th,
+.theme-nuit .nuit-tableau td {
+    padding: 14px 18px;
+    text-align: left;
+    vertical-align: middle;
+}
+.theme-nuit .nuit-tableau thead th {
+    padding-top: 16px;
+    padding-bottom: 16px;
+    color: var(--nuit-texte);
+    font-weight: 700;
+}
+.theme-nuit .nuit-tableau tbody tr:nth-child(odd) {
+    background: var(--nuit-carte);
+}
+
+/* Graphiques en CSS pur (anneau, barres) ; un tableau équivalent est lu par les lecteurs d'écran. */
+.theme-nuit .nuit-anneau-figure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 24px;
+    margin: 0;
+}
+.theme-nuit .nuit-anneau {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 190px;
+    height: 190px;
+    border-radius: 50%;
+    background: var(--anneau);
+}
+.theme-nuit .nuit-anneau-centre {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: var(--fond-anneau, var(--nuit-fond));
+}
+.theme-nuit .nuit-legende {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 15px;
+    line-height: 2;
+}
+.theme-nuit .nuit-legende-titre {
+    margin: 0 0 4px;
+    font-weight: 700;
+}
+.theme-nuit .nuit-legende-carre {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
+    background: var(--c);
+}
+.theme-nuit .nuit-barres-titre {
+    margin: 0 0 14px;
+    font-weight: 700;
+}
+.theme-nuit .nuit-barres {
+    display: flex;
+    align-items: flex-end;
+    gap: 22px;
+    height: 180px;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--nuit-bordure);
+}
+.theme-nuit .nuit-barres-colonne {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+    min-width: 0;
+    text-align: center;
+}
+.theme-nuit .nuit-barres-valeur {
+    font-size: 13px;
+    white-space: nowrap;
+}
+.theme-nuit .nuit-barres-barre {
+    display: block;
+    height: var(--h, 0%);
+    margin-top: 4px;
+    border-radius: 4px 4px 0 0;
+    background: var(--c);
+}
+.theme-nuit .nuit-barres-axe {
+    display: flex;
+    gap: 22px;
+    padding: 6px 10px 0;
+    color: var(--nuit-texte-2);
+    font-size: 13px;
+    text-align: center;
+}
+.theme-nuit .nuit-barres-axe span {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 759px) {
+    .theme-nuit .nuit-section-corps {
+        padding-top: 48px;
+        padding-bottom: 48px;
+    }
+    .theme-nuit .nuit-titre {
+        font-size: 28px;
+    }
+    .theme-nuit .nuit-barres,
+    .theme-nuit .nuit-barres-axe {
+        gap: 10px;
+    }
+    .theme-nuit .nuit-barres-valeur {
+        font-size: 11px;
+    }
+}

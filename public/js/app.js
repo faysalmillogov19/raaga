@@ -254,26 +254,42 @@ composant('souscription', (p) => ({
  * Compte à rebours avant l'ouverture d'une campagne (« dans 2 j 3 h 15 min »), mis à jour chaque minute ; à
  * l'échéance, invite à recharger la page. Sans JavaScript, la date d'ouverture reste écrite en toutes lettres.
  */
-composant('compteARebours', (cible, m) => ({
+composant('compteARebours', (cible, m = {}, parSeconde = false) => ({
+    // texte : « dans 3 j 4 h 12 min » (page des boutiques) ; j, h, mn, s : cases du thème « nuit » (x-public.compte-a-rebours).
     texte: '',
+    j: 0,
+    h: 0,
+    mn: 0,
+    s: 0,
     init() {
         this.maj();
-        this.minuteur = setInterval(() => this.maj(), 30000);
+        this.minuteur = setInterval(() => this.maj(), parSeconde ? 1000 : 30000);
     },
     destroy() {
         clearInterval(this.minuteur);
     },
+    deux(n) {
+        return String(n).padStart(2, '0');
+    },
     maj() {
-        const reste = Math.floor((new Date(cible).getTime() - Date.now()) / 60000);
+        const ecart = new Date(cible).getTime() - Date.now();
+        const secondes = Math.max(0, Math.floor(ecart / 1000));
+        this.j = Math.floor(secondes / 86400);
+        this.h = Math.floor((secondes % 86400) / 3600);
+        this.mn = Math.floor((secondes % 3600) / 60);
+        this.s = secondes % 60;
+        const reste = Math.floor(ecart / 60000);
         if (reste <= 0) {
-            this.texte = m.imminent;
-            clearInterval(this.minuteur);
+            this.texte = m.imminent ?? '';
+            if (secondes === 0) {
+                clearInterval(this.minuteur);
+            }
             return;
         }
         const j = Math.floor(reste / 1440);
         const h = Math.floor((reste % 1440) / 60);
         const min = reste % 60;
-        this.texte = [m.dans, j ? `${j} ${m.jours}` : '', (j || h) ? `${h} ${m.heures}` : '', `${min} ${m.minutes}`].filter(Boolean).join(' ');
+        this.texte = m.dans ? [m.dans, j ? `${j} ${m.jours}` : '', (j || h) ? `${h} ${m.heures}` : '', `${min} ${m.minutes}`].filter(Boolean).join(' ') : '';
     },
 }));
 

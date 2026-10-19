@@ -31,3 +31,6 @@ Thumbs.db
 # Inventaires du front-office et du back-office : régénérés sur le poste (php artisan raaga:inventaire), jamais commités ni déployés.
 /docs/INVENTAIRE-FRONT-OFFICE.md
 /docs/INVENTAIRE-BACK-OFFICE.md
+
+# Maquettes de référence (lecture seule, syntaxe de maquette) : jamais commitées ni déployées.
+/docs/maquettes/

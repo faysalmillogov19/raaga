@@ -1,25 +1,11 @@
-@php
-    // Chaque entrée est active si la route courante correspond à l'un de ses motifs.
-    // Deux démarches distinctes : « Investir » (actions B) et « Boutiques ».
-    $entrees = [
-        ['cle' => 'accueil', 'route' => 'accueil', 'motifs' => ['accueil']],
-        ['cle' => 'investir', 'route' => 'offre', 'motifs' => ['offre', 'transparence', 'actualites.*', 'souscrire', 'souscrire.*', 'souscription.*', 'paiement', 'paiement.*']],
-        ['cle' => 'boutiques', 'route' => 'boutiques', 'motifs' => ['boutiques', 'boutiques.*']],
-        ['cle' => 'espace', 'route' => auth()->check() ? 'espace' : 'connexion', 'motifs' => ['espace', 'espace.*', 'connexion', 'connexion.*']],
-        ['cle' => 'faq', 'route' => 'faq', 'motifs' => ['faq']],
-    ];
-    // Présentation des actions non visible : seule la démarche « boutiques » est proposée.
-    if (! \App\Support\Phase::presentationActions()) {
-        $entrees = array_values(array_filter($entrees, fn ($e) => $e['cle'] !== 'investir'));
-    }
-@endphp
+@php($entrees = \App\Support\MenuPublic::entrees())
 
 <nav aria-label="{{ __('public.menu.libelle') }}" class="bg-vert-fonce">
     <ul id="menu-principal"
         class="conteneur hidden !px-0 py-1 tab:flex tab:flex-wrap tab:!px-4 tab:py-0"
         :class="menuOuvert ? '!block' : ''">
         @foreach ($entrees as $entree)
-            @php($actif = request()->routeIs(...$entree['motifs']))
+            @php($actif = $entree['actif'])
             <li>
                 <a href="{{ route($entree['route']) }}"
                    @if ($actif) aria-current="page" @endif
