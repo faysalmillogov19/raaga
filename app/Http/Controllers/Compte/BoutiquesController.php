@@ -10,10 +10,12 @@ use App\Enums\TypeDocumentKyc;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
+use App\Models\InscriptionBoutique;
 use App\Models\ReservationBoutique;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\Boutiques\AvancesBoutiques;
+use App\Services\Boutiques\ListesAttente;
 use App\Services\Boutiques\ReservationsBoutiques;
 use App\Support\ThemePublic;
 use Illuminate\Http\RedirectResponse;
@@ -28,7 +30,7 @@ use Illuminate\View\View;
  */
 class BoutiquesController extends Controller
 {
-    public function __construct(private readonly ReservationsBoutiques $reservations) {}
+    public function __construct(private readonly ListesAttente $listes) {}
 
     /** Campagne affichée : ouverte, sinon la prochaine confirmée, sinon la dernière clôturée. */
     private function campagne(): ?CampagneBoutiques
@@ -104,9 +106,16 @@ class BoutiquesController extends Controller
         $boutique = Boutique::query()->where('code', $code)->with(['type', 'site', 'niveauRef'])->firstOrFail();
         abort_unless($campagne && in_array($boutique->site_id, (array) $campagne->sites) && in_array($boutique->type_boutique_id, (array) $campagne->types), 404);
 
+        $user = $request->user();
+        $inscription = ListesAttente::inscriptionDe($boutique, $user);
+
         return view('public.boutiques.boutique', [
             'campagne' => $campagne,
             'boutique' => $boutique,
+            // Liste d'attente : nombre de personnes déjà inscrites, inscription du citoyen, pièce déjà fournie.
+            'interesses' => ListesAttente::interesses($boutique),
+            'inscription' => $inscription,
+            'pieceFournie' => ListesAttente::pieceFournie($campagne, $user),
             'tarif' => ReservationsBoutiques::tarifer($boutique),
             'detail' => ReservationsBoutiques::detail($boutique),
             'limites' => self::limites($campagne, $request->user()),
@@ -116,28 +125,46 @@ class BoutiquesController extends Controller
         ]);
     }
 
+    /**
+     * Inscription sur une boutique : libre, elle est pré-réservée au nom du citoyen (caution à payer) ; sinon, il prend
+     * son rang sur la liste d'attente. La pièce d'identité n'est demandée qu'à la première inscription de la campagne.
+     */
     public function reserver(Request $request, string $code): RedirectResponse
     {
         $campagne = CampagneBoutiques::ouverte();
         $boutique = Boutique::query()->where('code', $code)->firstOrFail();
         abort_unless($campagne, 404);
+        $premiere = ListesAttente::pieceFournie($campagne, $request->user()) === null;
 
         $document = ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
         $donnees = $request->validate([
-            'type_piece' => ['required', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, ReservationsBoutiques::piecesPour($request->user())))],
-            'numero_piece' => ['required', 'string', 'min:5', 'max:40'],
-            'piece' => ['required', ...$document],
+            'type_piece' => [Rule::requiredIf($premiere), 'nullable', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, ReservationsBoutiques::piecesPour($request->user())))],
+            'numero_piece' => [Rule::requiredIf($premiere), 'nullable', 'string', 'min:5', 'max:40'],
+            'piece' => [Rule::requiredIf($premiere), 'nullable', ...$document],
             'rccm' => ['nullable', ...$document],
             'engagements' => ['array'],
             'engagements.*' => [Rule::enum(DocumentAccepte::class)],
         ], [], __('public.boutiques.reservation.attributs'));
 
-        $reservation = $this->reservations->reserver(
-            $campagne, $request->user(), $boutique, TypeDocumentKyc::from($donnees['type_piece']), $donnees['numero_piece'],
+        $inscription = $this->listes->inscrire(
+            $campagne, $request->user(), $boutique, isset($donnees['type_piece']) ? TypeDocumentKyc::from($donnees['type_piece']) : null, $donnees['numero_piece'] ?? null,
             $request->file('piece'), $request->file('rccm'), $donnees['engagements'] ?? [], (string) $request->ip(), (string) $request->userAgent(),
         );
 
-        return redirect()->route('boutiques.reservation.show', $reservation->reference)->with('reservation.creee', true);
+        // Retenue : caution à payer ; sinon, rang sur la liste d'attente.
+        return $inscription->reservation
+            ? redirect()->route('boutiques.reservation.show', $inscription->reservation->reference)->with('reservation.creee', true)
+            : redirect()->route('espace', ['onglet' => 'boutiques'])->avecSucces('public.boutiques.attente.inscrit', ['code' => $boutique->code, 'rang' => $inscription->rang()]);
+    }
+
+    /** Désistement : inscription en attente retirée, ou boutique dont le citoyen est attributaire libérée pour le suivant. */
+    public function desister(Request $request, int $inscription): RedirectResponse
+    {
+        $i = InscriptionBoutique::query()->with('boutique')->findOrFail($inscription);
+        abort_unless($i->user_id === $request->user()->id, 403);
+        $this->listes->desister($i, $request->user());
+
+        return redirect()->route('espace', ['onglet' => 'boutiques'])->avecSucces('public.boutiques.attente.desiste', ['code' => (string) $i->boutique?->code]);
     }
 
     /** Suivi d'une réservation : uniquement par son titulaire. */

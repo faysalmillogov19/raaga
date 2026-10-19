@@ -83,7 +83,8 @@ Route::middleware('actions.souscription')->controller(SouscriptionController::cl
     Route::post('/souscrire', 'store')->middleware(['auth', 'role:citoyen', 'throttle:10,1'])->name('souscrire.store');
 });
 
-// Boutiques du marché, au premier arrivé : plan public et règlement ; récapitulatif, réservation et suivi (citoyen connecté).
+// Boutiques du marché, au premier arrivé : plan public et règlement ; récapitulatif, inscription (liste d'attente),
+// réservation, désistement et suivi (citoyen connecté).
 Route::controller(BoutiquesController::class)->prefix('boutiques')->name('boutiques')->group(function () {
     Route::get('/', 'index');
     Route::get('/reglement', 'reglement')->name('.reglement');
@@ -92,6 +93,8 @@ Route::controller(BoutiquesController::class)->prefix('boutiques')->name('boutiq
         // Tentatives limitées par utilisateur (5 par minute) sur l'action de réservation.
         Route::post('/plan/{code}/reserver', 'reserver')->middleware('throttle:5,1')->name('.reserver');
         Route::get('/reservations/{reference}', 'suivi')->name('.suivi');
+        // Désistement d'une inscription (liste d'attente) ou de la boutique dont le citoyen est attributaire.
+        Route::post('/inscriptions/{inscription}/desister', 'desister')->whereNumber('inscription')->middleware('throttle:10,1')->name('.desister');
     });
 });
 

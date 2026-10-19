@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Compte;
 
 use App\Enums\DocumentAccepte;
 use App\Enums\Role;
+use App\Enums\StatutInscriptionBoutique;
 use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
 use App\Http\Controllers\Controller;
 use App\Models\Acceptation;
+use App\Models\InscriptionBoutique;
 use App\Models\LigneRegistre;
 use App\Models\ManifestationInteret;
 use App\Models\ReservationBoutique;
@@ -85,6 +87,11 @@ class EspaceController extends Controller
                 ->unique(fn (Acceptation $a) => $a->souscription->tranche_id.'-'.$a->version_document),
             'attestations' => $user->lignesRegistre()->with('tranche')->orderByDesc('date_inscription')->get(),
             'candidatures' => $candidatures,
+            // Listes d'attente : inscriptions en attente (rang), et inscription retenue de chaque réservation (désistement).
+            'inscriptions' => $onglet === 'boutiques' ? InscriptionBoutique::query()->where('user_id', $user->id)
+                ->where('statut', StatutInscriptionBoutique::EnAttente)->with(['boutique.type', 'campagne'])->latest('id')->get() : collect(),
+            'retenues' => InscriptionBoutique::query()->where('user_id', $user->id)->where('statut', StatutInscriptionBoutique::Retenue)
+                ->pluck('id', 'reservation_boutique_id'),
             // RAAGA Invest : manifestations d'intérêt du citoyen (simulations non engageantes, aucun paiement).
             'interets' => $actions ? ManifestationInteret::query()->where('user_id', $user->id)->latest('id')->get() : collect(),
         ]);

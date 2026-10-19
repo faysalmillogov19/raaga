@@ -1,15 +1,20 @@
 {{--
     Récapitulatif d'une boutique (code, site, niveau, bloc ou zone, type et sa description, surface, observations, loyer
-    mensuel, caution, avance, total à payer) et confirmation de la réservation :
-    pièce d'identité (CNIB, CIB-AES ou passeport) d'une personne physique, ou IFU d'une personne morale (RCCM facultatif), numéro, trois engagements. La boutique est alors
-    pré-réservée au nom du citoyen pour le délai de paiement de la caution.
+    mensuel, caution, avance, total à payer), nombre de personnes déjà inscrites, puis inscription : pièce d'identité
+    (CNIB, CIB-AES ou passeport) d'une personne physique, ou IFU d'une personne morale (RCCM facultatif), numéro, trois
+    engagements ; la pièce n'est demandée qu'à la première inscription de la campagne. Boutique libre : elle est
+    pré-réservée au nom du citoyen pour le délai de paiement de la caution ; sinon, il prend son rang sur la liste d'attente.
 --}}
 @php
     $b = __('public.boutiques');
     $r = $b['reservation'];
     $titre = __('public.boutiques.reservation.titre', ['code' => $boutique->code]);
-    $disponible = $boutique->statut->reservable();
+    $a = $b['attente'];
+    $libre = $boutique->statut->reservable();
+    $inscriptible = \App\Services\Boutiques\ListesAttente::ouverteAuxInscriptions($boutique);
     $limiteAtteinte = $limites['restants'] !== null && ($limites['restants'][$boutique->type_boutique_id] ?? 0) === 0;
+    // Retenue tout de suite : boutique libre et citoyen sous la limite de ce type ; sinon, liste d'attente.
+    $immediate = $libre && ! $limiteAtteinte;
     // Thème « nuit » : page en fond sombre, récapitulatif en fiche blanche.
     $nuit = \App\Support\ThemePublic::nuit();
 @endphp
@@ -55,18 +60,40 @@
             @endif
         </section>
 
+        {{-- Liste d'attente : nombre de personnes déjà inscrites (attributaire compris), jamais leur identité. --}}
+        <p class="mt-4 font-semibold text-encre" data-interesses="{{ $interesses }}">{{ trans_choice('public.boutiques.attente.interesses', $interesses, ['n' => format_nombre($interesses)]) }}</p>
+
         @if (! $ouverte)
             <x-public.alerte variante="info" class="mt-6">{{ $r['fermee'] }}</x-public.alerte>
-        @elseif (! $disponible)
+        @elseif ($inscription)
+            <x-public.alerte variante="info" class="mt-6" data-inscription="{{ $inscription->statut->value }}"
+                             :titre="$inscription->reservation ? $a['deja_retenu'] : $a['deja_inscrit']">
+                @if ($inscription->reservation)
+                    <a href="{{ route('boutiques.suivi', $inscription->reservation->reference) }}" class="font-semibold">{{ $r['suivi_titre'] }}</a>
+                @else
+                    {{ __('public.boutiques.attente.rang', ['rang' => $inscription->rang()]) }}
+                    <a href="{{ route('espace', ['onglet' => 'boutiques']) }}" class="font-semibold">{{ $a['voir_espace'] }}</a>
+                @endif
+            </x-public.alerte>
+        @elseif (! $inscriptible)
             <x-public.alerte variante="attention" class="mt-6" data-indisponible>{{ $r['indisponible'] }}</x-public.alerte>
-        @elseif ($limiteAtteinte)
-            <x-public.alerte variante="attention" class="mt-6" data-limite-atteinte :titre="$b['limites']['atteinte']">{{ __('public.boutiques.limites.atteinte_detail', ['n' => $campagne->limitePour($boutique->type_boutique_id), 'type' => $boutique->type?->code ?? $boutique->type?->libelle, 'restants' => $limites['resume']]) }}</x-public.alerte>
         @elseif (! $tarif)
             <x-public.alerte variante="attention" class="mt-6">{{ $r['sans_tarif'] }}</x-public.alerte>
         @else
+            @if (! $immediate)
+                <x-public.alerte variante="attention" class="mt-6" :data-limite-atteinte="$limiteAtteinte && $libre ? '' : null" data-liste-attente>
+                    {{ $libre ? $a['limite'] : $a['occupee'] }}
+                </x-public.alerte>
+            @else
+                <p class="mt-4 texte-carte" data-boutique-libre>{{ $a['libre'] }}</p>
+            @endif
             <form method="POST" action="{{ route('boutiques.reserver', $boutique->code) }}" enctype="multipart/form-data" class="carte mt-6 p-5" novalidate
-                  x-data="{ piece: @js(old('type_piece', $pieces[0]->value)) }" data-formulaire-reservation>
+                  x-data="{ piece: @js(old('type_piece', $pieceFournie?->type_piece ?? $pieces[0]->value)) }" data-formulaire-reservation>
                 @csrf
+                @if ($pieceFournie)
+                    {{-- Pièce déjà fournie dans la campagne : reprise pour cette inscription. --}}
+                    <p class="font-semibold text-encre" data-piece-fournie>{{ __('public.boutiques.attente.piece_fournie', ['type' => $r['types'][$pieceFournie->type_piece] ?? $pieceFournie->type_piece]) }}</p>
+                @else
                 <fieldset>
                     <legend class="text-lg font-bold text-encre"><x-requis /> {{ $r['piece_titre'] }}</legend>
                     <p class="texte-carte">{{ $r['piece_aide'] }}</p>
@@ -95,6 +122,7 @@
                            class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
                     <x-public.erreur :messages="$errors->get('rccm')" />
                 </div>
+                @endif
 
                 <fieldset class="mt-6">
                     <legend class="font-bold text-encre"><x-requis /> {{ $r['engagements'] }}</legend>
@@ -108,8 +136,10 @@
                     <x-public.erreur :messages="$errors->get('engagements')" />
                 </fieldset>
 
-                <p class="mt-5 font-semibold text-encre">{{ __('public.boutiques.reservation.delai', ['delai' => $campagne->libelleDelaiPaiement()]) }}</p>
-                <button type="submit" class="btn-primaire mt-4 w-full sm:w-auto">{{ $r['confirmer'] }}</button>
+                @if ($immediate)
+                    <p class="mt-5 font-semibold text-encre">{{ __('public.boutiques.reservation.delai', ['delai' => $campagne->libelleDelaiPaiement()]) }}</p>
+                @endif
+                <button type="submit" class="btn-primaire mt-4 w-full sm:w-auto">{{ $immediate ? $a['bouton_reserver'] : $a['bouton_inscrire'] }}</button>
             </form>
         @endif
     </div>

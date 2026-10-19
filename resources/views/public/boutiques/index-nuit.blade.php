@@ -101,7 +101,9 @@
 
                 return [$boutique->code => [...ReservationsBoutiques::detail($boutique), 'statut' => $p['statuts'][$statut],
                     'limite' => $limiteAtteinte && $statut === 'disponible' ? $b['limites']['atteinte'] : null,
-                    'lien' => $statut === 'disponible' && $ouverte && ! $limiteAtteinte ? route('boutiques.boutique', $boutique->code) : null]];
+                    // Libre, pré-réservée ou réservée : on peut s'y inscrire (réservation ou liste d'attente).
+                    'lien' => in_array($statut, ['disponible', 'pre_reservee', 'reservee'], true) && $ouverte ? route('boutiques.boutique', $boutique->code) : null,
+                    'action' => $statut === 'disponible' ? $p['detail']['reserver'] : $p['detail']['inscrire']]];
             });
             $premier = $plan->first(fn ($bt) => $bt->statut->surPlan() === 'disponible') ?? $plan->first();
         @endphp
@@ -166,7 +168,7 @@
                                     @if ($detail['lien'])
                                         <a href="{{ $detail['lien'] }}" class="nuit-case nuit-plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                            :class="d && d.code === @js($boutique->code) ? 'est-choisie' : ''"
-                                           aria-label="{{ __('public.boutiques.plan.choisir', ['code' => $boutique->code]) }}" @mouseenter="d = @js($detail)" @focus="d = @js($detail)">{{ $boutique->numero }}</a>
+                                           aria-label="{{ __('public.boutiques.plan.choisir', ['code' => $boutique->code]) }}" @mouseenter="d = @js($detail)" @focus="d = @js($detail)">@isset($icones[$statut])<x-icon :name="$icones[$statut]" class="nuit-case-icone" />@endisset{{ $boutique->numero }}@if ($detail['limite'])<span class="sr-only" data-limite-atteinte>{{ $detail['limite'] }}</span><span class="nuit-case-limite" aria-hidden="true">!</span>@endif</a>
                                     @else
                                         <button type="button" class="nuit-case nuit-plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                                 :class="d && d.code === @js($boutique->code) ? 'est-choisie' : ''"
@@ -206,7 +208,7 @@
                                     </div>
                                 </template>
                                 <p class="nuit-fiche-limite" x-show="d.limite" x-text="d.limite" role="status"></p>
-                                <a x-show="d.lien" :href="d.lien" class="nuit-pilule nuit-pilule-plein">{{ $p['detail']['reserver'] }}</a>
+                                <a x-show="d.lien" :href="d.lien" class="nuit-pilule nuit-pilule-plein" x-text="d.action">{{ $p['detail']['reserver'] }}</a>
                             </div>
                         </template>
                     </aside>

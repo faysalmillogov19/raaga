@@ -122,14 +122,16 @@
                                 $limiteAtteinte = $limites['restants'] !== null && ($limites['restants'][$boutique->type_boutique_id] ?? 0) === 0;
                                 $detail = [...\App\Services\Boutiques\ReservationsBoutiques::detail($boutique), 'statut' => $p['statuts'][$statut],
                                     'limite' => $limiteAtteinte && $statut === 'disponible' ? $b['limites']['atteinte'] : null,
-                                    'lien' => $statut === 'disponible' && $ouverte && ! $limiteAtteinte ? route('boutiques.boutique', $boutique->code) : null];
+                                    // Libre, pré-réservée ou réservée : on peut s'y inscrire (réservation ou liste d'attente).
+                                    'lien' => in_array($statut, ['disponible', 'pre_reservee', 'reservee'], true) && $ouverte ? route('boutiques.boutique', $boutique->code) : null,
+                                    'action' => $statut === 'disponible' ? $p['detail']['reserver'] : $p['detail']['inscrire']];
                                 $survol = $boutique->code.' · '.$boutique->type?->libelle.($boutique->surface ? ' · '.format_nombre((float) $boutique->surface, 1).' m²' : '');
                             @endphp
                             <li>
                                 @if ($detail['lien'])
                                     <a href="{{ $detail['lien'] }}" class="plan-case plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                        aria-label="{{ __('public.boutiques.plan.choisir', ['code' => $boutique->code]) }}" @mouseenter="d = @js($detail)" @focus="d = @js($detail)">
-                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut])
+                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut, 'limite' => $detail['limite']])
                                     </a>
                                 @else
                                     <button type="button" class="plan-case plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
@@ -163,7 +165,7 @@
                                     <dt class="font-semibold text-encre">{{ $p['detail']['total'] }}</dt><dd class="font-bold text-vert-fonce" x-text="d.montants?.total"></dd>
                                 </dl>
                                 <p class="plan-limite mt-3" x-show="d.limite" x-text="d.limite" role="status"></p>
-                                <a x-show="d.lien" :href="d.lien" class="btn-primaire mt-3">{{ $p['detail']['reserver'] }}</a>
+                                <a x-show="d.lien" :href="d.lien" class="btn-primaire mt-3" x-text="d.action">{{ $p['detail']['reserver'] }}</a>
                             </div>
                         </template>
                     </section>

@@ -5,11 +5,13 @@ namespace Tests\Feature\Compte;
 use App\Enums\Role;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutCampagneBoutiques;
+use App\Enums\StatutInscriptionBoutique;
 use App\Enums\StatutKyc;
 use App\Enums\StatutPaiement;
 use App\Enums\StatutReservationBoutique;
 use App\Models\BoutiqueStatut;
 use App\Models\CampagneBoutiques;
+use App\Models\InscriptionBoutique;
 use App\Models\MoyenPaiement;
 use App\Models\Paiement;
 use App\Models\Remboursement;
@@ -81,10 +83,10 @@ class ReservationBoutiquesTest extends TestCase
         $this->assertSame(StatutBoutique::PreReservee, $boutique->fresh()->statut);
         $this->assertSame(1, $citoyen->kycDocuments()->count());
 
-        // Pré-réservée à son nom avec compte à rebours ; le plan la montre pré-réservée, sans lien.
+        // Pré-réservée à son nom avec compte à rebours ; le plan la montre pré-réservée, toujours liée (liste d'attente).
         $this->actingAs($citoyen)->get(route('boutiques.reservation.show', $r->reference))->assertOk()->assertSee('data-compte-rebours', false);
         $this->get(route('boutiques', ['niveau' => 'RC', 'bloc' => 'B']))->assertSee('data-statut="pre_reservee"', false)
-            ->assertDontSee('href="'.route('boutiques.boutique', $boutique->code).'"', false);
+            ->assertSee('href="'.route('boutiques.boutique', $boutique->code).'"', false);
     }
 
     public function test_reservation_simultanee_un_seul_gagnant(): void
@@ -94,11 +96,11 @@ class ReservationBoutiquesTest extends TestCase
         Boutiques::reserver($this, $premier, $boutique, 'B0000001')->assertSessionHasNoErrors();
 
         // Une requête concurrente a lu la boutique « disponible » avant l'enregistrement du premier : l'index unique
-        // partiel refuse la seconde réservation active, la boutique reste au premier.
+        // partiel refuse la seconde réservation active, la boutique reste au premier ; le second est inscrit en attente.
         $boutique->forceFill(['statut' => StatutBoutique::Disponible])->save();
-        Boutiques::reserver($this, $second, $boutique, 'B0000002')
-            ->assertSessionHasErrors(['boutique' => __('public.boutiques.erreurs.deja_prise')]);
+        Boutiques::reserver($this, $second, $boutique, 'B0000002')->assertSessionHasNoErrors();
         $this->assertSame([$premier->id], ReservationBoutique::query()->whereIn('statut', StatutReservationBoutique::actifs())->pluck('user_id')->all());
+        $this->assertSame(StatutInscriptionBoutique::EnAttente, InscriptionBoutique::query()->where('user_id', $second->id)->sole()->statut);
 
         // Garantie de la base elle-même, hors de toute logique applicative.
         $this->expectException(UniqueConstraintViolationException::class);
@@ -111,15 +113,17 @@ class ReservationBoutiquesTest extends TestCase
         $citoyen = $this->citoyen();
         Boutiques::reserver($this, $citoyen, Boutiques::boutique('A', 1), 'B 123-4567')->assertSessionHasNoErrors();
 
-        // Même compte : refusé (une boutique par personne par défaut).
-        Boutiques::reserver($this, $citoyen, Boutiques::boutique('A', 2), 'X9999999')
-            ->assertSessionHasErrors(['boutique' => __('public.boutiques.erreurs.limite_type', ['n' => 1, 'type' => 'Petite boutique'])]);
+        // Même compte : pas retenu (une boutique par personne par défaut), seulement inscrit sur la liste d'attente.
+        Boutiques::reserver($this, $citoyen, Boutiques::boutique('A', 2), 'X9999999')->assertSessionHasNoErrors();
+        $this->assertSame(1, ReservationBoutique::count());
 
-        // Autre compte, même pièce (casse et séparateurs ignorés) : refusé aussi.
-        Boutiques::reserver($this, $this->citoyen(), Boutiques::boutique('A', 2), 'b1234567')
-            ->assertSessionHasErrors(['boutique' => __('public.boutiques.erreurs.limite_type', ['n' => 1, 'type' => 'Petite boutique'])]);
+        // Autre compte, même pièce (casse et séparateurs ignorés) : pas retenu non plus.
+        $autre = $this->citoyen();
+        Boutiques::reserver($this, $autre, Boutiques::boutique('A', 2), 'b1234567')->assertSessionHasNoErrors();
+        $this->assertSame(1, ReservationBoutique::count());
+        $this->assertSame(2, InscriptionBoutique::query()->where('boutique_id', Boutiques::boutique('A', 2)->id)->where('statut', StatutInscriptionBoutique::EnAttente)->count());
 
-        // Autre pièce : accepté.
+        // Autre pièce : retenu (les inscrits avant lui sont déjà attributaires d'une boutique de ce type).
         Boutiques::reserver($this, $this->citoyen(), Boutiques::boutique('A', 2), 'C7654321')->assertSessionHasNoErrors();
         $this->assertSame(2, ReservationBoutique::count());
 

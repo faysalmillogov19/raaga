@@ -31,7 +31,7 @@ class CautionsRembourserController extends Controller
     /** @return Builder<Remboursement> annulations faute d'avance en attente de retenue */
     public static function requete(): Builder
     {
-        return Remboursement::query()->where('origine', Remboursement::ANNULATION_AVANCE)->where('statut', Remboursement::EN_ATTENTE_RETENUE);
+        return Remboursement::query()->whereIn('origine', Remboursement::ORIGINES_RETENUE)->where('statut', Remboursement::EN_ATTENTE_RETENUE);
     }
 
     public function index(Request $request): Response|StreamedResponse|View

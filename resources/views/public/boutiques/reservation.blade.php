@@ -8,7 +8,11 @@
         StatutReservationBoutique::Reservee => $r['reservee'],
         StatutReservationBoutique::Attribuee => $r['attribuee'],
         StatutReservationBoutique::Expiree => $r['expiree'],
-        StatutReservationBoutique::Annulee => $c->annulation_motif === \App\Models\ReservationBoutique::ANNULATION_AVANCE ? $r['annulee_avance'] : $r['annulee'],
+        StatutReservationBoutique::Annulee => match ($c->annulation_motif) {
+            \App\Models\ReservationBoutique::ANNULATION_AVANCE => $r['annulee_avance'],
+            \App\Models\ReservationBoutique::ANNULATION_DESISTEMENT => $r['annulee_desistement'],
+            default => $r['annulee'],
+        },
         default => null,
     };
     // Thème « nuit » : frise du parcours (étapes de « Comment ça marche »), selon le statut de la réservation.

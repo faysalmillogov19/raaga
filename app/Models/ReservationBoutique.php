@@ -142,6 +142,9 @@ class ReservationBoutique extends Model implements Payable
     /** Motif d'annulation : avance non payée dans le délai (annulation automatique à la date limite). */
     public const ANNULATION_AVANCE = 'AVANCE_NON_PAYEE';
 
+    /** Motif d'annulation : désistement du citoyen (la boutique passe au suivant de sa liste d'attente). */
+    public const ANNULATION_DESISTEMENT = 'DESISTEMENT';
+
     /** Avance attendue et date limite dépassée, sans preuve en contrôle : la réservation est à annuler. */
     public function avanceEchue(): bool
     {
@@ -168,6 +171,7 @@ class ReservationBoutique extends Model implements Payable
     {
         return match (true) {
             $this->statut === StatutReservationBoutique::Annulee && $this->annulation_motif === self::ANNULATION_AVANCE => __('public.boutiques.statuts.annulee_avance'),
+            $this->statut === StatutReservationBoutique::Annulee && $this->annulation_motif === self::ANNULATION_DESISTEMENT => __('public.boutiques.statuts.annulee_desistement'),
             $this->statut === StatutReservationBoutique::Reservee && $this->avance_payee_le !== null => __('public.boutiques.statuts.avance_payee'),
             default => $this->statut->label(),
         };

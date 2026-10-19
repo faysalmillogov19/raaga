@@ -82,6 +82,8 @@ class AvancesBoutiques
 
         if ($annulee) {
             $annulee->user->notify(new AvanceBoutiqueCitoyen($annulee, 'annulee_auto'));
+            // Boutique libérée : le suivant de sa liste d'attente est retenu.
+            app(ListesAttente::class)->apresLiberation($annulee);
         }
 
         return $annulee !== null;
@@ -92,7 +94,7 @@ class AvancesBoutiques
     {
         return DB::transaction(function () use ($remboursement, $retenuePct, $motif, $regulateur) {
             $rb = Remboursement::query()->lockForUpdate()->findOrFail($remboursement->id);
-            if ($rb->statut !== Remboursement::EN_ATTENTE_RETENUE || $rb->origine !== Remboursement::ANNULATION_AVANCE) {
+            if ($rb->statut !== Remboursement::EN_ATTENTE_RETENUE || ! in_array($rb->origine, Remboursement::ORIGINES_RETENUE, true)) {
                 throw ValidationException::withMessages(['retenue_pct' => __('admin.avances.erreurs.pas_en_attente')]);
             }
             if (DecisionAvance::query()->where('remboursement_id', $rb->id)->where('statut', DecisionAvance::PROPOSEE)->exists()) {

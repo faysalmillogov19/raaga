@@ -38,6 +38,12 @@ class Remboursement extends Model
     /** Réservation annulée faute d'avance (décision confirmée) : caution remboursée moins la retenue. */
     public const ANNULATION_AVANCE = 'ANNULATION_AVANCE';
 
+    /** Désistement du citoyen attributaire : caution remboursée moins la retenue décidée ; avance remboursée en entier. */
+    public const DESISTEMENT = 'DESISTEMENT';
+
+    /** Origines dont la caution attend une décision de retenue (RÉGULATEUR propose, VALIDATEUR décide). */
+    public const ORIGINES_RETENUE = [self::ANNULATION_AVANCE, self::DESISTEMENT];
+
     protected function casts(): array
     {
         return ['montant' => 'integer', 'retenue_pct' => 'integer', 'propose_le' => 'datetime', 'valide_le' => 'datetime'];

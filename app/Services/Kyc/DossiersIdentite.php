@@ -3,11 +3,13 @@
 namespace App\Services\Kyc;
 
 use App\Enums\StatutDocumentKyc;
+use App\Enums\StatutInscriptionBoutique;
 use App\Enums\StatutKyc;
 use App\Enums\StatutPaiement;
 use App\Enums\StatutReservationBoutique;
 use App\Enums\StatutSouscription;
 use App\Models\Boutique;
+use App\Models\InscriptionBoutique;
 use App\Models\KycDocument;
 use App\Models\Remboursement;
 use App\Models\ReservationBoutique;
@@ -16,6 +18,7 @@ use App\Models\User;
 use App\Models\VerificationKyc;
 use App\Notifications\AnnulationIdentite;
 use App\Services\Audit\Journal;
+use App\Services\Boutiques\ListesAttente;
 use App\Services\Paiement\Remboursements;
 use App\Services\Validation\NotificationDecision;
 use Illuminate\Support\Facades\DB;
@@ -156,6 +159,13 @@ class DossiersIdentite
             $c->forceFill(['statut' => StatutReservationBoutique::Annulee])->save();
             $bilan['candidatures'][] = $c->reference;
         }
+
+        // Listes d'attente : toutes ses inscriptions sont closes ; chaque boutique libérée passe au suivant de sa liste.
+        $campagnes = InscriptionBoutique::query()->where('user_id', $citoyen->id)->whereIn('statut', StatutInscriptionBoutique::actives())->distinct()->pluck('campagne_boutiques_id')
+            ->merge($candidatures->pluck('campagne_boutiques_id'))->unique()->filter()->values();
+        InscriptionBoutique::query()->where('user_id', $citoyen->id)->whereIn('statut', StatutInscriptionBoutique::actives())
+            ->update(['statut' => StatutInscriptionBoutique::Annulee->value, 'close_le' => now(), 'motif_cloture' => 'annulation_identite', 'updated_at' => now()]);
+        DB::afterCommit(fn () => $campagnes->each(fn ($id) => app(ListesAttente::class)->reevaluer((int) $id)));
 
         return $bilan;
     }

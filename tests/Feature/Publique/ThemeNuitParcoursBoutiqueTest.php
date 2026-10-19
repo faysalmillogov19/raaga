@@ -59,7 +59,8 @@ class ThemeNuitParcoursBoutiqueTest extends TestCase
         Boutiques::reserver($this, $citoyen, Boutiques::boutique('A'))->assertSessionHasNoErrors();
 
         $this->actingAs($citoyen)->get(route('boutiques.boutique', Boutiques::boutique('A', 2)->code))->assertOk()
-            ->assertSee('nuit-page', false)->assertSee('data-limite-atteinte', false)->assertDontSee('data-formulaire-reservation', false);
+            ->assertSee('nuit-page', false)->assertSee('data-limite-atteinte', false)->assertSee('data-formulaire-reservation', false)
+            ->assertSee(__('public.boutiques.attente.bouton_inscrire'));
     }
 
     public function test_caution_compte_a_rebours_choix_et_paiement_manuel(): void

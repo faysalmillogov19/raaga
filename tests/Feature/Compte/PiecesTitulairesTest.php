@@ -160,11 +160,11 @@ class PiecesTitulairesTest extends TestCase
     public function test_limite_de_reservation_sur_le_numero_de_piece_ou_sur_l_ifu(): void
     {
         $campagne = Boutiques::campagneOuverte();
-        $limite = ['boutique' => __('public.boutiques.erreurs.limite_type', ['n' => 1, 'type' => 'Petite boutique'])];
-
-        // Personne physique : numéro de pièce (CIB-AES acceptée) ; même pièce sur un autre compte refusée.
+        // Personne physique : numéro de pièce (CIB-AES acceptée) ; même pièce sur un autre compte : pas retenue (liste d'attente).
         Boutiques::reserver($this, $this->citoyen(), Boutiques::boutique('A', 1), 'AES 001', 'CIB_AES')->assertSessionHasNoErrors();
-        Boutiques::reserver($this, $this->citoyen(), Boutiques::boutique('A', 2), 'aes-001', 'CIB_AES')->assertSessionHasErrors($limite);
+        $meme = $this->citoyen();
+        Boutiques::reserver($this, $meme, Boutiques::boutique('A', 2), 'aes-001', 'CIB_AES')->assertSessionHasNoErrors();
+        $this->assertSame(0, ReservationBoutique::query()->where('user_id', $meme->id)->count());
         // Une personne physique ne réserve pas avec un IFU.
         Boutiques::reserver($this, $this->citoyen(), Boutiques::boutique('A', 2), '00012345X', 'IFU')->assertSessionHasErrors('type_piece');
 
@@ -176,7 +176,9 @@ class PiecesTitulairesTest extends TestCase
         Boutiques::reserver($this, $morale, Boutiques::boutique('A', 2), '0001-2345 X', 'IFU')->assertSessionHasNoErrors();
         $this->assertSame('00012345X', $morale->fresh()->ifu);
         $this->assertSame(['type_piece' => 'IFU', 'numero_piece' => '00012345X'], ReservationBoutique::query()->where('user_id', $morale->id)->sole()->only(['type_piece', 'numero_piece']));
-        Boutiques::reserver($this, $this->citoyen(TypeTitulaire::Morale), Boutiques::boutique('A', 3), '00012345x', 'IFU')->assertSessionHasErrors($limite);
+        $memeIfu = $this->citoyen(TypeTitulaire::Morale);
+        Boutiques::reserver($this, $memeIfu, Boutiques::boutique('A', 3), '00012345x', 'IFU')->assertSessionHasNoErrors();
+        $this->assertSame(0, ReservationBoutique::query()->where('user_id', $memeIfu->id)->count());
         Boutiques::reserver($this, $this->citoyen(TypeTitulaire::Morale), Boutiques::boutique('A', 3), '00099999Z', 'IFU')->assertSessionHasNoErrors();
         $this->assertSame(3, ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)->count());
     }

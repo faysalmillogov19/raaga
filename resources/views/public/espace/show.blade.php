@@ -178,13 +178,40 @@
                                 @endforeach
                             </dl>
                             <a href="{{ route('boutiques.suivi', $c->reference) }}" class="btn-secondaire mt-3">{{ __('public.espace.voir_candidature') }}</a>
+                            {{-- Désistement d'une boutique pas encore attribuée : elle passe au suivant de sa liste d'attente. --}}
+                            @if (in_array($c->statut, [\App\Enums\StatutReservationBoutique::PreReservee, \App\Enums\StatutReservationBoutique::Reservee], true) && isset($retenues[$c->id]))
+                                @include('public.espace._desistement', ['inscriptionId' => $retenues[$c->id], 'texte' => __('public.boutiques.attente.desister_reservation', ['code' => (string) $c->boutique?->code])])
+                            @endif
                         </li>
                         @if ($loop->last)</ul>@endif
                     @empty
-                        <x-etat-vide icone="boutiques" :titre="__('public.espace.vides.boutiques_titre')" :lien="route('boutiques')" :libelle-lien="__('public.boutiques.titre')">
-                            {{ __('public.espace.vides.boutiques') }}
-                        </x-etat-vide>
+                        @if ($inscriptions->isEmpty())
+                            <x-etat-vide icone="boutiques" :titre="__('public.espace.vides.boutiques_titre')" :lien="route('boutiques')" :libelle-lien="__('public.boutiques.titre')">
+                                {{ __('public.espace.vides.boutiques') }}
+                            </x-etat-vide>
+                        @endif
                     @endforelse
+
+                    {{-- Listes d'attente : rang de chaque inscription, dans l'ordre d'arrivée ; désistement possible. --}}
+                    @if ($inscriptions->isNotEmpty())
+                        <h3 class="mt-8 !text-[1.15rem]">{{ __('public.boutiques.attente.mes_inscriptions') }}</h3>
+                        <ul class="mt-3 space-y-3" data-inscriptions>
+                            @foreach ($inscriptions as $i)
+                                <li class="carte p-4 tab:p-5" data-inscription="{{ $i->boutique?->code }}">
+                                    <div class="flex flex-wrap items-start justify-between gap-2">
+                                        <p class="whitespace-nowrap font-extrabold text-vert-fonce">{{ $i->boutique?->code }}</p>
+                                        <span class="rounded-full bg-jaune-pale px-3 py-1 text-sm font-bold text-encre">{{ $i->statut->label() }}</span>
+                                    </div>
+                                    <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.95rem] tab:grid-cols-3">
+                                        <div><dt class="text-sm text-gris">{{ __('public.boutiques.attente.colonnes.campagne') }}</dt><dd class="font-semibold">{{ $i->campagne?->nom }}</dd></div>
+                                        <div><dt class="text-sm text-gris">{{ __('public.boutiques.attente.colonnes.date') }}</dt><dd class="font-semibold">{{ $i->inscrite_le?->format('d/m/Y H:i') }}</dd></div>
+                                        <div><dt class="text-sm text-gris">{{ __('public.boutiques.attente.colonnes.rang') }}</dt><dd class="font-extrabold text-encre" data-rang>{{ $i->rang() }}</dd></div>
+                                    </dl>
+                                    @include('public.espace._desistement', ['inscriptionId' => $i->id, 'texte' => __('public.boutiques.attente.desister_attente', ['code' => (string) $i->boutique?->code])])
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
                     @break
 
                 @case('profil')

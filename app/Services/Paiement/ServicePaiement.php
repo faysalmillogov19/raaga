@@ -14,6 +14,7 @@ use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Models\User;
 use App\Services\Audit\Journal;
+use App\Services\Boutiques\ListesAttente;
 use App\Services\Sms\EnvoiSms;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -181,6 +182,18 @@ class ServicePaiement
 
     /** @param class-string<Model&Payable> $classe */
     private function expirerUn(string $classe, int $id, \BackedEnum $reservee, \BackedEnum $expiree, string $action): bool
+    {
+        $expire = $this->expirerDansTransaction($classe, $id, $reservee, $expiree, $action);
+        // Pré-réservation expirée : la boutique passe au suivant de sa liste d'attente.
+        if ($expire && $classe === ReservationBoutique::class) {
+            app(ListesAttente::class)->apresLiberation(ReservationBoutique::query()->findOrFail($id));
+        }
+
+        return $expire;
+    }
+
+    /** @param class-string<Model&Payable> $classe */
+    private function expirerDansTransaction(string $classe, int $id, \BackedEnum $reservee, \BackedEnum $expiree, string $action): bool
     {
         return DB::transaction(function () use ($classe, $id, $reservee, $expiree, $action) {
             $objet = $classe::query()->lockForUpdate()->find($id);

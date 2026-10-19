@@ -77,23 +77,25 @@ class LimitesParTypeTest extends TestCase
         return collect($codes)->map(fn ($c) => $this->types[$c]->libelle.' ('.$n.')')->implode(', ');
     }
 
-    public function test_un_de_chaque_type_accepte_et_deuxieme_du_meme_type_refuse(): void
+    public function test_un_de_chaque_type_retenu_et_deuxieme_du_meme_type_en_liste_d_attente(): void
     {
         $citoyen = $this->citoyen();
         $this->plan($citoyen)->assertSee('Vous pouvez encore réserver : '.$this->enClair(['PV', 'PP', 'PF']).'.');
 
         Boutiques::reserver($this, $citoyen, $this->boutique(1))->assertSessionHasNoErrors();
         $plan = $this->plan($citoyen)->assertSee('Vous pouvez encore réserver : '.$this->enClair(['PP', 'PF']).'.');
-        // PV : visibles, plus réservables pour lui ; PP et PF : toujours liés au récapitulatif.
+        // PV : limite atteinte signalée, mais toujours liés au récapitulatif (inscription en liste d'attente seulement).
         $html = $plan->getContent();
-        $this->assertStringContainsString('data-limite-atteinte', $html);
-        $this->assertStringNotContainsString('href="'.route('boutiques.boutique', 'RAA-RC-BP-002').'"', $html);
+        $this->assertStringContainsString('Limite atteinte pour ce type', $html);
+        $this->assertStringContainsString('href="'.route('boutiques.boutique', 'RAA-RC-BP-002').'"', $html);
         $this->assertStringContainsString('href="'.route('boutiques.boutique', 'RAA-RC-BP-004').'"', $html);
         $this->actingAs($citoyen)->get(route('boutiques.boutique', 'RAA-RC-BP-002'))->assertOk()
-            ->assertSee('Limite atteinte pour ce type')->assertDontSee('data-formulaire-reservation', false);
+            ->assertSee('data-limite-atteinte', false)->assertSee('data-formulaire-reservation', false)
+            ->assertSee(__('public.boutiques.attente.bouton_inscrire'));
 
-        Boutiques::reserver($this, $citoyen, $this->boutique(2))
-            ->assertSessionHasErrors(['boutique' => __('public.boutiques.erreurs.limite_type', ['n' => 1, 'type' => 'PV'])]);
+        // Deuxième PV : pas retenu, inscrit en liste d'attente (la boutique reste libre pour les autres).
+        Boutiques::reserver($this, $citoyen, $this->boutique(2))->assertSessionHasNoErrors()->assertRedirect(route('espace', ['onglet' => 'boutiques']));
+        $this->assertSame(StatutBoutique::Disponible, $this->boutique(2)->statut);
         Boutiques::reserver($this, $citoyen, $this->boutique(4))->assertSessionHasNoErrors();
         Boutiques::reserver($this, $citoyen, $this->boutique(5))->assertSessionHasNoErrors();
         $this->assertSame(3, ReservationBoutique::query()->where('user_id', $citoyen->id)->count());
@@ -108,18 +110,21 @@ class LimitesParTypeTest extends TestCase
     {
         Boutiques::reserver($this, $this->citoyen(), $this->boutique(1), 'B1234567')->assertSessionHasNoErrors();
 
-        // Autre compte, même pièce (casse et séparateurs ignorés) : refusé pour le même type, accepté pour un autre type.
+        // Autre compte, même pièce (casse et séparateurs ignorés) : pas retenu pour le même type, retenu pour un autre type.
         $autre = $this->citoyen('+22670999999');
-        Boutiques::reserver($this, $autre, $this->boutique(2), 'b 123-4567')->assertSessionHasErrors('boutique');
+        Boutiques::reserver($this, $autre, $this->boutique(2), 'b 123-4567')->assertSessionHasNoErrors();
+        $this->assertSame(0, ReservationBoutique::query()->where('user_id', $autre->id)->count());
         Boutiques::reserver($this, $autre, $this->boutique(4), 'b 123-4567')->assertSessionHasNoErrors();
-        // Autre pièce : accepté.
+        $this->assertSame(1, ReservationBoutique::query()->where('user_id', $autre->id)->count());
+        // Autre pièce : retenu.
         Boutiques::reserver($this, $this->citoyen('+22670888888'), $this->boutique(2), 'C7654321')->assertSessionHasNoErrors();
+        $this->assertSame(StatutBoutique::PreReservee, $this->boutique(2)->statut);
     }
 
     public function test_deux_demandes_simultanees_du_meme_type_une_seule_acceptee(): void
     {
-        // Deux comptes, une même pièce, deux PV différents : la campagne est verrouillée pendant chaque réservation, la
-        // seconde demande compte la première et est refusée.
+        // Deux comptes, une même pièce, deux PV différents : la campagne est verrouillée pendant chaque inscription, la
+        // seconde demande compte la première et n'est pas retenue (liste d'attente seulement).
         $premier = $this->citoyen();
         $second = $this->citoyen('+22670999999');
         Boutiques::reserver($this, $premier, $this->boutique(1), 'B1234567')->assertSessionHasNoErrors();
@@ -127,7 +132,7 @@ class LimitesParTypeTest extends TestCase
         DB::listen(function ($q) use (&$requetes) {
             $requetes[] = strtolower($q->sql);
         });
-        Boutiques::reserver($this, $second, $this->boutique(2), 'B1234567')->assertSessionHasErrors('boutique');
+        Boutiques::reserver($this, $second, $this->boutique(2), 'B1234567')->assertSessionHasNoErrors();
 
         // Le comptage du type a lieu après le verrou de la campagne : une demande concurrente attend la fin de l'autre.
         $verrou = collect($requetes)->search(fn ($s) => str_contains($s, 'from "campagnes_boutiques"') && str_contains($s, 'for update'));
@@ -144,14 +149,17 @@ class LimitesParTypeTest extends TestCase
     {
         $citoyen = $this->citoyen();
         Boutiques::reserver($this, $citoyen, $this->boutique(1))->assertSessionHasNoErrors();
-        Boutiques::reserver($this, $citoyen, $this->boutique(2))->assertSessionHasErrors('boutique');
+        // Deuxième PV : liste d'attente, inscription gardée mais sautée tant qu'il garde le premier.
+        Boutiques::reserver($this, $citoyen, $this->boutique(2))->assertSessionHasNoErrors();
+        $this->assertSame(StatutBoutique::Disponible, $this->boutique(2)->statut);
 
-        // Expiration (caution non payée sous 72 heures) : la place est libérée.
+        // Expiration (caution non payée sous 72 heures) : la place est libérée, et son inscription sur le deuxième PV
+        // redevient active : il en devient l'attributaire.
         $this->travel(73)->hours();
         $this->artisan('raaga:expirer-reservations')->assertSuccessful();
         $this->assertSame(StatutReservationBoutique::Expiree, ReservationBoutique::query()->where('boutique_id', $this->boutique(1)->id)->sole()->statut);
-        $this->plan($citoyen)->assertSee('Vous pouvez encore réserver : '.$this->enClair(['PV', 'PP', 'PF']).'.');
-        Boutiques::reserver($this, $citoyen, $this->boutique(2))->assertSessionHasNoErrors();
+        $this->assertSame(StatutReservationBoutique::PreReservee, ReservationBoutique::query()->where('boutique_id', $this->boutique(2)->id)->sole()->statut);
+        $this->assertSame($citoyen->id, ReservationBoutique::query()->where('boutique_id', $this->boutique(2)->id)->sole()->user_id);
 
         // Annulation : la place est libérée aussi.
         ReservationBoutique::query()->where('boutique_id', $this->boutique(2)->id)->sole()->forceFill(['statut' => StatutReservationBoutique::Annulee])->save();

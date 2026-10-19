@@ -23,11 +23,9 @@ use App\Services\Audit\Journal;
 use App\Services\Kyc\VerificationIdentite;
 use App\Support\MemoRequete;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -40,7 +38,8 @@ use Illuminate\Validation\ValidationException;
  *    confirmation est enregistrée en premier par le serveur, et la limite par personne (compte et numéro de pièce)
  *    se contrôle dans la même transaction ;
  *  - aucune réservation avant l'ouverture ni après la fermeture (date et heure).
- * La boutique est pré-réservée au nom du citoyen pour le délai de paiement de la caution ; payée, elle est réservée.
+ * La boutique est pré-réservée au nom de son attributaire pour le délai de paiement de la caution ; payée, elle est
+ * réservée. Inscriptions et listes d'attente : ListesAttente (plusieurs boutiques par personne, suivant retenu).
  */
 class ReservationsBoutiques
 {
@@ -191,103 +190,64 @@ class ReservationsBoutiques
     }
 
     /**
-     * Pré-réservation d'une boutique disponible, avec la pièce d'identité (CNIB, CIB-AES ou passeport) d'une personne
-     * physique, ou l'IFU d'une personne morale (RCCM facultatif).
+     * Pré-réservation d'une boutique au nom de son attributaire (premier inscrit sur une boutique libre, ou suivant de
+     * la liste d'attente) : montants figés depuis la grille confirmée, caution à payer dans le délai de la campagne.
+     * À appeler dans une transaction qui verrouille la campagne et la boutique (ListesAttente).
      *
-     * @param  list<string>  $engagements  valeurs DocumentAccepte cochées
-     *
-     * @throws ValidationException
+     * @param  array{loyer_mensuel: int, caution: int, avance: int, mois_caution: int, mois_avance: int}  $tarif
      */
-    public function reserver(CampagneBoutiques $campagne, User $user, Boutique $boutique, TypeDocumentKyc $typePiece, string $numeroPiece,
-        UploadedFile $piece, ?UploadedFile $rccm, array $engagements, string $ip, string $userAgent): ReservationBoutique
+    public function preReserver(CampagneBoutiques $campagne, User $user, Boutique $boutique, ?string $typePiece, ?string $numeroPiece, array $tarif, ?User $auteur = null): ReservationBoutique
     {
-        $erreur = fn (string $cle, array $params = []) => throw ValidationException::withMessages(['boutique' => __('public.boutiques.erreurs.'.$cle, $params)]);
-        $numero = ReservationBoutique::normaliserPiece($numeroPiece);
-        if (! $user->telephone) {
-            $erreur('telephone');
+        $reservation = ReservationBoutique::create([
+            'reference' => $this->reference(), 'user_id' => $user->id, 'campagne_boutiques_id' => $campagne->id, 'boutique_id' => $boutique->id,
+            // Montants figés : un changement ultérieur de la grille ne les modifie pas.
+            'caution' => $tarif['caution'], 'avance' => $tarif['avance'], 'loyer_mensuel' => $tarif['loyer_mensuel'],
+            'mois_caution' => $tarif['mois_caution'], 'mois_avance' => $tarif['mois_avance'],
+            'type_piece' => $typePiece, 'numero_piece' => $numeroPiece,
+            'statut' => StatutReservationBoutique::PreReservee, 'expire_le' => now()->addSeconds($campagne->delaiPaiementSecondes()),
+        ]);
+        $boutique->changerStatut(StatutBoutique::PreReservee, 'pre_reservation', $reservation, $auteur ?? $user);
+
+        $this->journal->ecrire($auteur ?? $user, 'reservation_boutique.pre_reservee', 'ReservationBoutique', $reservation->id, null, [
+            'reference' => $reservation->reference, 'boutique' => $boutique->code, 'campagne' => $campagne->id, 'caution' => $tarif['caution'],
+        ]);
+
+        return $reservation;
+    }
+
+    /**
+     * Pièce d'identité versée au dossier du citoyen (vérifiée ensuite au back-office) ; numéro de pièce ou IFU retenu
+     * s'il n'est pas déjà connu ; identité « en attente » si elle n'était pas soumise ou avait été rejetée.
+     *
+     * @param  list<string>  $chemins  fichiers enregistrés (à supprimer si la transaction échoue)
+     */
+    public static function deposerPiece(User $user, TypeDocumentKyc $typePiece, string $numero, UploadedFile $piece, ?UploadedFile $rccm, array &$chemins): void
+    {
+        foreach (array_filter([[$typePiece, FaceDocument::Recto, $piece], $rccm ? [TypeDocumentKyc::Rccm, null, $rccm] : null]) as [$type, $face, $fichier]) {
+            $chemin = $fichier->storeAs('kyc/'.$user->id, Str::uuid().'.'.$fichier->extension(), VerificationIdentite::DISQUE);
+            $chemins[] = $chemin;
+            KycDocument::create([
+                'user_id' => $user->id, 'type' => $type, 'face' => $face, 'chemin_fichier' => $chemin,
+                'nom_original' => Str::limit($fichier->getClientOriginalName(), 200, ''), 'mime' => $fichier->getMimeType(),
+                'taille' => $fichier->getSize(), 'empreinte_sha256' => hash_file('sha256', $fichier->getRealPath()),
+                'statut' => StatutDocumentKyc::EnAttente, 'televerse_par' => $user->id, 'numero' => $type === $typePiece ? $numero : null,
+            ]);
         }
-        if (! in_array($typePiece, self::piecesPour($user), true) || mb_strlen($numero) < 5) {
-            throw ValidationException::withMessages(['numero_piece' => __('public.boutiques.erreurs.piece')]);
+        $user->forceFill($typePiece === TypeDocumentKyc::Ifu ? ['ifu' => $user->ifu ?? $numero] : ['numero_piece' => $user->numero_piece ?? $numero])->save();
+        if (in_array($user->statut_kyc, [null, StatutKyc::NonSoumis, StatutKyc::Rejete], true)) {
+            $user->forceFill(['statut_kyc' => StatutKyc::EnAttente])->save();
         }
-        if (array_diff(array_map(fn (DocumentAccepte $d) => $d->value, self::ENGAGEMENTS), $engagements)) {
-            throw ValidationException::withMessages(['engagements' => __('public.boutiques.erreurs.engagements')]);
-        }
+    }
 
-        $chemins = [];
-        try {
-            return DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $rccm, $ip, $userAgent, $erreur, &$chemins) {
-                // Une réservation à la fois par campagne : l'ordre d'arrivée est celui de l'enregistrement par le serveur.
-                $campagne = CampagneBoutiques::query()->lockForUpdate()->findOrFail($campagne->id);
-                if (! $campagne->accepteReservations()) {
-                    $erreur('fermee');
-                }
-                $boutique = Boutique::query()->lockForUpdate()->with('type')->findOrFail($boutique->id);
-                if (! in_array($boutique->site_id, (array) $campagne->sites) || ! in_array($boutique->type_boutique_id, (array) $campagne->types)
-                    || ! $boutique->type?->attribuable || $boutique->type->code === TypeBoutique::CODE_CHAMBRE_FROIDE) {
-                    $erreur('hors_campagne');
-                }
-                if (! $boutique->statut->reservable()) {
-                    $erreur('deja_prise');
-                }
-                $tarif = self::tarifer($boutique) ?? $erreur('sans_tarif');
-
-                // Limite par personne et par type : réservations actives de ce type dans la campagne, sur le compte et sur
-                // le numéro de pièce (personne physique) ou l'IFU (personne morale). Même transaction, campagne verrouillée : deux demandes simultanées sont traitées l'une
-                // après l'autre et ne dépassent jamais la limite.
-                $limite = $campagne->limitePour($boutique->type_boutique_id);
-                if (self::activesDuType($campagne, $boutique->type_boutique_id, $user->id, [$numero]) >= $limite) {
-                    $erreur('limite_type', ['n' => $limite, 'type' => $boutique->type->code ?? $boutique->type->libelle]);
-                }
-
-                $reservation = ReservationBoutique::create([
-                    'reference' => $this->reference(), 'user_id' => $user->id, 'campagne_boutiques_id' => $campagne->id, 'boutique_id' => $boutique->id,
-                    // Montants figés : un changement ultérieur de la grille ne les modifie pas.
-                    'caution' => $tarif['caution'], 'avance' => $tarif['avance'], 'loyer_mensuel' => $tarif['loyer_mensuel'],
-                    'mois_caution' => $tarif['mois_caution'], 'mois_avance' => $tarif['mois_avance'],
-                    'type_piece' => $typePiece->value, 'numero_piece' => $numero,
-                    'statut' => StatutReservationBoutique::PreReservee, 'expire_le' => now()->addSeconds($campagne->delaiPaiementSecondes()),
-                ]);
-                $boutique->changerStatut(StatutBoutique::PreReservee, 'pre_reservation', $reservation, $user);
-
-                foreach (self::ENGAGEMENTS as $document) {
-                    Acceptation::create([
-                        'user_id' => $user->id, 'reservation_boutique_id' => $reservation->id, 'document' => $document,
-                        'version_document' => $document === DocumentAccepte::ReglementCampagneBoutiques ? (string) $campagne->version : config('raaga.inscription.version_conditions'),
-                        'accepte_le' => now(), 'ip' => $ip, 'user_agent' => substr($userAgent, 0, 500),
-                    ]);
-                }
-
-                // Pièce jointe au dossier d'identité du citoyen : vérifiée ensuite par l'ADMIN (vérifications d'identité).
-                foreach (array_filter([[$typePiece, FaceDocument::Recto, $piece], $rccm ? [TypeDocumentKyc::Rccm, null, $rccm] : null]) as [$type, $face, $fichier]) {
-                    $chemin = $fichier->storeAs('kyc/'.$user->id, Str::uuid().'.'.$fichier->extension(), VerificationIdentite::DISQUE);
-                    $chemins[] = $chemin;
-                    KycDocument::create([
-                        'user_id' => $user->id, 'type' => $type, 'face' => $face, 'chemin_fichier' => $chemin,
-                        'nom_original' => Str::limit($fichier->getClientOriginalName(), 200, ''), 'mime' => $fichier->getMimeType(),
-                        'taille' => $fichier->getSize(), 'empreinte_sha256' => hash_file('sha256', $fichier->getRealPath()),
-                        'statut' => StatutDocumentKyc::EnAttente, 'televerse_par' => $user->id, 'numero' => $type === $typePiece ? $numero : null,
-                    ]);
-                }
-                // Identifiant contrôlé du titulaire (numéro de pièce ou IFU), s'il n'est pas déjà connu.
-                $user->forceFill($typePiece === TypeDocumentKyc::Ifu ? ['ifu' => $user->ifu ?? $numero] : ['numero_piece' => $user->numero_piece ?? $numero])->save();
-                if (in_array($user->statut_kyc, [null, StatutKyc::NonSoumis, StatutKyc::Rejete], true)) {
-                    $user->forceFill(['statut_kyc' => StatutKyc::EnAttente])->save();
-                }
-
-                $this->journal->ecrire($user, 'reservation_boutique.pre_reservee', 'ReservationBoutique', $reservation->id, null, [
-                    'reference' => $reservation->reference, 'boutique' => $boutique->code, 'campagne' => $campagne->id, 'caution' => $tarif['caution'],
-                ]);
-
-                return $reservation;
-            });
-        } catch (UniqueConstraintViolationException) {
-            // Deux confirmations simultanées sur la même boutique : l'index unique n'en garde qu'une.
-            Storage::disk(VerificationIdentite::DISQUE)->delete($chemins);
-            $erreur('deja_prise');
-        } catch (\Throwable $e) {
-            Storage::disk(VerificationIdentite::DISQUE)->delete($chemins);
-
-            throw $e;
+    /** Engagements acceptés (horodatés, append-only), rattachés à l'inscription et à la réservation éventuelle. */
+    public static function accepterEngagements(CampagneBoutiques $campagne, User $user, ?int $inscriptionId, ?int $reservationId, string $ip, string $userAgent): void
+    {
+        foreach (self::ENGAGEMENTS as $document) {
+            Acceptation::create([
+                'user_id' => $user->id, 'inscription_boutique_id' => $inscriptionId, 'reservation_boutique_id' => $reservationId, 'document' => $document,
+                'version_document' => $document === DocumentAccepte::ReglementCampagneBoutiques ? (string) $campagne->version : config('raaga.inscription.version_conditions'),
+                'accepte_le' => now(), 'ip' => $ip, 'user_agent' => substr($userAgent, 0, 500),
+            ]);
         }
     }
 
