@@ -64,6 +64,9 @@ class User extends Authenticatable
             'type_titulaire' => TypeTitulaire::class,
             'kyc_maj_demandee_le' => 'datetime',
             'piece_avertie_le' => 'datetime',
+            // Investisseur : date limite de correction d'une identité invalide, puis gel des actions (attestation et carte bloquées).
+            'kyc_actions_a_corriger_avant' => 'datetime',
+            'actions_gelees_le' => 'datetime',
             'identite_validee' => 'array',
             // Secrets chiffrés en base avec la clé de l'application.
             'totp_secret' => 'encrypted',
@@ -170,6 +173,12 @@ class User extends Authenticatable
     public function estPersonneMorale(): bool
     {
         return $this->type_titulaire === TypeTitulaire::Morale;
+    }
+
+    /** Actions gelées : identité non corrigée dans le délai (attestation et carte d'actionnaire bloquées, dividendes versés). */
+    public function actionsGelees(): bool
+    {
+        return $this->actions_gelees_le !== null;
     }
 
     public function kycValide(): bool

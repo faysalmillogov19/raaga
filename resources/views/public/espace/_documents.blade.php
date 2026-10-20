@@ -9,7 +9,11 @@
                                 <li class="carte flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div><p class="font-semibold text-encre">{{ __('public.espace.documents.attestation', ['n' => format_nombre($ligne->nb_actions)]) }}</p>
                                         <p class="texte-carte">{{ $ligne->tranche->nom }} · {{ __('public.espace.documents.certificat', ['numero' => $ligne->numero_certificat]) }} · {{ $ligne->date_inscription->format('d/m/Y') }}</p></div>
-                                    <a href="{{ route('espace.documents.attestation', $ligne->numero_certificat) }}" class="btn-secondaire" download>{{ __('public.espace.documents.telecharger') }}</a>
+                                    @if ($user->actionsGelees())
+                                        <p class="texte-carte" data-attestation-bloquee>{{ __('public.invest.identite.attestation_bloquee_court') }}</p>
+                                    @else
+                                        <a href="{{ route('espace.documents.attestation', $ligne->numero_certificat) }}" class="btn-secondaire" download>{{ __('public.espace.documents.telecharger') }}</a>
+                                    @endif
                                 </li>
                             @endforeach
                             @foreach ($recus as $r)

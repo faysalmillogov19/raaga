@@ -25,6 +25,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * Souscription en ligne d'un citoyen : calculs à partir des paramètres confirmés de la tranche ouverte
  * (prix, frais, plafond, seuils), puis réservation (statut RÉSERVÉE) avec les quatre acceptations horodatées.
+ * L'achat est possible sans identité validée : une identité invalide est signalée au souscripteur, qui doit la
+ * corriger dans le délai commun, sinon ses actions payées sont gelées (IdentitesInvestisseurs).
  */
 class PreparationSouscription
 {
@@ -135,9 +137,6 @@ class PreparationSouscription
     {
         $erreur = fn (string $champ, string $cle, array $params = []) => throw ValidationException::withMessages([$champ => __('public.souscription.erreurs.'.$cle, $params)]);
 
-        if (! $user->kycValide()) {
-            $erreur('identite', 'kyc');
-        }
         if (! $this->publicAutorise($tranche, $user)) {
             $erreur('nb_actions', 'public');
         }

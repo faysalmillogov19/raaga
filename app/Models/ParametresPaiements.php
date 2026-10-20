@@ -13,23 +13,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
- * Paramètres des paiements (une seule fiche) : trois délais, chacun en valeur + durée (SECONDE, MINUTE, HEURE, JOUR),
+ * Paramètres des paiements (une seule fiche) : quatre délais, chacun en valeur + durée (SECONDE, MINUTE, HEURE, JOUR),
  * avec sa valeur en secondes calculée et stockée. Délai de paiement de la caution (72 heures par défaut), délai de
  * complément d'un paiement incomplet (48 heures), délai pour payer l'avance à compter du passage de la boutique en
- * « réservée » (30 jours). Saisis par le RÉGULATEUR, confirmés par le VALIDATEUR (workflow commun, versions figées) ;
- * tant que rien n'est confirmé, les valeurs par défaut s'appliquent.
+ * « réservée » (30 jours), délai de correction d'une identité invalide, commun aux boutiques et aux actions
+ * (48 heures). Saisis par le RÉGULATEUR, confirmés par le VALIDATEUR (workflow commun, versions figées) ; valeurs
+ * initiales posées par ParametresPaiementsSeeder, confirmées d'office ; à défaut, les valeurs par défaut s'appliquent.
  */
 #[Table(name: 'parametres_paiements')]
 #[Fillable([
     'delai_caution_valeur', 'delai_caution_duree_id', 'delai_caution_secondes',
     'delai_complement_valeur', 'delai_complement_duree_id', 'delai_complement_secondes',
     'delai_avance_valeur', 'delai_avance_duree_id', 'delai_avance_secondes',
+    'delai_kyc_valeur', 'delai_kyc_duree_id', 'delai_kyc_secondes',
     'statut', 'version', 'soumis_par', 'soumis_le', 'valide_par', 'valide_le', 'motif_rejet',
 ])]
 class ParametresPaiements extends Model implements Parametrable
 {
     /** Délais : clé => [valeur, durée] par défaut. */
-    public const DELAIS = ['caution' => [72, 'HEURE'], 'complement' => [48, 'HEURE'], 'avance' => [30, 'JOUR']];
+    public const DELAIS = ['caution' => [72, 'HEURE'], 'complement' => [48, 'HEURE'], 'avance' => [30, 'JOUR'], 'kyc' => [48, 'HEURE']];
 
     /** Plafond d'un délai : un an. */
     public const SECONDES_MAX = 31_536_000;
@@ -38,6 +40,7 @@ class ParametresPaiements extends Model implements Parametrable
         'delai_caution_valeur', 'delai_caution_duree_id', 'delai_caution_secondes',
         'delai_complement_valeur', 'delai_complement_duree_id', 'delai_complement_secondes',
         'delai_avance_valeur', 'delai_avance_duree_id', 'delai_avance_secondes',
+        'delai_kyc_valeur', 'delai_kyc_duree_id', 'delai_kyc_secondes',
     ];
 
     protected function casts(): array

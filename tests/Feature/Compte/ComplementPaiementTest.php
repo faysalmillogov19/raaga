@@ -157,7 +157,7 @@ class ComplementPaiementTest extends TestCase
     public function test_delai_parametre_par_le_regulateur_et_confirme_par_le_validateur(): void
     {
         $this->assertSame(48 * 3_600, ParametresPaiements::delaiSecondes('complement'));
-        $this->en($this->regulateur)->put(route('admin.parametres-paiements.update'), ['delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE', 'delai_complement_valeur' => 72, 'delai_complement_duree' => 'HEURE', 'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR'])->assertSessionHas('succes');
+        $this->en($this->regulateur)->put(route('admin.parametres-paiements.update'), ['delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE', 'delai_complement_valeur' => 72, 'delai_complement_duree' => 'HEURE', 'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR', 'delai_kyc_valeur' => 48, 'delai_kyc_duree' => 'HEURE'])->assertSessionHas('succes');
         $this->en($this->regulateur)->post(route('admin.parametres-paiements.soumettre'))->assertSessionHas('succes');
         $this->assertSame(48 * 3_600, ParametresPaiements::delaiSecondes('complement'));
 

@@ -237,7 +237,7 @@ composant('souscription', (p) => ({
         return p.seuil !== null && !p.justificatifFourni && p.deja + this.montant > p.seuil;
     },
     get pret() {
-        return p.kyc && this.valide && this.coches.length === 4 && (!this.justificatifRequis || this.fichier);
+        return this.valide && this.coches.length === 4 && (!this.justificatifRequis || this.fichier);
     },
     fcfa,
     lire(valeur) {

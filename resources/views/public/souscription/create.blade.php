@@ -11,7 +11,7 @@
     $parametres = [
         'nb' => $nbInitial, 'min' => $min, 'reste' => $reste, 'prix' => $t->valeur_unitaire,
         'fraisType' => $t->frais_souscription_type->value, 'fraisValeur' => (int) $t->frais_souscription_valeur,
-        'seuil' => $t->seuil_kyc_renforce, 'deja' => $deja['montant'], 'justificatifFourni' => $justificatifFourni, 'kyc' => $kyc,
+        'seuil' => $t->seuil_kyc_renforce, 'deja' => $deja['montant'], 'justificatifFourni' => $justificatifFourni,
     ];
     $titre = __('public.souscription.titre', ['tranche' => $t->nom]);
 @endphp
@@ -22,7 +22,7 @@
     <div class="conteneur pb-48 pt-8 tab:pt-12 lg:pb-12">
         @unless ($kyc)
             <x-public.alerte variante="attention" :titre="__('public.souscription.kyc.titre')" class="mb-6">
-                {{ __('public.souscription.kyc.'.($user->statut_kyc ?? StatutKyc::NonSoumis)->value) }}
+                {{ __('public.souscription.kyc.'.($user->statut_kyc ?? StatutKyc::NonSoumis)->value, ['delai' => \App\Models\ParametresPaiements::libelleEnVigueur('kyc')]) }}
                 <a href="{{ route('espace.verification') }}" class="font-semibold">{{ __('public.souscription.kyc.lien') }}</a>
             </x-public.alerte>
         @endunless
@@ -154,9 +154,6 @@
                         <span>{{ __('public.souscription.continuer') }}</span>
                         <span>(<span x-text="coches.length">0</span>/4)</span>
                     </button>
-                    @unless ($kyc)
-                        <p class="mt-2 text-sm text-gris">{{ __('public.souscription.kyc.bouton') }}</p>
-                    @endunless
                     <p class="mt-2 hidden text-sm text-gris lg:block">{{ __('public.souscription.delai', ['delai' => $t->libelleDelaiPaiement()]) }}</p>
                 </aside>
             </form>

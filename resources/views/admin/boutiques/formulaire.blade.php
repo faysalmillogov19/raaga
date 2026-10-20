@@ -136,7 +136,7 @@
             </div>
         </section>
 
-        {{-- Listes d'attente : délai de correction de l'identité d'un attributaire, délai de relance de la liste générale. --}}
+        {{-- Listes d'attente : délai de relance de la liste générale (correction d'une identité : « Délais de paiement »). --}}
         <section class="bo-carte !mt-0" aria-labelledby="s-listes" data-delais-listes>
             <h2 id="s-listes" class="!text-[1.15rem]">{{ __('admin.boutiques.sections.listes') }}</h2>
             <div class="mt-3 grid gap-4 lg:grid-cols-2">

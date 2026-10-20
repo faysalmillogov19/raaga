@@ -35,13 +35,14 @@ class DelaisPaiementTest extends TestCase
         $this->creerActeurs();
     }
 
-    /** Saisie des trois délais. */
+    /** Saisie des quatre délais. */
     private function saisie(array $surcharges = []): array
     {
         return [
             'delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE',
             'delai_complement_valeur' => 48, 'delai_complement_duree' => 'HEURE',
             'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR',
+            'delai_kyc_valeur' => 48, 'delai_kyc_duree' => 'HEURE',
             ...$surcharges,
         ];
     }
@@ -60,23 +61,24 @@ class DelaisPaiementTest extends TestCase
         $attendu = [['SECONDE', 1], ['MINUTE', 60], ['HEURE', 3_600], ['JOUR', 86_400]];
         $lire = fn () => Duree::query()->orderBy('ordre')->get()->map(fn (Duree $d) => [$d->code, $d->secondes])->all();
 
-        // La migration crée les durées ; le seeder (dans ReferentielsSeeder) ne crée ni ne modifie rien de plus.
+        // La migration crée les durées. Base vide : le seeder crée exactement les quatre durées.
         $this->assertSame($attendu, $lire());
+        Duree::query()->delete();
+        $this->seed(DureesSeeder::class);
+        $this->assertSame($attendu, $lire());
+        $this->assertSame(4, Duree::count());
+
+        // Le seeder (dans ReferentielsSeeder) ne crée ni ne modifie rien de plus.
         Duree::query()->where('code', 'JOUR')->update(['libelle' => 'jour ouvré']);
         $this->seed(ReferentielsSeeder::class);
         $this->seed(DureesSeeder::class);
         $this->assertSame($attendu, $lire());
         $this->assertSame('jour ouvré', Duree::query()->where('code', 'JOUR')->value('libelle'));
 
-        // Base vide : le seeder crée exactement les quatre durées.
-        Duree::query()->delete();
-        $this->seed(DureesSeeder::class);
-        $this->assertSame($attendu, $lire());
-        $this->assertSame(4, Duree::count());
-
         // Aucun écran : ni route de gestion, ni journal de validation.
         $this->assertFalse(collect(app('router')->getRoutes())->contains(fn ($r) => str_contains($r->uri(), 'durees')));
-        $this->assertSame(0, ParametrageDecision::query()->count());
+        // (Seules les valeurs initiales des délais de paiement sont confirmées d'office par ReferentielsSeeder.)
+        $this->assertSame(0, ParametrageDecision::query()->where('objet_type', '!=', 'delais')->count());
     }
 
     public function test_valeurs_par_defaut(): void

@@ -164,20 +164,20 @@ class SouscriptionTest extends TestCase
         $this->assertStringStartsWith('kyc/'.$citoyen->id.'/', $document->chemin_fichier);
     }
 
-    public function test_identite_non_validee_preparation_possible_mais_reservation_refusee(): void
+    public function test_achat_possible_sans_identite_validee(): void
     {
         $this->tranche();
-        $citoyen = $this->citoyen(StatutKyc::EnAttente);
+        $citoyen = $this->citoyen(StatutKyc::Rejete);
 
+        // Avertissement (délai de correction, gel), sans blocage.
         $this->actingAs($citoyen)->get('/souscrire')->assertOk()
             ->assertSee('Votre identité n’est pas encore vérifiée')
-            ->assertSee('Paiement possible après vérification de votre identité.')
+            ->assertSee('dans un délai de 48 heures après notre alerte, sinon vos actions payées seront gelées', false)
+            ->assertDontSee('Paiement possible après vérification de votre identité.')
             ->assertSee('href="'.route('espace.verification').'"', false);
 
-        $this->actingAs($citoyen)->post('/souscrire', ['nb_actions' => 10, 'engagements' => self::TOUS])
-            ->assertSessionHasErrors(['identite' => 'Votre identité doit être vérifiée avant de réserver et de payer une souscription.']);
-
-        $this->assertSame(0, Souscription::count());
+        $this->actingAs($citoyen)->post('/souscrire', ['nb_actions' => 10, 'engagements' => self::TOUS])->assertSessionHasNoErrors();
+        $this->assertSame(1, Souscription::count());
     }
 
     public function test_plafond_par_personne_et_acces(): void

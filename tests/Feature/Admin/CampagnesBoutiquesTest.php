@@ -190,19 +190,19 @@ class CampagnesBoutiquesTest extends TestCase
         // Sans saisie : 7 jours par défaut.
         $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire())->assertSessionHasNoErrors();
         $defaut = CampagneBoutiques::query()->latest('id')->firstOrFail();
-        $this->assertSame([604_800, '7 jours'], [$defaut->delaiListeSecondes('kyc'), $defaut->libelleDelaiListe('relance')]);
+        $this->assertSame([604_800, '7 jours'], [$defaut->delaiListeSecondes('relance'), $defaut->libelleDelaiListe('relance')]);
 
         // Saisis : valeur et durée, convertis en secondes ; affichés sur la fiche et figés dans la version.
         $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire(['nom' => 'Délais',
-            'delai_kyc_valeur' => 2, 'delai_kyc_duree' => 'JOUR', 'delai_relance_valeur' => 48, 'delai_relance_duree' => 'HEURE']))->assertSessionHasNoErrors();
+            'delai_relance_valeur' => 48, 'delai_relance_duree' => 'HEURE']))->assertSessionHasNoErrors();
         $c = CampagneBoutiques::query()->where('nom', 'Délais')->sole();
-        $this->assertSame([172_800, 172_800], [$c->delaiListeSecondes('kyc'), $c->delaiListeSecondes('relance')]);
+        $this->assertSame(172_800, $c->delaiListeSecondes('relance'));
         $this->en($this->regulateur)->get(route('admin.boutiques.show', $c))->assertOk()
-            ->assertSee('data-delai-liste="kyc"', false)->assertSee('2 jours')->assertSee('48 heures');
+            ->assertSee('data-delai-liste="relance"', false)->assertDontSee('data-delai-liste="kyc"', false)->assertSee('48 heures');
         $this->en($this->regulateur)->get(route('admin.boutiques.edit', $c))->assertOk()->assertSee('data-delais-listes', false);
-        $this->assertSame([2, 172_800], [$c->snapshotParametres()['delai_kyc_valeur'], $c->snapshotParametres()['delai_kyc_secondes']]);
+        $this->assertSame([48, 172_800], [$c->snapshotParametres()['delai_relance_valeur'], $c->snapshotParametres()['delai_relance_secondes']]);
 
         // Valeur sans durée : refusée.
-        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire(['delai_kyc_valeur' => 3]))->assertSessionHasErrors('delai_kyc_duree');
+        $this->en($this->regulateur)->post(route('admin.boutiques.store'), $this->formulaire(['delai_relance_valeur' => 3]))->assertSessionHasErrors('delai_relance_duree');
     }
 }

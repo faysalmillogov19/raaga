@@ -26,27 +26,28 @@ use Illuminate\Support\Collection;
 #[Table(name: 'campagnes_boutiques')]
 #[Fillable([
     'statut', 'nom', 'description', 'date_ouverture', 'date_cloture', 'delai_paiement_valeur', 'delai_paiement_duree_id', 'delai_paiement_secondes', 'canaux_actifs', 'sites', 'types', 'limites',
-    'delai_kyc_valeur', 'delai_kyc_duree_id', 'delai_kyc_secondes', 'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes',
+    'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes',
     'version', 'cree_par', 'soumis_par', 'soumise_le', 'valide_par', 'validee_le', 'motif_rejet',
     'ouverte_le', 'cloturee_le', 'attribuee_le',
 ])]
 class CampagneBoutiques extends Model implements Parametrable
 {
     public const PARAMETRES = ['nom', 'description', 'date_ouverture', 'date_cloture', 'sites', 'types', 'limites', 'canaux_actifs',
-        'delai_kyc_valeur', 'delai_kyc_duree_id', 'delai_kyc_secondes', 'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes'];
+        'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes'];
 
     /**
      * Avenant d'une campagne ouverte (réservations en cours) : date de clôture, présentation, délais des listes
      * d'attente, moyens de paiement, et ajouts au périmètre (sites, types, limites relevées ; jamais de retrait).
      */
     public const AVENANT_OUVERTE = ['date_cloture', 'description', 'canaux_actifs', 'sites', 'types', 'limites',
-        'delai_kyc_valeur', 'delai_kyc_duree_id', 'delai_kyc_secondes', 'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes'];
+        'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes'];
 
     /**
-     * Délais des listes d'attente : clé => [valeur, durée] par défaut. « kyc » : correction de l'identité d'un
-     * attributaire ; « relance » : nouvelle manifestation d'intérêt de la liste d'attente générale.
+     * Délais des listes d'attente propres à la campagne : clé => [valeur, durée] par défaut. « relance » : nouvelle
+     * manifestation d'intérêt de la liste d'attente générale. La correction d'une identité invalide suit le délai
+     * commun des « Délais de paiement » (ParametresPaiements, « kyc »).
      */
-    public const DELAIS_LISTES = ['kyc' => [7, 'JOUR'], 'relance' => [7, 'JOUR']];
+    public const DELAIS_LISTES = ['relance' => [7, 'JOUR']];
 
     /** Valeurs par défaut d'une nouvelle campagne. */
     /** Nombre maximum d'emplacements par personne, pour chaque type coché (par défaut). */
@@ -88,7 +89,7 @@ class CampagneBoutiques extends Model implements Parametrable
         return $duree && $this->delai_paiement_valeur ? $duree->libelle($this->delai_paiement_valeur) : ParametresPaiements::libelleEnVigueur('caution');
     }
 
-    /** Délai d'une liste d'attente (kyc, relance), en secondes : celui saisi pour la campagne, sinon la valeur par défaut. */
+    /** Délai d'une liste d'attente (relance), en secondes : celui saisi pour la campagne, sinon la valeur par défaut. */
     public function delaiListeSecondes(string $delai): int
     {
         [$valeur, $duree] = self::DELAIS_LISTES[$delai];

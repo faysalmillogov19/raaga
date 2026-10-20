@@ -96,7 +96,7 @@ class AppServiceProvider extends ServiceProvider
         });
         LigneRegistre::created(fn (LigneRegistre $l) => DB::afterCommit(fn () => app(Cartes::class)->synchroniser($l->user, TypeCarte::Actionnaire)));
         User::saved(function (User $u) {
-            if ($u->wasChanged('statut_kyc') || $u->wasChanged('piece_expire_le')) {
+            if ($u->wasChanged('statut_kyc') || $u->wasChanged('piece_expire_le') || $u->wasChanged('actions_gelees_le')) {
                 DB::afterCommit(function () use ($u) {
                     app(Cartes::class)->synchroniser($u, TypeCarte::Commercant);
                     app(Cartes::class)->synchroniser($u, TypeCarte::Actionnaire);

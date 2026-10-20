@@ -6,6 +6,7 @@ use App\Enums\StatutKyc;
 use App\Enums\StatutPaiement;
 use App\Enums\StatutReservationBoutique;
 use App\Models\Paiement;
+use App\Models\ParametresPaiements;
 use App\Models\Remboursement;
 use App\Models\ReservationBoutique;
 use App\Notifications\IdentiteAttributaireCitoyen;
@@ -19,7 +20,8 @@ use Throwable;
 /**
  * Identité des attributaires de boutiques (tâche planifiée). L'attributaire paie et fait vérifier son identité en
  * parallèle ; l'attribution définitive exige une identité validée. Identité rejetée, à mettre à jour ou jamais soumise :
- *  - il est prévenu (SMS et « Mon espace ») et dispose du délai de correction de la campagne ;
+ *  - il est prévenu (SMS et « Mon espace ») et dispose du délai commun de correction (« Délais de paiement », 48 h par
+ *    défaut, le même que pour les actions) ;
  *  - identité renvoyée (en attente de vérification) ou validée dans le délai : le délai est levé ;
  *  - délai dépassé sans correction : réservation annulée, boutique au suivant de sa liste d'attente ; caution payée
  *    remboursée moins la retenue décidée (RÉGULATEUR propose, VALIDATEUR décide), avance payée remboursée en entier.
@@ -51,7 +53,7 @@ class IdentitesAttributaires
             ->whereHas('user', fn ($u) => $u->whereIn('statut_kyc', self::aCorriger())->orWhereNull('statut_kyc'))
             ->with(['user', 'campagne', 'boutique'])->get()
             ->each(function (ReservationBoutique $r) use (&$bilan) {
-                $r->forceFill(['kyc_a_corriger_avant' => now()->addSeconds($r->campagne->delaiListeSecondes('kyc'))])->save();
+                $r->forceFill(['kyc_a_corriger_avant' => now()->addSeconds(ParametresPaiements::delaiSecondes('kyc'))])->save();
                 $this->journal->ecrire(null, 'reservation_boutique.identite_a_corriger', 'ReservationBoutique', $r->id, null,
                     ['reference' => $r->reference, 'statut_kyc' => $r->user->statut_kyc?->value, 'avant' => $r->kyc_a_corriger_avant->toAtomString()]);
                 $this->prevenir($r, 'a_corriger');

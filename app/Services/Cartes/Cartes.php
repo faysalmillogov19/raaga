@@ -253,7 +253,8 @@ class Cartes
             $validite = $validite->min(CarbonImmutable::parse($user->piece_expire_le));
         }
 
-        $conforme = $user->statut_kyc === StatutKyc::Valide && ! $validite->isPast();
+        // Actions gelées (identité non corrigée dans le délai) : carte d'actionnaire bloquée jusqu'au dégel.
+        $conforme = $user->statut_kyc === StatutKyc::Valide && ! $validite->isPast() && ! ($type === TypeCarte::Actionnaire && $user->actionsGelees());
         $statut = match (true) {
             $conforme => StatutCarte::Active,
             // Identité douteuse : aucune carte ; une carte déjà émise est suspendue jusqu'à régularisation.

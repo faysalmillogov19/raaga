@@ -657,12 +657,11 @@ return [
         'delai' => 'Votre réservation sera conservée :delai : passé ce délai sans paiement, elle expire.',
         'kyc' => [
             'titre' => 'Votre identité n’est pas encore vérifiée',
-            'NON_SOUMIS' => 'Vous pouvez préparer votre souscription, mais le paiement sera possible seulement après la vérification de votre pièce d’identité.',
-            'EN_ATTENTE' => 'Vos pièces sont en cours de vérification (48 heures au plus). Vous pouvez préparer votre souscription ; le paiement sera possible après validation.',
-            'REJETE' => 'Vos pièces ont été refusées. Vous pouvez préparer votre souscription ; le paiement sera possible après l’envoi et la validation de nouvelles pièces.',
-            'A_METTRE_A_JOUR' => 'Vos pièces sont à mettre à jour. Vous pouvez préparer votre souscription ; le paiement sera possible après l’envoi et la validation d’un dossier complet.',
+            'NON_SOUMIS' => 'Vous pouvez souscrire et payer dès maintenant. Envoyez votre pièce d’identité : sans dossier valide dans un délai de :delai après notre alerte, vos actions payées seront gelées (attestation et carte d’actionnaire bloquées ; les dividendes restent versés).',
+            'EN_ATTENTE' => 'Vos pièces sont en cours de vérification. Vous pouvez souscrire et payer dès maintenant.',
+            'REJETE' => 'Vos pièces ont été refusées. Vous pouvez souscrire et payer, mais corrigez votre dossier dans un délai de :delai après notre alerte, sinon vos actions payées seront gelées (attestation et carte d’actionnaire bloquées ; les dividendes restent versés).',
+            'A_METTRE_A_JOUR' => 'Vos pièces sont à mettre à jour. Vous pouvez souscrire et payer, mais complétez votre dossier dans un délai de :delai après notre alerte, sinon vos actions payées seront gelées (attestation et carte d’actionnaire bloquées ; les dividendes restent versés).',
             'lien' => 'Vérifier mon identité',
-            'bouton' => 'Paiement possible après vérification de votre identité.',
         ],
         'public_refuse' => 'Cette tranche n’est pas ouverte à votre pays de résidence.',
         'reservee' => 'Votre souscription :reference est réservée. Payez-la avant le délai indiqué pour la conserver.',
@@ -673,7 +672,6 @@ return [
             'justificatif' => 'justificatif d’origine des fonds',
         ],
         'erreurs' => [
-            'kyc' => 'Votre identité doit être vérifiée avant de réserver et de payer une souscription.',
             'public' => 'Cette tranche n’est pas ouverte à votre pays de résidence.',
             'multiple' => 'Cette tranche n’accepte qu’une seule souscription par personne.',
             'minimum' => 'Choisissez au moins :n action(s).',
@@ -1039,6 +1037,30 @@ return [
     ],
 
     'invest' => [
+        // Identité d'un investisseur : achat possible sans identité validée ; à corriger dans le délai, sinon actions gelées.
+        'identite' => [
+            'a_corriger_titre' => 'Votre identité est à corriger',
+            'a_corriger_texte' => 'Corrigez votre dossier d’identité avant le :date. Sans correction, vos actions payées seront gelées : attestation et carte d’actionnaire bloquées (les dividendes restent versés).',
+            'gelees_titre' => 'Vos actions sont gelées',
+            'gelees_texte' => 'Votre identité n’a pas été corrigée dans le délai : votre attestation et votre carte d’actionnaire sont bloquées. Vos dividendes restent versés. Le gel est levé dès que votre identité est validée.',
+            'attestation_bloquee' => 'Vos actions sont gelées : l’attestation sera disponible dès que votre identité sera validée.',
+            'attestation_bloquee_court' => 'Bloquée : actions gelées jusqu’à la validation de votre identité.',
+            'bouton_verifier' => 'Vérifier mon identité',
+            'bouton_espace' => 'Voir mes actions',
+            'notifications' => [
+                'sujet_a_corriger' => 'Votre identité est à corriger',
+                'sujet_gelees' => 'Vos actions sont gelées',
+                'sujet_degelees' => 'Vos actions ne sont plus gelées',
+                'a_corriger' => 'Votre dossier d’identité est invalide. Corrigez-le avant le :date dans « Vérifier mon identité ». Sans correction, vos actions payées seront gelées : attestation et carte d’actionnaire bloquées (les dividendes restent versés).',
+                'gelees' => 'Votre identité n’a pas été corrigée dans le délai : vos actions sont gelées. Votre attestation et votre carte d’actionnaire sont bloquées ; vos dividendes restent versés. Le gel est levé dès que votre identité est validée.',
+                'degelees' => 'Votre identité est validée : vos actions ne sont plus gelées. Votre attestation et votre carte d’actionnaire sont de nouveau disponibles.',
+            ],
+            'sms' => [
+                'a_corriger' => '{nomPlateforme} : votre dossier d’identité est invalide. Corrigez-le avant le {date} dans Mon espace, sinon vos actions payées seront gelées.[ Aide : {numeroVert}]',
+                'gelees' => '{nomPlateforme} : votre identité n’a pas été corrigée à temps. Vos actions sont gelées (attestation et carte bloquées, dividendes versés) jusqu’à la validation de votre identité.',
+                'degelees' => '{nomPlateforme} : votre identité est validée. Vos actions ne sont plus gelées.',
+            ],
+        ],
         'simulateur' => [
             'titre' => 'Simuler mon investissement',
             'intro' => 'Estimez le montant correspondant au nombre d’actions envisagé. Simulation indicative et non engageante.',

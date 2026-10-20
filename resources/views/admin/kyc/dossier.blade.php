@@ -52,6 +52,12 @@
         @if ($proposition)
             <x-admin.message type="info" class="mt-4 !mb-0">{{ $k['proposition_en_attente'] }} : {{ $proposition->motif }}</x-admin.message>
         @endif
+        {{-- Investisseur : délai de correction en cours, ou actions gelées (attestation et carte bloquées, dividendes versés). --}}
+        @if ($citoyen->actionsGelees())
+            <x-admin.message type="avertissement" class="mt-4 !mb-0" data-actions-gelees>{{ __('admin.kyc.actions_gelees', ['date' => $citoyen->actions_gelees_le->format('d/m/Y H:i')]) }}</x-admin.message>
+        @elseif ($citoyen->kyc_actions_a_corriger_avant)
+            <x-admin.message type="info" class="mt-4 !mb-0" data-delai-investisseur>{{ __('admin.kyc.delai_investisseur', ['date' => $citoyen->kyc_actions_a_corriger_avant->format('d/m/Y H:i')]) }}</x-admin.message>
+        @endif
         <dl class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-identite>
             <div><dt class="texte-carte">{{ $d['champs']['nom'] }}</dt><dd class="font-bold">{{ $citoyen->name }}</dd></div>
             <div><dt class="texte-carte">{{ $d['champs']['telephone'] }}</dt><dd>{{ $citoyen->telephone }}</dd></div>

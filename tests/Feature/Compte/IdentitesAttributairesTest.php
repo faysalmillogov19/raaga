@@ -7,7 +7,6 @@ use App\Enums\Role;
 use App\Enums\StatutKyc;
 use App\Enums\StatutReservationBoutique;
 use App\Models\Boutique;
-use App\Models\Duree;
 use App\Models\Remboursement;
 use App\Models\ReservationBoutique;
 use App\Models\User;
@@ -40,8 +39,8 @@ class IdentitesAttributairesTest extends TestCase
         $this->app->instance(SmsProvider::class, $this->sms);
         $this->creerActeurs();
         config(['raaga.compte_location' => ['titulaire' => 'Raaga SA · location', 'banque' => 'Banque B', 'numero' => 'BF00 LOCATION']]);
-        // Délai de correction de la campagne : 2 jours.
-        Boutiques::campagneOuverte(['delai_kyc_valeur' => 2, 'delai_kyc_duree_id' => Duree::parCode('JOUR')->id, 'delai_kyc_secondes' => 172_800]);
+        // Délai commun de correction (« Délais de paiement ») : 48 heures par défaut.
+        Boutiques::campagneOuverte();
     }
 
     private function citoyen(): User

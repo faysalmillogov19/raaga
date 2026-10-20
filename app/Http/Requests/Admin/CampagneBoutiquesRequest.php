@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Paramètres d'une campagne de réservation (premier arrivé) : période (date et heure), site(s) concerné(s), nombre
  * maximum de boutiques par personne, moyens de paiement (le délai de paiement de la caution est un des « Délais de
- * paiement »), délais des listes d'attente (correction de l'identité, relance de la liste générale). Les montants ne
+ * paiement »), délai de relance de la liste d'attente générale. Les montants ne
  * se saisissent pas : ils viennent de la grille tarifaire confirmée de chaque site.
  */
 class CampagneBoutiquesRequest extends FormRequest
@@ -41,7 +41,7 @@ class CampagneBoutiquesRequest extends FormRequest
             // Limite par type coché : nombre maximum d'emplacements par personne, au moins 1.
             'limites' => ['nullable', 'array'],
             ...collect((array) $this->input('types'))->mapWithKeys(fn ($id) => ['limites.'.(int) $id => ['required', 'integer', 'min:1', 'max:1000']])->all(),
-            // Délais des listes d'attente : correction de l'identité d'un attributaire, relance de la liste générale.
+            // Délai de relance de la liste d'attente générale.
             ...collect(array_keys(CampagneBoutiques::DELAIS_LISTES))->flatMap(fn (string $d) => [
                 // Vide : délai par défaut (CampagneBoutiques::DELAIS_LISTES).
                 'delai_'.$d.'_valeur' => ['nullable', 'integer', 'min:1', 'max:999999'],

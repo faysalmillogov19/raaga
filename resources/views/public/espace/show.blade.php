@@ -111,6 +111,17 @@
                     @endif
                     @break
                 @case('actions')
+                    {{-- Identité invalide : date limite de correction, puis gel des actions (attestation et carte bloquées). --}}
+                    @if ($user->actionsGelees())
+                        <x-public.alerte variante="danger" class="mb-6" :titre="__('public.invest.identite.gelees_titre')" data-actions-gelees>
+                            {{ __('public.invest.identite.gelees_texte') }} <a href="{{ route('espace.verification') }}" class="font-semibold">{{ __('public.invest.identite.bouton_verifier') }}</a>
+                        </x-public.alerte>
+                    @elseif ($user->kyc_actions_a_corriger_avant)
+                        <x-public.alerte variante="attention" class="mb-6" :titre="__('public.invest.identite.a_corriger_titre')" data-identite-a-corriger>
+                            {{ __('public.invest.identite.a_corriger_texte', ['date' => $user->kyc_actions_a_corriger_avant->translatedFormat('j F Y à H\hi')]) }}
+                            <a href="{{ route('espace.verification') }}" class="font-semibold">{{ __('public.invest.identite.bouton_verifier') }}</a>
+                        </x-public.alerte>
+                    @endif
                     <h3 class="!text-[1.15rem]">{{ __('public.espace.rubriques.actions') }}</h3>
                     <div class="mt-3">
                     @forelse ($souscriptions as $s)

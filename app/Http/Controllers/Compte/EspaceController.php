@@ -18,6 +18,7 @@ use App\Services\Documents\GenerateurPdf;
 use App\Services\Paiement\ServicePaiement;
 use App\Support\Phase;
 use App\Support\Recu;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -106,9 +107,13 @@ class EspaceController extends Controller
     }
 
     /** Attestation d'actionnaire (actions B), après allocation. */
-    public function attestation(Request $request, LigneRegistre $ligne, GenerateurPdf $pdf): Response
+    public function attestation(Request $request, LigneRegistre $ligne, GenerateurPdf $pdf): Response|RedirectResponse
     {
         abort_unless($ligne->user_id === $request->user()->id, 403);
+        // Actions gelées (identité non corrigée dans le délai) : attestation bloquée jusqu'au dégel.
+        if ($request->user()->actionsGelees()) {
+            return redirect()->route('espace', ['onglet' => 'actions'])->with('erreur', __('public.invest.identite.attestation_bloquee'));
+        }
 
         return response($pdf->rendre('documents.attestation-actions-b', [
             'ligne' => $ligne->load(['tranche', 'user']),

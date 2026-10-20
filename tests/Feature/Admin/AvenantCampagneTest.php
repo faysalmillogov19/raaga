@@ -62,9 +62,9 @@ class AvenantCampagneTest extends TestCase
 
         $nouvelleOuverture = now()->addDays(2)->setTime(9, 0);
         $this->proposer($c, ['nom' => 'Réservation 2027 (corrigée)', 'date_ouverture' => $nouvelleOuverture->format('Y-m-d\TH:i'),
-            'delai_kyc_valeur' => 3, 'delai_kyc_duree' => 'JOUR'])->assertSessionHas('succes');
+            'delai_relance_valeur' => 3, 'delai_relance_duree' => 'JOUR'])->assertSessionHas('succes');
         $avenant = Avenant::sole();
-        $this->assertEqualsCanonicalizing(['nom', 'date_ouverture', 'delai_kyc_valeur', 'delai_kyc_duree_id', 'delai_kyc_secondes'], array_keys($avenant->nouvelle_valeur));
+        $this->assertEqualsCanonicalizing(['nom', 'date_ouverture', 'delai_relance_valeur', 'delai_relance_duree_id', 'delai_relance_secondes'], array_keys($avenant->nouvelle_valeur));
         // Rien ne change avant la décision, et la campagne ne s'ouvre pas.
         $this->assertSame('Réservation 2027', $c->fresh()->nom);
         $this->travel(2)->hours();
@@ -79,7 +79,7 @@ class AvenantCampagneTest extends TestCase
         $this->en($this->validateur)->post(route('admin.boutiques.avenant.confirmer', [$c, $avenant]))->assertSessionHas('succes');
         $c->refresh();
         $this->assertSame(StatutAvenant::Approuve, $avenant->fresh()->statut);
-        $this->assertSame(['Réservation 2027 (corrigée)', 259_200], [$c->nom, $c->delaiListeSecondes('kyc')]);
+        $this->assertSame(['Réservation 2027 (corrigée)', 259_200], [$c->nom, $c->delaiListeSecondes('relance')]);
         $this->assertSame($nouvelleOuverture->format('Y-m-d H:i'), $c->date_ouverture->format('Y-m-d H:i'));
         $this->assertSame(StatutCampagneBoutiques::Confirmee, $c->statut);
         $this->assertSame([1, 1], [$c->version, $c->versions()->count()]);

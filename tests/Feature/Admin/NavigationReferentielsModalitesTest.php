@@ -127,7 +127,7 @@ class NavigationReferentielsModalitesTest extends TestCase
         $this->en($sa)->get(route('admin.parametres-paiements'))->assertOk()->assertDontSee('id="modifier-delais"', false)->assertDontSee('Soumettre');
         $this->en($sa)->post(route('admin.referencement.zones.store', 'moyens'), ['code' => 'SANK', 'libelle' => 'Sank'])->assertForbidden();
         $this->en($sa)->post(route('admin.referencement.zones.desactiver', ['moyens', $orange->id]))->assertForbidden();
-        $this->en($sa)->put(route('admin.parametres-paiements.update'), ['delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE', 'delai_complement_valeur' => 24, 'delai_complement_duree' => 'HEURE', 'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR'])->assertForbidden();
+        $this->en($sa)->put(route('admin.parametres-paiements.update'), ['delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE', 'delai_complement_valeur' => 24, 'delai_complement_duree' => 'HEURE', 'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR', 'delai_kyc_valeur' => 48, 'delai_kyc_duree' => 'HEURE'])->assertForbidden();
         $this->en($sa)->post(route('admin.parametres-paiements.soumettre'))->assertForbidden();
         $this->en($sa)->post(route('admin.parametres-paiements.confirmer'))->assertForbidden();
         $this->assertSame([true, 48 * 3_600], [$orange->fresh()->actif, ParametresPaiements::delaiSecondes('complement')]);
@@ -189,7 +189,7 @@ class NavigationReferentielsModalitesTest extends TestCase
             'instructions' => 'Numéro marchand', 'ordre' => 10, 'usages' => ['ACTIONS' => ['autorise' => 1, 'min' => '', 'max' => ''], 'CAUTION' => ['autorise' => 1, 'min' => '', 'max' => '']]])
             ->assertSessionHas('succes');
         $sank = MoyenPaiement::query()->where('code', 'SANK_MONEY')->sole();
-        $this->en($this->regulateur)->put(route('admin.parametres-paiements.update'), ['delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE', 'delai_complement_valeur' => 72, 'delai_complement_duree' => 'HEURE', 'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR'])->assertSessionHas('succes');
+        $this->en($this->regulateur)->put(route('admin.parametres-paiements.update'), ['delai_caution_valeur' => 72, 'delai_caution_duree' => 'HEURE', 'delai_complement_valeur' => 72, 'delai_complement_duree' => 'HEURE', 'delai_avance_valeur' => 30, 'delai_avance_duree' => 'JOUR', 'delai_kyc_valeur' => 48, 'delai_kyc_duree' => 'HEURE'])->assertSessionHas('succes');
         $this->en($this->regulateur)->post(route('admin.parametres-paiements.soumettre'))->assertSessionHas('succes');
         $delais = ParametresPaiements::fiche();
 
