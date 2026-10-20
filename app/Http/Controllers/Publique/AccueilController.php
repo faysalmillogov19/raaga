@@ -7,13 +7,12 @@ use App\Models\CampagneBoutiques;
 use App\Services\Invest\RaagaInvest;
 use App\Services\Publique\AccueilBoutiques;
 use App\Services\Publique\AccueilNuit;
-use App\Support\Diapositives;
 use App\Support\Phase;
 use App\Support\ThemePublic;
 use Illuminate\View\View;
 
 /**
- * Accueil public : carrousel, puis les deux démarches côte à côte (investir, obtenir une boutique), chiffres, étapes,
+ * Accueil public : bandeau fixe (titre, sous-titre, « Je réserve », « Comment ça marche »), puis les deux démarches côte à côte (investir, obtenir une boutique), chiffres, étapes,
  * versements, sites, questions, aide. La carte « J'investis » n'apparaît que si la présentation des actions est visible.
  */
 class AccueilController extends Controller
@@ -33,7 +32,6 @@ class AccueilController extends Controller
             'chiffres' => $accueil->chiffres(),
             'durees' => $accueil->durees(),
             'sites' => $accueil->sites(),
-            'diapositives' => Diapositives::affichees(),
             'questions' => array_values(array_filter(array_map(fn (int $i) => $questions[$i] ?? null, self::QUESTIONS_ACCUEIL))),
             // Campagne ouverte : le plan des boutiques (réservation après connexion) ; sinon, la page des boutiques ou la création de compte.
             'urlCandidater' => $ouverte || auth()->check() ? route('boutiques') : route('inscription'),

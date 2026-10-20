@@ -3,10 +3,8 @@
 namespace App\Support\Plateforme;
 
 use App\Enums\Droit;
-use App\Support\Diapositives;
 use App\Support\MotsInterdits;
 use App\Support\Telephone;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
 /**
@@ -26,7 +24,6 @@ final class Catalogue
         'reseaux' => true,
         'projet' => false,
         'messages' => true,
-        'site_public' => true,
     ];
 
     /** Champs dont la modification demande une confirmation (affichés partout : site, SMS, PDF). */
@@ -42,12 +39,6 @@ final class Catalogue
 
     /** Mots interdits sur le site public (App\Support\MotsInterdits) : refusés dans tous les textes saisis. */
     public const PROMESSE_RENDEMENT = MotsInterdits::MOTIF;
-
-    /** Position du texte d'une diapositive du carrousel (sur ordinateur ; à gauche sur mobile). */
-    public const POSITIONS_TEXTE = ['gauche', 'droite', 'panneau'];
-
-    /** Taille maximale d'une image du carrousel d'accueil (Ko). */
-    public const PHOTO_MAX_KO = 5120;
 
     /** Taille maximale des armoiries (Ko). */
     public const ARMOIRIES_MAX_KO = 500;
@@ -121,9 +112,6 @@ final class Catalogue
                 'modeMaintenance' => ['maintenance'],
                 'messageAntiFraude' => ['texte_long', 250],
             ],
-            'site_public' => [
-                'carrousel' => ['carrousel'],
-            ],
         ];
     }
 
@@ -160,7 +148,7 @@ final class Catalogue
                 'contact' => ['libelle' => null, 'nom' => null, 'telephone' => null, 'email' => null, 'afficher' => false],
                 'personne' => ['nom' => null, 'fonction' => null],
                 'hebergeur' => ['nom' => null, 'adresse' => null, 'contact' => null],
-                'reseaux', 'liens', 'financement', 'carrousel' => [],
+                'reseaux', 'liens', 'financement' => [],
                 'mois_annee' => ['mois' => null, 'annee' => null],
                 'bandeau' => ['texte' => null, 'type' => 'information', 'debut' => null, 'fin' => null, 'lien' => null],
                 'maintenance' => ['actif' => false, 'message' => null, 'finPrevue' => null],
@@ -192,23 +180,6 @@ final class Catalogue
                 'tel_intl' => [$champ => ['nullable', 'regex:/^\+\s*[1-9](\s*\d){7,14}$/']],
                 'expediteur' => [$champ => ['nullable', 'regex:/^[A-Za-z0-9]{1,11}$/']],
                 'image' => [$champ => ['nullable', 'file', 'mimes:svg,png', 'max:'.self::ARMOIRIES_MAX_KO]],
-                'carrousel' => [
-                    $champ => ['nullable', 'array', 'max:'.Diapositives::MAX_TOTAL],
-                    "{$champ}.*.image" => ['nullable', 'string', 'regex:'.Diapositives::FORMAT, "required_without:{$champ}.*.fichier"],
-                    "{$champ}.*.fichier" => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:'.self::PHOTO_MAX_KO, 'dimensions:min_width=640'],
-                    "{$champ}.*.alt" => ['required', 'string', 'max:160'],
-                    "{$champ}.*.titre" => ['nullable', 'string', 'max:60', 'not_regex:'.self::PROMESSE_RENDEMENT],
-                    "{$champ}.*.sousTitre" => ['nullable', 'string', 'max:140', 'not_regex:'.self::PROMESSE_RENDEMENT],
-                    "{$champ}.*.boutonLibelle" => ['nullable', 'string', 'max:40', "required_with:{$champ}.*.boutonLien", 'not_regex:'.self::PROMESSE_RENDEMENT],
-                    "{$champ}.*.boutonLien" => ['nullable', 'string', 'max:255', 'regex:#^(https://|/(?!/))#i', "required_with:{$champ}.*.boutonLibelle"],
-                    "{$champ}.*.ordre" => ['nullable', 'integer', 'min:0', 'max:999'],
-                    "{$champ}.*.active" => ['boolean'],
-                    "{$champ}.*.cadrageX" => ['nullable', 'integer', 'between:0,100'],
-                    "{$champ}.*.cadrageY" => ['nullable', 'integer', 'between:0,100'],
-                    "{$champ}.*.texte" => ['nullable', Rule::in(self::POSITIONS_TEXTE)],
-                    "{$champ}.*.debut" => ['nullable', 'date_format:Y-m-d'],
-                    "{$champ}.*.fin" => ['nullable', 'date_format:Y-m-d', "after_or_equal:{$champ}.*.debut"],
-                ],
                 'entier' => [$champ => ['nullable', 'integer', 'min:0', 'max:9000000000000000']],
                 'horaires' => [
                     "{$champ}.jours" => ['nullable', 'array'],
@@ -306,24 +277,6 @@ final class Catalogue
                 'tel_bf' => ($c = Telephone::chiffresLocaux((string) $v)) === '' ? null : '+226'.$c,
                 'tel_intl' => $intl($v),
                 'image' => $actuelles[$champ] ?? null,
-                // Image déposée : déclinée en WebP ; sinon, l'image déjà enregistrée de la diapositive.
-                'carrousel' => $ordonner(array_map(fn (array $d) => [
-                    'image' => ($d['fichier'] ?? null) instanceof UploadedFile ? Diapositives::deposer($d['fichier'])
-                        : (Diapositives::existe($d['image'] ?? null) ? $d['image'] : null),
-                    'alt' => $texte($d['alt'] ?? null),
-                    'titre' => $texte($d['titre'] ?? null),
-                    'sousTitre' => $texte($d['sousTitre'] ?? null),
-                    'boutonLibelle' => $texte($d['boutonLibelle'] ?? null),
-                    'boutonLien' => $texte($d['boutonLien'] ?? null),
-                    'active' => (bool) ($d['active'] ?? false),
-                    // Point de l'image gardé visible au recadrage (en %), position du texte.
-                    'cadrageX' => ($d['cadrageX'] ?? '') === '' ? 50 : (int) $d['cadrageX'],
-                    'cadrageY' => ($d['cadrageY'] ?? '') === '' ? 50 : (int) $d['cadrageY'],
-                    'texte' => $d['texte'] ?? 'gauche',
-                    'debut' => $texte($d['debut'] ?? null),
-                    'fin' => $texte($d['fin'] ?? null),
-                    'ordre' => (int) ($d['ordre'] ?? 999),
-                ], array_values((array) $v))),
                 'entier' => $entier($v),
                 'horaires' => [
                     'jours' => array_values(array_intersect(self::JOURS, (array) ($v['jours'] ?? []))),

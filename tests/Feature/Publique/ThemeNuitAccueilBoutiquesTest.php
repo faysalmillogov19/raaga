@@ -7,9 +7,7 @@ use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutKyc;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 use Tests\Support\Boutiques;
 use Tests\Support\ConnexionBackoffice;
 use Tests\TestCase;
@@ -67,20 +65,6 @@ class ThemeNuitAccueilBoutiquesTest extends TestCase
             ->assertSee('Boutiques par niveau')->assertSee('<table class="sr-only">', false)
             ->assertSee('Grille confirmée')->assertSee('Loyer (9 m²)')->assertSee(format_fcfa(45_000))
             ->assertSeeInOrder(['Terminé', 'Études', $campagne->date_ouverture->format('d/m/Y'), 'Réservations', 'Ouvertes jusqu’au '.$campagne->date_cloture->format('d/m/Y')], false);
-    }
-
-    public function test_accueil_diapositives_actives_le_carrousel_remplace_le_bandeau(): void
-    {
-        Storage::fake('local');
-        $this->connecterBackoffice(Role::SuperAdmin);
-        $this->put(route('admin.plateforme.update', 'site_public'), ['carrousel' => [[
-            'fichier' => UploadedFile::fake()->image('marche.jpg', 640, 360), 'alt' => 'Allée du marché', 'titre' => 'Diapositive du jour',
-            'sousTitre' => 'Candidatez en ligne.', 'boutonLibelle' => 'Je réserve', 'boutonLien' => '/inscription', 'active' => '1',
-        ]]])->assertSessionHasNoErrors();
-        auth()->logout();
-        Cache::flush();
-
-        $this->get('/')->assertOk()->assertSee('Diapositive du jour')->assertSee('acc-diapo', false)->assertDontSee('nuit-hero', false);
     }
 
     public function test_boutiques_sans_campagne(): void

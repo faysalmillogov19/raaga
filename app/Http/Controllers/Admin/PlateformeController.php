@@ -6,7 +6,6 @@ use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Plateforme\ParametresPlateforme;
-use App\Support\Diapositives;
 use App\Support\Plateforme\Catalogue;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -32,11 +31,15 @@ class PlateformeController extends Controller
 
     public function __construct(private readonly ParametresPlateforme $parametres) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         Gate::authorize(Droit::PlateformeVoir->value);
 
-        $section = Catalogue::existe((string) $request->query('section')) ? $request->query('section') : 'identite';
+        // Section inconnue (dont l'ancienne rubrique « Site public › Carrousel », retirée) : retour à la première section.
+        if ($request->filled('section') && ! Catalogue::existe((string) $request->query('section'))) {
+            return redirect()->route('admin.plateforme');
+        }
+        $section = $request->query('section') ?: 'identite';
         $onglet = $request->query('onglet') === 'historique' ? 'historique' : 'parametres';
         $ligne = DB::table('parametres_plateforme')->where('section', $section)->first();
 
@@ -104,6 +107,8 @@ class PlateformeController extends Controller
         Gate::authorize(Droit::PlateformeModifierTout->value);
 
         $section = DB::table('parametres_plateforme_versions')->where('id', $version)->value('section') ?? abort(404);
+        // Version d'une section retirée du catalogue (carrousel) : jamais restaurée.
+        abort_unless(Catalogue::existe($section), 404);
 
         return redirect()->route('admin.plateforme', ['section' => $section, 'onglet' => 'historique'])
             ->with('succes', $this->parametres->restaurer($version, $request->user())
@@ -135,12 +140,6 @@ class PlateformeController extends Controller
                 'tel_intl' => ["{$champ}.regex" => $e('tel_intl')],
                 'expediteur' => ["{$champ}.regex" => $e('expediteur')],
                 'image' => ["{$champ}.*" => $e('armoiries')],
-                'carrousel' => [
-                    "{$champ}.*.fichier.*" => $e('photo'), "{$champ}.*.image.required_without" => $e('diapositive_image'),
-                    "{$champ}.*.boutonLien.regex" => $e('lien_bouton'), "{$champ}.*.fin.after_or_equal" => $e('fin_apres_debut'),
-                    "{$champ}.max" => $e('diapositives_max'),
-                    "{$champ}.*.titre.not_regex" => $e('promesse'), "{$champ}.*.sousTitre.not_regex" => $e('promesse'), "{$champ}.*.boutonLibelle.not_regex" => $e('promesse'),
-                ],
                 'reseaux', 'liens' => ["{$champ}.*.url.url" => $e('https'), "{$champ}.*.url.regex" => $e('https')],
                 'bandeau' => ["{$champ}.lien.url" => $e('https'), "{$champ}.lien.regex" => $e('https'), "{$champ}.fin.after" => $e('fin_apres_debut'), "{$champ}.texte.not_regex" => $e('promesse')],
                 'horaires' => ["{$champ}.fin.after" => $e('fin_apres_debut')],
@@ -150,16 +149,6 @@ class PlateformeController extends Controller
         }
 
         $validateur = Validator::make($request->all(), Catalogue::regles($section), $messages, $this->attributs($section));
-
-        // Carrousel d'accueil : 5 diapositives actives au plus.
-        if ($section === 'site_public') {
-            $validateur->after(function ($v) use ($request) {
-                $actives = collect((array) $request->input('carrousel', []))->filter(fn ($d) => filter_var($d['active'] ?? false, FILTER_VALIDATE_BOOL))->count();
-                if ($actives > Diapositives::MAX_ACTIVES) {
-                    $v->errors()->add('carrousel', __('admin.plateforme.erreurs.actives_max', ['max' => Diapositives::MAX_ACTIVES]));
-                }
-            });
-        }
 
         // Chiffres du projet : le total de la répartition doit égaler le coût total.
         if ($section === 'projet') {

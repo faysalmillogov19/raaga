@@ -51,7 +51,7 @@
             @endif
 
             @if ($modifiable)
-                <form method="POST" action="{{ route('admin.plateforme.update', $section) }}" @if (in_array($section, ['identite', 'site_public'], true)) enctype="multipart/form-data" @endif
+                <form method="POST" action="{{ route('admin.plateforme.update', $section) }}" @if ($section === 'identite') enctype="multipart/form-data" @endif
                       class="mt-5" novalidate x-ref="formulaire"
                       x-data="{
                           sensibles: @js($sensibles),

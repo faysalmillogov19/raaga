@@ -15,7 +15,7 @@
     $o = fn (string $sous, $defaut = null) => old("{$champ}.{$sous}", $defaut);
 @endphp
 
-<div @class(['formulaire-champ !mt-0', 'lg:col-span-2' => in_array($type, ['texte_long', 'horaires', 'contact', 'hebergeur', 'reseaux', 'liens', 'financement', 'bandeau', 'maintenance', 'carrousel'], true)])>
+<div @class(['formulaire-champ !mt-0', 'lg:col-span-2' => in_array($type, ['texte_long', 'horaires', 'contact', 'hebergeur', 'reseaux', 'liens', 'financement', 'bandeau', 'maintenance'], true)])>
     @switch($type)
         @case('texte')
         @case('url')
@@ -61,135 +61,6 @@
                 @endif
                 <input id="{{ $id }}" name="{{ $champ }}" type="file" accept=".svg,.png,image/svg+xml,image/png" @class(['champ', 'est-invalide' => $invalide])>
             </div>
-            @break
-
-        @case('carrousel')
-            @php
-                $c = fn (string $cle, array $r = []) => __('admin.plateforme.carrousel.'.$cle, $r);
-                $diapos = array_map(fn (array $d) => [
-                    'cle' => \Illuminate\Support\Str::random(8),
-                    'image' => \App\Support\Diapositives::existe($d['image'] ?? null) ? $d['image'] : '',
-                    'apercu' => \App\Support\Diapositives::existe($d['image'] ?? null) ? \App\Support\Diapositives::url($d['image'], 640) : null,
-                    'alt' => $d['alt'] ?? '', 'titre' => $d['titre'] ?? '', 'sousTitre' => $d['sousTitre'] ?? '',
-                    'boutonLibelle' => $d['boutonLibelle'] ?? '', 'boutonLien' => $d['boutonLien'] ?? '',
-                    'active' => filter_var($d['active'] ?? false, FILTER_VALIDATE_BOOL), 'debut' => $d['debut'] ?? '', 'fin' => $d['fin'] ?? '',
-                    'cadrageX' => (int) ($d['cadrageX'] ?? 50), 'cadrageY' => (int) ($d['cadrageY'] ?? 50), 'texte' => $d['texte'] ?? 'gauche',
-                ], array_values((array) old($champ, $valeur ?? [])));
-                // Erreurs par diapositive (« carrousel.2.alt ») : affichées sous le champ concerné.
-                $erreursDiapos = collect($errors->getMessages())->filter(fn ($m, $cle) => str_starts_with($cle, $champ.'.'))->map(fn ($m) => $m[0]);
-                $erreurs = collect($errors->get($champ));
-                if ($erreursDiapos->isNotEmpty() && collect($diapos)->contains(fn ($d) => $d['image'] === '')) {
-                    $erreurs->push($p('erreurs.carrousel_fichiers'));
-                }
-            @endphp
-            <fieldset x-data="{
-                          diapos: @js($diapos),
-                          erreurs: @js($erreursDiapos),
-                          glisse: null,
-                          poignee: null,
-                          get actives() { return this.diapos.filter(d => d.active).length },
-                          deplacer(de, vers) {
-                              if (de === null || de === vers || vers < 0 || vers >= this.diapos.length) return;
-                              const [d] = this.diapos.splice(de, 1);
-                              this.diapos.splice(vers, 0, d);
-                              this.erreurs = {};
-                          },
-                          ajouter() { this.diapos.push({ cle: Math.random().toString(36).slice(2), image: '', apercu: null, alt: '', titre: '', sousTitre: '', boutonLibelle: '', boutonLien: '', active: true, debut: '', fin: '', cadrageX: 50, cadrageY: 50, texte: 'gauche' }) },
-                          cadrer(d, e) { const r = e.currentTarget.getBoundingClientRect(); d.cadrageX = Math.round((e.clientX - r.left) * 100 / r.width); d.cadrageY = Math.round((e.clientY - r.top) * 100 / r.height) },
-                          choisir(d, e) { const f = e.target.files[0]; if (f) d.apercu = URL.createObjectURL(f) },
-                          erreur(i, c) { return this.erreurs[`{{ $champ }}.${i}.${c}`] ?? null },
-                      }">
-                <legend class="font-bold text-encre">{{ $libelle }}</legend>
-                <p class="texte-carte mt-1" aria-live="polite">
-                    <span x-text="@js($c('actives', ['n' => '__N__', 'max' => \App\Support\Diapositives::MAX_ACTIVES])).replace('__N__', actives)"></span>
-                    <strong x-show="actives > {{ \App\Support\Diapositives::MAX_ACTIVES }}" x-cloak class="block text-rouge">{{ $c('trop', ['max' => \App\Support\Diapositives::MAX_ACTIVES]) }}</strong>
-                </p>
-                <p x-show="! diapos.length" class="texte-carte mt-3">{{ $c('aucune') }}</p>
-                <ol class="mt-3 grid gap-4">
-                    <template x-for="(d, i) in diapos" :key="d.cle">
-                        <li class="rounded-charte border border-ligne bg-white p-4" :class="glisse === i && 'opacity-50'"
-                            :draggable="poignee === d.cle" @dragstart="glisse = i; $event.dataTransfer.effectAllowed = 'move'"
-                            @dragover.prevent @drop.prevent="deplacer(glisse, i)" @dragend="glisse = null; poignee = null">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="cursor-grab text-gris" title="{{ $c('glisser') }}" @pointerdown="poignee = d.cle" @pointerup="poignee = null">
-                                    <x-icon name="poignee" /><span class="sr-only">{{ $c('glisser') }}</span>
-                                </span>
-                                <h3 class="!text-base font-bold text-encre" x-text="@js($c('diapositive', ['n' => '__N__'])).replace('__N__', i + 1)"></h3>
-                                <span x-show="! d.active" class="bo-etiquette">{{ $c('inactive') }}</span>
-                                <span class="ml-auto flex gap-1">
-                                    <button type="button" class="bo-bouton-icone" :disabled="i === 0" @click="deplacer(i, i - 1)" :aria-label="@js($c('monter', ['n' => '__N__'])).replace('__N__', i + 1)"><x-icon name="chevron" class="h-5 w-5 -rotate-90" /></button>
-                                    <button type="button" class="bo-bouton-icone" :disabled="i === diapos.length - 1" @click="deplacer(i, i + 1)" :aria-label="@js($c('descendre', ['n' => '__N__'])).replace('__N__', i + 1)"><x-icon name="chevron" class="h-5 w-5 rotate-90" /></button>
-                                    <button type="button" class="bo-bouton-icone text-rouge" @click="diapos.splice(i, 1); erreurs = {}" :aria-label="@js($c('supprimer', ['n' => '__N__'])).replace('__N__', i + 1)"><x-icon name="supprimer" class="h-5 w-5" /></button>
-                                </span>
-                            </div>
-                            <input type="hidden" :name="`{{ $champ }}[${i}][ordre]`" :value="i + 1">
-                            <input type="hidden" :name="`{{ $champ }}[${i}][image]`" :value="d.image">
-                            <input type="hidden" :name="`{{ $champ }}[${i}][cadrageX]`" :value="d.cadrageX">
-                            <input type="hidden" :name="`{{ $champ }}[${i}][cadrageY]`" :value="d.cadrageY">
-                            <div class="mt-3 grid gap-3 lg:grid-cols-[200px_1fr]">
-                                <div>
-                                    <div x-show="d.apercu" class="relative cursor-crosshair" @click="cadrer(d, $event)" title="{{ $c('cadrage_aide') }}">
-                                        <img :src="d.apercu" alt="" class="block w-full rounded border border-ligne">
-                                        <span class="pointer-events-none absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-jaune shadow"
-                                              :style="`left: ${d.cadrageX}%; top: ${d.cadrageY}%`" aria-hidden="true"></span>
-                                    </div>
-                                    <p x-show="d.apercu" class="aide-champ">{{ $c('cadrage_aide') }}</p>
-                                    <div x-show="d.apercu" class="mt-1 flex gap-2">
-                                        <label class="font-normal text-sm">{{ $c('cadrage_x') }}
-                                            <input type="number" min="0" max="100" class="champ mt-1 w-20" x-model.number="d.cadrageX"></label>
-                                        <label class="font-normal text-sm">{{ $c('cadrage_y') }}
-                                            <input type="number" min="0" max="100" class="champ mt-1 w-20" x-model.number="d.cadrageY"></label>
-                                    </div>
-                                    <div x-show="! d.apercu" class="flex aspect-video w-full items-center justify-center rounded bg-[#005C2B] text-sm text-white">{{ $c('diapositive', ['n' => '']) }}</div>
-                                </div>
-                                <div class="grid gap-3 lg:grid-cols-2">
-                                    <label class="font-normal lg:col-span-2">{{ $p('sous_champs.fichier') }}
-                                        <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="champ mt-1" :class="(erreur(i, 'fichier') || erreur(i, 'image')) && 'est-invalide'"
-                                               :name="`{{ $champ }}[${i}][fichier]`" @change="choisir(d, $event)">
-                                        <span class="aide-champ block">{{ $c('image_aide') }}</span>
-                                        <span class="message-erreur block" x-show="erreur(i, 'fichier') || erreur(i, 'image')" x-text="erreur(i, 'fichier') || erreur(i, 'image')"></span>
-                                    </label>
-                                    <label class="font-normal lg:col-span-2">{{ $p('sous_champs.alt') }}
-                                        <input type="text" required maxlength="160" class="champ mt-1" :class="erreur(i, 'alt') && 'est-invalide'" :name="`{{ $champ }}[${i}][alt]`" x-model="d.alt">
-                                        <span class="aide-champ block">{{ $c('alt_aide') }}</span>
-                                        <span class="message-erreur block" x-show="erreur(i, 'alt')" x-text="erreur(i, 'alt')"></span>
-                                    </label>
-                                    @foreach (['titre' => 60, 'sousTitre' => 140, 'boutonLibelle' => 40, 'boutonLien' => 255] as $sous => $longueur)
-                                        <label class="font-normal">{{ $p('sous_champs.'.$sous) }}
-                                            <input type="text" maxlength="{{ $longueur }}" class="champ mt-1" :class="erreur(i, '{{ $sous }}') && 'est-invalide'" :name="`{{ $champ }}[${i}][{{ $sous }}]`" x-model="d.{{ $sous }}"
-                                                   @if ($sous === 'boutonLien') placeholder="/boutiques" @endif>
-                                            @if ($sous === 'boutonLien')
-                                                <span class="aide-champ block">{{ $c('lien_aide') }}</span>
-                                            @elseif ($longueur <= 140)
-                                                <span class="aide-champ block" x-text="`${d.{{ $sous }}.length} / {{ $longueur }}`"></span>
-                                            @endif
-                                            <span class="message-erreur block" x-show="erreur(i, '{{ $sous }}')" x-text="erreur(i, '{{ $sous }}')"></span>
-                                        </label>
-                                    @endforeach
-                                    <label class="font-normal">{{ $c('debut') }}
-                                        <input type="date" class="champ mt-1" :name="`{{ $champ }}[${i}][debut]`" x-model="d.debut"></label>
-                                    <label class="font-normal">{{ $c('fin') }}
-                                        <input type="date" class="champ mt-1" :class="erreur(i, 'fin') && 'est-invalide'" :name="`{{ $champ }}[${i}][fin]`" x-model="d.fin" :min="d.debut">
-                                        <span class="message-erreur block" x-show="erreur(i, 'fin')" x-text="erreur(i, 'fin')"></span>
-                                    </label>
-                                    <label class="font-normal">{{ $c('texte') }}
-                                        <select class="champ mt-1" :name="`{{ $champ }}[${i}][texte]`" x-model="d.texte">
-                                            @foreach (Catalogue::POSITIONS_TEXTE as $position)<option value="{{ $position }}">{{ $c('textes.'.$position) }}</option>@endforeach
-                                        </select></label>
-                                    <label class="inline-flex items-center gap-2 font-normal">
-                                        <input type="hidden" :name="`{{ $champ }}[${i}][active]`" value="0">
-                                        <input type="checkbox" value="1" :name="`{{ $champ }}[${i}][active]`" x-model="d.active">
-                                        {{ $p('sous_champs.active') }}
-                                    </label>
-                                </div>
-                            </div>
-                        </li>
-                    </template>
-                </ol>
-                <x-admin.bouton variante="contour" class="mt-3" type="button" x-on:click="ajouter()" x-bind:disabled="diapos.length >= {{ \App\Support\Diapositives::MAX_TOTAL }}">
-                    <x-icon name="plus" /> {{ $c('ajouter') }}
-                </x-admin.bouton>
-            </fieldset>
             @break
 
         @case('horaires')

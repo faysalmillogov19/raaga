@@ -7,9 +7,9 @@ use App\Support\Diapositives;
 use Illuminate\Database\Seeder;
 
 /**
- * Contenu par défaut du carrousel d'accueil : les quatre photos retenues (database/seeders/images/carrousel), avec
- * leurs textes et leur cadrage. Jamais en production, où les diapositives sont saisies par l'ADMIN (Paramètres ›
- * Site public › Carrousel). Ne remplace jamais un carrousel déjà saisi.
+ * Contenu par défaut de l'ancien carrousel d'accueil : les quatre photos retenues (database/seeders/images/carrousel),
+ * avec leurs textes et leur cadrage. Le carrousel est retiré de l'accueil (20/10/2026) : ce seeder n'est plus appelé par
+ * DatabaseSeeder ; fichier conservé. Jamais en production. Ne remplace jamais un carrousel déjà saisi.
  */
 class CarrouselAccueilSeeder extends Seeder
 {

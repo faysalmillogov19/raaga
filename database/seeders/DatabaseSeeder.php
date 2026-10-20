@@ -27,7 +27,6 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
         // Référentiels (idempotents, aussi lancés seuls par deploy.sh) : paramètres, niveaux, zones, types, unités, moyens de paiement.
         $this->call(ReferentielsSeeder::class);
-        $this->call(CarrouselAccueilSeeder::class);
 
         // Comptes de démonstration : jamais en production.
         if (! app()->environment('production')) {

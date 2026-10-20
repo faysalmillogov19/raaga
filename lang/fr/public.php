@@ -1133,16 +1133,6 @@ return [
         'sous_titre' => 'Choisissez votre boutique sur le plan, confirmez avec votre pièce d’identité, puis payez la caution : au premier arrivé, premier servi.',
         'candidater' => 'Je réserve',
         'comment' => 'Comment ça marche',
-        'carrousel' => [
-            'role' => 'carrousel',
-            'diapositive' => 'diapositive',
-            'nom' => 'À la une',
-            'pause' => 'Mettre le défilement en pause',
-            'lecture' => 'Reprendre le défilement',
-            'precedente' => 'Diapositive précédente',
-            'suivante' => 'Diapositive suivante',
-            'aller' => 'Afficher la diapositive :n',
-        ],
         'chiffres_titre' => 'Le marché en chiffres',
         'chiffres' => [
             'boutiques' => 'boutiques référencées',

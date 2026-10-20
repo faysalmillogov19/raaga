@@ -1,10 +1,8 @@
 {{--
-    Accueil de la phase 1 (boutiques) : carrousel, chiffres clés, étapes, ce que l'on verse, sites, questions, aide.
+    Accueil de la phase 1 (boutiques) : bandeau fixe, chiffres clés, étapes, ce que l'on verse, sites, questions, aide.
     Chiffres et dates lus dans la base ou les paramètres de la plateforme ; aucun montant.
 --}}
 @php
-    use App\Support\Diapositives;
-
     $a = __('public.accueil_raaga');
     $numeroVert = plateforme('contacts.numeroVert');
     $mois = fn (array $plage) => $plage[0] === $plage[1]
@@ -13,15 +11,22 @@
 @endphp
 
 <x-public.layout :titre="$a['titre_page']">
-    @if ($premiere = $diapositives->first())
-        <x-slot:head>
-            {{-- Première image du carrousel chargée en priorité (la plus adaptée à l'écran). --}}
-            <link rel="preload" as="image" type="image/webp" imagesrcset="{{ Diapositives::srcset($premiere['image']) }}" imagesizes="100vw" fetchpriority="high">
-        </x-slot:head>
-    @endif
-
-    {{-- 1. Carrousel --}}
-    <x-public.carrousel :diapositives="$diapositives" :url-candidater="$urlCandidater" />
+    {{-- 1. Bandeau fixe (ancienne diapositive par défaut, sur fond vert) : titre, sous-titre, « Je réserve », « Comment ça marche ». --}}
+    <section class="acc-carrousel" aria-labelledby="accueil-titre" data-bandeau-accueil>
+        <h1 id="accueil-titre" class="sr-only">{{ $a['titre_page'] }}</h1>
+        <div class="acc-carrousel-piste">
+            <div class="acc-diapo acc-diapo-defaut">
+                <div class="conteneur acc-diapo-contenu">
+                    <h2 class="acc-titre">{{ $a['titre'] }}</h2>
+                    <p class="acc-sous-titre">{{ $a['sous_titre'] }}</p>
+                    <a href="{{ $urlCandidater }}" class="acc-btn acc-btn-jaune acc-diapo-bouton">{{ $a['candidater'] }}</a>
+                </div>
+            </div>
+        </div>
+        <div class="conteneur acc-carrousel-barre">
+            <a href="#comment" class="acc-btn acc-btn-contour">{{ $a['comment'] }}</a>
+        </div>
+    </section>
 
     {{-- 2. Promesse, puis les deux démarches côte à côte (empilées sur mobile), chacune avec son code visuel. --}}
     @php($d = __('public.demarches'))

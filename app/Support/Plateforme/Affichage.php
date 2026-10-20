@@ -19,8 +19,6 @@ final class Affichage
             'tel_bf' => $valeur ? Telephone::formater($valeur) : $vide,
             'entier' => $valeur === null ? $vide : ($champ === 'nombreBoutiques' ? format_nombre($valeur) : format_fcfa($valeur)),
             'image' => $valeur ? basename($valeur) : $vide,
-            'carrousel' => $valeur ? trans_choice('admin.plateforme.carrousel.resume', count($valeur), ['n' => count($valeur)])
-                .' ('.trans_choice('admin.plateforme.carrousel.resume_actives', $n = collect($valeur)->where('active', true)->count(), ['n' => $n]).') : '.self::joindre(array_map(fn ($d) => ($d['active'] ? '' : '(inactive) ').($d['titre'] ?? $d['alt']), $valeur), ' ; ') : $vide,
             'horaires' => format_horaires($valeur) ?? $vide,
             'gps' => ($valeur['latitude'] ?? null) !== null ? $valeur['latitude'].', '.$valeur['longitude'] : $vide,
             'contact' => self::joindre([$valeur['libelle'] ?? null, $valeur['nom'] ?? null, $valeur['telephone'] ?? null, $valeur['email'] ?? null])

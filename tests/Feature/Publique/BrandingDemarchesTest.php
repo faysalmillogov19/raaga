@@ -129,12 +129,10 @@ class BrandingDemarchesTest extends TestCase
             $this->assertNotNull(MotsInterdits::trouver($texte), $texte);
         }
 
-        // Textes saisis par l'ADMIN, carrousel compris : refusés.
+        // Textes saisis par l'ADMIN : refusés.
         $this->connecterBackoffice(Role::Admin);
         $this->put(route('admin.plateforme.update', 'messages'), ['bandeauAnnonce' => ['texte' => 'Placement sans risque', 'type' => 'information'], 'messageAntiFraude' => 'Gagnez 10 % par an'])
             ->assertSessionHasErrors(['bandeauAnnonce.texte', 'messageAntiFraude']);
-        $this->put(route('admin.plateforme.update', 'site_public'), ['carrousel' => [['alt' => 'Marché', 'titre' => 'Rendement garanti', 'active' => '1']]])
-            ->assertSessionHasErrors('carrousel.0.titre');
     }
 
     public function test_encadres_toujours_presents(): void

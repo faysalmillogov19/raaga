@@ -1,11 +1,10 @@
 {{--
     Accueil, thème « nuit » (maquette docs/maquettes/maquette-accueil-theme-nuit.html). Toutes les données viennent de la
     base (App\Services\Publique\AccueilNuit) ; le téléphone illustré est un exemple (aria-hidden, mention « Exemple »).
-    Diapositives actives : le carrousel remplace le bandeau blanc. Carte « Investir » : même logique que le thème clair.
+    Bandeau blanc toujours affiché (plus de carrousel). Carte « Investir » : même logique que le thème clair.
 --}}
 @php
     use App\Services\Publique\AccueilNuit;
-    use App\Support\Diapositives;
     use App\Support\TitreNuit;
 
     $a = __('public.accueil_raaga');
@@ -22,63 +21,53 @@
 @endphp
 
 <x-public.layout :titre="$a['titre_page']" :sombre="true">
-    @if ($premiere = $diapositives->first())
-        <x-slot:head>
-            <link rel="preload" as="image" type="image/webp" imagesrcset="{{ Diapositives::srcset($premiere['image']) }}" imagesizes="100vw" fetchpriority="high">
-        </x-slot:head>
-    @endif
-
-    {{-- 1. Diapositives actives : carrousel ; sinon bandeau blanc avec le téléphone illustré. --}}
-    @if ($diapositives->isNotEmpty())
-        <x-public.carrousel :diapositives="$diapositives" :url-candidater="$urlCandidater" />
-    @else
-        <section class="nuit-section-blanc nuit-hero" aria-labelledby="accueil-titre">
-            <div class="conteneur nuit-hero-corps">
-                <div class="nuit-hero-texte">
-                    <span class="nuit-badge"><span class="nuit-badge-numero" aria-hidden="true">1</span>{{ $n['badge'] }}</span>
-                    <h1 id="accueil-titre" class="nuit-hero-titre">{{ $titreLeger }} <span class="nuit-hero-accent">{{ $titreFort }}</span></h1>
-                    <p class="nuit-hero-intro">{{ $a['sous_titre'] }}
-                        @if ($totalBoutiques > 0) {{ __('public.nuit.accueil.chiffres', ['boutiques' => format_nombre($totalBoutiques), 'niveaux' => $niveaux->count()]) }}@endif</p>
-                    <div class="nuit-boutons">
-                        <x-public.pilule :href="$urlCandidater" class="nuit-pilule-grand">{{ $a['candidater'] }}</x-public.pilule>
-                        <x-public.pilule variante="contour" href="#comment" class="nuit-pilule-grand">{{ $a['comment'] }}</x-public.pilule>
-                    </div>
+    {{-- 1. Bandeau blanc avec le téléphone illustré. --}}
+    <section class="nuit-section-blanc nuit-hero" aria-labelledby="accueil-titre">
+        <div class="conteneur nuit-hero-corps">
+            <div class="nuit-hero-texte">
+                <span class="nuit-badge"><span class="nuit-badge-numero" aria-hidden="true">1</span>{{ $n['badge'] }}</span>
+                <h1 id="accueil-titre" class="nuit-hero-titre">{{ $titreLeger }} <span class="nuit-hero-accent">{{ $titreFort }}</span></h1>
+                <p class="nuit-hero-intro">{{ $a['sous_titre'] }}
+                    @if ($totalBoutiques > 0) {{ __('public.nuit.accueil.chiffres', ['boutiques' => format_nombre($totalBoutiques), 'niveaux' => $niveaux->count()]) }}@endif</p>
+                <div class="nuit-boutons">
+                    <x-public.pilule :href="$urlCandidater" class="nuit-pilule-grand">{{ $a['candidater'] }}</x-public.pilule>
+                    <x-public.pilule variante="contour" href="#comment" class="nuit-pilule-grand">{{ $a['comment'] }}</x-public.pilule>
                 </div>
-                @if ($exemple)
-                    @php
-                        $t = $n['telephone'];
-                    @endphp
-                    <div class="nuit-scene" aria-hidden="true" data-exemple>
-                        <span class="nuit-scene-exemple">{{ $n['exemple'] }}</span>
-                        <div class="nuit-telephone">
-                            <div class="nuit-telephone-ecran">
-                                <p class="nuit-telephone-petit">{{ __('public.entete.mon_espace') }}</p>
-                                <p class="nuit-telephone-code">{{ $exemple['code'] }}</p>
-                                <div class="nuit-telephone-anneau"><span>50 %</span><small>{{ $t['paye'] }}</small></div>
-                                <div class="nuit-telephone-grille">
-                                    <div><p>{{ $t['loyer'] }}</p><p>{{ format_nombre($exemple['loyer']) }}</p></div>
-                                    <div><p>{{ $t['caution'] }}</p><p class="nuit-vif">{{ $t['payee'] }}</p></div>
-                                    <div><p>{{ $t['avance'] }}</p><p class="nuit-jaune">{{ $t['echeance'] }}</p></div>
-                                    <div><p>{{ $t['carte'] }}</p><p>{{ $t['qr'] }}</p></div>
-                                </div>
-                            </div>
-                        </div>
-                        @if ($exemple['moyens'])
-                            <div class="nuit-bulle nuit-bulle-moyens">
-                                @foreach ($exemple['moyens'] as $moyen)<p><span>{{ $moyen }}</span><span class="nuit-vif">✓</span></p>@endforeach
-                            </div>
-                        @endif
-                        <div class="nuit-bulle nuit-bulle-total">
-                            <p class="nuit-bulle-libelle">{{ $t['total'] }}</p>
-                            <p class="nuit-bulle-montant">{{ format_fcfa($exemple['total']) }}</p>
-                            <div class="nuit-bulle-barres"><span></span><span></span><span></span><span></span><span></span></div>
-                        </div>
-                        <div class="nuit-bulle nuit-bulle-carte"><p>{{ $t['carte_titre'] }}</p><p>{{ $t['carte_texte'] }}</p></div>
-                    </div>
-                @endif
             </div>
-        </section>
-    @endif
+            @if ($exemple)
+                @php
+                    $t = $n['telephone'];
+                @endphp
+                <div class="nuit-scene" aria-hidden="true" data-exemple>
+                    <span class="nuit-scene-exemple">{{ $n['exemple'] }}</span>
+                    <div class="nuit-telephone">
+                        <div class="nuit-telephone-ecran">
+                            <p class="nuit-telephone-petit">{{ __('public.entete.mon_espace') }}</p>
+                            <p class="nuit-telephone-code">{{ $exemple['code'] }}</p>
+                            <div class="nuit-telephone-anneau"><span>50 %</span><small>{{ $t['paye'] }}</small></div>
+                            <div class="nuit-telephone-grille">
+                                <div><p>{{ $t['loyer'] }}</p><p>{{ format_nombre($exemple['loyer']) }}</p></div>
+                                <div><p>{{ $t['caution'] }}</p><p class="nuit-vif">{{ $t['payee'] }}</p></div>
+                                <div><p>{{ $t['avance'] }}</p><p class="nuit-jaune">{{ $t['echeance'] }}</p></div>
+                                <div><p>{{ $t['carte'] }}</p><p>{{ $t['qr'] }}</p></div>
+                            </div>
+                        </div>
+                    </div>
+                    @if ($exemple['moyens'])
+                        <div class="nuit-bulle nuit-bulle-moyens">
+                            @foreach ($exemple['moyens'] as $moyen)<p><span>{{ $moyen }}</span><span class="nuit-vif">✓</span></p>@endforeach
+                        </div>
+                    @endif
+                    <div class="nuit-bulle nuit-bulle-total">
+                        <p class="nuit-bulle-libelle">{{ $t['total'] }}</p>
+                        <p class="nuit-bulle-montant">{{ format_fcfa($exemple['total']) }}</p>
+                        <div class="nuit-bulle-barres"><span></span><span></span><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="nuit-bulle nuit-bulle-carte"><p>{{ $t['carte_titre'] }}</p><p>{{ $t['carte_texte'] }}</p></div>
+                </div>
+            @endif
+        </div>
+    </section>
 
     {{-- 2. Qu'est-ce que Raaga ? (orbite) --}}
     <section class="nuit-section nuit-section-principal" aria-labelledby="quoi-titre">
