@@ -34,3 +34,6 @@ Thumbs.db
 
 # Maquettes de référence (lecture seule, syntaxe de maquette) : jamais commitées ni déployées.
 /docs/maquettes/
+
+# Captures d'écran (contrôles visuels) : gardées en local, jamais dans le dépôt.
+/docs/captures/
