@@ -88,6 +88,7 @@
         @case('parametres') <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/> @break
         @case('plateforme') <rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 9h4M7 12h7"/><circle cx="16.5" cy="9" r="1"/> @break
         @case('cadenas') <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/> @break
+        @case('carre-plein') <rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/> @break
         @case('institutions') <path d="M3 21h18M5 21V10M19 21V10M9 21v-7h6v7"/><path d="M12 3 3 8h18z"/> @break
         @case('boutiques') <path d="M3 9 4.5 4h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 11.5V20h14v-8.5M10 20v-5h4v5"/> @break
         @case('conventions') <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h3"/><path d="m14 17 1.5 1.5L19 15"/> @break

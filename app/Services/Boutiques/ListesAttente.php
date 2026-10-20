@@ -65,6 +65,20 @@ class ListesAttente
             ->whereIn('statut', StatutInscriptionBoutique::actives())->count();
     }
 
+    /**
+     * Nombre de personnes intéressées par boutique (même règle que interesses()), en une requête pour tout un plan.
+     *
+     * @param  list<int>  $boutiques
+     * @return array<int, int> identifiant de boutique => nombre
+     */
+    public static function interessesParBoutique(array $boutiques): array
+    {
+        return InscriptionBoutique::query()->whereIn('boutique_id', $boutiques)
+            ->whereIn('statut', StatutInscriptionBoutique::actives())
+            ->groupBy('boutique_id')->selectRaw('boutique_id, count(*) as n')->pluck('n', 'boutique_id')
+            ->map(fn ($n) => (int) $n)->all();
+    }
+
     /** Inscription active du citoyen sur cette boutique, ou null. */
     public static function inscriptionDe(Boutique $boutique, User $user): ?InscriptionBoutique
     {

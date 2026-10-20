@@ -9,12 +9,14 @@ use App\Enums\PublicAutorise;
 use App\Enums\RegleArret;
 use App\Enums\RegleSiEchec;
 use App\Enums\Role;
+use App\Enums\StatutBoutique;
 use App\Enums\StatutKyc;
 use App\Enums\StatutTranche;
 use App\Enums\TypeFraisSouscription;
 use App\Models\Duree;
 use App\Models\Tranche;
 use App\Models\User;
+use App\Services\Boutiques\ListesAttente;
 use App\Support\ThemePublic;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -118,6 +120,43 @@ class ThemeLumiereTest extends TestCase
 
         config(['raaga.theme_public' => 'nuit']);
         $this->get('/page-inexistante')->assertNotFound()->assertSee('theme-nuit', false)->assertDontSee('theme-lumiere', false);
+    }
+
+    public function test_grille_du_plan_selon_la_maquette(): void
+    {
+        Boutiques::campagneOuverte([], 6);
+        Boutiques::boutique('A', 2)->forceFill(['statut' => StatutBoutique::PreReservee])->save();
+        Boutiques::boutique('A', 3)->forceFill(['statut' => StatutBoutique::Reservee])->save();
+        Boutiques::boutique('A', 4)->forceFill(['statut' => StatutBoutique::Attribuee])->save();
+        $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670123456']);
+        Boutiques::reserver($this, $citoyen, Boutiques::boutique('A', 5))->assertSessionHasNoErrors();
+        $this->app['auth']->forgetGuards();
+
+        $html = $this->get(route('boutiques', ['niveau' => 'RC', 'bloc' => 'A']))->assertOk()
+            ->assertSee('<strong>Rez-de-chaussée · bloc A · 2 disponibles sur 6</strong> · Touchez un emplacement pour voir son détail.', false)
+            ->assertSee('aria-label="MCE-RC-A-001, Disponible"', false)->assertSee('aria-label="MCE-RC-A-002, Pré-réservée"', false)
+            ->assertSee('aria-label="MCE-RC-A-004, Attribuée"', false)
+            ->assertSee('@click.prevent="d = ', false)->assertSee('Retirée')
+            ->assertSee('Emplacement')->assertSee('data-interesses', false)
+            ->getContent();
+
+        // Numéro sur trois chiffres pour une case disponible, icône pour les autres ; toutes les cases dans l'ordre.
+        $this->assertMatchesRegularExpression('/aria-label="MCE-RC-A-001, Disponible"[^>]*>001</', $html);
+        $this->assertSame(['001', '002', '003', '004', '005', '006'], array_map(fn ($c) => substr($c, -3), $this->codes($html)));
+        // Fiche : libellés des montants avec leur durée, action selon le statut, personnes inscrites.
+        $this->assertStringContainsString('Caution (12 mois)', $html);
+        $this->assertStringContainsString('Boutique attribuée', $html);
+        $this->assertStringContainsString('Voir et m’inscrire sur la liste d’attente', $html);
+        $this->assertStringContainsString('1 personne s’est déjà inscrite sur cette boutique.', $html);
+        $this->assertSame(1, ListesAttente::interessesParBoutique([Boutiques::boutique('A', 5)->id])[Boutiques::boutique('A', 5)->id] ?? 0);
+    }
+
+    /** @return list<string> */
+    private function codes(string $html): array
+    {
+        preg_match_all('/aria-label="(MCE-RC-A-\d{3}),/', $html, $m);
+
+        return array_values(array_unique($m[1]));
     }
 
     public function test_feuille_de_style_du_theme_lumiere(): void

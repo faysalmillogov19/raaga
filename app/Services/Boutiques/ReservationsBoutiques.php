@@ -160,6 +160,7 @@ class ReservationsBoutiques
             'montants' => $tarif ? [
                 'loyer' => format_fcfa($tarif['loyer_mensuel']), 'caution' => format_fcfa($tarif['caution']),
                 'avance' => format_fcfa($tarif['avance']), 'total' => format_fcfa($tarif['caution'] + $tarif['avance']),
+                'mois_caution' => $tarif['mois_caution'], 'mois_avance' => $tarif['mois_avance'],
             ] : null,
         ];
     }

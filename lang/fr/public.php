@@ -141,7 +141,18 @@ return [
         'boutiques' => [
             'plan_titre' => 'Choisissez',
             'plan_fort' => 'votre emplacement',
-            'plan_entete' => '{0} :niveau · :bloc · aucun emplacement disponible|{1} :niveau · :bloc · 1 emplacement disponible|[2,*] :niveau · :bloc · :n emplacements disponibles',
+            'plan_entete' => '{0,1} :niveau · bloc :bloc · :n disponible sur :total|[2,*] :niveau · bloc :bloc · :n disponibles sur :total',
+            'plan_aide' => 'Touchez un emplacement pour voir son détail.',
+            // Libellés particuliers de certains blocs (pilules et en-tête du plan).
+            'blocs' => ['BP' => 'BP (pôle)'],
+            'case' => ':code, :statut',
+            'fiche' => [
+                'surtitre' => 'Emplacement',
+                'caution' => 'Caution (:mois)',
+                'avance' => 'Avance (:mois)',
+                'mois' => ':n mois',
+                'attribuee' => 'Boutique attribuée',
+            ],
             'etape' => 'Étape :n',
         ],
     ],

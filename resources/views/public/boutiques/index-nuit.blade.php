@@ -6,6 +6,7 @@
 --}}
 @php
     use App\Models\Niveau;
+    use App\Services\Boutiques\ListesAttente;
     use App\Services\Boutiques\ReservationsBoutiques;
     use App\Support\TitreNuit;
 
@@ -15,7 +16,7 @@
     $titre = $b['titre'];
     $lien = fn (array $choix) => route('boutiques', array_filter(['site' => $site?->id, 'type' => $type?->id, 'niveau' => $niveau, 'bloc' => $bloc, ...$choix], fn ($v) => $v !== null));
     $libellesNiveaux = Niveau::query()->whereIn('code', $niveaux->keys())->pluck('libelle', 'code');
-    $icones = ['pre_reservee' => 'horloge', 'reservee' => 'cadenas', 'attribuee' => 'check'];
+    $icones = ['pre_reservee' => 'horloge', 'reservee' => 'carre-plein', 'attribuee' => 'check'];
 @endphp
 
 <x-public.layout :titre="$titre" :sombre="true">
@@ -95,15 +96,29 @@
         {{-- Plan : choix en pilules, légende, cases, fiche blanche de l'emplacement survolé ou choisi. --}}
         @php
             $disponibles = $plan->filter(fn ($bt) => $bt->statut->surPlan() === 'disponible')->count();
-            $details = $plan->mapWithKeys(function ($boutique) use ($limites, $p, $b, $ouverte, $relance) {
+            $f = $n['boutiques']['fiche'];
+            $interesses = ListesAttente::interessesParBoutique($plan->pluck('id')->all());
+            $details = $plan->mapWithKeys(function ($boutique) use ($limites, $p, $b, $f, $ouverte, $relance, $interesses) {
                 $statut = $boutique->statut->surPlan();
                 $limiteAtteinte = $limites['restants'] !== null && ($limites['restants'][$boutique->type_boutique_id] ?? 0) === 0;
+                $detail = ReservationsBoutiques::detail($boutique);
+                $nb = $interesses[$boutique->id] ?? 0;
+                if ($detail['montants']) {
+                    $detail['montants']['libelle_caution'] = __('public.nuit.boutiques.fiche.caution', ['mois' => __('public.nuit.boutiques.fiche.mois', ['n' => $detail['montants']['mois_caution']])]);
+                    $detail['montants']['libelle_avance'] = __('public.nuit.boutiques.fiche.avance', ['mois' => __('public.nuit.boutiques.fiche.mois', ['n' => $detail['montants']['mois_avance']])]);
+                }
 
-                return [$boutique->code => [...ReservationsBoutiques::detail($boutique), 'statut' => $p['statuts'][$statut],
+                return [$boutique->code => [...$detail, 'statut' => $p['statuts'][$statut], 'statut_cle' => $statut,
                     'limite' => $limiteAtteinte && $statut === 'disponible' ? $b['limites']['atteinte'] : null,
                     // Libre, pré-réservée ou réservée : on peut s'y inscrire (réservation ou liste d'attente).
                     'lien' => in_array($statut, ['disponible', 'pre_reservee', 'reservee'], true) && ($ouverte || in_array($boutique->id, $relance, true)) ? route('boutiques.boutique', $boutique->code) : null,
-                    'action' => $statut === 'disponible' ? $p['detail']['reserver'] : $p['detail']['inscrire']]];
+                    'action' => match ($statut) {
+                        'disponible' => $p['detail']['reserver'],
+                        'pre_reservee', 'reservee' => $p['detail']['inscrire'],
+                        'attribuee' => $f['attribuee'],
+                        default => null,
+                    },
+                    'interesses' => $statut !== 'retiree' ? trans_choice('public.boutiques.attente.interesses', $nb, ['n' => format_nombre($nb)]) : null]];
             });
             $premier = $plan->first(fn ($bt) => $bt->statut->surPlan() === 'disponible') ?? $plan->first();
         @endphp
@@ -119,7 +134,7 @@
                 @foreach ([['site', $p['site'], $sites->mapWithKeys(fn ($s) => [$s->id => ($s->code ? $s->code.' · ' : '').$s->nom]), $site?->id],
                            ['type', $p['type'], $types->count() > 1 ? collect(['' => $p['tous_types']])->union($types->mapWithKeys(fn ($t) => [$t->id => $t->code.' · '.$t->libelle])) : collect(), $type?->id ?? ''],
                            ['niveau', $p['niveau'], $niveaux->keys()->mapWithKeys(fn ($nv) => [$nv => $libellesNiveaux[$nv] ?? $nv]), $niveau],
-                           ['bloc', $p['bloc'], collect($blocs)->mapWithKeys(fn ($bl) => [$bl => $p['bloc'].' '.$bl]), $bloc]] as [$cle, $libelle, $options, $actuel])
+                           ['bloc', $p['bloc'], collect($blocs)->mapWithKeys(fn ($bl) => [$bl => $n['boutiques']['blocs'][$bl] ?? $p['bloc'].' '.$bl]), $bloc]] as [$cle, $libelle, $options, $actuel])
                     @if ($options->isNotEmpty())
                         <nav class="nuit-plan-groupe" aria-label="{{ $libelle }}" data-choix="{{ $cle }}">
                             <p class="nuit-plan-libelle">{{ $libelle }}</p>
@@ -143,7 +158,7 @@
             </div>
 
             <ul class="nuit-plan-legende" aria-label="{{ $p['legende'] }}">
-                @foreach (['disponible', 'pre_reservee', 'reservee', 'attribuee'] as $statut)
+                @foreach (['disponible', 'pre_reservee', 'reservee', 'attribuee', 'retiree'] as $statut)
                     <li><span class="nuit-plan-point nuit-plan-{{ $statut }}" aria-hidden="true">@isset($icones[$statut])<x-icon :name="$icones[$statut]" />@endisset</span>{{ $p['statuts'][$statut] }}</li>
                 @endforeach
             </ul>
@@ -160,27 +175,27 @@
             @else
                 <div class="nuit-plan">
                     <div class="nuit-carte nuit-plan-carte">
-                        <p class="nuit-plan-entete"><strong>{{ trans_choice('public.nuit.boutiques.plan_entete', $disponibles, ['niveau' => $libellesNiveaux[$niveau] ?? $niveau, 'bloc' => $p['bloc'].' '.$bloc, 'n' => format_nombre($disponibles)]) }}</strong> · {{ $p['detail_aide'] }}</p>
+                        <p class="nuit-plan-entete"><strong>{{ trans_choice('public.nuit.boutiques.plan_entete', $disponibles, ['niveau' => $libellesNiveaux[$niveau] ?? $niveau, 'bloc' => $n['boutiques']['blocs'][$bloc] ?? $bloc, 'n' => format_nombre($disponibles), 'total' => format_nombre($plan->count())]) }}</strong> · {{ $n['boutiques']['plan_aide'] }}</p>
+                        {{-- Toutes les cases, dans l'ordre des numéros. Un clic choisit la case et met à jour la fiche ; sans JavaScript,
+                             une case ouverte à l'inscription mène à sa page. --}}
                         <ul class="nuit-plan-cases" data-bloc="{{ $niveau }}-{{ $bloc }}">
                             @foreach ($plan as $boutique)
                                 @php
                                     $statut = $boutique->statut->surPlan();
                                     $detail = $details[$boutique->code];
                                     $survol = $boutique->code.' · '.$boutique->type?->libelle.($boutique->surface ? ' · '.format_nombre((float) $boutique->surface, 1).' m²' : '');
+                                    $etiquette = __('public.nuit.boutiques.case', ['code' => $boutique->code, 'statut' => $p['statuts'][$statut]]);
+                                    $contenu = isset($icones[$statut]) ? null : str_pad((string) $boutique->numero, 3, '0', STR_PAD_LEFT);
                                 @endphp
                                 <li>
                                     @if ($detail['lien'])
                                         <a href="{{ $detail['lien'] }}" class="nuit-case nuit-plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                            :class="d && d.code === @js($boutique->code) ? 'est-choisie' : ''"
-                                           aria-label="{{ __('public.boutiques.plan.choisir', ['code' => $boutique->code]) }}" @mouseenter="d = @js($detail)" @focus="d = @js($detail)">@isset($icones[$statut])<x-icon :name="$icones[$statut]" class="nuit-case-icone" />@endisset{{ $boutique->numero }}@if ($detail['limite'])<span class="sr-only" data-limite-atteinte>{{ $detail['limite'] }}</span><span class="nuit-case-limite" aria-hidden="true">!</span>@endif</a>
+                                           aria-label="{{ $etiquette }}" aria-controls="plan-detail" @click.prevent="d = @js($detail)">@isset($icones[$statut])<x-icon :name="$icones[$statut]" class="nuit-case-icone" />@endisset{{ $contenu }}@if ($detail['limite'])<span class="sr-only" data-limite-atteinte>{{ $detail['limite'] }}</span><span class="nuit-case-limite" aria-hidden="true">!</span>@endif</a>
                                     @else
                                         <button type="button" class="nuit-case nuit-plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                                 :class="d && d.code === @js($boutique->code) ? 'est-choisie' : ''"
-                                                aria-label="{{ __('public.boutiques.plan.boutique', ['code' => $boutique->code, 'statut' => $p['statuts'][$statut]]) }}"
-                                                aria-controls="plan-detail" @mouseenter="d = @js($detail)" @click="d = @js($detail)">
-                                            @isset($icones[$statut])<x-icon :name="$icones[$statut]" class="nuit-case-icone" />@endisset{{ $boutique->numero }}
-                                            @if ($detail['limite'])<span class="sr-only" data-limite-atteinte>{{ $detail['limite'] }}</span><span class="nuit-case-limite" aria-hidden="true">!</span>@endif
-                                        </button>
+                                                aria-label="{{ $etiquette }}" aria-controls="plan-detail" @click="d = @js($detail)">@isset($icones[$statut])<x-icon :name="$icones[$statut]" class="nuit-case-icone" />@endisset{{ $contenu }}@if ($detail['limite'])<span class="sr-only" data-limite-atteinte>{{ $detail['limite'] }}</span><span class="nuit-case-limite" aria-hidden="true">!</span>@endif</button>
                                     @endif
                                 </li>
                             @endforeach
@@ -191,8 +206,9 @@
                     <aside id="plan-detail" class="nuit-fiche nuit-plan-fiche" x-show="d" x-cloak aria-live="polite" data-plan-detail>
                         <template x-if="d">
                             <div>
-                                <p class="nuit-fiche-surtitre"><span x-text="d.type_code"></span> · <span x-text="d.statut"></span></p>
+                                <p class="nuit-fiche-surtitre">{{ $f['surtitre'] }}</p>
                                 <p class="nuit-fiche-titre" x-text="d.code"></p>
+                                <p class="nuit-fiche-statut"><span class="nuit-badge-statut" :class="'nuit-plan-' + d.statut_cle" x-text="d.statut"></span></p>
                                 <dl class="nuit-fiche-lignes">
                                     <div class="nuit-fiche-ligne"><dt>{{ $p['detail']['niveau'] }}</dt><dd x-text="d.niveau"></dd></div>
                                     <div class="nuit-fiche-ligne"><dt>{{ $p['detail']['bloc'] }}</dt><dd x-text="d.bloc"></dd></div>
@@ -204,8 +220,8 @@
                                     <div>
                                         <dl class="nuit-fiche-lignes">
                                             <div class="nuit-fiche-ligne est-montant"><dt>{{ $p['detail']['loyer'] }}</dt><dd x-text="d.montants.loyer"></dd></div>
-                                            <div class="nuit-fiche-ligne est-montant"><dt>{{ $p['detail']['caution'] }}</dt><dd x-text="d.montants.caution"></dd></div>
-                                            <div class="nuit-fiche-ligne est-montant est-separee"><dt>{{ $p['detail']['avance'] }}</dt><dd x-text="d.montants.avance"></dd></div>
+                                            <div class="nuit-fiche-ligne est-montant"><dt x-text="d.montants.libelle_caution"></dt><dd x-text="d.montants.caution"></dd></div>
+                                            <div class="nuit-fiche-ligne est-montant est-separee"><dt x-text="d.montants.libelle_avance"></dt><dd x-text="d.montants.avance"></dd></div>
                                         </dl>
                                         <p class="nuit-fiche-total-libelle">{{ $p['detail']['total'] }}</p>
                                         <p class="nuit-fiche-total" x-text="d.montants.total"></p>
@@ -213,6 +229,8 @@
                                 </template>
                                 <p class="nuit-fiche-limite" x-show="d.limite" x-text="d.limite" role="status"></p>
                                 <a x-show="d.lien" :href="d.lien" class="nuit-pilule nuit-pilule-plein" x-text="d.action">{{ $p['detail']['reserver'] }}</a>
+                                <span x-show="! d.lien && d.statut_cle === 'attribuee'" class="nuit-pilule nuit-pilule-plein nuit-pilule-inactive" x-text="d.action"></span>
+                                <p class="nuit-fiche-interesses" x-show="d.interesses" x-text="d.interesses" data-interesses></p>
                             </div>
                         </template>
                     </aside>

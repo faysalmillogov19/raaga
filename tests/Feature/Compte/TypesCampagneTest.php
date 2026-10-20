@@ -127,17 +127,18 @@ class TypesCampagneTest extends TestCase
         $description = 'Zone de préparation et de découpe privative du pôle boucherie-poissonnerie.';
         $this->assertSame($description, $pp->type->description_citoyen);
 
-        // Plan : détail au survol ou au clic (code, site, niveau, bloc, type et description, surface, observations, montants).
+        // Plan : détail au clic (code, site, niveau, bloc, type et description, surface, observations, montants).
         $page = $this->get(route('boutiques', ['site' => $this->site->id, 'niveau' => 'RC', 'bloc' => 'BP']))->assertOk()->getContent();
         $this->assertStringContainsString('data-plan-detail', $page);
         // @js : JSON.parse('…') avec les guillemets échappés en ".
-        preg_match("/@mouseenter=\"d = JSON\.parse\('(.+?)'\)\" @focus/s", $page, $m);
+        preg_match("/@click(?:\.prevent)?=\"d = JSON\.parse\('(.+?)'\)\">/s", $page, $m);
         $detail = json_decode(str_replace('\u0022', '"', html_entity_decode($m[1])), true);
         // 12 m² × 5 000 FCFA = 60 000 FCFA par mois ; caution 12 mois, avance 3 mois.
         $this->assertSame(['RAA-RC-BP-019', 'RAA · Marché Raaga', 'BP', 'PP', 'Pôle : préparation et découpe privative', $description, '12,00 m²', 'Évier double et carrelage'],
             [$detail['code'], $detail['site'], $detail['bloc'], $detail['type_code'], $detail['type'], $detail['type_description'], $detail['surface'], $detail['observations']]);
         $this->assertStringStartsWith('RC · ', $detail['niveau']);
-        $this->assertSame(["60\u{00A0}000\u{00A0}FCFA", "720\u{00A0}000\u{00A0}FCFA", "180\u{00A0}000\u{00A0}FCFA", "900\u{00A0}000\u{00A0}FCFA"], array_values($detail['montants']));
+        $this->assertSame(["60\u{00A0}000\u{00A0}FCFA", "720\u{00A0}000\u{00A0}FCFA", "180\u{00A0}000\u{00A0}FCFA", "900\u{00A0}000\u{00A0}FCFA"], array_values(array_slice($detail['montants'], 0, 4)));
+        $this->assertSame([12, 3], [$detail['montants']['mois_caution'], $detail['montants']['mois_avance']]);
 
         // Récapitulatif avant réservation.
         $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670123456']);

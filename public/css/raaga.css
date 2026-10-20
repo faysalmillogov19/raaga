@@ -3058,8 +3058,20 @@ html,
 }
 .theme-lumiere .nuit-case.est-choisie {
     outline: 3px solid #16201A;
-    outline-offset: 1px;
-    border-color: #16201A;
+    outline-offset: 2px;
+    border: 1px solid var(--c-bord, var(--c-fond));
+    background: var(--c-fond);
+    color: var(--c);
+}
+.theme-lumiere .nuit-plan-disponible { --c-bord: #00843D; }
+.theme-lumiere .nuit-plan-retiree { --c: #5E6B63; --c-fond: #FFFFFF; --c-bord: #9AA8A0; }
+.theme-lumiere .nuit-case.nuit-plan-retiree {
+    border: 1px dashed #9AA8A0;
+}
+.theme-lumiere a.nuit-case:hover {
+    background: var(--c-fond);
+    color: var(--c);
+    box-shadow: inset 0 0 0 1px var(--c-bord, var(--c));
 }
 .theme-lumiere .nuit-plan-fiche {
     border: 2px solid #00843D;
@@ -3164,4 +3176,83 @@ html,
 }
 .theme-lumiere .nuit-page .demarche-boutiques {
     --accent: #005C2B;
+}
+
+/* Plan des boutiques (maquette maquette-boutiques-theme-clair.html) : cases en gras, statut retiré, badge de la fiche,
+ * personnes inscrites sous le bouton. */
+.theme-nuit .nuit-case {
+    font-weight: 800;
+}
+.theme-nuit .nuit-plan-retiree { --c: #8FA3B8; --c-fond: transparent; }
+.theme-nuit .nuit-case.nuit-plan-retiree {
+    border-style: dashed;
+}
+.theme-nuit .nuit-plan-point.nuit-plan-retiree {
+    border: 1px dashed var(--c);
+    background: transparent;
+}
+.theme-nuit .nuit-fiche-titre {
+    margin-bottom: 6px;
+}
+.theme-nuit .nuit-fiche-statut {
+    margin: 0 0 14px;
+}
+.theme-nuit .nuit-badge-statut {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--c);
+    color: var(--nuit-encre);
+    font-size: 13px;
+    font-weight: 700;
+}
+.theme-nuit .nuit-fiche .nuit-pilule-inactive {
+    cursor: default;
+}
+.theme-nuit .nuit-fiche-interesses {
+    margin: 10px 0 0;
+    color: var(--nuit-gris-clair);
+    font-size: 13px;
+    text-align: center;
+}
+.theme-lumiere .nuit-fiche-surtitre,
+.theme-lumiere .nuit-fiche-ligne dt,
+.theme-lumiere .nuit-fiche-interesses {
+    color: #4A5868;
+}
+.theme-lumiere .nuit-fiche-ligne.est-montant dt {
+    color: #16201A;
+}
+.theme-lumiere .nuit-badge-statut {
+    background: var(--c-fond);
+    color: #16201A;
+}
+.theme-lumiere .nuit-badge-statut.nuit-plan-disponible {
+    background: #DDF3E5;
+    color: #005C2B;
+}
+/* Légende : rond de 14 px (disponible), carrés de 22 px à coins de 6 px avec l'icône (pré-réservée, réservée, attribuée),
+ * rond pointillé (retirée). */
+.theme-lumiere .nuit-plan-point {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+}
+.theme-lumiere .nuit-plan-point svg {
+    width: 13px;
+    height: 13px;
+}
+.theme-lumiere .nuit-plan-point.nuit-plan-disponible,
+.theme-lumiere .nuit-plan-point.nuit-plan-retiree {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+}
+.theme-lumiere .nuit-plan-point.nuit-plan-retiree {
+    border: 1px dashed #9AA8A0;
+    background: transparent;
+}
+.theme-lumiere .nuit-case-icone {
+    width: 14px;
+    height: 14px;
 }
