@@ -19,24 +19,29 @@ class LogoTest extends TestCase
 {
     use ConnexionBackoffice, RefreshDatabase;
 
-    public function test_armoiries_en_tete_logo_en_tete_nuit_au_pied_de_page_et_a_la_connexion(): void
+    public function test_armoiries_seules_en_tete_logo_au_pied_de_page_et_a_la_connexion(): void
     {
         $logo = e(ImagesPlateforme::url('logoHorizontal'));
+        $absents = array_filter([$logo, e((string) ImagesPlateforme::url('logoHorizontalBlanc')), e((string) ImagesPlateforme::url('logoSymbole')), 'BURKINA FASO', e((string) plateforme('identite.deviseNationale'))]);
 
-        // Thème « nuit » (défaut) : en-tête blanc avec les armoiries et le logo (maquettes du thème).
-        preg_match('/<header.*?<\/header>/s', $this->get('/')->assertOk()->getContent(), $enteteNuit);
-        $this->assertStringContainsString(e(ImagesPlateforme::url('armoiries')), $enteteNuit[0]);
-        $this->assertStringContainsString($logo, $enteteNuit[0]);
-
-        // Thème « clair » (rendu historique) : armoiries seules dans l'en-tête.
-        config(['raaga.theme_public' => 'clair']);
-        $accueil = $this->get('/')->assertOk();
-        preg_match('/<header.*?<\/header>/s', $accueil->getContent(), $entete);
-        $this->assertStringContainsString(e(ImagesPlateforme::url('armoiries')), $entete[0]);
-        $this->assertStringContainsString('aria-label="Accueil · '.e(plateforme('identite.nomPlateforme')).'"', $entete[0]);
-        foreach ([$logo, e(ImagesPlateforme::url('logoSymbole')), 'BURKINA FASO', e((string) plateforme('identite.deviseNationale'))] as $absent) {
-            $this->assertStringNotContainsString($absent, $entete[0]);
+        // Décision de la hiérarchie : armoiries seules dans l'en-tête de page, dans les trois thèmes (aucun logo Raaga).
+        foreach (['lumiere', 'nuit', 'clair'] as $theme) {
+            config(['raaga.theme_public' => $theme]);
+            foreach (['/', '/boutiques'] as $url) {
+                preg_match('/<header.*?<\/header>/s', $this->get($url)->assertOk()->getContent(), $entete);
+                $this->assertStringContainsString(e(ImagesPlateforme::url('armoiries')), $entete[0], "$theme $url");
+                $this->assertStringContainsString('aria-label="Accueil · '.e(plateforme('identite.nomPlateforme')).'"', $entete[0], "$theme $url");
+                foreach ($absents as $absent) {
+                    $this->assertStringNotContainsString($absent, $entete[0], "$theme $url");
+                }
+            }
         }
+        // Thèmes « lumière » et « nuit » : armoiries visibles à toutes les largeurs (plus de règle qui les masque sous 760 px).
+        $css = file_get_contents(public_path('css/raaga.css'));
+        $this->assertStringContainsString(".theme-nuit .nuit-entete-armoiries {\n    display: block;\n    height: 44px;\n    width: auto;\n}", str_replace("\r\n", "\n", $css));
+        $this->assertStringNotContainsString('nuit-entete-logo-image', $css);
+
+        $accueil = $this->get('/')->assertOk();
 
         preg_match('/<footer.*?<\/footer>/s', $accueil->getContent(), $pied);
         $this->assertStringContainsString($logo, $pied[0]);

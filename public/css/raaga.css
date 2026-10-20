@@ -1067,11 +1067,8 @@ html,
 .theme-nuit .nuit-entete-logo {
     gap: 12px;
 }
-.theme-nuit .nuit-entete-logo-image {
-    height: 36px;
-}
 .theme-nuit .nuit-entete-armoiries {
-    display: none;
+    display: block;
     height: 44px;
     width: auto;
 }
@@ -1199,12 +1196,6 @@ html,
 @media (min-width: 760px) {
     .theme-nuit .nuit-entete-logo {
         margin-right: 0;
-    }
-    .theme-nuit .nuit-entete-armoiries {
-        display: block;
-    }
-    .theme-nuit .nuit-entete-logo-image {
-        height: 40px;
     }
     .theme-nuit .nuit-menu {
         display: block;

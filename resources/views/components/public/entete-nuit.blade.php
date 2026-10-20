@@ -1,7 +1,7 @@
 {{--
-    En-tête du thème « nuit » (maquettes docs/maquettes) : bandeau blanc, armoiries et logo, menu principal en ligne
+    En-tête du thème « nuit » (maquettes docs/maquettes) : bandeau blanc, armoiries seules (aucun logo, décision de la hiérarchie), menu principal en ligne
     (pictogrammes des deux démarches), numéro vert (grand écran), bouton pilule « Mon espace » (connecté : prénom et menu
-    du compte). Sous 760 px : logo seul, menu dans un panneau ouvert par le bouton burger.
+    du compte). Sous 760 px : armoiries, menu dans un panneau ouvert par le bouton burger.
 --}}
 @php($entrees = \App\Support\MenuPublic::entreesNuit())
 <header class="nuit-entete" x-data="{ menuOuvert: false }" @keydown.escape="menuOuvert = false">
@@ -9,7 +9,6 @@
         <a href="{{ route('accueil') }}" class="nuit-entete-logo"
            aria-label="{{ __('public.entete.accueil', ['nom' => plateforme('identite.nomPlateforme')]) }}">
             <x-public.armoiries class="nuit-entete-armoiries" />
-            <x-logo class="nuit-entete-logo-image" alt="" />
         </a>
 
         <nav aria-label="{{ __('public.menu.libelle') }}" class="nuit-menu" :class="menuOuvert ? 'est-ouvert' : ''">
