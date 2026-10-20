@@ -59,6 +59,7 @@ class ThemeNuitPagesTest extends TestCase
 
     public function test_connexion_et_inscription_carte_sombre_puis_clair(): void
     {
+        config(['raaga.theme_public' => 'nuit']);
         foreach ([route('connexion'), route('inscription')] as $url) {
             $this->get($url)->assertOk()->assertSee('nuit-page', false)->assertSee('compte-carte', false)
                 ->assertSee('<div class="mb-5 text-center">', false);

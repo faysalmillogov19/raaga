@@ -1006,6 +1006,8 @@ html,
     --nuit-vert: #00843D;
     --nuit-bouton: #0E3B2A;
     --nuit-jaune: #FCD116;
+    /* Jaune en couleur de texte (sur fond sombre) ; le thème « lumière » le fonce (#8A6A00). */
+    --nuit-jaune-texte: #FCD116;
     --nuit-encre: #0B1A2C;
     --nuit-gris-clair: #4A5868;
     --nuit-ligne-claire: #E3E8EE;
@@ -1223,7 +1225,7 @@ html,
 /* ------------------------------------------------------------------ Habillage commun */
 .theme-nuit .portail-invest {
     background: var(--nuit-fond-alt);
-    color: var(--nuit-jaune);
+    color: var(--nuit-jaune-texte);
     border-bottom: 1px solid var(--nuit-bordure);
 }
 .theme-nuit .bandeau-annonce-information {
@@ -1247,7 +1249,7 @@ html,
     color: var(--nuit-texte-2);
 }
 .theme-nuit .pied-public .pied-lien:hover {
-    color: var(--nuit-jaune);
+    color: var(--nuit-jaune-texte);
 }
 .theme-nuit .pied-public .border-white\/10 {
     border-color: var(--nuit-bordure);
@@ -1294,7 +1296,7 @@ html,
     color: var(--nuit-vif);
 }
 :where(.theme-nuit .nuit-page) a:where(:not([class*="btn-"]):not(.nuit-pilule)):hover {
-    color: var(--nuit-jaune);
+    color: var(--nuit-jaune-texte);
 }
 .theme-nuit .nuit-page .nav-historique-bouton {
     border-color: var(--nuit-bordure);
@@ -1774,7 +1776,7 @@ html,
 
 /* ------------------------------------------------------------------ Thème « nuit », lot 1 : accueil, « Obtenir une boutique », règlement */
 .theme-nuit .nuit-vif { color: var(--nuit-vif); }
-.theme-nuit .nuit-jaune { color: var(--nuit-jaune); }
+.theme-nuit .nuit-jaune { color: var(--nuit-jaune-texte); }
 
 /* Bandeau des pages internes (x-public.page-entete « sombre »). */
 .theme-nuit .nuit-bandeau {
@@ -2641,7 +2643,7 @@ html,
     background: #2A2A1A;
 }
 .theme-nuit .nuit-page .encadre-attention .encadre-symbole {
-    color: var(--nuit-jaune);
+    color: var(--nuit-jaune-texte);
 }
 .theme-nuit .nuit-page .encadre-danger {
     border-color: var(--nuit-erreur);
@@ -2898,7 +2900,7 @@ html,
 
 /* Démarche « Investir » : accents jaunes (#FCD116) au lieu du vert vif. */
 .theme-nuit .nuit-bandeau.nuit-investir .nuit-bandeau-titre strong {
-    color: var(--nuit-jaune);
+    color: var(--nuit-jaune-texte);
 }
 .theme-nuit .nuit-page form.nuit-investir .bg-vert-fonce {
     border-color: var(--nuit-jaune);
@@ -2906,7 +2908,7 @@ html,
     color: var(--nuit-encre);
 }
 .theme-nuit .nuit-page form.nuit-investir :is(.text-vert-fonce, a:not([class*="btn-"])) {
-    color: var(--nuit-jaune);
+    color: var(--nuit-jaune-texte);
 }
 .theme-nuit .nuit-page form.nuit-investir input[type="checkbox"] {
     color: var(--nuit-jaune);
@@ -2919,4 +2921,247 @@ html,
 }
 .theme-nuit .nuit-page .btn-demarche {
     border-radius: 999px;
+}
+
+/* ================================================================== Thème « lumière » (défaut, config raaga.theme_public)
+ * Même mise en page que le thème « nuit » (classe .theme-nuit conservée sur le body), en couleurs claires : la classe
+ * .theme-lumiere redéfinit les variables --nuit-* (mêmes rôles), puis corrige les quelques couleurs écrites en dur.
+ * Le pied de page et le téléphone illustré de l'accueil gardent leurs couleurs sombres. Maquettes de référence :
+ * docs/maquettes/maquette-*-theme-clair.html (non déployées). Contraste d'au moins 4,5:1. */
+.theme-nuit.theme-lumiere {
+    --nuit-fond: #FFFFFF;
+    --nuit-fond-alt: #F5F7F5;
+    --nuit-carte: #FFFFFF;
+    --nuit-pied: #071322;
+    --nuit-texte: #16201A;
+    --nuit-texte-2: #5E6B63;
+    --nuit-bordure: #D9E0DB;
+    --nuit-vif: #00843D;
+    --nuit-vert: #00843D;
+    --nuit-bouton: #005C2B;
+    --nuit-jaune: #FCD116;
+    --nuit-jaune-texte: #8A6A00;
+    --nuit-encre: #16201A;
+    --nuit-erreur: #B3261E;
+    --texte-doux: #5E6B63;
+}
+/* Zones restées sombres : pied de page, téléphone illustré (écran) et bulles sombres de l'accueil. */
+.theme-lumiere .pied-public,
+.theme-lumiere .nuit-telephone-ecran,
+.theme-lumiere .nuit-bulle-moyens,
+.theme-lumiere .nuit-bulle-carte {
+    --nuit-fond: #0B1A2C;
+    --nuit-carte: #13263D;
+    --nuit-texte: #FFFFFF;
+    --nuit-texte-2: #B5C4D4;
+    --nuit-bordure: #24476B;
+    --nuit-vif: #3DDC97;
+    --nuit-bouton: #0E3B2A;
+    --nuit-jaune-texte: #FCD116;
+    --nuit-encre: #0B1A2C;
+}
+
+/* Focus : contour foncé et halo jaune, sur tous les fonds clairs. */
+.theme-lumiere a:focus-visible,
+.theme-lumiere button:focus-visible,
+.theme-lumiere summary:focus-visible,
+.theme-lumiere input:focus-visible,
+.theme-lumiere select:focus-visible,
+.theme-lumiere textarea:focus-visible,
+.theme-lumiere [tabindex]:focus-visible {
+    outline: 3px solid #16201A;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 6px #FCD116;
+}
+.theme-lumiere .pied-public a:focus-visible {
+    outline-color: #FCD116;
+    box-shadow: none;
+}
+
+/* Liens : vert foncé, survol vert Raaga (maquettes). */
+:where(.theme-lumiere .nuit-page) a:where(:not([class*="btn-"]):not(.nuit-pilule)) {
+    color: #005C2B;
+}
+:where(.theme-lumiere .nuit-page) a:where(:not([class*="btn-"]):not(.nuit-pilule)):hover {
+    color: #00843D;
+}
+
+/* Habillage : bande RAAGA Invest jaune, texte foncé ; notifications claires ; contrôles natifs clairs. */
+.theme-lumiere .portail-invest {
+    border-bottom-color: #E5C200;
+    background: #FCD116;
+    color: #16201A;
+}
+.theme-lumiere .notification::backdrop {
+    background: rgba(22, 32, 26, .45);
+}
+.theme-lumiere .notification-succes { --notif: #00843D; --notif-pale: #E8F4EC; }
+.theme-lumiere .notification-information { --notif: #0B66A8; --notif-pale: #E6F1FA; }
+.theme-lumiere .notification-alerte { --notif: #8A6A00; --notif-pale: #FFF6CC; }
+.theme-lumiere .notification-erreur { --notif: #B3261E; --notif-pale: #FDECEA; }
+.theme-lumiere .nuit-page {
+    color-scheme: light;
+}
+.theme-lumiere .nuit-page :where(input, textarea)::placeholder {
+    color: #6B7A71;
+}
+.theme-lumiere .nuit-menu-compte,
+.theme-lumiere .nuit-page .compte-carte {
+    box-shadow: 0 12px 30px rgba(22, 32, 26, .12);
+}
+
+/* Pilules : choisies vert foncé et texte blanc ; non choisies blanches, bordure #C9D2CC. */
+.theme-lumiere .nuit-pilule-choix {
+    border-color: #C9D2CC;
+    background: #FFFFFF;
+    color: #2E3A33;
+}
+.theme-lumiere .nuit-page a.nuit-pilule-choix {
+    color: #2E3A33;
+}
+.theme-lumiere .nuit-pilule-choix:hover {
+    border-color: #00843D;
+}
+.theme-lumiere .nuit-pilule-choix[aria-pressed="true"],
+.theme-lumiere .nuit-pilule-choix[aria-current="page"],
+.theme-lumiere .nuit-page a.nuit-pilule-choix[aria-current="page"] {
+    border-color: #005C2B;
+    background: #005C2B;
+    color: #FFFFFF;
+}
+.theme-lumiere .nuit-pilule-contour,
+.theme-lumiere .nuit-page a.nuit-pilule-contour {
+    color: #005C2B;
+}
+.theme-lumiere .nuit-page .nuit-choix {
+    border-color: #C9D2CC;
+    background: #FFFFFF;
+}
+.theme-lumiere .nuit-page .nuit-choix:has(input:checked) {
+    border-color: #005C2B;
+    background: #005C2B;
+}
+.theme-lumiere .nuit-page .nuit-choix:has(input:checked) .text-encre {
+    color: #FFFFFF;
+}
+
+/* Plan des boutiques : cases claires (disponible : fond #E8F4EC, bordure #00843D, texte #005C2B) ; fiche encadrée. */
+.theme-lumiere .nuit-plan-disponible { --c: #005C2B; --c-fond: #E8F4EC; }
+.theme-lumiere .nuit-plan-pre_reservee { --c: #16201A; --c-fond: #FCD116; }
+.theme-lumiere .nuit-plan-reservee { --c: #16201A; --c-fond: #F7931E; }
+.theme-lumiere .nuit-plan-attribuee { --c: #16201A; --c-fond: #9AA8A0; }
+.theme-lumiere .nuit-plan-disponible.nuit-case {
+    border-color: #00843D;
+}
+.theme-lumiere .nuit-case:not(.nuit-plan-disponible) {
+    border-color: var(--c-fond);
+}
+.theme-lumiere .nuit-case.est-choisie {
+    outline: 3px solid #16201A;
+    outline-offset: 1px;
+    border-color: #16201A;
+}
+.theme-lumiere .nuit-plan-fiche {
+    border: 2px solid #00843D;
+}
+
+/* Fonds pâles des pastilles de statut et encadrés : versions claires, texte foncé. */
+.theme-lumiere .nuit-page .bg-vert-pale {
+    background: #E8F4EC;
+}
+.theme-lumiere .nuit-page .bg-jaune-pale,
+.theme-lumiere .nuit-page .bg-\[\#FFF6CC\] {
+    background: #FFF6CC;
+    color: #16201A;
+}
+.theme-lumiere .nuit-page .bg-rouge-pale {
+    background: #FDECEA;
+}
+.theme-lumiere .nuit-page .encadre-info {
+    background: #F5F7F5;
+}
+.theme-lumiere .nuit-page .encadre-attention {
+    border: 1px solid #C9A400;
+    border-left-width: 4px;
+    background: #FFF6CC;
+    color: #4A3B00;
+}
+.theme-lumiere .nuit-page .encadre-attention :is(h3, a) {
+    color: #4A3B00;
+}
+.theme-lumiere .nuit-page .encadre-danger {
+    background: #FDECEA;
+}
+.theme-lumiere .nuit-page .alerte-compte {
+    background: #FDECEA;
+}
+.theme-lumiere .nuit-page .btn-plein:disabled {
+    background: #E5EAE7;
+    color: #5E6B63;
+}
+.theme-lumiere .nuit-page .rounded-full.bg-fond {
+    background: #F5F7F5;
+}
+.theme-lumiere .nuit-fiche-limite {
+    background: #FFF6CC;
+}
+
+/* Démarche « Investir » : jaune en fond (choix, cases cochées, bouton), texte foncé ; texte jaune assombri. */
+.theme-lumiere .nuit-page form.nuit-investir .bg-white:not(.bg-vert-fonce) {
+    border-color: #C9D2CC;
+}
+.theme-lumiere .nuit-page form.nuit-investir .btn-primaire:disabled {
+    border-color: #E5EAE7;
+    background: #E5EAE7;
+    color: #5E6B63;
+    opacity: 1;
+}
+
+/* Cartes : blanches, bordure de 1 px #D9E0DB (maquettes) ; moyens de paiement encadrés. */
+.theme-lumiere .nuit-carte {
+    border: 1px solid var(--nuit-bordure);
+}
+.theme-lumiere .nuit-moyens li {
+    border: 1px solid #D9E0DB;
+}
+.theme-lumiere .nuit-etiquette {
+    background: #E8F4EC;
+    color: #005C2B;
+}
+.theme-lumiere .nuit-tableau tbody tr:nth-child(odd) {
+    background: var(--nuit-fond-alt);
+}
+.theme-lumiere .nuit-plan-point {
+    background: var(--c-fond);
+    color: #16201A;
+}
+.theme-lumiere .nuit-plan-point.nuit-plan-disponible {
+    background: #00843D;
+}
+.theme-lumiere .nuit-fiche:not(.nuit-plan-fiche) {
+    border: 1px solid var(--nuit-bordure);
+}
+
+/* Contraste : sur fond alterné (#F5F7F5), le vert d'accent passe à #007A38 (#00843D y donne 4,47:1). */
+.theme-lumiere :is(.nuit-section-alterne, .nuit-bandeau, .nuit-faits > div, .nuit-page .section-grise, .bandeau-annonce-information, .nuit-tableau tbody tr:nth-child(odd)) {
+    --nuit-vif: #007A38;
+}
+.theme-lumiere .nuit-section-alterne .nuit-carte {
+    --nuit-vif: #00843D;
+}
+/* États de campagne et badge de démarche « Boutiques » : fonds pâles ou foncés, jamais de texte sur vert vif. */
+.theme-lumiere .nuit-etat {
+    background: #E8F4EC;
+    color: #005C2B;
+}
+.theme-lumiere .nuit-etat-bientot {
+    background: #FFF6CC;
+    color: #4A3B00;
+}
+.theme-lumiere .nuit-etat-terminee {
+    background: #E5EAE7;
+    color: #16201A;
+}
+.theme-lumiere .nuit-page .demarche-boutiques {
+    --accent: #005C2B;
 }

@@ -9,10 +9,11 @@ return [
     'demo' => (bool) env('RAAGA_DEMO', false),
 
     /*
-    | Thème du site public et de l'espace citoyen : « nuit » (fonds bleu nuit, défaut) ou « clair » (rendu historique,
-    | inchangé). Toute autre valeur vaut « nuit ». Le back-office a ses propres thèmes (clair, Forêt).
+    | Thème du site public et de l'espace citoyen : « lumiere » (mise en page du thème nuit en couleurs claires, défaut),
+    | « nuit » (fonds bleu nuit) ou « clair » (rendu historique, inchangé). Toute autre valeur vaut « lumiere ». Le
+    | back-office a ses propres thèmes (clair, Forêt).
     */
-    'theme_public' => env('RAAGA_THEME_PUBLIC', 'nuit'),
+    'theme_public' => env('RAAGA_THEME_PUBLIC', 'lumiere'),
 
     /*
     | Identité, contacts, mentions légales, chiffres du projet, messages de service :

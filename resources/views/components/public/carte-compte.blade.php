@@ -6,7 +6,7 @@
         <div class="compte-carte">
             {{ $avant ?? '' }}
 
-            @if (\App\Support\ThemePublic::nuit())
+            @if (\App\Support\ThemePublic::sombre())
                 {{-- Thème « nuit » : carte sombre, logo pour fond foncé (ou logo couleur sur sa plaque blanche). --}}
                 <div class="mb-5 text-center"><x-logo variante="blanc" class="h-12" :alt="plateforme('identite.nomPlateforme')" /></div>
             @else

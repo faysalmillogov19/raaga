@@ -17,12 +17,14 @@ class ThemeNuitSocleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_nuit_par_defaut_et_valeur_inconnue(): void
+    public function test_mise_en_page_nuit_pour_nuit_et_lumiere(): void
     {
-        $this->assertSame('nuit', config('raaga.theme_public'));
+        config(['raaga.theme_public' => 'nuit']);
         $this->assertTrue(ThemePublic::nuit());
-        config(['raaga.theme_public' => 'n’importe quoi']);
-        $this->assertSame(ThemePublic::NUIT, ThemePublic::courant());
+        $this->assertTrue(ThemePublic::sombre());
+        config(['raaga.theme_public' => 'lumiere']);
+        $this->assertTrue(ThemePublic::nuit());
+        $this->assertFalse(ThemePublic::sombre());
         config(['raaga.theme_public' => 'clair']);
         $this->assertFalse(ThemePublic::nuit());
     }

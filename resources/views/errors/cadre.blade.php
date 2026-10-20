@@ -12,6 +12,7 @@
     $numeroVert = rescue(fn () => plateforme('contacts.numeroVert'), null, false);
     // Thème « nuit » du site public (lu dans la configuration, sans base de données).
     $nuit = rescue(fn () => \App\Support\ThemePublic::nuit(), false, false);
+    $lumiere = rescue(fn () => \App\Support\ThemePublic::lumiere(), false, false);
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -23,7 +24,7 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <x-assets :scripts="false" />
 </head>
-<body @class(['site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased', 'theme-nuit' => $nuit])>
+<body @class(['site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased', 'theme-nuit' => $nuit, 'theme-lumiere' => $lumiere])>
     <div class="bande-tricolore" aria-hidden="true"></div>
 
     <header class="cadre-erreur-entete border-b border-gris-clair">
