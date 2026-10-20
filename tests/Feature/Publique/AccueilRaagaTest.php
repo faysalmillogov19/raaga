@@ -52,7 +52,7 @@ class AccueilRaagaTest extends TestCase
     public function test_affichage_de_la_page(): void
     {
         $page = $this->get('/')->assertOk();
-        $page->assertSeeInOrder(['Votre boutique au marché Raaga', 'boutiques référencées', 'Comment ça marche', 'Ce que vous versez', 'Les sites',
+        $page->assertSeeInOrder(['Votre boutique au marché Raaga', 'boutiques référencées', 'Comment ça marche', 'Ce que vous versez',
             'Questions fréquentes', 'Besoin d’aide ?'], false)
             ->assertSee('Je réserve')->assertSee('href="#comment"', false)
             ->assertSee('Raaga ne vous demandera jamais de payer à une personne. Payez uniquement par les canaux officiels.', false);
@@ -65,7 +65,8 @@ class AccueilRaagaTest extends TestCase
         // 7 boutiques non retirées, 5 niveaux par défaut, 2 sites confirmés ; aucune campagne ouverte.
         $page->assertSee('data-compteur="7"', false)->assertSee('data-compteur="5"', false)->assertSee('data-compteur="2"', false)
             ->assertSee('Prochaine campagne bientôt')
-            ->assertSee('Marché Raaga')->assertSee('Marché de Sarfalao')->assertDontSee('Arrondissement 4')->assertSee('5 boutiques')->assertSee('1 boutique');
+            // Rubrique « Où se trouvent les boutiques / Les sites » retirée (20/10/2026) : aucune carte de site.
+            ->assertDontSee('Où se trouvent les boutiques')->assertDontSee('acc-sites', false)->assertDontSee('Marché de Sarfalao');
 
         // Campagne ouverte : sa date de clôture.
         $campagne = Boutiques::campagneOuverte();

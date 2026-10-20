@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
 
 /**
  * Données de la page d'accueil (phase 1 : boutiques), toutes lues dans la base : chiffres clés, durées de caution et
- * d'avance par niveau (grilles tarifaires confirmées), sites confirmés. Aucun montant n'est affiché ici.
+ * d'avance par niveau (grilles tarifaires confirmées). Aucun montant n'est affiché ici.
  */
 final class AccueilBoutiques
 {
@@ -49,13 +49,5 @@ final class AccueilBoutiques
             'caution' => [min($parNiveau[$n->code]['caution']), max($parNiveau[$n->code]['caution'])],
             'avance' => [min($parNiveau[$n->code]['avance']), max($parNiveau[$n->code]['avance'])],
         ])->values();
-    }
-
-    /** Sites confirmés, avec leur nombre de boutiques (hors retirées). @return Collection<int, Site> */
-    public function sites(): Collection
-    {
-        return Site::query()->where('statut', StatutSite::Confirme)
-            ->withCount(['boutiques' => fn ($q) => $q->where('statut', '!=', StatutBoutique::Retiree)])
-            ->orderBy('nom')->get();
     }
 }

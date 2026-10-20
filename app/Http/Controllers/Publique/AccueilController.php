@@ -13,7 +13,7 @@ use Illuminate\View\View;
 
 /**
  * Accueil public : bandeau fixe (titre, sous-titre, « Je réserve », « Comment ça marche »), puis les deux démarches côte à côte (investir, obtenir une boutique), chiffres, étapes,
- * versements, sites, questions, aide. La carte « J'investis » n'apparaît que si la présentation des actions est visible.
+ * versements, questions, aide. La carte « J'investis » n'apparaît que si la présentation des actions est visible.
  */
 class AccueilController extends Controller
 {
@@ -31,7 +31,6 @@ class AccueilController extends Controller
             'ouverte' => $ouverte,
             'chiffres' => $accueil->chiffres(),
             'durees' => $accueil->durees(),
-            'sites' => $accueil->sites(),
             'questions' => array_values(array_filter(array_map(fn (int $i) => $questions[$i] ?? null, self::QUESTIONS_ACCUEIL))),
             // Campagne ouverte : le plan des boutiques (réservation après connexion) ; sinon, la page des boutiques ou la création de compte.
             'urlCandidater' => $ouverte || auth()->check() ? route('boutiques') : route('inscription'),

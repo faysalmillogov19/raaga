@@ -1,5 +1,5 @@
 {{--
-    Accueil de la phase 1 (boutiques) : bandeau fixe, chiffres clés, étapes, ce que l'on verse, sites, questions, aide.
+    Accueil de la phase 1 (boutiques) : bandeau fixe, chiffres clés, étapes, ce que l'on verse, questions, aide.
     Chiffres et dates lus dans la base ou les paramètres de la plateforme ; aucun montant.
 --}}
 @php
@@ -143,32 +143,7 @@
         </div>
     </section>
 
-    {{-- 5. Les sites --}}
-    <section class="acc-section" aria-labelledby="acc-sites-titre" data-apparition>
-        <div class="conteneur">
-            <p class="surtitre">{{ $a['sites_surtitre'] }}</p>
-            <h2 id="acc-sites-titre" class="acc-h2">{{ $a['sites_titre'] }}</h2>
-            @if ($sites->isEmpty())
-                <p class="mt-4">{{ $a['sites_vides'] }}</p>
-            @else
-                <ul class="acc-sites">
-                    @foreach ($sites as $site)
-                        <li class="acc-carte acc-site">
-                            <img src="{{ asset('images/accueil/banniere-640.webp') }}" alt="" loading="lazy" decoding="async" width="640" height="360" class="acc-site-image">
-                            <div class="acc-site-texte">
-                                <h3 class="acc-h3">{{ $site->nom }}</h3>
-                                @if ($site->localite())<p class="acc-site-ville"><x-icon name="lieu" class="h-4 w-4" /> {{ $site->localite() }}</p>@endif
-                                <p>{{ trans_choice('public.accueil_raaga.sites_boutiques', $site->boutiques_count, ['n' => format_nombre($site->boutiques_count)]) }}</p>
-                                <a href="{{ route('boutiques') }}" class="acc-btn acc-btn-vert">{{ $a['sites_voir'] }}<span class="sr-only"> : {{ $site->nom }}</span></a>
-                            </div>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </div>
-    </section>
-
-    {{-- 6. Questions fréquentes --}}
+    {{-- 5. Questions fréquentes --}}
     <section class="acc-section acc-section-verte" aria-labelledby="acc-faq-titre" data-apparition>
         <div class="conteneur">
             <p class="surtitre">{{ $a['faq_surtitre'] }}</p>
