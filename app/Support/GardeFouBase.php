@@ -24,7 +24,7 @@ final class GardeFouBase
     public const SEEDERS_PRODUCTION = ['ReferentielsSeeder', 'Database\\Seeders\\ReferentielsSeeder'];
 
     /** Commandes réservées au poste de développement (APP_ENV=local) : refusées partout ailleurs, avant tout accès à la base. */
-    public const COMMANDES_POSTE_LOCAL = ['raaga:inventaire'];
+    public const COMMANDES_POSTE_LOCAL = ['raaga:inventaire', 'raaga:simulation'];
 
     /** Une commande réservée au poste local peut-elle tourner dans cet environnement ? */
     public static function posteLocal(?string $environnement = null): bool
