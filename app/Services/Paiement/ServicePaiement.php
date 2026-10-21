@@ -54,6 +54,25 @@ class ServicePaiement
         return $this->creer($objet, $canal, null, $acteur, Paiement::nouvelleReferenceVersement());
     }
 
+    /**
+     * Encaissement au guichet (espèces, mobile money réglé devant l'agent, carte au terminal) : le paiement est créé au nom
+     * de l'agent et confirmé aussitôt, définitif dès son enregistrement ; la référence de l'opérateur ou du terminal est
+     * conservée. Il entre dans la caisse du jour de l'agent.
+     */
+    public function encaisserAuGuichet(Payable&Model $objet, MoyenPaiement $canal, User $agent, ?string $referenceExterne): Paiement
+    {
+        return DB::transaction(function () use ($objet, $canal, $agent, $referenceExterne) {
+            $paiement = $this->creer($objet, $canal, null, $agent);
+            $paiement->forceFill([
+                'agent_id' => $agent->id,
+                'reference_fournisseur' => $referenceExterne,
+                'metadonnees' => array_filter(['guichet' => true, 'reference_externe' => $referenceExterne]),
+            ])->save();
+
+            return $this->confirmer($paiement->reference, true, $agent);
+        });
+    }
+
     private function creer(Payable&Model $objet, MoyenPaiement $canal, ?string $telephone, User $acteur, ?string $referenceVersement = null): Paiement
     {
         return DB::transaction(function () use ($objet, $canal, $telephone, $acteur, $referenceVersement) {

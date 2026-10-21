@@ -123,6 +123,9 @@ enum Droit: string
     // Cartes d'accès : vérifier une carte scannée (photo, nom, type, statut), l'imprimer au guichet.
     case CartesVerifier = 'cartes.verifier';
     case CartesImprimer = 'cartes.imprimer';
+    // Agent de guichet : faire souscrire des actions à une personne présente (compte, identité validée sur place,
+    // souscription et encaissement définitif) et tenir sa caisse du jour.
+    case GuichetSouscrire = 'guichet.souscrire';
     // ADMIN : demande de révocation (motif), réémission après perte, photos du personnel ; VALIDATEUR : confirme la révocation.
     case CartesGerer = 'cartes.gerer';
     case CartesRevocationConfirmer = 'cartes.revocation_confirmer';
@@ -189,7 +192,7 @@ enum Droit: string
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
             self::KycTraiter, self::ConformiteTraiter, self::KycAnnulationConfirmer,
-            self::CartesImprimer, self::CartesGerer, self::CartesRevocationConfirmer,
+            self::CartesImprimer, self::CartesGerer, self::CartesRevocationConfirmer, self::GuichetSouscrire,
             self::SouscriptionsRapprocher, self::RemboursementsApprouver, self::RemboursementsSuivre, self::RelancesEnvoyer,
             self::PaiementsCorrectionsConfirmer,
             self::ObservationsRepondre,
@@ -344,8 +347,9 @@ enum Droit: string
                 self::RemboursementsVoir, self::RemboursementsSuivre,
             ],
             // Agent de guichet (profil du back-office) : vérifie les cartes scannées, consulte le dossier du titulaire
-            // (aucun montant) et imprime sa carte après contrôle de sa pièce d'identité.
-            Role::AgentGuichet => [self::TableauDeBordVoir, self::CartesVerifier, self::CartesImprimer],
+            // (aucun montant) et imprime sa carte après contrôle de sa pièce d'identité ; fait souscrire des actions à une
+            // personne présente (compte, identité validée sur place, encaissement) et tient sa caisse du jour.
+            Role::AgentGuichet => [self::TableauDeBordVoir, self::CartesVerifier, self::CartesImprimer, self::GuichetSouscrire],
             Role::Regulateur => [
                 self::TableauDeBordVoir, self::BrouillonsVoir, self::InteretsVoir,
                 self::PhaseVoir, self::PhaseProposer,

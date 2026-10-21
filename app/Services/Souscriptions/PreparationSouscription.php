@@ -80,12 +80,13 @@ class PreparationSouscription
 
     /**
      * @param  array<int, string>  $engagements  valeurs DocumentAccepte cochées
+     * @param  User|null  $agent  agent de guichet qui fait souscrire la personne présente (null : souscription en ligne)
      *
      * @throws ValidationException
      */
-    public function reserver(Tranche $tranche, User $user, int $nbActions, array $engagements, ?UploadedFile $justificatif, string $ip, string $userAgent): Souscription
+    public function reserver(Tranche $tranche, User $user, int $nbActions, array $engagements, ?UploadedFile $justificatif, string $ip, string $userAgent, ?User $agent = null): Souscription
     {
-        return DB::transaction(function () use ($tranche, $user, $nbActions, $engagements, $justificatif, $ip, $userAgent) {
+        return DB::transaction(function () use ($tranche, $user, $nbActions, $engagements, $justificatif, $ip, $userAgent, $agent) {
             // Verrou sur le compte : deux envois simultanés ne peuvent pas contourner le plafond.
             User::query()->whereKey($user->id)->lockForUpdate()->first();
 
@@ -106,7 +107,8 @@ class PreparationSouscription
                 'valeur_unitaire' => $tranche->valeur_unitaire,
                 'montant' => $montant,
                 'frais_souscription' => self::frais($tranche, $montant),
-                'canal' => CanalSouscription::Web,
+                'canal' => $agent ? CanalSouscription::Guichet : CanalSouscription::Web,
+                'agent_id' => $agent?->id,
                 'statut' => StatutSouscription::Reservee,
                 'revue_statut' => $tranche->seuil_revue_conformite && $cumul > $tranche->seuil_revue_conformite ? StatutRevue::EnAttente : null,
                 'expire_le' => now()->addSeconds($tranche->delaiPaiementSecondes()),
@@ -124,9 +126,10 @@ class PreparationSouscription
                 ]);
             }
 
-            $this->journal->ecrire($user, 'souscription.reservee', 'Souscription', $souscription->id, null, [
+            $this->journal->ecrire($agent ?? $user, 'souscription.reservee', 'Souscription', $souscription->id, null, array_filter([
                 'reference' => $souscription->reference, 'tranche' => $tranche->id, 'actions' => $nbActions, 'montant' => $montant,
-            ]);
+                'guichet' => $agent ? true : null,
+            ], fn ($v) => $v !== null));
 
             return $souscription;
         });
