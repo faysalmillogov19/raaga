@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\ConventionsController;
 use App\Http\Controllers\Admin\DividendesController;
 use App\Http\Controllers\Admin\GrillesTarifairesController;
 use App\Http\Controllers\Admin\GuichetController;
+use App\Http\Controllers\Admin\GuichetSouscriptionController;
 use App\Http\Controllers\Admin\HistoriqueDecisionsController;
 use App\Http\Controllers\Admin\ImportBoutiquesController;
 use App\Http\Controllers\Admin\ImportsController;
@@ -221,6 +222,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/titulaires/{titulaire}', 'titulaire')->whereNumber('titulaire')->name('.titulaire');
             Route::post('/cartes/{jeton}/imprimer', 'imprimer')->where('jeton', '[A-Za-z0-9]{1,100}')->middleware(['can:'.Droit::CartesImprimer->value, 'throttle:20,1'])->name('.imprimer');
         });
+        // Souscription d'actions au guichet (AGENT DE GUICHET) pour une personne présente : code SMS, compte, identité
+        // validée sur place, souscription, encaissement définitif et reçu.
+        Route::controller(GuichetSouscriptionController::class)->prefix('guichet/souscription')->name('guichet-souscription')
+            ->middleware('can:'.Droit::GuichetSouscrire->value)->group(function () {
+                Route::get('/', 'index');
+                Route::post('/telephone', 'telephone')->middleware('throttle:10,1')->name('.telephone');
+                Route::post('/renvoyer', 'renvoyer')->middleware('throttle:10,1')->name('.renvoyer');
+                Route::post('/code', 'code')->middleware('throttle:20,1')->name('.code');
+                Route::post('/compte', 'compte')->name('.compte');
+                Route::post('/identite', 'identite')->name('.identite');
+                Route::post('/souscrire', 'souscrire')->name('.souscrire');
+                Route::post('/encaisser', 'encaisser')->middleware('throttle:20,1')->name('.encaisser');
+                Route::get('/recu/{reference}', 'recu')->where('reference', '[A-Z0-9-]{1,40}')->name('.recu');
+                Route::post('/terminer', 'terminer')->name('.terminer');
+            });
         Route::post('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::post('/profil/mot-de-passe', [ProfilController::class, 'motDePasse'])->middleware('throttle:10,1')->name('profil.mot-de-passe');
 

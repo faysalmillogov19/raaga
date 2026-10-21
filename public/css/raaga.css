@@ -3247,3 +3247,50 @@ html,
     width: 14px;
     height: 14px;
 }
+
+/* Souscription au guichet : frise des étapes et montant à encaisser. */
+.guichet-etapes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: #5E6B63;
+    font-size: 0.95rem;
+}
+.guichet-etapes li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.guichet-etape-numero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid #C9D2CC;
+    border-radius: 50%;
+    font-weight: 700;
+}
+.guichet-etapes .est-faite .guichet-etape-numero {
+    border-color: #005C2B;
+    background: #E8F4EC;
+    color: #005C2B;
+}
+.guichet-etapes .est-courante {
+    color: #16201A;
+    font-weight: 700;
+}
+.guichet-etapes .est-courante .guichet-etape-numero {
+    border-color: #005C2B;
+    background: #005C2B;
+    color: #FFFFFF;
+}
+.guichet-montant {
+    font-size: 1.35rem;
+}
+.guichet-montant strong {
+    color: #005C2B;
+}

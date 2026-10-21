@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Guichet;
 
+use App\Contracts\SmsProvider;
 use App\Enums\CanalSouscription;
 use App\Enums\DocumentAccepte;
 use App\Enums\Droit;
@@ -28,6 +29,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Tests\Support\ConnexionBackoffice;
+use Tests\Support\FakeSmsProvider;
 use Tests\Support\ParametresInvestissementConfirmes;
 use Tests\TestCase;
 
@@ -37,7 +40,7 @@ use Tests\TestCase;
  */
 class SouscriptionGuichetTest extends TestCase
 {
-    use ParametresInvestissementConfirmes, RefreshDatabase;
+    use ConnexionBackoffice, ParametresInvestissementConfirmes, RefreshDatabase;
 
     private User $agent;
 
@@ -175,6 +178,74 @@ class SouscriptionGuichetTest extends TestCase
 
         $this->expectException(ValidationException::class);
         $this->guichet->souscrire($this->agent, $citoyen, 1, [DocumentAccepte::AucunDroitBoutique->value], null, '10.0.0.1', 'guichet');
+    }
+
+    public function test_parcours_http_au_guichet_de_bout_en_bout(): void
+    {
+        $sms = new FakeSmsProvider;
+        $this->app->instance(SmsProvider::class, $sms);
+        $this->trancheOuverte();
+        $agent = $this->connecterBackoffice(Role::AgentGuichet);
+        $page = route('admin.guichet-souscription');
+
+        // Menu et étape 1 : téléphone.
+        $this->get(route('admin.tableau'))->assertOk()->assertSee($page, false);
+        $this->get($page)->assertOk()->assertSee('data-etape="telephone"', false)->assertSee('Envoyer le code');
+        $this->post(route('admin.guichet-souscription.telephone'), ['telephone' => '70 11 12 22'])->assertRedirect($page);
+        $this->get($page)->assertSee('Aucun compte pour ce numéro');
+        $this->post(route('admin.guichet-souscription.code'), ['code' => '000000'])->assertSessionHasErrors('code');
+        $this->post(route('admin.guichet-souscription.code'), ['code' => $sms->dernierCode()])->assertRedirect($page);
+
+        // Compte, identité, souscription.
+        $this->get($page)->assertSee('data-etape="compte"', false);
+        $this->post(route('admin.guichet-souscription.compte'), $this->identite())->assertSessionHasNoErrors()->assertRedirect($page);
+        $issa = User::query()->where('telephone', '+22670111222')->sole();
+        $this->get($page)->assertSee('data-etape="identite"', false)->assertSee('Issa SAWADOGO');
+        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'numero_piece' => 'B12345678',
+            'piece_expire_le' => now()->addYears(2)->toDateString(), ...$this->pieces()])->assertSessionHasErrors('piece_conforme');
+        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'numero_piece' => 'B12345678',
+            'piece_expire_le' => now()->addYears(2)->toDateString(), 'piece_conforme' => '1', ...$this->pieces()])->assertSessionHasNoErrors();
+        $this->assertSame(StatutKyc::Valide, $issa->fresh()->statut_kyc);
+        $this->get($page)->assertSee('data-etape="souscription"', false)->assertSee('Lisez à la personne');
+        $this->post(route('admin.guichet-souscription.souscrire'), ['nb_actions' => 3, 'engagements' => $this->engagements()])->assertSessionHasNoErrors();
+
+        // Paiement : montant affiché, moyens encaissables seulement, référence exigée hors espèces.
+        $this->get($page)->assertSee('data-etape="paiement"', false)->assertSee('data-a-encaisser', false)
+            ->assertSee('Espèces au guichet')->assertSee('Orange Money')->assertDontSee('Virement bancaire');
+        $this->post(route('admin.guichet-souscription.encaisser'), ['moyen' => 'ESPECES'])->assertSessionHasErrors('montant_recu');
+        $this->post(route('admin.guichet-souscription.encaisser'), ['moyen' => 'ORANGE_MONEY', 'montant_recu' => '1'])->assertSessionHasErrors('reference');
+        $this->post(route('admin.guichet-souscription.encaisser'), ['moyen' => 'ESPECES', 'montant_recu' => '1'])->assertSessionHasNoErrors()->assertRedirect($page);
+
+        $s = $issa->souscriptions()->sole();
+        $this->assertSame(StatutSouscription::Payee, $s->statut);
+        $this->assertSame($agent->id, $s->agent_id);
+        $this->get($page)->assertSee('data-etape="recu"', false)->assertSee(route('admin.guichet-souscription.recu', $s->reference), false);
+        $this->get(route('admin.guichet-souscription.recu', $s->reference))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+
+        // Nouvelle personne : la démarche repart du téléphone.
+        $this->post(route('admin.guichet-souscription.terminer'))->assertRedirect($page);
+        $this->get($page)->assertSee('data-etape="telephone"', false);
+    }
+
+    public function test_personne_existante_confirmee_par_code_et_refus_des_autres_profils(): void
+    {
+        $sms = new FakeSmsProvider;
+        $this->app->instance(SmsProvider::class, $sms);
+        $this->trancheOuverte();
+        User::factory()->role(Role::Citoyen)->create(['name' => 'Awa OUEDRAOGO', 'telephone' => '+22670123456', 'statut_kyc' => StatutKyc::Valide, 'pays_residence' => 'BF']);
+
+        $this->connecterBackoffice(Role::AgentGuichet);
+        $this->post(route('admin.guichet-souscription.telephone'), ['telephone' => '70123456']);
+        $this->get(route('admin.guichet-souscription'))->assertSee('Compte existant : Awa OUEDRAOGO.');
+        $this->post(route('admin.guichet-souscription.code'), ['code' => $sms->dernierCode()]);
+        // Identité déjà validée : directement la souscription.
+        $this->get(route('admin.guichet-souscription'))->assertSee('data-etape="souscription"', false);
+
+        foreach ([Role::Admin, Role::ControleurPaiements, Role::Validateur] as $role) {
+            $this->connecterBackoffice($role);
+            $this->get(route('admin.guichet-souscription'))->assertForbidden();
+            $this->post(route('admin.guichet-souscription.telephone'), ['telephone' => '70123456'])->assertForbidden();
+        }
     }
 
     public function test_un_numero_du_back_office_est_refuse(): void

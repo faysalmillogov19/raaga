@@ -124,8 +124,10 @@ class SouscriptionGuichet
     /** @return list<MoyenPaiement> moyens retenus par la tranche, autorisés pour ce montant et encaissables au guichet */
     public function moyens(Souscription $souscription): array
     {
-        return array_values(array_filter($souscription->loadMissing('tranche')->canauxPaiement(),
-            fn (MoyenPaiement $m) => in_array($m->famille, self::FAMILLES, true)));
+        // Espèces d'abord, puis mobile money et carte, dans l'ordre du référentiel.
+        return collect($souscription->loadMissing('tranche')->canauxPaiement())
+            ->filter(fn (MoyenPaiement $m) => in_array($m->famille, self::FAMILLES, true))
+            ->sortBy(fn (MoyenPaiement $m) => array_search($m->famille, self::FAMILLES, true))->values()->all();
     }
 
     /** Une référence est exigée pour le mobile money et la carte (transaction de l'opérateur, ticket du terminal). */
