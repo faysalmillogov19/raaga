@@ -22,6 +22,7 @@ use App\Enums\TypeFraisSouscription;
 use App\Models\Duree;
 use App\Models\Tranche;
 use App\Models\User;
+use App\Services\Guichet\CaisseGuichet;
 use App\Services\Guichet\SouscriptionGuichet;
 use App\Services\Souscriptions\PreparationSouscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -246,6 +247,38 @@ class SouscriptionGuichetTest extends TestCase
             $this->get(route('admin.guichet-souscription'))->assertForbidden();
             $this->post(route('admin.guichet-souscription.telephone'), ['telephone' => '70123456'])->assertForbidden();
         }
+    }
+
+    public function test_caisse_du_jour_totaux_cloture_et_encaissement_bloque_apres_cloture(): void
+    {
+        $this->trancheOuverte();
+        $citoyen = User::factory()->role(Role::Citoyen)->create(['name' => 'Awa OUEDRAOGO', 'statut_kyc' => StatutKyc::Valide, 'pays_residence' => 'BF']);
+        $agent = $this->connecterBackoffice(Role::AgentGuichet);
+        $s1 = $this->guichet->souscrire($agent, $citoyen, 2, $this->engagements(), null, '10.0.0.1', 'guichet');
+        $this->guichet->encaisser($agent, $s1, 'ESPECES', null);
+        $s2 = $this->guichet->souscrire($agent, $citoyen, 3, $this->engagements(), null, '10.0.0.1', 'guichet');
+        $this->guichet->encaisser($agent, $s2, 'ORANGE_MONEY', 'OM-778899');
+
+        // Un autre agent ne voit pas ces encaissements.
+        $autre = User::factory()->role(Role::AgentGuichet)->create();
+        $this->assertTrue(app(CaisseGuichet::class)->ouverts($autre)->isEmpty());
+
+        $this->get(route('admin.guichet-caisse'))->assertOk()
+            ->assertSee('data-jour="'.now()->toDateString().'"', false)->assertSee('Awa OUEDRAOGO')->assertSee('OM-778899')
+            ->assertSee('Total Espèces au guichet')->assertSee(format_fcfa(20_000))->assertSee(format_fcfa(30_000))->assertSee(format_fcfa(50_000));
+
+        $this->post(route('admin.guichet-caisse.cloturer'), ['jour' => now()->toDateString()])->assertRedirect(route('admin.guichet-caisse'))
+            ->assertSessionHas('succes', __('admin.guichet.caisse.cloturee', ['nombre' => 2, 'total' => format_fcfa(50_000)]));
+        $this->assertDatabaseHas('clotures_caisse', ['agent_id' => $agent->id, 'nb_encaissements' => 2, 'total_montant' => 50_000]);
+        $this->assertDatabaseMissing('paiements', ['agent_id' => $agent->id, 'cloture_caisse_id' => null, 'statut' => StatutPaiement::Confirme->value]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'caisse.cloturee', 'acteur_id' => $agent->id]);
+        $this->get(route('admin.guichet-caisse'))->assertSee('data-cloture', false)->assertSee('data-aucun', false);
+
+        // Deuxième clôture refusée ; plus d'encaissement aujourd'hui.
+        $this->post(route('admin.guichet-caisse.cloturer'), ['jour' => now()->toDateString()])->assertSessionHasErrors('jour');
+        $s3 = $this->guichet->souscrire($agent, $citoyen, 1, $this->engagements(), null, '10.0.0.1', 'guichet');
+        $this->expectException(ValidationException::class);
+        $this->guichet->encaisser($agent, $s3, 'ESPECES', null);
     }
 
     public function test_un_numero_du_back_office_est_refuse(): void

@@ -28,7 +28,7 @@ class NavigationTest extends TestCase
     private const MENUS = [
         'superadmin' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'phase', 'plateforme', 'securite', 'audit', 'parametres', 'connexions', 'unites', 'moyens', 'delais'],
         'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme', 'interets', 'kyc', 'guichet', 'photos_personnel'],
-        'agent_guichet' => ['tableau', 'guichet', 'guichet_souscription'],
+        'agent_guichet' => ['tableau', 'guichet', 'guichet_souscription', 'guichet_caisse'],
         'controleur_paiements' => ['tableau', 'paiements', 'remboursements'],
         'gestionnaire_sites' => ['tableau', 'brouillons', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'imports_sites', 'imports_boutiques'],
         'validateur' => ['tableau', 'a_valider', 'a_valider_attributions', 'attributions_a_faire', 'historique', 'a_valider_sites', 'a_valider_finances', 'a_valider_grilles', 'a_valider_referentiels', 'a_valider_campagnes', 'a_valider_demarches', 'a_valider_autorisations', 'a_valider_imports', 'a_valider_paiements', 'a_valider_cautions', 'a_valider_identites', 'a_valider_cartes', 'cautions', 'tranches', 'investissement', 'sites', 'boutiques_referentiel', 'imports_sites', 'imports_boutiques', 'boutiques', 'dividendes', 'simulations', 'dossiers_kyb', 'conventions', 'appels_fonds', 'registre_a', 'conformite', 'registre', 'audit', 'observations'],

@@ -46,6 +46,7 @@ class SouscriptionGuichet
         private readonly DossiersIdentite $dossiers,
         private readonly PreparationSouscription $preparation,
         private readonly ServicePaiement $paiements,
+        private readonly CaisseGuichet $caisse,
     ) {}
 
     /** Compte citoyen du numéro, null s'il n'existe pas ; un numéro tenu par un compte du back-office est refusé. */
@@ -140,6 +141,10 @@ class SouscriptionGuichet
     {
         if ($souscription->canal !== CanalSouscription::Guichet || $souscription->statut !== StatutSouscription::Reservee) {
             throw ValidationException::withMessages(['moyen' => __('admin.guichet.souscription.erreurs.non_encaissable')]);
+        }
+        // Caisse du jour clôturée : plus aucun encaissement aujourd'hui pour cet agent.
+        if ($this->caisse->estCloturee($agent)) {
+            throw ValidationException::withMessages(['moyen' => __('admin.guichet.caisse.cloturee_aujourdhui')]);
         }
         $moyen = collect($this->moyens($souscription))->firstWhere('code', $code)
             ?? throw ValidationException::withMessages(['moyen' => __('admin.guichet.souscription.erreurs.moyen')]);

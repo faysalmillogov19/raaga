@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ConnexionsController;
 use App\Http\Controllers\Admin\ConventionsController;
 use App\Http\Controllers\Admin\DividendesController;
 use App\Http\Controllers\Admin\GrillesTarifairesController;
+use App\Http\Controllers\Admin\GuichetCaisseController;
 use App\Http\Controllers\Admin\GuichetController;
 use App\Http\Controllers\Admin\GuichetSouscriptionController;
 use App\Http\Controllers\Admin\HistoriqueDecisionsController;
@@ -236,6 +237,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::post('/encaisser', 'encaisser')->middleware('throttle:20,1')->name('.encaisser');
                 Route::get('/recu/{reference}', 'recu')->where('reference', '[A-Z0-9-]{1,40}')->name('.recu');
                 Route::post('/terminer', 'terminer')->name('.terminer');
+            });
+        // Caisse de l'agent de guichet : encaissements non clôturés, clôture d'un jour.
+        Route::controller(GuichetCaisseController::class)->prefix('guichet/caisse')->name('guichet-caisse')
+            ->middleware('can:'.Droit::GuichetSouscrire->value)->group(function () {
+                Route::get('/', 'index');
+                Route::post('/cloturer', 'cloturer')->middleware('throttle:10,1')->name('.cloturer');
             });
         Route::post('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::post('/profil/mot-de-passe', [ProfilController::class, 'motDePasse'])->middleware('throttle:10,1')->name('profil.mot-de-passe');
