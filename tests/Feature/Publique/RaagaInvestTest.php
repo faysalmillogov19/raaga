@@ -27,7 +27,7 @@ use Tests\Support\ActeursParametrage;
 use Tests\TestCase;
 
 /**
- * RAAGA Invest : paramètres saisis par le RÉGULATEUR et confirmés par le VALIDATEUR, simulateur (montant, part de
+ * RAAGA Invest : paramètres saisis par le RÉGULATEUR et confirmés par le VALIDATEUR, simulateur retiré (montant, part de
  * l'objectif de collecte), jauge qui dépasse 100 %, manifestation d'intérêt sans paiement, droits par profil et
  * textes obligatoires.
  */
@@ -66,11 +66,11 @@ class RaagaInvestTest extends TestCase
         return User::factory()->role(Role::Citoyen)->create();
     }
 
-    public function test_sans_parametres_confirmes_ni_simulation_ni_manifestation(): void
+    public function test_sans_parametres_confirmes_pas_de_manifestation(): void
     {
         $this->assertNull(RaagaInvest::parametres());
         $this->assertNull(RaagaInvest::jauge());
-        $this->get(route('invest.simulateur'))->assertOk()->assertSee('data-simulateur-indisponible', false)->assertDontSee('data-formulaire-interet', false);
+        $this->get(route('offre'))->assertOk()->assertDontSee('id="interet"', false)->assertDontSee('data-formulaire-interet', false);
 
         // Saisis mais pas encore confirmés : toujours rien.
         $this->en($this->regulateur)->put(route('admin.investissement.update'), ['objectif_collecte' => 1_000_000, 'valeur_action' => 5_000, 'minimum_actions' => 1])->assertSessionHas('succes');
@@ -82,17 +82,19 @@ class RaagaInvestTest extends TestCase
         $this->assertSame(0, ManifestationInteret::query()->count());
     }
 
-    public function test_calculs_du_simulateur(): void
+    public function test_le_simulateur_est_retire(): void
     {
         $this->confirmer(objectif: 2_000_000_000, valeur: 10_000, plafond: 2_500_000_000);
 
+        // Montant indicatif d'une manifestation d'intérêt : nombre d'actions × valeur.
         $this->assertSame(['nombre' => 50, 'valeur_action' => 10_000, 'montant' => 500_000, 'part_objectif' => 0.025], RaagaInvest::simuler(50));
         $this->assertNull(RaagaInvest::simuler(0));
 
-        $page = $this->get(route('invest.simulateur', ['actions' => 50]))->assertOk();
-        $page->assertSee(format_fcfa(500_000))->assertSee('0,03&nbsp;%', false)->assertSee('Part de l’objectif de collecte (indicatif)')
-            ->assertSee('Objectif de collecte : '.format_fcfa(2_000_000_000).' (il peut être dépassé).')->assertSee('Plafond global : '.format_fcfa(2_500_000_000).'.')
-            ->assertDontSee('part du capital', false)->assertDontSee('Part du capital', false);
+        // Ancienne adresse : renvoi vers la manifestation d'intérêt de l'offre ; plus aucun lien ni mention.
+        $this->get('/invest/simulateur')->assertRedirect(route('offre').'#interet');
+        foreach ([route('accueil'), route('offre')] as $url) {
+            $this->get($url)->assertOk()->assertDontSee('Simuler mon investissement')->assertDontSee('/invest/simulateur', false);
+        }
     }
 
     public function test_la_jauge_depasse_l_objectif(): void
@@ -122,8 +124,8 @@ class RaagaInvestTest extends TestCase
         $this->confirmer(objectif: 1_000_000_000, valeur: 10_000);
         $citoyen = $this->citoyen();
 
-        $this->actingAs($citoyen)->get(route('invest.simulateur'))->assertSee('data-formulaire-interet', false)
-            ->assertSee('Je comprends qu’il s’agit d’une simulation non engageante');
+        $this->actingAs($citoyen)->get(route('offre'))->assertSee('id="interet"', false)->assertSee('data-formulaire-interet', false)
+            ->assertSee('Je comprends que cette démarche ne m’engage pas et ne réserve aucune action')->assertDontSee('simulation non engageante');
 
         // La case est obligatoire.
         $this->actingAs($citoyen)->post(route('invest.interet'), ['profil' => 'DIASPORA', 'pays_residence' => 'France', 'nombre_actions' => 30])
@@ -145,7 +147,7 @@ class RaagaInvestTest extends TestCase
 
         // Visiteur non connecté : lien de connexion, aucun enregistrement possible.
         auth()->logout();
-        $this->get(route('invest.simulateur'))->assertDontSee('data-formulaire-interet', false)->assertSee('Connectez-vous pour manifester votre intérêt');
+        $this->get(route('offre'))->assertDontSee('data-formulaire-interet', false)->assertSee('Connectez-vous pour manifester votre intérêt');
         $this->post(route('invest.interet'), ['profil' => 'RESIDENT', 'pays_residence' => 'Burkina Faso', 'nombre_actions' => 5, 'simulation_comprise' => '1'])
             ->assertRedirect();
         $this->assertSame(1, ManifestationInteret::query()->count());
@@ -155,7 +157,7 @@ class RaagaInvestTest extends TestCase
     {
         $this->confirmer();
 
-        foreach ([route('invest.simulateur'), route('offre')] as $url) {
+        foreach ([route('offre')] as $url) {
             $page = $this->get($url)->assertOk();
             $page->assertSee(self::RENDEMENT, false)->assertSee(self::BOUTIQUE, false)->assertSee('· RAAGA Invest</title>', false)->assertSee('data-portail', false);
             foreach (['UMOA', 'AMF', 'part du capital'] as $interdit) {

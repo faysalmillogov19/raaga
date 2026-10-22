@@ -97,15 +97,15 @@ class ActionDixMilleTest extends TestCase
         $this->assertSame(2_000_000_000, TranchesController::valeursParDefaut()['objectif_montant']);
     }
 
-    public function test_simulateur_a_10_000(): void
+    public function test_montant_indicatif_a_10_000(): void
     {
         $this->confirmerParametresInvestissement(10_000, minimum: 1);
 
         $this->assertSame(['nombre' => 1, 'valeur_action' => 10_000, 'montant' => 10_000, 'part_objectif' => 0.001], RaagaInvest::simuler(1));
         $this->assertSame(250_000, RaagaInvest::simuler(25)['montant']);
-        // Valeur de départ : le nombre minimum d'actions (1).
-        $this->get(route('invest.simulateur'))->assertOk()->assertSee('name="actions"', false)->assertSee('value="1"', false)
-            ->assertSee(format_fcfa(10_000));
+        // Manifestation d'intérêt (offre) : valeur de départ, le nombre minimum d'actions (1).
+        $this->actingAs(User::factory()->role(Role::Citoyen)->create())->get(route('offre'))->assertOk()
+            ->assertSee('name="nombre_actions"', false)->assertSee('value="1"', false);
     }
 
     public function test_offre_souscription_fermee_valeur_indicative_et_minimum(): void

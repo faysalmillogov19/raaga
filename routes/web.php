@@ -131,9 +131,10 @@ Route::middleware(['actions.presentation', 'auth', 'role:citoyen'])->controller(
     Route::get('/recu', 'recu')->name('recu');
 });
 
-// RAAGA Invest : simulateur (public) et manifestation d'intérêt (citoyen connecté) ; aucun paiement.
+// RAAGA Invest : manifestation d'intérêt (citoyen connecté, formulaire sur la page de l'offre) ; aucun paiement.
+// L'ancien simulateur est retiré : son adresse renvoie à la manifestation d'intérêt.
 Route::middleware('actions.presentation')->controller(InvestController::class)->prefix('invest')->name('invest.')->group(function () {
-    Route::get('/simulateur', 'simulateur')->name('simulateur');
+    Route::get('/simulateur', fn () => redirect()->to(route('offre').'#interet', 301));
     Route::post('/interet', 'interet')->middleware(['auth', 'role:citoyen', 'throttle:10,1'])->name('interet');
 });
 

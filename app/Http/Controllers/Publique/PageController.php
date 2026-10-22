@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Publique;
 
+use App\Enums\ProfilInvestisseur;
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Services\Invest\RaagaInvest;
 use App\Services\Publique\CollectePublique;
@@ -45,6 +47,11 @@ class PageController extends Controller
             'etapes' => $etapes,
             // Prix (tranche ouverte) ou valeur indicative, minimum : une seule source ; taux IRVM de la dernière distribution.
             'conditions' => RaagaInvest::conditions(),
+            // Manifestation d'intérêt (citoyen connecté) : seulement avec des paramètres d'investissement confirmés.
+            'interet' => RaagaInvest::parametres() !== null,
+            'citoyen' => request()->user()?->hasRole(Role::Citoyen) ?? false,
+            'profils' => ProfilInvestisseur::cases(),
+            'nombreMinimum' => RaagaInvest::conditions()['minimum'] ?? 1,
             'irvm' => Phase::tauxIrvm(),
             'documents' => [
                 ['cle' => 'reglement', 'url' => Phase::souscriptionOuverte() ? route('souscrire.reglement') : $this->urlFichier(config('raaga.documents.reglement'))],

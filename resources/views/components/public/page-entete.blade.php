@@ -8,7 +8,7 @@
 @php
     $demarche = \App\Support\Demarche::courante();
     $nuit = $sombre && \App\Support\ThemePublic::nuit();
-    // Démarche « Investir » (et son simulateur) : accents jaunes en thème « nuit ».
+    // Démarche « Investir » : accents jaunes en thème « nuit ».
     $investir = $nuit && ($demarche === 'investir' || request()->routeIs('invest.*'));
     [$leger, $fort] = \App\Support\TitreNuit::decouper($titre);
 @endphp

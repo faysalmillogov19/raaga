@@ -27,7 +27,7 @@ use Tests\TestCase;
 
 /**
  * Thème « nuit », lot 3 : compte (connexion, inscription), espace citoyen et ses onglets, profil, vérification
- * d'identité, carte d'accès (rendu inchangé), RAAGA Invest (offre, simulateur, souscription, accents jaunes),
+ * d'identité, carte d'accès (rendu inchangé), RAAGA Invest (offre, souscription, accents jaunes),
  * transparence, pages d'information, pages d'erreur et maintenance. Thème « clair » : rendu historique.
  */
 class ThemeNuitPagesTest extends TestCase
@@ -121,7 +121,7 @@ class ThemeNuitPagesTest extends TestCase
     {
         $this->trancheOuverte();
 
-        foreach ([route('offre'), route('invest.simulateur'), route('transparence')] as $url) {
+        foreach ([route('offre'), route('transparence')] as $url) {
             $this->get($url)->assertOk()->assertSee('nuit-page', false)->assertSee('nuit-investir', false);
         }
         $this->get(route('transparence'))->assertSee('carte-blanche', false)->assertSee('role="progressbar"', false);

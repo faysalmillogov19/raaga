@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Publique;
 
 use App\Enums\ProfilInvestisseur;
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\ManifestationInteret;
 use App\Services\Audit\Journal;
@@ -12,29 +11,15 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
 
 /**
- * RAAGA Invest : simulateur (nombre d'actions × valeur indicative = montant, part de l'objectif de collecte,
- * indicative) et manifestation d'intérêt d'un citoyen connecté (simulation non engageante, référence attribuée,
- * aucun paiement). Valeurs tirées des paramètres d'investissement confirmés : sans eux, ni simulation ni manifestation.
+ * RAAGA Invest : manifestation d'intérêt d'un citoyen connecté (démarche non engageante, référence attribuée, aucun
+ * paiement), depuis la page de l'offre. Montant indicatif tiré des paramètres d'investissement confirmés : sans eux,
+ * pas de manifestation.
  */
 class InvestController extends Controller
 {
     public function __construct(private readonly Journal $journal) {}
-
-    public function simulateur(Request $request): View
-    {
-        $nombre = max(1, min(10_000_000, (int) $request->query('actions', $this->minimum())));
-
-        return view('public.invest.simulateur', [
-            'parametres' => RaagaInvest::parametres(),
-            'simulation' => RaagaInvest::simuler($nombre),
-            'nombre' => $nombre,
-            'citoyen' => $request->user()?->hasRole(Role::Citoyen) ?? false,
-            'profils' => ProfilInvestisseur::cases(),
-        ]);
-    }
 
     public function interet(Request $request): RedirectResponse
     {
@@ -58,11 +43,5 @@ class InvestController extends Controller
 
         return redirect()->route('espace', ['onglet' => 'interets'])
             ->avecSucces('public.invest.messages.enregistree', ['reference' => $manifestation->reference]);
-    }
-
-    /** Nombre minimum d'actions (conditions publiques, 1 sinon) : valeur de départ du simulateur. */
-    private function minimum(): int
-    {
-        return RaagaInvest::conditions()['minimum'] ?? 1;
     }
 }

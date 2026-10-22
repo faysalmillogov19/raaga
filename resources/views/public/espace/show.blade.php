@@ -89,7 +89,7 @@
                     {{-- RAAGA Invest : manifestations d'intérêt (simulations non engageantes, aucun paiement). --}}
                     <x-public.mentions-invest class="mb-4" />
                     @if ($interets->isEmpty())
-                        <p>{{ __('public.invest.interet.aucune') }} <a href="{{ route('invest.simulateur') }}" class="lien-fort">{{ __('public.invest.interet.lien') }}</a></p>
+                        <p>{{ __('public.invest.interet.aucune') }} <a href="{{ route('offre') }}#interet" class="lien-fort">{{ __('public.invest.interet.lien') }}</a></p>
                     @else
                         <div class="overflow-x-auto">
                             <table class="w-full text-left" data-interets>

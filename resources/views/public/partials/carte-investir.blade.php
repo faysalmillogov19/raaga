@@ -27,7 +27,6 @@
                 <p>{{ __('public.demarches.investir.collecte', ['collecte' => format_fcfa($jauge['collecte'])]) }} ·
                     <strong data-pourcentage-objectif>{{ __('public.demarches.investir.pourcentage', ['pourcentage' => $jauge['libelle']]) }}</strong></p>
             </div>
-            <a href="{{ route('invest.simulateur') }}" class="lien-fort">{{ $d['investir']['simuler'] }}</a>
         @endif
         <p class="acc-demarche-tirage"><x-icon name="check" class="h-5 w-5 shrink-0" /> <span>{{ $d['investir']['dividendes'] }}</span></p>
         <p class="acc-demarche-risque"><x-icon name="danger" class="h-5 w-5 shrink-0" /> <span>{{ $d['investir']['risque'] }}</span></p>

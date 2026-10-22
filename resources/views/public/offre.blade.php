@@ -10,9 +10,8 @@
 
     <div class="conteneur grid grid-cols-[minmax(0,1fr)] gap-8 py-8 tab:py-12 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-12">
         <div class="space-y-10">
-            {{-- RAAGA Invest : mentions obligatoires, simulateur. --}}
+            {{-- RAAGA Invest : mentions obligatoires. --}}
             <x-public.mentions-invest />
-            <p><a href="{{ route('invest.simulateur') }}" class="lien-fort">{{ __('public.invest.simulateur.titre') }}</a></p>
 
             {{-- Comment ça marche : 4 étapes --}}
             <section aria-labelledby="etapes-titre">
@@ -59,6 +58,41 @@
                 <h2 id="calendrier-titre">{{ __('public.offre.calendrier.titre') }}</h2>
                 <x-public.frise class="mt-5" :etapes="$etapes" />
             </section>
+
+            {{-- Manifestation d'intérêt : citoyen connecté, démarche non engageante, aucun paiement. --}}
+            @if ($interet)
+                @php($v = __('public.invest'))
+                <section id="interet" class="carte p-5 tab:p-6" aria-labelledby="interet-titre">
+                    <h2 id="interet-titre">{{ $v['interet']['titre'] }}</h2>
+                    <p class="mt-2">{{ $v['interet']['intro'] }}</p>
+                    @if ($citoyen)
+                        <form method="POST" action="{{ route('invest.interet') }}" class="mt-4 space-y-4" data-formulaire-interet>
+                            @csrf
+                            <fieldset>
+                                <legend class="font-bold text-encre"><x-requis /> {{ $v['attributs']['profil'] }}</legend>
+                                <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                                    @foreach ($profils as $profil)
+                                        <label class="inline-flex min-h-[44px] items-center gap-3">
+                                            <input type="radio" name="profil" value="{{ $profil->value }}" @checked(old('profil') === $profil->value) required> {{ $profil->label() }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                                @error('profil') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+                            </fieldset>
+                            <x-public.champ nom="pays_residence" :libelle="ucfirst($v['attributs']['pays_residence'])" :valeur="old('pays_residence', 'Burkina Faso')" maxlength="80" required />
+                            <x-public.champ nom="nombre_actions" :libelle="ucfirst($v['attributs']['nombre_actions'])" type="number" min="1" max="10000000" :valeur="old('nombre_actions', $nombreMinimum)" required />
+                            <div>
+                                <x-public.case nom="simulation_comprise" :libelle="$v['interet']['case']" value="1" required />
+                                @error('simulation_comprise') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
+                            </div>
+                            <button type="submit" class="btn-primaire">{{ $v['interet']['envoyer'] }}</button>
+                            <p class="texte-carte">{{ $v['interet']['aucun_paiement'] }}</p>
+                        </form>
+                    @else
+                        <p class="mt-3"><a href="{{ route('connexion') }}" class="lien-fort">{{ $v['interet']['se_connecter'] }}</a></p>
+                    @endif
+                </section>
+            @endif
 
             {{-- FAQ dédiée --}}
             <section aria-labelledby="faq-investir-titre">
