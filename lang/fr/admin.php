@@ -959,7 +959,7 @@ return [
         'titre' => 'Paramètres d’investissement',
         'intro' => 'RAAGA Invest : objectif de collecte (il peut être dépassé), valeur indicative par action, nombre minimum d’actions et plafond global facultatif. Le RÉGULATEUR les saisit et les soumet ; le VALIDATEUR les confirme dans « À valider › Données financières ». Le site public affiche la dernière version confirmée.',
         'aucun' => 'Aucun paramètre saisi',
-        'aucune_confirmee' => 'Aucune version confirmée : le simulateur et la jauge de l’accueil restent masqués.',
+        'aucune_confirmee' => 'Aucune version confirmée : la manifestation d’intérêt et la jauge de l’accueil restent masquées.',
         'en_vigueur' => 'Version confirmée en vigueur : objectif :objectif, valeur indicative :valeur par action, minimum :minimum action(s).',
         'vides' => 'Saisissez d’abord les paramètres d’investissement.',
         'sans_plafond' => 'Sans plafond',
