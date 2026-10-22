@@ -11,7 +11,7 @@ use App\Models\Paiement;
  */
 interface PaymentProvider
 {
-    /** Vrai pour le simulateur de recette (bandeau « Paiement simulé » affiché). */
+    /** Vrai pour le simulateur de paiement (boutons de réponse simulée affichés, jamais en production). */
     public function estSimule(): bool;
 
     /** Transmet la demande de paiement (paiement au statut EN_ATTENTE, référence unique). */

@@ -52,7 +52,7 @@ class ThemeNuitAccueilBoutiquesTest extends TestCase
 
         $page = $this->get('/')->assertOk();
 
-        $page->assertSee('data-exemple', false)->assertSee('Exemple')->assertSee('MCE-RC-A-001', false)
+        $page->assertSee('data-exemple', false)->assertDontSee('nuit-scene-exemple', false)->assertSee('MCE-RC-A-001', false)
             // 4 petites boutiques de 9 m² et 1 grande : chiffres, orbite, campagne.
             ->assertSee('5 emplacements, 1 niveaux.')
             ->assertSee('Marché central, à Ouagadougou, réunit 5 boutiques sur 1 niveaux', false)

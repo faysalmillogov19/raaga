@@ -61,7 +61,6 @@ return [
     'cadre' => [
         'nom' => 'Raaga',
         'sous_titre' => 'Back-office · phase 1',
-        'version' => 'Version de recette · :date',
         'racine' => 'Raaga',
         'menu' => 'Afficher ou masquer le menu',
         'recherche' => 'Rechercher',
@@ -2882,8 +2881,7 @@ return [
             'titre' => 'Simulation, exercice :annee',
             'source' => 'Source des détentions',
             'source_registre' => 'Registre des actions au :date',
-            'source_demo' => 'Jeu fictif de démonstration (200 actionnaires)',
-            'registre_vide' => 'Le registre ne contient encore aucune action à cette date : utilisez le jeu fictif pour tester les paramètres.',
+            'registre_vide' => 'Le registre ne contient encore aucune action à cette date : la simulation sera possible après la première allocation.',
             'beneficiaires' => 'Bénéficiaires',
             'actions' => 'Actions',
             'dpa' => 'Dividende brut par action',

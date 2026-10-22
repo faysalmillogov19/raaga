@@ -95,7 +95,6 @@ return [
         'accueil' => [
             'badge' => 'Au premier arrivé, premier servi',
             'chiffres' => ':boutiques emplacements, :niveaux niveaux.',
-            'exemple' => 'Exemple',
             'telephone' => ['paye' => 'payé', 'loyer' => 'Loyer', 'caution' => 'Caution', 'payee' => 'Payée', 'avance' => 'Avance',
                 'echeance' => 'J-21', 'carte' => 'Carte', 'qr' => 'QR prêt', 'total' => 'Total à verser', 'carte_titre' => 'Ma carte d’accès', 'carte_texte' => 'Lue aux portiques du marché'],
             'quoi_surtitre' => 'Qu’est-ce que Raaga ?',
@@ -528,12 +527,6 @@ return [
             'apres_allocation' => 'Après l’allocation',
             'a_annoncer' => 'Date annoncée ultérieurement',
         ],
-        'exemple' => [
-            'titre' => 'Exemple chiffré',
-            'achat' => 'Awa achète :nb actions à :prix l’une : elle paie :total.',
-            'dividende' => 'Si, une année, l’assemblée générale décidait de verser un dividende de :dividende par action (montant fictif, pour l’exemple), Awa recevrait :nb × :dividende = :gain.',
-            'avertissement' => 'Cet exemple est purement illustratif : aucun montant de dividende n’est promis.',
-        ],
         'encart' => [
             'pret' => 'Prêt à souscrire ?',
             'texte' => 'La souscription prend quelques minutes depuis votre téléphone.',
@@ -694,7 +687,6 @@ return [
 
     'paiement' => [
         'titre' => 'Paiement',
-        'simule' => 'Paiement simulé, environnement de recette',
         'reservation' => 'Votre réservation',
         'reference' => 'Code de réservation',
         'reference_paiement' => 'Référence du paiement',
@@ -773,7 +765,7 @@ return [
         ],
         'actualiser' => 'Vérifier maintenant',
         'changer' => 'Choisir un autre moyen de paiement',
-        'simulateur' => 'Simulateur de recette',
+        'simulateur' => 'Simulateur de paiement',
         'simulateur_aide' => 'Aucune somme n’est débitée. Choisissez la réponse de l’opérateur.',
         'simuler_succes' => 'Simuler un paiement réussi',
         'simuler_echec' => 'Simuler un échec',
@@ -1450,13 +1442,13 @@ return [
     ],
 
     'recette_sms' => [
-        'titre' => 'SMS de recette',
+        'titre' => 'SMS envoyés',
         'intro' => 'Aucun SMS n’est réellement envoyé sur cet environnement : les messages s’affichent ici, avec les codes de confirmation. Cette page n’existe pas en production.',
         'actualisation' => 'Mise à jour automatique toutes les 3 secondes. Le message le plus récent est en premier.',
         'vide' => 'Aucun SMS pour le moment.',
         'copier' => 'Copier le code',
         'copie' => 'Code copié',
-        'lien' => 'Voir les SMS de recette (code de confirmation)',
+        'lien' => 'Voir les SMS envoyés (code de confirmation)',
     ],
 
     'etats_vides' => [

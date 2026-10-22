@@ -1,6 +1,6 @@
 {{--
     Accueil, thème « nuit » (maquette docs/maquettes/maquette-accueil-theme-nuit.html). Toutes les données viennent de la
-    base (App\Services\Publique\AccueilNuit) ; le téléphone illustré est un exemple (aria-hidden, mention « Exemple »).
+    base (App\Services\Publique\AccueilNuit) ; le téléphone illustré est décoratif (aria-hidden).
     Bandeau blanc toujours affiché (plus de carrousel). Carte « Investir » : même logique que le thème clair.
 --}}
 @php
@@ -39,7 +39,6 @@
                     $t = $n['telephone'];
                 @endphp
                 <div class="nuit-scene" aria-hidden="true" data-exemple>
-                    <span class="nuit-scene-exemple">{{ $n['exemple'] }}</span>
                     <div class="nuit-telephone">
                         <div class="nuit-telephone-ecran">
                             <p class="nuit-telephone-petit">{{ __('public.entete.mon_espace') }}</p>

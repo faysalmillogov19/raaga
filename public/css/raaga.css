@@ -2237,18 +2237,6 @@ html,
 .theme-nuit .nuit-scene p {
     margin: 0;
 }
-.theme-nuit .nuit-scene-exemple {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 2;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--nuit-ligne-claire);
-    color: var(--nuit-encre);
-    font-size: 12px;
-    font-weight: 700;
-}
 .theme-nuit .nuit-telephone {
     position: absolute;
     top: 0;

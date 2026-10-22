@@ -8,12 +8,9 @@
 @endphp
 
 <x-admin.layout :titre="$titre" :fil="[['libelle' => __('admin.dividendes.titre'), 'url' => route('admin.dividendes')], ['libelle' => __('admin.dividendes.exercice', ['annee' => $d->exercice]), 'url' => route('admin.dividendes.show', $d)], ['libelle' => __('admin.dividendes.actions.simuler')]]">
-    <nav class="bo-onglets" aria-label="{{ $s('source') }}">
-        <a href="{{ route('admin.dividendes.simulation', $d) }}" @class(['bo-onglet', 'bo-onglet-actif' => $source === 'registre'])>{{ $s('source_registre', ['date' => $d->date_arrete->format('d/m/Y')]) }}</a>
-        <a href="{{ route('admin.dividendes.simulation', [$d, 'source' => 'demo']) }}" @class(['bo-onglet', 'bo-onglet-actif' => $source === 'demo'])>{{ $s('source_demo') }}</a>
-    </nav>
+    <p class="texte-carte !mt-0" data-source>{{ $s('source_registre', ['date' => $d->date_arrete->format('d/m/Y')]) }}</p>
 
-    @if ($source === 'registre' && $r->nbBeneficiaires === 0)
+    @if ($r->nbBeneficiaires === 0)
         <x-admin.message type="erreur">{{ $s('registre_vide') }}</x-admin.message>
     @endif
 

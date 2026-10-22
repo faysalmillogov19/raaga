@@ -16,12 +16,6 @@
     <x-public.page-entete :titre="$titre" :fil="$fil" :sombre="true" />
 
     <div class="conteneur max-w-3xl py-8 tab:py-12">
-        @if ($simule)
-            <p class="mb-6 rounded-charte border-2 border-dashed border-jaune bg-jaune-pale px-4 py-3 text-center font-bold text-encre" role="note">
-                {{ __('public.paiement.simule') }}
-            </p>
-        @endif
-
         @if ($alerte ?? null)
             {{-- Texte des fichiers de langue, référence échappée par le contrôleur. --}}
             <x-public.alerte variante="info" class="mb-6" role="status">{!! $alerte !!}</x-public.alerte>

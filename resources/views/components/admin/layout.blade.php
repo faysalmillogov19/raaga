@@ -21,9 +21,6 @@
     $initiales = collect(preg_split('/\s+/', trim($user->name)))->filter()->take(2)->map(fn ($m) => mb_strtoupper(mb_substr($m, 0, 1)))->implode('');
     // Groupe de la page courante, pour le fil d'Ariane.
     $groupeActif = collect($menu)->search(fn ($entrees) => collect($entrees)->contains(fn ($e) => MenuBackoffice::estActive($e)));
-    // Version de recette : date du fichier statique (CSS, JS) modifié le plus récemment.
-    $dates = array_map('filemtime', array_filter(array_map('public_path', ['css/app.css', 'css/admin.css', 'css/raaga.css', 'js/app.js']), 'is_file'));
-    $version = ! app()->isProduction() && $dates !== [] ? date('d/m/Y', max($dates)) : null;
 @endphp
 
 <!DOCTYPE html>
@@ -84,9 +81,6 @@
                 @endforeach
             </nav>
 
-            @if ($version)
-                <p class="adm-version">{{ __('admin.cadre.version', ['date' => $version]) }}</p>
-            @endif
         </aside>
 
         <div class="adm-principal">

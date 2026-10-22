@@ -33,7 +33,7 @@ class SmsRecetteTest extends TestCase
     {
         User::factory()->role(Role::Citoyen)->create(['telephone' => '+22670123456']);
 
-        $this->get('/recette/sms')->assertOk()->assertSee('SMS de recette')->assertSee('Aucun SMS pour le moment.');
+        $this->get('/recette/sms')->assertOk()->assertSee('SMS envoyés')->assertDontSee('SMS de recette')->assertSee('Aucun SMS pour le moment.');
 
         $this->post('/connexion/telephone', ['telephone' => '70 12 34 56'])->assertRedirect(route('connexion'));
 

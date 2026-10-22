@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Domain\Dividendes\Detention;
+use App\Domain\Dividendes\MoteurDistribution;
 use App\Enums\PayeurFrais;
 use App\Enums\StatutAvenant;
 use App\Enums\StatutDistribution;
@@ -200,6 +202,31 @@ class DividendesWorkflowTest extends TestCase
         $this->assertSame(StatutAvenant::Approuve, $avenant->refresh()->statut);
     }
 
+    /**
+     * Détentions reproductibles (200 actionnaires, quelques actions bloquées, canaux variés) pour vérifier le moteur.
+     *
+     * @return list<Detention>
+     */
+    private function detentions(): array
+    {
+        mt_srand(2026);
+        $canaux = ['ORANGE_MONEY', 'MOOV_MONEY', 'VIREMENT', null];
+        $detentions = [];
+        for ($i = 1; $i <= 200; $i++) {
+            $tirage = mt_rand(1, 100);
+            $actions = match (true) {
+                $tirage <= 60 => mt_rand(1, 10),
+                $tirage <= 90 => mt_rand(10, 100),
+                $tirage <= 98 => mt_rand(100, 1_000),
+                default => mt_rand(1_000, 5_000),
+            };
+            $detentions[] = new Detention("actionnaire-{$i}", $actions, bloquee: $i % 67 === 0, canal: $canaux[mt_rand(0, 3)]);
+        }
+        mt_srand();
+
+        return $detentions;
+    }
+
     public function test_la_simulation_respecte_l_egalite_comptable(): void
     {
         $this->en($this->regulateur)->post(route('admin.dividendes.store'), $this->formulaire(['montant_global' => 49_999_999]));
@@ -208,15 +235,16 @@ class DividendesWorkflowTest extends TestCase
 
         foreach ([PayeurFrais::Raaga, PayeurFrais::Souscripteur] as $payeur) {
             $d->forceFill(['frais_supportes_par' => $payeur])->save();
-            $r = $service->simuler($d, SimulationDistribution::SOURCE_DEMO);
+            $r = (new MoteurDistribution)->calculer($service->parametres($d), $this->detentions());
             $fraisDeduits = $r->fraisParActionnaire ? $r->totalFrais : 0;
 
             $this->assertGreaterThan(0, $r->nbBeneficiaires);
             $this->assertSame(49_999_999, $r->totalNetAPayer + $r->totalRetenue + $fraisDeduits + $r->totalReporte + $r->totalConsigne + $r->reliquat);
         }
 
-        $this->en($this->regulateur)->get(route('admin.dividendes.simulation', [$d, 'source' => 'demo']))->assertOk()->assertSee('Vérifié');
-        $this->en($this->regulateur)->get(route('admin.dividendes.simulation', $d))->assertOk()->assertSee('aucune action');
+        // Simulation sur le registre seulement : vide tant qu'aucune action n'est allouée, sans jeu fictif.
+        $this->en($this->regulateur)->get(route('admin.dividendes.simulation', $d))->assertOk()->assertSee('aucune action')
+            ->assertSee('la simulation sera possible après la première allocation')->assertDontSee('fictif');
         $this->en($this->validateur)->get(route('admin.dividendes.simulation', $d))->assertOk();
         $this->en($this->regulateur)->get(route('admin.dividendes.avis', $d))->assertOk()->assertSee('PV-AGO-2026-01');
     }

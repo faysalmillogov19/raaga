@@ -84,7 +84,7 @@ class PaiementTest extends TestCase
     {
         $this->actingAs($this->citoyen)->get('/paiement')->assertRedirect($this->url());
         $this->actingAs($this->citoyen)->get($this->url())->assertOk()
-            ->assertSee('Paiement simulé, environnement de recette')
+            ->assertDontSee('Paiement simulé')->assertDontSee('recette')
             ->assertSee("250\u{00A0}000\u{00A0}FCFA")
             ->assertSee('Orange Money')->assertSee('Virement bancaire')->assertSee('Espèces au guichet')
             ->assertDontSee('Moov Money');

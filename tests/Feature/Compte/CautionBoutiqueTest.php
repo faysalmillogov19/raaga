@@ -50,7 +50,7 @@ class CautionBoutiqueTest extends TestCase
     {
         $this->actingAs($this->citoyen)->get($this->url())->assertOk()
             ->assertSee('Paiement de la caution')
-            ->assertSee('Paiement simulé, environnement de recette')
+            ->assertDontSee('Paiement simulé')->assertDontSee('recette')
             ->assertSee('Grande boutique')->assertSee('MCE-RC-B-001')->assertSee("1\u{00A0}440\u{00A0}000\u{00A0}FCFA")->assertSee('data-compte-rebours', false)
             ->assertSee('Orange Money')->assertSee('Virement bancaire')->assertDontSee('Moov Money');
 

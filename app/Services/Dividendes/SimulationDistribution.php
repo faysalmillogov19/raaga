@@ -18,23 +18,15 @@ use App\Models\MoyenPaiement;
 
 /**
  * Simulation d'une distribution à la date d'arrêté : registre des actions B (citoyens) ou registre des
- * actions A (institutions) selon la classe du paramétrage, ou jeu fictif de démonstration.
+ * actions A (institutions) selon la classe du paramétrage.
  */
 class SimulationDistribution
 {
-    public const SOURCE_REGISTRE = 'registre';
-
-    public const SOURCE_DEMO = 'demo';
-
     public function __construct(private readonly MoteurDistribution $moteur = new MoteurDistribution) {}
 
-    public function simuler(DistributionDividende $distribution, string $source = self::SOURCE_REGISTRE): ResultatDistribution
+    public function simuler(DistributionDividende $distribution): ResultatDistribution
     {
-        $detentions = $source === self::SOURCE_DEMO
-            ? $this->detentionsFictives()
-            : $this->detentionsAuRegistre($distribution);
-
-        return $this->moteur->calculer($this->parametres($distribution), $detentions);
+        return $this->moteur->calculer($this->parametres($distribution), $this->detentionsAuRegistre($distribution));
     }
 
     public function parametres(DistributionDividende $d): ParametresDistribution
@@ -98,32 +90,5 @@ class SimulationDistribution
             ->get()
             ->map(fn ($l) => new Detention((int) $l->user_id, (int) $l->actions, bloquee: $bloques->has($l->user_id)))
             ->all();
-    }
-
-    /**
-     * Jeu fictif et reproductible (200 actionnaires) pour tester les paramètres avant la première allocation.
-     *
-     * @return list<Detention>
-     */
-    private function detentionsFictives(): array
-    {
-        mt_srand(2026);
-        $canaux = ['ORANGE_MONEY', 'MOOV_MONEY', 'VIREMENT', null];
-        $detentions = [];
-
-        for ($i = 1; $i <= 200; $i++) {
-            $tirage = mt_rand(1, 100);
-            $actions = match (true) {
-                $tirage <= 60 => mt_rand(1, 10),
-                $tirage <= 90 => mt_rand(10, 100),
-                $tirage <= 98 => mt_rand(100, 1_000),
-                default => mt_rand(1_000, 5_000),
-            };
-            $detentions[] = new Detention("demo-{$i}", $actions, bloquee: $i % 67 === 0, canal: $canaux[mt_rand(0, 3)]);
-        }
-
-        mt_srand();
-
-        return $detentions;
     }
 }

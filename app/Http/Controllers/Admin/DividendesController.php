@@ -176,12 +176,9 @@ class DividendesController extends Controller
         Gate::authorize(Droit::DividendesVoir->value);
         Gate::authorize(Droit::SimulationsLancer->value);
 
-        $source = $request->query('source') === SimulationDistribution::SOURCE_DEMO ? SimulationDistribution::SOURCE_DEMO : SimulationDistribution::SOURCE_REGISTRE;
-
         return view('admin.dividendes.simulation', [
             'distribution' => $distribution,
-            'source' => $source,
-            'resultat' => $this->simulation->simuler($distribution, $source),
+            'resultat' => $this->simulation->simuler($distribution),
         ]);
     }
 
