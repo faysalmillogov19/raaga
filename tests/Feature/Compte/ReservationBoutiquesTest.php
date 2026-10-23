@@ -251,6 +251,24 @@ class ReservationBoutiquesTest extends TestCase
         $this->en($this->regulateur)->get(route('admin.tableau'))->assertOk()->assertSee('data-campagnes-boutiques', false)->assertSee('Réservation 2027');
     }
 
+    /**
+     * Les cellules du tableau de bord affichent des nombres et ne portent pas « data-compteur » : ce marqueur est
+     * celui du comptage animé de l'accueil public, qui écrivait « NaN » à partir d'un nom de statut.
+     */
+    public function test_tableau_de_bord_compteurs_par_campagne_sans_animation(): void
+    {
+        $this->creerActeurs();
+        $attendus = $this->campagne->compteurs();
+
+        $page = $this->en($this->validateur)->get(route('admin.tableau'))->assertOk()->assertSee('data-campagnes-boutiques', false);
+
+        foreach ($attendus as $statut => $nombre) {
+            $page->assertSee('data-statut-boutiques="'.$statut.'">'.format_nombre($nombre).'</td>', false);
+        }
+        $this->assertDoesNotMatchRegularExpression('/data-compteur="(?!\d+")/', $page->getContent());
+        $page->assertDontSee('NaN');
+    }
+
     public function test_plafonds_des_moyens_de_paiement(): void
     {
         $citoyen = $this->citoyen();

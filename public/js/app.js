@@ -821,6 +821,10 @@ document.addEventListener('click', async (evenement) => {
     const format = new Intl.NumberFormat('fr-FR');
     const compter = (element) => {
         const cible = Number(element.dataset.compteur);
+        // Valeur non numérique : on laisse le texte affiché par le serveur plutôt que d'écrire « NaN ».
+        if (!Number.isFinite(cible)) {
+            return;
+        }
         const debut = performance.now();
         const duree = 1200;
         const pas = (instant) => {

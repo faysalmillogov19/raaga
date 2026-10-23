@@ -62,7 +62,7 @@
                             @foreach ($campagnesBoutiques as $campagne)
                                 @php($n = $campagne->compteurs())
                                 <tr><td><a href="{{ route('admin.boutiques.show', $campagne) }}" class="font-semibold">{{ $campagne->nom }}</a> <span class="texte-carte">· {{ $campagne->statut->label() }}</span></td>
-                                    @foreach (['disponible', 'pre_reservee', 'reservee', 'attribuee'] as $statut)<td class="text-right" data-compteur="{{ $statut }}">{{ format_nombre($n[$statut]) }}</td>@endforeach</tr>
+                                    @foreach (['disponible', 'pre_reservee', 'reservee', 'attribuee'] as $statut)<td class="text-right" data-statut-boutiques="{{ $statut }}">{{ format_nombre($n[$statut]) }}</td>@endforeach</tr>
                             @endforeach
                         </tbody>
                     </table>
