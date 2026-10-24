@@ -3501,3 +3501,14 @@ html,
 .carte-id-depot {
     flex-basis: 100%;
 }
+.carte-id-qr {
+    position: relative;
+    flex-direction: column;
+    gap: 4px;
+}
+.carte-id-qr-logo {
+    max-width: 64px;
+    max-height: 18px;
+    padding: 2px;
+    background: #fff;
+}

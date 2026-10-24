@@ -119,12 +119,6 @@
             </div>
             @break
 
-        @case('numero_vert')
-            <label for="{{ $id }}">{{ $libelle }}</label>
-            <input id="{{ $id }}" name="{{ $champ }}" value="{{ old($champ, $valeur) }}" type="text" inputmode="numeric" pattern="[0-9 ]+" maxlength="{{ $max }}"
-                   @class(['champ', 'est-invalide' => $invalide]) @if ($aide) aria-describedby="{{ $id }}-aide" @endif>
-            @break
-
         @case('horaires')
             <fieldset>
                 <legend class="font-bold text-encre">{{ $libelle }}</legend>

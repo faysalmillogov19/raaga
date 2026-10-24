@@ -48,6 +48,12 @@ final class ImagesPlateforme
         return $chemin && $disque->exists($chemin) ? $disque->path($chemin) : null;
     }
 
+    /** Fichier déposé dans les paramètres (pas le fichier fourni par défaut) : exigé pour générer une carte. */
+    public static function deposee(string $champ): bool
+    {
+        return self::depose($champ) !== null;
+    }
+
     /** Chemin absolu de l'image à servir, ou null si aucune (logo blanc non fourni). */
     public static function chemin(string $champ): ?string
     {

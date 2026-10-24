@@ -1,6 +1,8 @@
 {{--
     Aperçu de la carte d'identification (SUPER_ADMIN) : recto et verso avec les valeurs du formulaire et un titulaire
     fictif marqué SPÉCIMEN. Rien n'est enregistré, aucun compte n'existe. Variables : $valeurs, $images, $manquants.
+    Recto validé : armoiries, « BURKINA FASO », « CARTE D'IDENTIFICATION » + type, QR code avec logo, titulaire, né(e) le,
+    carte n°, expire le, photo ; aucune information sur la boutique. Numéro vert : celui des contacts, tel qu'enregistré.
 --}}
 @php
     use App\Support\ImagesPlateforme;
@@ -27,23 +29,21 @@
             <div class="carte-id" data-face="recto">
                 <div class="carte-id-entete">
                     @if ($a = ImagesPlateforme::url('armoiries'))<img src="{{ $a }}" alt="" class="carte-id-armoiries">@endif
-                    <div class="carte-id-pays">
-                        <strong>{{ $c('pays') }}</strong>
-                        @if (filled(plateforme('identite.deviseNationale')))<span>{{ plateforme('identite.deviseNationale') }}</span>@endif
-                    </div>
-                    @if ($l = ImagesPlateforme::url('logoHorizontal'))<img src="{{ $l }}" alt="Raaga" class="carte-id-logo">@endif
+                    <div class="carte-id-pays"><strong>{{ $c('pays') }}</strong></div>
                 </div>
-                <p class="carte-id-titre">{{ $c('titre_carte') }}</p>
+                <p class="carte-id-titre">{{ $c('titre_carte') }} · {{ $c('type_commercant') }}</p>
                 <div class="carte-id-corps">
                     <div class="carte-id-photo">{{ $c('photo') }}</div>
                     <dl class="carte-id-infos">
-                        <dt>{{ $c('nom') }}</dt><dd>{{ $specimen }}</dd>
-                        <dt>{{ $c('activite') }}</dt><dd>{{ $specimen }}</dd>
-                        <dt>{{ $c('emplacement') }}</dt><dd>{{ $specimen }}</dd>
+                        <dt>{{ $c('titulaire') }}</dt><dd>{{ $specimen }}</dd>
+                        <dt>{{ $c('ne_le') }}</dt><dd>{{ $specimen }}</dd>
                         <dt>{{ $c('numero') }}</dt><dd>{{ $specimen }}</dd>
-                        <dt>{{ $c('validite') }}</dt><dd>{{ $specimen }}</dd>
+                        <dt>{{ $c('expire') }}</dt><dd>{{ $specimen }}</dd>
                     </dl>
-                    <div class="carte-id-qr" aria-label="{{ $c('qr') }}">{{ $c('qr') }}</div>
+                    <div class="carte-id-qr" aria-label="{{ $c('qr') }}">
+                        <span>{{ $c('qr') }}</span>
+                        @if ($l = ImagesPlateforme::url('logoHorizontal'))<img src="{{ $l }}" alt="Raaga" class="carte-id-qr-logo">@endif
+                    </div>
                 </div>
                 <span class="carte-id-filigrane" aria-hidden="true">{{ $specimen }}</span>
                 <span class="carte-id-lisere" aria-hidden="true"></span>
@@ -73,7 +73,7 @@
                         </div>
                         <p class="carte-id-nom-autorite">{!! $valeur($valeurs['nomAutorite'] ?? null) !!}</p>
                     </div>
-                    <p class="carte-id-perte">{{ $c('perte') }}<strong>{!! $valeur($valeurs['numeroVertCarte'] ?? null) !!}</strong></p>
+                    <p class="carte-id-perte" data-numero-vert>{{ $c('perte') }}<strong>{!! $valeur(plateforme('contacts.numeroVert')) !!}</strong></p>
                 </div>
                 <span class="carte-id-filigrane" aria-hidden="true">{{ $specimen }}</span>
                 <span class="carte-id-lisere" aria-hidden="true"></span>

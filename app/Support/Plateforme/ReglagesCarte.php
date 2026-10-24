@@ -12,7 +12,10 @@ use Illuminate\Support\Facades\Storage;
  */
 final class ReglagesCarte
 {
-    /** Réglages requis pour générer une carte, dans l'ordre d'affichage : [section, champ]. */
+    /**
+     * Réglages requis pour générer une carte, dans l'ordre d'affichage : [section, champ]. Armoiries et logo : fichiers
+     * déposés dans les paramètres (les fichiers fournis par défaut ne suffisent pas). Numéro vert : celui des contacts.
+     */
     public const REQUIS = [
         ['identite', 'armoiries'],
         ['identite', 'logoHorizontal'],
@@ -20,7 +23,7 @@ final class ReglagesCarte
         ['carte', 'nomAutorite'],
         ['carte', 'signatureAutorite'],
         ['carte', 'cachetAutorite'],
-        ['carte', 'numeroVertCarte'],
+        ['contacts', 'numeroVert'],
     ];
 
     /**
@@ -36,7 +39,8 @@ final class ReglagesCarte
         $manquants = [];
         foreach (self::REQUIS as [$section, $champ]) {
             $present = match (true) {
-                $section === 'identite' => ImagesPlateforme::disponible($champ),
+                $section === 'identite' => ImagesPlateforme::deposee($champ),
+                $section === 'contacts' => filled(plateforme('contacts.'.$champ)),
                 isset(Catalogue::IMAGES_CARTE[$champ]) => isset($nouvelles[$champ]) || self::chemin($carte[$champ] ?? null) !== null,
                 default => filled($carte[$champ] ?? null),
             };

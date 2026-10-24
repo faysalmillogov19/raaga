@@ -64,7 +64,7 @@
                         <p class="mt-1">{{ $p('carte.manquants_detail') }}</p>
                         <ul class="mt-1 list-disc pl-5">
                             @foreach ($manquants as $champ)
-                                <li data-manquant="{{ $champ }}">{{ $p('champs.'.$champ) }} @if (in_array($champ, ['armoiries', 'logoHorizontal'], true))<span class="texte-carte">{{ $p('carte.section_identite') }}</span>@endif</li>
+                                <li data-manquant="{{ $champ }}">{{ $p('champs.'.$champ) }} @if (in_array($champ, ['armoiries', 'logoHorizontal'], true))<span class="texte-carte">{{ $p('carte.section_identite') }}</span>@elseif ($champ === 'numeroVert')<span class="texte-carte">{{ $p('carte.section_contacts') }}</span>@endif</li>
                             @endforeach
                         </ul>
                     @endif

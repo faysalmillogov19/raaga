@@ -188,7 +188,6 @@ class PlateformeController extends Controller
                         "{$champ}.uploaded" => $poids, "{$champ}.max" => $poids,
                         "{$champ}.dimensions" => __($r['hauteur'] ? 'admin.plateforme.erreurs.carte_dimensions_carre' : 'admin.plateforme.erreurs.carte_largeur', $r)];
                 })(),
-                'numero_vert' => ["{$champ}.regex" => $e('numero_vert')],
                 'reseaux', 'liens' => ["{$champ}.*.url.url" => $e('https'), "{$champ}.*.url.regex" => $e('https')],
                 'bandeau' => ["{$champ}.lien.url" => $e('https'), "{$champ}.lien.regex" => $e('https'), "{$champ}.fin.after" => $e('fin_apres_debut'), "{$champ}.texte.not_regex" => $e('promesse')],
                 'horaires' => ["{$champ}.fin.after" => $e('fin_apres_debut')],

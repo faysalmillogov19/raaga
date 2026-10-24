@@ -125,13 +125,13 @@ final class Catalogue
                 'modeMaintenance' => ['maintenance'],
                 'messageAntiFraude' => ['texte_long', 250],
             ],
-            // Carte d'identification : réglages lus par le rendu des cartes, tous requis pour générer une carte.
+            // Carte d'identification : réglages lus par le rendu des cartes, tous requis pour générer une carte (le numéro
+            // vert imprimé au verso est celui des contacts d'assistance).
             'carte' => [
                 'qualiteAutorite' => ['texte', 120],
                 'nomAutorite' => ['texte', 120],
                 'signatureAutorite' => ['image_carte'],
                 'cachetAutorite' => ['image_carte'],
-                'numeroVertCarte' => ['numero_vert', 20],
             ],
         ];
     }
@@ -216,7 +216,6 @@ final class Catalogue
                 // PNG seulement (extension et contenu), poids, puis dimensions : un seul message, celui de la première règle en échec.
                 'image_carte' => [$champ => ['bail', 'nullable', 'file', 'mimes:png', 'mimetypes:image/png', 'max:'.self::IMAGE_CARTE_MAX_KO,
                     'dimensions:min_width='.self::IMAGES_CARTE[$champ]['largeur'].(self::IMAGES_CARTE[$champ]['hauteur'] ? ',min_height='.self::IMAGES_CARTE[$champ]['hauteur'] : '')]],
-                'numero_vert' => [$champ => ['nullable', 'string', 'regex:/^[0-9 ]+$/', "max:{$max}"]],
                 'entier' => [$champ => ['nullable', 'integer', 'min:0', 'max:9000000000000000']],
                 'horaires' => [
                     "{$champ}.jours" => ['nullable', 'array'],
@@ -314,7 +313,6 @@ final class Catalogue
                 'tel_bf' => ($c = Telephone::chiffresLocaux((string) $v)) === '' ? null : '+226'.$c,
                 'tel_intl' => $intl($v),
                 'image', 'image_carte' => $actuelles[$champ] ?? null,
-                'numero_vert' => ($v = trim((string) preg_replace('/\s+/', ' ', (string) $v))) === '' ? null : $v,
                 'entier' => $entier($v),
                 'horaires' => [
                     'jours' => array_values(array_intersect(self::JOURS, (array) ($v['jours'] ?? []))),

@@ -46,7 +46,7 @@ class ParametresPlateformeTest extends TestCase
                 ['libelle' => 'B', 'montant' => '40', 'couleur' => 'gris', 'ordre' => '2'],
             ]],
             'messages' => ['bandeauAnnonce' => ['texte' => 'Ouverture le 1er novembre', 'type' => 'information'], 'messageAntiFraude' => 'Ne communiquez jamais votre code.'],
-            'carte' => ['qualiteAutorite' => 'Le Maire de l’Arrondissement N°1', 'nomAutorite' => 'A. OUÉDRAOGO', 'numeroVertCarte' => '80 00 11 22'],
+            'carte' => ['qualiteAutorite' => 'Le Maire de l’Arrondissement N°1', 'nomAutorite' => 'A. OUÉDRAOGO'],
         };
     }
 

@@ -27,7 +27,6 @@ class CarteIdentificationTestSeeder extends Seeder
             'nomAutorite' => 'TEST · Nom de l’autorité',
             'signatureAutorite' => $this->deposer('signature-autorite', $this->signature()),
             'cachetAutorite' => $this->deposer('cachet-autorite', $this->cachet()),
-            'numeroVertCarte' => '00 00 00 00',
         ], null);
     }
 
