@@ -3,12 +3,13 @@
 namespace App\Support\Plateforme;
 
 use App\Enums\Droit;
+use App\Models\User;
 use App\Support\MotsInterdits;
 use App\Support\Telephone;
 use Illuminate\Validation\Rule;
 
 /**
- * Catalogue des paramètres de la plateforme : 8 sections, leurs champs, leur type, le droit qui
+ * Catalogue des paramètres de la plateforme : 9 sections, leurs champs, leur type, le droit qui
  * permet de les modifier. Il pilote le formulaire, la validation serveur, la normalisation et les
  * valeurs par défaut (un champ inconnu reste vide et n'est jamais affiché sur le site).
  */
@@ -24,7 +25,11 @@ final class Catalogue
         'reseaux' => true,
         'projet' => false,
         'messages' => true,
+        'carte' => false,
     ];
+
+    /** Sections que seul le SUPER_ADMIN voit (ni consultation ni onglet pour les autres profils). */
+    public const SECTIONS_RESTREINTES = ['carte'];
 
     /** Champs dont la modification demande une confirmation (affichés partout : site, SMS, PDF). */
     public const SENSIBLES = ['numeroVert', 'emailAssistance', 'urlSiteOfficiel', 'contactFraude'];
@@ -42,6 +47,14 @@ final class Catalogue
 
     /** Taille maximale des armoiries (Ko). */
     public const ARMOIRIES_MAX_KO = 500;
+
+    /** Images de la carte d'identification : PNG à fond transparent, 2 Mo au plus, dimensions minimales (px). */
+    public const IMAGE_CARTE_MAX_KO = 2048;
+
+    public const IMAGES_CARTE = [
+        'signatureAutorite' => ['largeur' => 600, 'hauteur' => null],
+        'cachetAutorite' => ['largeur' => 600, 'hauteur' => 600],
+    ];
 
     /**
      * Champs par section : nom => [type, longueur maximale éventuelle].
@@ -112,12 +125,32 @@ final class Catalogue
                 'modeMaintenance' => ['maintenance'],
                 'messageAntiFraude' => ['texte_long', 250],
             ],
+            // Carte d'identification : réglages lus par le rendu des cartes, tous requis pour générer une carte.
+            'carte' => [
+                'qualiteAutorite' => ['texte', 120],
+                'nomAutorite' => ['texte', 120],
+                'signatureAutorite' => ['image_carte'],
+                'cachetAutorite' => ['image_carte'],
+                'numeroVertCarte' => ['numero_vert', 20],
+            ],
         ];
     }
 
     public static function existe(string $section): bool
     {
         return array_key_exists($section, self::SECTIONS);
+    }
+
+    /** Le profil peut-il consulter la section ? Une section restreinte n'existe que pour le SUPER_ADMIN. */
+    public static function visible(string $section, User $user): bool
+    {
+        return self::existe($section) && (! in_array($section, self::SECTIONS_RESTREINTES, true) || $user->can(Droit::PlateformeModifierTout->value));
+    }
+
+    /** La section a-t-elle des champs image (formulaire envoyé en multipart) ? */
+    public static function aDesImages(string $section): bool
+    {
+        return collect(self::champs()[$section])->contains(fn (array $d) => in_array($d[0], ['image', 'image_carte'], true));
     }
 
     /**
@@ -180,6 +213,10 @@ final class Catalogue
                 'tel_intl' => [$champ => ['nullable', 'regex:/^\+\s*[1-9](\s*\d){7,14}$/']],
                 'expediteur' => [$champ => ['nullable', 'regex:/^[A-Za-z0-9]{1,11}$/']],
                 'image' => [$champ => ['nullable', 'file', 'mimes:svg,png', 'max:'.self::ARMOIRIES_MAX_KO]],
+                // PNG seulement (extension et contenu), poids, puis dimensions : un seul message, celui de la première règle en échec.
+                'image_carte' => [$champ => ['bail', 'nullable', 'file', 'mimes:png', 'mimetypes:image/png', 'max:'.self::IMAGE_CARTE_MAX_KO,
+                    'dimensions:min_width='.self::IMAGES_CARTE[$champ]['largeur'].(self::IMAGES_CARTE[$champ]['hauteur'] ? ',min_height='.self::IMAGES_CARTE[$champ]['hauteur'] : '')]],
+                'numero_vert' => [$champ => ['nullable', 'string', 'regex:/^[0-9 ]+$/', "max:{$max}"]],
                 'entier' => [$champ => ['nullable', 'integer', 'min:0', 'max:9000000000000000']],
                 'horaires' => [
                     "{$champ}.jours" => ['nullable', 'array'],
@@ -276,7 +313,8 @@ final class Catalogue
                 'expediteur' => $texte($v),
                 'tel_bf' => ($c = Telephone::chiffresLocaux((string) $v)) === '' ? null : '+226'.$c,
                 'tel_intl' => $intl($v),
-                'image' => $actuelles[$champ] ?? null,
+                'image', 'image_carte' => $actuelles[$champ] ?? null,
+                'numero_vert' => ($v = trim((string) preg_replace('/\s+/', ' ', (string) $v))) === '' ? null : $v,
                 'entier' => $entier($v),
                 'horaires' => [
                     'jours' => array_values(array_intersect(self::JOURS, (array) ($v['jours'] ?? []))),

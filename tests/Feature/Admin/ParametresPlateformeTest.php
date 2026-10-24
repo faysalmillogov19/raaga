@@ -46,6 +46,7 @@ class ParametresPlateformeTest extends TestCase
                 ['libelle' => 'B', 'montant' => '40', 'couleur' => 'gris', 'ordre' => '2'],
             ]],
             'messages' => ['bandeauAnnonce' => ['texte' => 'Ouverture le 1er novembre', 'type' => 'information'], 'messageAntiFraude' => 'Ne communiquez jamais votre code.'],
+            'carte' => ['qualiteAutorite' => 'Le Maire de l’Arrondissement N°1', 'nomAutorite' => 'A. OUÉDRAOGO', 'numeroVertCarte' => '80 00 11 22'],
         };
     }
 
@@ -54,7 +55,7 @@ class ParametresPlateformeTest extends TestCase
         return $this->put(route('admin.plateforme.update', $section), [...$this->saisie($section), ...$surcharges, 'confirmation_sensible' => $confirmer ? '1' : '0']);
     }
 
-    public function test_le_super_admin_modifie_les_8_sections(): void
+    public function test_le_super_admin_modifie_les_9_sections(): void
     {
         $this->connecterBackoffice(Role::SuperAdmin);
 
@@ -66,7 +67,7 @@ class ParametresPlateformeTest extends TestCase
         $this->assertSame('RAAGASA', plateforme('identite.expediteurSms'));
         $this->assertSame('+22680000000', plateforme('contacts.numeroVert'));
         $this->assertSame(10_000_000_000, plateforme('mentions.capitalSocial'));
-        $this->assertSame(8, AuditLog::query()->where('action', 'plateforme.modifiee')->count());
+        $this->assertSame(9, AuditLog::query()->where('action', 'plateforme.modifiee')->count());
     }
 
     public function test_l_admin_modifie_les_sections_2_3_6_8_et_toute_autre_ecriture_renvoie_403(): void

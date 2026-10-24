@@ -63,6 +63,68 @@
             </div>
             @break
 
+        @case('image_carte')
+            {{-- Signature, cachet : image actuelle et nouvelle image côte à côte, sur damier (la transparence se voit). Aucune adresse publique : image intégrée. --}}
+            @php
+                $chemin = \App\Support\Plateforme\ReglagesCarte::chemin($valeur);
+                $actuelle = \App\Support\Plateforme\ReglagesCarte::dataUri($chemin);
+                $opaqueActuelle = $chemin && ! \App\Support\Plateforme\ReglagesCarte::transparente($chemin);
+            @endphp
+            <label for="{{ $id }}">{{ $libelle }}</label>
+            <div class="flex flex-wrap items-start gap-4"
+                 x-data="{
+                     nouvelle: null, format: false, opaque: false,
+                     choisir(e) {
+                         const f = e.target.files[0];
+                         this.nouvelle = null; this.format = false; this.opaque = false;
+                         if (! f) return;
+                         if (f.type !== 'image/png') { this.format = true; return; }
+                         const url = URL.createObjectURL(f);
+                         this.nouvelle = url;
+                         const img = new Image();
+                         img.onload = () => {
+                             const c = document.createElement('canvas');
+                             const k = Math.min(1, 200 / Math.max(img.width, img.height));
+                             c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+                             const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, c.width, c.height);
+                             const d = ctx.getImageData(0, 0, c.width, c.height).data;
+                             let transparent = false;
+                             for (let i = 3; i < d.length; i += 4) { if (d[i] < 255) { transparent = true; break; } }
+                             this.opaque = ! transparent;
+                         };
+                         img.src = url;
+                     },
+                 }">
+                <figure class="m-0">
+                    <figcaption class="texte-carte text-[12px]">{{ $p('carte.actuelle') }}</figcaption>
+                    @if ($actuelle)
+                        <img src="{{ $actuelle }}" alt="{{ $libelle }} ({{ mb_strtolower($p('carte.actuelle')) }})" class="carte-id-damier carte-id-miniature mt-1 rounded border border-ligne p-1" data-image-actuelle="{{ $champ }}">
+                    @else
+                        <p class="mt-1 texte-carte">{{ $p('carte.aucune') }}</p>
+                    @endif
+                </figure>
+                <figure class="m-0" x-show="nouvelle" x-cloak>
+                    <figcaption class="texte-carte text-[12px]">{{ $p('carte.nouvelle') }}</figcaption>
+                    <img :src="nouvelle" alt="{{ $libelle }} ({{ mb_strtolower($p('carte.nouvelle')) }})" class="carte-id-damier carte-id-miniature mt-1 rounded border border-vert p-1">
+                </figure>
+                <div class="carte-id-depot">
+                    <input id="{{ $id }}" name="{{ $champ }}" type="file" accept=".png,image/png" @change="choisir($event)"
+                           @class(['champ', 'est-invalide' => $invalide]) @if ($aide) aria-describedby="{{ $id }}-aide" @endif>
+                    <p class="message-erreur" role="alert" x-show="format" x-cloak>{{ $p('carte.format_js') }}</p>
+                    <p class="carte-id-avertissement" role="status" x-show="opaque" x-cloak>{{ $p('carte.sans_transparence_nouvelle') }}</p>
+                    @if ($opaqueActuelle)
+                        <p class="carte-id-avertissement" x-show="! nouvelle">{{ $p('carte.sans_transparence_actuelle') }}</p>
+                    @endif
+                </div>
+            </div>
+            @break
+
+        @case('numero_vert')
+            <label for="{{ $id }}">{{ $libelle }}</label>
+            <input id="{{ $id }}" name="{{ $champ }}" value="{{ old($champ, $valeur) }}" type="text" inputmode="numeric" pattern="[0-9 ]+" maxlength="{{ $max }}"
+                   @class(['champ', 'est-invalide' => $invalide]) @if ($aide) aria-describedby="{{ $id }}-aide" @endif>
+            @break
+
         @case('horaires')
             <fieldset>
                 <legend class="font-bold text-encre">{{ $libelle }}</legend>

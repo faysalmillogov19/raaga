@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Support\Plateforme\Catalogue;
+use App\Support\Plateforme\ReglagesCarte;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,8 @@ class PlateformeController extends Controller
             return redirect()->route('admin.plateforme');
         }
         $section = $request->query('section') ?: 'identite';
+        // Section réservée au SUPER_ADMIN (carte d'identification) : ni consultation ni onglet pour les autres profils.
+        abort_unless(Catalogue::visible($section, $request->user()), 403);
         $onglet = $request->query('onglet') === 'historique' ? 'historique' : 'parametres';
         $ligne = DB::table('parametres_plateforme')->where('section', $section)->first();
 
@@ -70,17 +73,27 @@ class PlateformeController extends Controller
             ])]);
         }
 
-        // Images (armoiries, logos) : un fichier déposé remplace l'image en vigueur.
+        // Images (armoiries, logos, signature et cachet de la carte) : un fichier déposé remplace l'image en vigueur.
+        // Chaque fichier a un nom unique et l'ancien n'est jamais supprimé (une carte imprimée se réimprime à l'identique).
+        $sansTransparence = [];
         foreach (Catalogue::champs()[$section] as $champ => [$type]) {
-            if ($type === 'image' && $request->hasFile($champ)) {
+            if (in_array($type, ['image', 'image_carte'], true) && $request->hasFile($champ)) {
                 $valeurs[$champ] = $this->deposerImage($request->file($champ), $champ);
+                if ($type === 'image_carte' && ! ReglagesCarte::transparente(Storage::disk(self::DISQUE)->path($valeurs[$champ]))) {
+                    $sansTransparence[] = '« '.__('admin.plateforme.champs.'.$champ).' »';
+                }
             }
         }
 
         $titre = __('admin.plateforme.sections.'.$section);
+        $retour = redirect()->route('admin.plateforme', ['section' => $section]);
+        if ($sansTransparence !== []) {
+            // Avertissement non bloquant : l'image est enregistrée.
+            $retour->with('avertissement_plateforme', __('admin.plateforme.carte.sans_transparence', ['champs' => implode(', ', $sansTransparence)]));
+        }
 
-        return redirect()->route('admin.plateforme', ['section' => $section])->with('succes', $this->parametres->enregistrer($section, $valeurs, $request->user())
-            ? __('admin.plateforme.enregistre', ['section' => $titre])
+        return $retour->with('succes', $this->parametres->enregistrer($section, $valeurs, $request->user())
+            ? __($section === 'carte' ? 'admin.plateforme.carte.enregistree' : 'admin.plateforme.enregistre', ['section' => $titre])
             : __('admin.plateforme.aucun_changement'));
     }
 
@@ -91,6 +104,10 @@ class PlateformeController extends Controller
     {
         $this->autoriserModification($request, $section);
 
+        if ($section === 'carte') {
+            return $this->apercuCarte($request);
+        }
+
         // Valeurs d'aperçu limitées au rendu de cette page : jamais visibles d'une autre requête.
         $this->parametres->apercu($section, $this->valider($request, $section, $this->parametres->section($section)));
         try {
@@ -100,6 +117,28 @@ class PlateformeController extends Controller
         }
 
         return response($html);
+    }
+
+    /**
+     * Aperçu de la carte d'identification (recto et verso) avec les valeurs saisies et un titulaire fictif marqué
+     * SPÉCIMEN. Rien n'est enregistré : une image choisie est lue depuis le fichier temporaire de l'envoi.
+     */
+    private function apercuCarte(Request $request): Response
+    {
+        $valeurs = $this->valider($request, 'carte', $this->parametres->section('carte'));
+        $images = $nouvelles = [];
+        foreach (array_keys(Catalogue::IMAGES_CARTE) as $champ) {
+            if ($request->hasFile($champ)) {
+                $nouvelles[$champ] = $request->file($champ)->getRealPath();
+            }
+            $images[$champ] = ReglagesCarte::dataUri($nouvelles[$champ] ?? ReglagesCarte::chemin($valeurs[$champ] ?? null));
+        }
+
+        return response(view('admin.plateforme.apercu-carte', [
+            'valeurs' => $valeurs,
+            'images' => $images,
+            'manquants' => ReglagesCarte::manquants($valeurs, $nouvelles),
+        ])->render());
     }
 
     public function restaurer(Request $request, int $version): RedirectResponse
@@ -140,6 +179,16 @@ class PlateformeController extends Controller
                 'tel_intl' => ["{$champ}.regex" => $e('tel_intl')],
                 'expediteur' => ["{$champ}.regex" => $e('expediteur')],
                 'image' => ["{$champ}.*" => $e('armoiries')],
+                'image_carte' => (function () use ($champ) {
+                    $r = ['champ' => __('admin.plateforme.champs.'.$champ)] + Catalogue::IMAGES_CARTE[$champ];
+                    $format = __('admin.plateforme.erreurs.carte_format', $r);
+                    $poids = __('admin.plateforme.erreurs.carte_poids', $r);
+
+                    return ["{$champ}.file" => $format, "{$champ}.mimes" => $format, "{$champ}.mimetypes" => $format,
+                        "{$champ}.uploaded" => $poids, "{$champ}.max" => $poids,
+                        "{$champ}.dimensions" => __($r['hauteur'] ? 'admin.plateforme.erreurs.carte_dimensions_carre' : 'admin.plateforme.erreurs.carte_largeur', $r)];
+                })(),
+                'numero_vert' => ["{$champ}.regex" => $e('numero_vert')],
                 'reseaux', 'liens' => ["{$champ}.*.url.url" => $e('https'), "{$champ}.*.url.regex" => $e('https')],
                 'bandeau' => ["{$champ}.lien.url" => $e('https'), "{$champ}.lien.regex" => $e('https'), "{$champ}.fin.after" => $e('fin_apres_debut'), "{$champ}.texte.not_regex" => $e('promesse')],
                 'horaires' => ["{$champ}.fin.after" => $e('fin_apres_debut')],

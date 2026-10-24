@@ -12,7 +12,7 @@
     <p class="texte-carte mb-4 max-w-4xl">{{ $p('intro') }}</p>
 
     <nav class="bo-onglets flex-wrap" aria-label="{{ __('admin.menu.plateforme') }}">
-        @foreach (array_keys(Catalogue::SECTIONS) as $i => $cle)
+        @foreach (array_values(array_filter(array_keys(Catalogue::SECTIONS), fn ($c) => Catalogue::visible($c, auth()->user()))) as $i => $cle)
             @php($ouvert = auth()->user()->can(Catalogue::droitModification($cle)->value))
             <a href="{{ route('admin.plateforme', ['section' => $cle]) }}" @class(['bo-onglet inline-flex items-center gap-1.5', 'bo-onglet-actif' => $cle === $section])
                @if ($cle === $section) aria-current="page" @endif>
@@ -50,8 +50,29 @@
                 <x-admin.message type="ok" class="mt-4 !mb-0">{{ $p('aides.pas_de_tranche') }}</x-admin.message>
             @endif
 
+            @if (session('avertissement_plateforme'))
+                <x-admin.message type="avertissement" class="mt-4 !mb-0">{{ session('avertissement_plateforme') }}</x-admin.message>
+            @endif
+
+            @if ($section === 'carte')
+                @php($manquants = \App\Support\Plateforme\ReglagesCarte::manquants())
+                <div @class(['carte-id-etat mt-4', 'carte-id-etat-pret' => $manquants === [], 'carte-id-etat-manquant' => $manquants !== []]) role="status" data-etat-carte="{{ $manquants === [] ? 'pret' : 'manquant' }}">
+                    <p class="font-bold">{{ $manquants === [] ? $p('carte.pret') : $p('carte.manquants') }}</p>
+                    @if ($manquants === [])
+                        <p class="mt-1">{{ $p('carte.pret_detail') }}</p>
+                    @else
+                        <p class="mt-1">{{ $p('carte.manquants_detail') }}</p>
+                        <ul class="mt-1 list-disc pl-5">
+                            @foreach ($manquants as $champ)
+                                <li data-manquant="{{ $champ }}">{{ $p('champs.'.$champ) }} @if (in_array($champ, ['armoiries', 'logoHorizontal'], true))<span class="texte-carte">{{ $p('carte.section_identite') }}</span>@endif</li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endif
+
             @if ($modifiable)
-                <form method="POST" action="{{ route('admin.plateforme.update', $section) }}" @if ($section === 'identite') enctype="multipart/form-data" @endif
+                <form method="POST" action="{{ route('admin.plateforme.update', $section) }}" @if (Catalogue::aDesImages($section)) enctype="multipart/form-data" @endif
                       class="mt-5" novalidate x-ref="formulaire"
                       x-data="{
                           sensibles: @js($sensibles),
@@ -99,7 +120,7 @@
 
                     <div class="mt-6 flex flex-wrap gap-3">
                         <x-admin.bouton variante="principal" type="submit">{{ $p('enregistrer') }}</x-admin.bouton>
-                        <x-admin.bouton variante="contour" type="submit"  formaction="{{ route('admin.plateforme.apercu', $section) }}" formtarget="_blank">{{ $p('apercu') }}</x-admin.bouton>
+                        <x-admin.bouton variante="contour" type="submit"  formaction="{{ route('admin.plateforme.apercu', $section) }}" formtarget="_blank">{{ $section === 'carte' ? $p('carte.apercu') : $p('apercu') }}</x-admin.bouton>
                     </div>
 
                     <dialog x-ref="dialogueSensible" class="bo-dialogue" aria-labelledby="sensible-titre">

@@ -18,7 +18,7 @@ final class Affichage
         return match (Catalogue::type($section, $champ)) {
             'tel_bf' => $valeur ? Telephone::formater($valeur) : $vide,
             'entier' => $valeur === null ? $vide : ($champ === 'nombreBoutiques' ? format_nombre($valeur) : format_fcfa($valeur)),
-            'image' => $valeur ? basename($valeur) : $vide,
+            'image', 'image_carte' => $valeur ? basename($valeur) : $vide,
             'horaires' => format_horaires($valeur) ?? $vide,
             'gps' => ($valeur['latitude'] ?? null) !== null ? $valeur['latitude'].', '.$valeur['longitude'] : $vide,
             'contact' => self::joindre([$valeur['libelle'] ?? null, $valeur['nom'] ?? null, $valeur['telephone'] ?? null, $valeur['email'] ?? null])
