@@ -130,6 +130,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/reviser', 'reviser')->middleware('can:'.Droit::MoyensPaiementGerer->value)->name('.reviser');
             Route::post('/confirmer', 'confirmer')->middleware('can:'.Droit::MoyensPaiementConfirmer->value)->name('.confirmer');
             Route::post('/rejeter', 'rejeter')->middleware('can:'.Droit::MoyensPaiementConfirmer->value)->name('.rejeter');
+            // SUPER_ADMIN : mise à jour directe des délais créés par le seeder, sans validation.
+            Route::put('/direct', 'miseAJourDirecte')->middleware('can:'.Droit::InstallationMettreAJour->value)->name('.direct');
+            // SUPER_ADMIN : libellés des durées (seconde, minute, heure, jour) créées par le seeder ; leur valeur ne change pas.
+            Route::put('/durees/{duree}', 'dureeDirecte')->whereNumber('duree')->middleware('can:'.Droit::InstallationMettreAJour->value)->name('.duree');
         });
 
         // Contrôle des paiements (CONTRÔLEUR DES PAIEMENTS) ; corrections confirmées par le VALIDATEUR (« À valider › Paiements »).
@@ -256,6 +260,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::get('/zones', 'index')->defaults('liste', 'zones')->middleware('can:'.Droit::ReferentielsBoutiquesVoir->value)->name('zones');
                 Route::get('/unites', 'index')->defaults('liste', 'unites')->middleware('can:'.Droit::UnitesVoir->value)->name('unites');
                 Route::get('/moyens-paiement', 'index')->defaults('liste', 'moyens')->middleware('can:'.Droit::ModalitesPaiementVoir->value)->name('moyens');
+                // SUPER_ADMIN : mise à jour directe d'un élément créé par le seeder (niveau, zone, unité, moyen), sans validation.
+                Route::put('/{liste}/{id}/direct', 'miseAJourDirecte')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')
+                    ->middleware('can:'.Droit::InstallationMettreAJour->value)->name('zones.direct');
                 Route::get('/{liste}/{id}', 'show')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.show');
                 Route::post('/{liste}', 'store')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->name('zones.store');
                 Route::put('/{liste}/{id}', 'update')->whereIn('liste', ['niveaux', 'zones', 'unites', 'moyens'])->whereNumber('id')->name('zones.update');
@@ -291,7 +298,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                     Route::post('/sites/{site}/import/annuler', 'annuler')->whereNumber('site')->name('import.annuler');
                 });
             });
-            Route::controller(ReferentielBoutiquesController::class)->prefix('boutiques')->name('boutiques')->middleware('can:'.Droit::SitesVoir->value)->group(function () {
+            Route::controller(ReferentielBoutiquesController::class)->prefix('boutiques')->name('boutiques')->middleware('can:'.Droit::BoutiquesReferentielVoir->value)->group(function () {
                 Route::get('/', 'index');
                 Route::get('/export', 'exporter')->name('.export');
                 Route::get('/{boutique}', 'show')->whereNumber('boutique')->name('.show');
@@ -323,6 +330,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/{type}', 'destroy')->whereNumber('type')->middleware('can:'.Droit::SitesGerer->value)->name('.destroy');
             Route::post('/{type}/confirmer', 'confirmer')->whereNumber('type')->middleware('can:'.Droit::SitesConfirmer->value)->name('.confirmer');
             Route::post('/{type}/rejeter', 'rejeter')->whereNumber('type')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
+            // SUPER_ADMIN : mise à jour directe d'un type créé par le seeder, sans validation.
+            Route::put('/{type}/direct', 'miseAJourDirecte')->whereNumber('type')->middleware('can:'.Droit::InstallationMettreAJour->value)->name('.direct');
         });
 
         // Sites (référentiel, en amont des campagnes) : GESTIONNAIRE DES SITES ET BOUTIQUES saisit, VALIDATEUR confirme.

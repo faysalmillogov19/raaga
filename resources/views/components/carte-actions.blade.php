@@ -20,6 +20,9 @@
         <a href="{{ route('cartes.fichier', [$carte, 'png']) }}" class="btn-secondaire" data-telecharger="png">
             <x-icon name="exporter" />{{ $a['png'] }}
         </a>
+        <a href="{{ route('cartes.fichier', [$carte, 'png', 'face' => 'verso']) }}" class="btn-secondaire" data-telecharger="png-verso">
+            <x-icon name="exporter" />{{ $a['png_verso'] }}
+        </a>
     </div>
 
     {{-- Plein écran : QR code en grand pour le scan, nom et numéro de carte. --}}

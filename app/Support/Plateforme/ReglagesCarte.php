@@ -13,8 +13,10 @@ use Illuminate\Support\Facades\Storage;
 final class ReglagesCarte
 {
     /**
-     * Réglages requis pour générer une carte, dans l'ordre d'affichage : [section, champ]. Armoiries et logo : fichiers
-     * déposés dans les paramètres (les fichiers fournis par défaut ne suffisent pas). Numéro vert : celui des contacts.
+     * Réglages requis pour générer une carte, dans l'ordre d'affichage : [section, champ]. Armoiries et logo (le logo
+     * unique de l'onglet 1, aussi au centre du QR code) : l'image affichée par le champ, fichier déposé ou, à défaut,
+     * fichier fourni avec le code (décision du 30/10/2026). Numéro vert : celui des contacts d'assistance. Les filigranes
+     * sont facultatifs.
      */
     public const REQUIS = [
         ['identite', 'armoiries'],
@@ -39,7 +41,7 @@ final class ReglagesCarte
         $manquants = [];
         foreach (self::REQUIS as [$section, $champ]) {
             $present = match (true) {
-                $section === 'identite' => ImagesPlateforme::deposee($champ),
+                $section === 'identite' => ImagesPlateforme::disponible($champ),
                 $section === 'contacts' => filled(plateforme('contacts.'.$champ)),
                 isset(Catalogue::IMAGES_CARTE[$champ]) => isset($nouvelles[$champ]) || self::chemin($carte[$champ] ?? null) !== null,
                 default => filled($carte[$champ] ?? null),
@@ -57,9 +59,69 @@ final class ReglagesCarte
         return self::manquants() === [];
     }
 
-    /** Chemin absolu d'un fichier déposé (chemin relatif au disque privé), ou null s'il n'existe pas. */
+    /**
+     * Filigranes non renseignés : avertissement non bloquant (un filigrane vide n'affiche rien sur la carte).
+     *
+     * @param  array<string, mixed>|null  $carte
+     * @param  array<string, string>  $nouvelles  images choisies mais pas encore enregistrées
+     * @return list<string> champs
+     */
+    public static function filigranesManquants(?array $carte = null, array $nouvelles = []): array
+    {
+        $carte ??= plateforme('carte');
+
+        return array_values(array_filter(array_keys(Catalogue::FILIGRANES),
+            fn (string $champ) => ! isset($nouvelles[$champ]) && self::chemin($carte[$champ] ?? null) === null));
+    }
+
+    /**
+     * Réglages en vigueur, figés sur la carte à son émission (réimpression à l'identique) : chemins des fichiers sur le
+     * disque privé (armoiries et logo fournis avec le code : « public:chemin »), textes de l'autorité et numéro vert tel
+     * qu'enregistré. Null si un réglage manque.
+     *
+     * @return array<string, string|null>|null
+     */
+    public static function instantane(): ?array
+    {
+        if (! self::prete()) {
+            return null;
+        }
+
+        return [
+            'armoiries' => self::image('armoiries'),
+            'logo' => self::image('logoHorizontal'),
+            'signature' => plateforme('carte.signatureAutorite'),
+            'cachet' => plateforme('carte.cachetAutorite'),
+            'qualite' => plateforme('carte.qualiteAutorite'),
+            'nom' => plateforme('carte.nomAutorite'),
+            'numero_vert' => plateforme('contacts.numeroVert'),
+            // Filigranes (facultatifs) : chemin du fichier déposé, ou null.
+            ...collect(Catalogue::FILIGRANES)->mapWithKeys(fn ($o, string $champ) => [$champ => self::chemin(plateforme('carte.'.$champ)) ? plateforme('carte.'.$champ) : null])->all(),
+        ];
+    }
+
+    /** Image de l'onglet 1 à figer : fichier déposé (chemin sur le disque privé), sinon fichier fourni (« public:… »). */
+    private static function image(string $champ): ?string
+    {
+        if (ImagesPlateforme::deposee($champ)) {
+            return plateforme('identite.'.$champ);
+        }
+        $defaut = ImagesPlateforme::DEFAUTS[$champ][0] ?? null;
+
+        return $defaut ? 'public:'.$defaut : null;
+    }
+
+    /**
+     * Chemin absolu d'un fichier déposé (chemin relatif au disque privé) ou fourni avec le code (« public:chemin »),
+     * ou null s'il n'existe pas.
+     */
     public static function chemin(?string $relatif): ?string
     {
+        if ($relatif && str_starts_with($relatif, 'public:')) {
+            $fichier = public_path(substr($relatif, 7));
+
+            return is_file($fichier) ? $fichier : null;
+        }
         $disque = Storage::disk('local');
 
         return $relatif && $disque->exists($relatif) ? $disque->path($relatif) : null;

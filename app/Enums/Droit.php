@@ -71,6 +71,9 @@ enum Droit: string
     case SitesVoir = 'sites.voir';
     // Capacités prévues des sites : distinct de « sites.voir », que le VALIDATEUR garde sans les capacités (16/10/2026).
     case CapacitesVoir = 'sites.capacites_voir';
+    // Référencement › Boutiques (liste et fiches des boutiques de tous les sites) : distinct de « sites.voir », que le
+    // SUPER_ADMIN garde sans les boutiques (30/10/2026).
+    case BoutiquesReferentielVoir = 'sites.boutiques_voir';
     case SitesGerer = 'sites.gerer';
     case SitesConfirmer = 'sites.confirmer';
 
@@ -78,8 +81,12 @@ enum Droit: string
     // lecture. Le VALIDATEUR décide depuis « À valider », sans l'onglet.
     case ReferentielsBoutiquesVoir = 'referentiels_boutiques.voir';
 
-    // Onglet « Modalités de paiement » (moyens et délais de paiement) : RÉGULATEUR, SUPER_ADMIN en lecture.
+    // Onglet « Modalités de paiement » (moyens et délais de paiement) : RÉGULATEUR, SUPER_ADMIN.
     case ModalitesPaiementVoir = 'modalites_paiement.voir';
+    // SUPER_ADMIN (25/10/2026) : mise à jour directe, sans validation, de toutes les entités créées par les seeders de
+    // référentiel (« par défaut ») : délais de paiement, durées, moyens de paiement, types de boutiques, unités de loyer,
+    // niveaux, zones. Ni création ni suppression ; le circuit saisie puis confirmation reste pour tout le reste.
+    case InstallationMettreAJour = 'installation.mettre_a_jour';
 
     // Unités de loyer (référentiel de la grille tarifaire) : RÉGULATEUR saisit, VALIDATEUR confirme.
     case UnitesVoir = 'unites.voir';
@@ -137,7 +144,7 @@ enum Droit: string
     case SouscriptionsVoir = 'souscriptions.voir';
     case SouscriptionsRapprocher = 'souscriptions.rapprocher';
 
-    // RAAGA Invest : manifestations d'intérêt (simulations non engageantes), en lecture et export (RÉGULATEUR, ADMIN).
+    // RAAGA Invest : manifestations d'intérêt (simulations non engageantes), en lecture et export (RÉGULATEUR seul).
     case InteretsVoir = 'interets.voir';
     // Contrôle des paiements (CONTRÔLEUR DES PAIEMENTS) : dossiers, relances, suivi des remboursements.
     case PaiementsVoir = 'paiements.voir';
@@ -191,6 +198,7 @@ enum Droit: string
             self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer, self::MoyensPaiementGerer, self::MoyensPaiementConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
+            self::InstallationMettreAJour,
             self::KycTraiter, self::ConformiteTraiter, self::KycAnnulationConfirmer,
             self::CartesImprimer, self::CartesGerer, self::CartesRevocationConfirmer, self::GuichetSouscrire,
             self::SouscriptionsRapprocher, self::RemboursementsApprouver, self::RemboursementsSuivre, self::RelancesEnvoyer,
@@ -283,25 +291,29 @@ enum Droit: string
     public static function pour(Role $role): array
     {
         return match ($role) {
-            // Support et assistance + comptes back-office, approbations, sécurité ; lecture seule sur
-            // les paramètres (tranches, paiements, dividendes, simulations) et le journal d'audit.
+            // Support et assistance + comptes back-office, approbations, sécurité ; lecture seule sur les paramètres
+            // (boutiques, référentiels) et le journal d'audit. Depuis le 25/10/2026, aucun accès aux interfaces de
+            // souscription et d'investissement (tranches, dividendes, simulations, registre des actions A, démarches du
+            // site public), réservées au RÉGULATEUR et au VALIDATEUR, sauf la mise à jour directe de toutes les entités
+            // créées par les seeders de référentiel.
             Role::SuperAdmin => [
                 ...self::support(),
                 self::TextesLegauxPublier,
                 self::PlateformeModifierTout,
-                self::InstitutionsInterlocuteur, self::RegistreAVoir,
+                self::InstitutionsInterlocuteur,
                 self::ApprobationsTraiter,
                 self::UtilisateursGerer,
                 self::SecuriteGerer, self::ConnexionsVoir, self::CharteVoir,
-                self::PhaseVoir,
                 self::AuditVoir,
-                self::ParametresVoir, self::TranchesVoir, self::BoutiquesVoir, self::DividendesVoir, self::SimulationsVoir, self::ReferentielsVoir,
-                self::SitesVoir, self::CapacitesVoir, self::GrilleVoir, self::ImportsVoir, self::UnitesVoir, self::MoyensPaiementVoir,
-                self::ReferentielsBoutiquesVoir, self::ModalitesPaiementVoir,
+                // Depuis le 30/10/2026 : ni sites, ni grille tarifaire, ni capacités, ni imports, ni boutiques (référentiel et
+                // campagnes). Restent les référentiels créés à l'installation (types, niveaux, zones, unités, paiements).
+                self::ReferentielsVoir,
+                self::UnitesVoir, self::MoyensPaiementVoir,
+                self::ReferentielsBoutiquesVoir, self::ModalitesPaiementVoir, self::InstallationMettreAJour,
             ],
-            // Support et assistance, plus la liste des manifestations d'intérêt RAAGA Invest (lecture, export),
-            // que le SUPER_ADMIN n'a pas.
-            Role::Admin => [...self::support(), self::InteretsVoir,
+            // Support et assistance. Depuis le 25/10/2026, plus la liste des manifestations d'intérêt RAAGA Invest :
+            // interfaces de souscription et d'investissement réservées au RÉGULATEUR et au VALIDATEUR.
+            Role::Admin => [...self::support(),
                 // Vérifications d'identité : voit la pièce, marque le dossier conforme ou douteux (aucun montant).
                 self::KycVoir, self::KycVoirPieces, self::KycTraiter, self::CartesVerifier, self::CartesGerer],
             // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre. Droits recentrés le 16/10/2026 : plus
@@ -313,7 +325,7 @@ enum Droit: string
                 self::TranchesVoir, self::TranchesConfirmer, self::TranchesPiloter,
                 self::BoutiquesVoir, self::BoutiquesConfirmer, self::BoutiquesPiloter, self::AvancesVoir, self::AvancesDecider,
                 // Référentiels, unités, moyens et délais de paiement : décidés depuis « À valider » (détail et différences), sans les onglets.
-                self::SitesVoir, self::SitesConfirmer, self::ImportsVoir, self::UnitesConfirmer,
+                self::SitesVoir, self::BoutiquesReferentielVoir, self::SitesConfirmer, self::ImportsVoir, self::UnitesConfirmer,
                 self::MoyensPaiementVoir, self::MoyensPaiementConfirmer,
                 self::DividendesVoir, self::DividendesConfirmer, self::DividendesPayer,
                 self::SimulationsVoir, self::SimulationsLancer, self::AllocationExecuter,
@@ -336,7 +348,7 @@ enum Droit: string
             // Référentiel des sites et des boutiques uniquement : saisie et soumission, jamais de confirmation.
             Role::GestionnaireSites => [
                 self::TableauDeBordVoir, self::BrouillonsVoir,
-                self::SitesVoir, self::CapacitesVoir, self::SitesGerer, self::ImportsVoir, self::ReferentielsBoutiquesVoir,
+                self::SitesVoir, self::BoutiquesReferentielVoir, self::CapacitesVoir, self::SitesGerer, self::ImportsVoir, self::ReferentielsBoutiquesVoir,
                 // Pas de « Cautions à rembourser » (17/10/2026) : la retenue et le remboursement ne relèvent pas du référentiel.
             ],
             // Rapproche, marque les paiements manuels, relance, suit les remboursements ; aucune grille, aucun montant,
@@ -356,7 +368,7 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::TranchesVoir, self::TranchesSaisir,
                 self::BoutiquesVoir, self::BoutiquesSaisir, self::AvancesVoir, self::AvancesProposer,
-                self::SitesVoir, self::CapacitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer, self::MoyensPaiementVoir, self::MoyensPaiementGerer, self::ModalitesPaiementVoir,
+                self::SitesVoir, self::BoutiquesReferentielVoir, self::CapacitesVoir, self::GrilleVoir, self::UnitesVoir, self::UnitesGerer, self::MoyensPaiementVoir, self::MoyensPaiementGerer, self::ModalitesPaiementVoir,
                 self::DividendesVoir, self::DividendesSaisir,
                 self::SimulationsVoir, self::SimulationsLancer,
                 self::KycVoir,

@@ -62,12 +62,14 @@ class NavigationReferentielsModalitesTest extends TestCase
 
         foreach ($this->profils() as $nom => $user) {
             $autorise = in_array($nom, ['SUPER_ADMIN', 'GESTIONNAIRE_SITES'], true);
-            $menu = $this->menu($this->en($user)->get(route('admin.tableau'))->assertOk()->getContent(), 'referentiels');
+            // SUPER_ADMIN (30/10/2026) : ces écrans sont dans son menu « Paramètres d’administration », avec les unités.
+            $superAdmin = $nom === 'SUPER_ADMIN';
+            $menu = $this->menu($this->en($user)->get(route('admin.tableau'))->assertOk()->getContent(), $superAdmin ? 'parametres_generaux' : 'referentiels');
             if ($autorise) {
                 foreach (['Types de boutiques', 'Niveaux', 'Zones'] as $libelle) {
                     $this->assertStringContainsString($libelle, $menu, $nom);
                 }
-                $this->assertStringNotContainsString('Unités', $menu, $nom);
+                $superAdmin ? $this->assertStringContainsString('Unités', $menu, $nom) : $this->assertStringNotContainsString('Unités', $menu, $nom);
             } else {
                 $this->assertSame('', $menu, $nom);
             }
@@ -83,9 +85,10 @@ class NavigationReferentielsModalitesTest extends TestCase
 
         foreach ($this->profils() as $nom => $user) {
             $autorise = in_array($nom, ['SUPER_ADMIN', 'REGULATEUR'], true);
-            $menu = $this->menu($this->en($user)->get(route('admin.tableau'))->assertOk()->getContent(), 'modalites');
+            $superAdmin = $nom === 'SUPER_ADMIN';
+            $menu = $this->menu($this->en($user)->get(route('admin.tableau'))->assertOk()->getContent(), $superAdmin ? 'parametres_generaux' : 'modalites');
             if ($autorise) {
-                $this->assertStringContainsString('Modalités de paiement', $menu, $nom);
+                $this->assertStringContainsString($superAdmin ? 'Paramètres d’administration' : 'Modalités de paiement', $menu, $nom);
                 $this->assertStringContainsString('href="'.route('admin.referencement.moyens').'"', $menu, $nom);
                 $this->assertStringContainsString('href="'.route('admin.parametres-paiements').'"', $menu, $nom);
             } else {

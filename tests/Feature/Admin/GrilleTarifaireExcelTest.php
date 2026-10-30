@@ -193,7 +193,8 @@ class GrilleTarifaireExcelTest extends TestCase
         $fichier = $this->remplir($this->telecharger(), [2 => ['M2', 2500, 12, 60]]);
         // Réservé au RÉGULATEUR (le SUPER_ADMIN télécharge, en lecture seule) ; le VALIDATEUR décide depuis « À valider »,
         // le GESTIONNAIRE n'a pas la grille.
-        $this->en($this->superAdmin)->get(route('admin.boutiques.grilles.excel', $this->site))->assertOk();
+        // Plus de grille tarifaire pour le SUPER_ADMIN depuis le 30/10/2026.
+        $this->en($this->superAdmin)->get(route('admin.boutiques.grilles.excel', $this->site))->assertForbidden();
         $this->en($this->superAdmin)->post(route('admin.boutiques.grilles.importer', $this->site), ['fichier' => $fichier])->assertForbidden();
         $this->en($this->validateur)->get(route('admin.boutiques.grilles.excel', $this->site))->assertForbidden();
         $this->en($this->validateur)->post(route('admin.boutiques.grilles.importer', $this->site), ['fichier' => $fichier])->assertForbidden();

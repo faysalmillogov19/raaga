@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Droit;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Cartes\RenduCarte;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Support\Plateforme\Catalogue;
 use App\Support\Plateforme\ReglagesCarte;
@@ -77,7 +78,7 @@ class PlateformeController extends Controller
         // Chaque fichier a un nom unique et l'ancien n'est jamais supprimé (une carte imprimée se réimprime à l'identique).
         $sansTransparence = [];
         foreach (Catalogue::champs()[$section] as $champ => [$type]) {
-            if (in_array($type, ['image', 'image_carte'], true) && $request->hasFile($champ)) {
+            if (in_array($type, ['image', 'image_carte', 'filigrane'], true) && $request->hasFile($champ)) {
                 $valeurs[$champ] = $this->deposerImage($request->file($champ), $champ);
                 if ($type === 'image_carte' && ! ReglagesCarte::transparente(Storage::disk(self::DISQUE)->path($valeurs[$champ]))) {
                     $sansTransparence[] = '« '.__('admin.plateforme.champs.'.$champ).' »';
@@ -127,17 +128,18 @@ class PlateformeController extends Controller
     {
         $valeurs = $this->valider($request, 'carte', $this->parametres->section('carte'));
         $images = $nouvelles = [];
-        foreach (array_keys(Catalogue::IMAGES_CARTE) as $champ) {
+        foreach ([...array_keys(Catalogue::IMAGES_CARTE), ...array_keys(Catalogue::FILIGRANES)] as $champ) {
             if ($request->hasFile($champ)) {
                 $nouvelles[$champ] = $request->file($champ)->getRealPath();
             }
-            $images[$champ] = ReglagesCarte::dataUri($nouvelles[$champ] ?? ReglagesCarte::chemin($valeurs[$champ] ?? null));
+            $images[$champ] = $nouvelles[$champ] ?? ReglagesCarte::chemin($valeurs[$champ] ?? null);
         }
 
+        // Même gabarit que les cartes générées (PNG et PDF), avec un titulaire fictif marqué SPÉCIMEN.
         return response(view('admin.plateforme.apercu-carte', [
-            'valeurs' => $valeurs,
-            'images' => $images,
+            'd' => app(RenduCarte::class)->specimen($valeurs, $images),
             'manquants' => ReglagesCarte::manquants($valeurs, $nouvelles),
+            'filigranesManquants' => ReglagesCarte::filigranesManquants($valeurs, $nouvelles),
         ])->render());
     }
 
@@ -179,6 +181,13 @@ class PlateformeController extends Controller
                 'tel_intl' => ["{$champ}.regex" => $e('tel_intl')],
                 'expediteur' => ["{$champ}.regex" => $e('expediteur')],
                 'image' => ["{$champ}.*" => $e('armoiries')],
+                'filigrane' => (function () use ($champ) {
+                    $r = ['champ' => __('admin.plateforme.champs.'.$champ)];
+                    $format = __('admin.plateforme.erreurs.carte_format', $r);
+                    $poids = __('admin.plateforme.erreurs.filigrane_poids', $r);
+
+                    return ["{$champ}.file" => $format, "{$champ}.mimes" => $format, "{$champ}.mimetypes" => $format, "{$champ}.uploaded" => $poids, "{$champ}.max" => $poids];
+                })(),
                 'image_carte' => (function () use ($champ) {
                     $r = ['champ' => __('admin.plateforme.champs.'.$champ)] + Catalogue::IMAGES_CARTE[$champ];
                     $format = __('admin.plateforme.erreurs.carte_format', $r);

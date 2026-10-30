@@ -22,7 +22,8 @@ use Illuminate\View\View;
 /**
  * Délais de paiement (caution, complément d'un paiement incomplet, avance), chacun en valeur + durée obligatoires, la
  * valeur en secondes étant calculée et stockée : RÉGULATEUR saisit et soumet, VALIDATEUR confirme ou rejette
- * (« À valider › Données financières »). Valeurs par défaut (72 heures, 48 heures, 30 jours) tant que rien n'est confirmé.
+ * (« À valider › Données financières ») ; le SUPER_ADMIN les met à jour directement, sans validation. Valeurs par
+ * défaut (72 heures, 48 heures, 30 jours) tant que rien n'est confirmé.
  */
 class ParametresPaiementsController extends Controller
 {
@@ -51,6 +52,70 @@ class ParametresPaiementsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         Gate::authorize(Droit::MoyensPaiementGerer->value);
+        $donnees = $this->donnees($request);
+        $fiche = ParametresPaiements::fiche();
+
+        return $this->executer(function () use ($request, $fiche, $donnees) {
+            if ($fiche->exists && ! $fiche->estModifiable()) {
+                throw new RegleGestionException(__('admin.parametrage.regles.non_modifiable'));
+            }
+            $avant = $fiche->only(ParametresPaiements::PARAMETRES);
+            $fiche->fill($donnees)->save();
+            $this->journal->ecrire($request->user(), 'delais.modifie', 'ParametresPaiements', $fiche->id, $avant, $donnees);
+        }, 'admin.delais.messages.enregistres');
+    }
+
+    /**
+     * SUPER_ADMIN : délais créés par le seeder mis à jour directement, appliqués tout de suite sans VALIDATEUR (version
+     * confirmée à son nom, journal). Refusé si une proposition du RÉGULATEUR attend la décision du VALIDATEUR.
+     */
+    public function miseAJourDirecte(Request $request): RedirectResponse
+    {
+        Gate::authorize(Droit::InstallationMettreAJour->value);
+        $donnees = $this->donnees($request);
+        $fiche = ParametresPaiements::fiche();
+
+        return $this->executer(function () use ($request, $fiche, $donnees) {
+            if ($fiche->exists && $fiche->estSoumis()) {
+                throw new RegleGestionException(__('admin.parametrage.regles.direct_en_attente'));
+            }
+            $avant = $fiche->only(ParametresPaiements::PARAMETRES);
+            $fiche->fill($donnees)->save();
+            $this->journal->ecrire($request->user(), 'delais.modifie', 'ParametresPaiements', $fiche->id, $avant, $donnees);
+            $this->workflow->appliquerDirectement($fiche, $request->user());
+        }, 'admin.parametrage.messages.mis_a_jour');
+    }
+
+    /**
+     * SUPER_ADMIN : libellés d'une durée créée par le seeder (seconde, minute, heure, jour), appliqués directement. Sa
+     * valeur en secondes ne change jamais : les délais déjà enregistrés en dépendent.
+     */
+    public function dureeDirecte(Request $request, Duree $duree): RedirectResponse
+    {
+        Gate::authorize(Droit::InstallationMettreAJour->value);
+        $donnees = $request->validate([
+            'libelle' => ['required', 'string', 'max:30'],
+            'libelle_pluriel' => ['required', 'string', 'max:30'],
+        ], [], __('admin.delais.durees.attributs'));
+
+        return $this->executer(function () use ($request, $duree, $donnees) {
+            $avant = $duree->only(array_keys($donnees));
+            $duree->fill($donnees);
+            if (! $duree->isDirty()) {
+                return;
+            }
+            $duree->save();
+            $this->journal->ecrire($request->user(), 'duree.mise_a_jour_directe', 'Duree', $duree->id, $avant, $donnees);
+        }, 'admin.parametrage.messages.mis_a_jour');
+    }
+
+    /**
+     * Délais saisis, convertis en secondes (calculées et stockées) ; un délai ne dépasse pas un an.
+     *
+     * @return array<string, int>
+     */
+    private function donnees(Request $request): array
+    {
         $regles = [];
         foreach (array_keys(ParametresPaiements::DELAIS) as $d) {
             $regles['delai_'.$d.'_valeur'] = ['required', 'integer', 'min:1', 'max:999999'];
@@ -68,16 +133,8 @@ class ParametresPaiementsController extends Controller
             }
             $donnees += ['delai_'.$d.'_valeur' => (int) $saisie['delai_'.$d.'_valeur'], 'delai_'.$d.'_duree_id' => $duree->id, 'delai_'.$d.'_secondes' => $secondes];
         }
-        $fiche = ParametresPaiements::fiche();
 
-        return $this->executer(function () use ($request, $fiche, $donnees) {
-            if ($fiche->exists && ! $fiche->estModifiable()) {
-                throw new RegleGestionException(__('admin.parametrage.regles.non_modifiable'));
-            }
-            $avant = $fiche->only(ParametresPaiements::PARAMETRES);
-            $fiche->fill($donnees)->save();
-            $this->journal->ecrire($request->user(), 'delais.modifie', 'ParametresPaiements', $fiche->id, $avant, $donnees);
-        }, 'admin.delais.messages.enregistres');
+        return $donnees;
     }
 
     public function soumettre(Request $request): RedirectResponse

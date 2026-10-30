@@ -26,7 +26,7 @@ return [
         'statuts' => ['EN_ATTENTE' => 'En attente', 'ACTIVE' => 'Active', 'SUSPENDUE' => 'Suspendue', 'REVOQUEE' => 'Révoquée', 'EXPIREE' => 'Expirée'],
         'carte' => ['numero' => 'Carte n°', 'valide_jusqu_au' => 'Valable jusqu’au', 'numero_actionnaire' => 'Actionnaire n°', 'photo' => 'Photo du titulaire',
             'carte_acces' => 'Carte d’accès', 'representant' => 'Représentant légal :', 'autres_emplacements' => '+ :n autres boutiques', 'qr' => 'QR code de vérification de la carte'],
-        'actions' => ['plein_ecran' => 'Afficher en plein écran', 'pdf' => 'Télécharger en PDF', 'png' => 'Télécharger l’image', 'fermer' => 'Fermer'],
+        'actions' => ['plein_ecran' => 'Afficher en plein écran', 'pdf' => 'Télécharger en PDF', 'png' => 'Télécharger le recto (image)', 'png_verso' => 'Télécharger le verso (image)', 'fermer' => 'Fermer'],
         'ma_carte' => [
             'titre' => 'Ma carte Raaga',
             'types' => 'Types de carte',

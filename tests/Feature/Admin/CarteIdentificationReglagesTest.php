@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\AuditLog;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Support\ImagesPlateforme;
+use App\Support\Telephone;
 use App\Support\Plateforme\ReglagesCarte;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -55,7 +56,7 @@ class CarteIdentificationReglagesTest extends TestCase
         ];
     }
 
-    /** Armoiries et logo déposés dans les paramètres (les fichiers fournis par défaut ne suffisent pas pour la carte). */
+    /** Armoiries et logo déposés dans les paramètres (à défaut, la carte prend les fichiers fournis par le code). */
     private function deposerArmoiriesEtLogo(): void
     {
         $parametres = app(ParametresPlateforme::class);
@@ -154,23 +155,50 @@ class CarteIdentificationReglagesTest extends TestCase
         $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
-    public function test_les_armoiries_et_le_logo_fournis_par_defaut_ne_suffisent_pas(): void
+    public function test_sans_depot_la_carte_utilise_les_armoiries_et_le_logo_fournis_par_defaut(): void
     {
         $this->connecterBackoffice(Role::SuperAdmin);
         $this->enregistrer($this->complet())->assertSessionHasNoErrors();
 
-        // Fichiers fournis par le code toujours affichés sur le site, mais aucun dépôt : réglages manquants.
-        $this->assertNotNull(ImagesPlateforme::url('armoiries'));
-        $this->assertSame(['armoiries', 'logoHorizontal'], ReglagesCarte::manquants());
-        $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()
-            ->assertSee('data-manquant="armoiries"', false)->assertSee('data-manquant="logoHorizontal"', false)
-            ->assertSee('(fichier à déposer dans la section Identité de la plateforme)');
-
-        $this->deposerArmoiriesEtLogo();
+        // Champs de l'onglet 1 vides : fichiers fournis par le code, comme sur le site ; rien ne manque (30/10/2026).
+        $this->assertNull(plateforme('identite.armoiries'));
+        $this->assertNull(plateforme('identite.logoHorizontal'));
+        $this->assertSame([], ReglagesCarte::manquants());
         $this->assertTrue(ReglagesCarte::prete());
+        $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()
+            ->assertDontSee('data-manquant="armoiries"', false)->assertDontSee('data-manquant="logoHorizontal"', false);
+
+        // Instantané figé : fichiers fournis par le code, retrouvés à la réimpression.
+        $instantane = ReglagesCarte::instantane();
+        $this->assertSame('public:'.ImagesPlateforme::DEFAUTS['armoiries'][0], $instantane['armoiries']);
+        $this->assertSame('public:'.ImagesPlateforme::DEFAUTS['logoHorizontal'][0], $instantane['logo']);
+        $this->assertSame(public_path(ImagesPlateforme::DEFAUTS['armoiries'][0]), ReglagesCarte::chemin($instantane['armoiries']));
+        $this->assertFileExists(ReglagesCarte::chemin($instantane['logo']));
+
+        // Un dépôt prend le pas sur le fichier par défaut.
+        $this->deposerArmoiriesEtLogo();
+        $this->assertSame(plateforme('identite.armoiries'), ReglagesCarte::instantane()['armoiries']);
     }
 
-    public function test_le_numero_vert_est_celui_des_contacts_affiche_tel_qu_il_est_enregistre(): void
+    public function test_filigranes_png_cinq_mo_et_huit_cents_px_sur_le_plus_grand_cote(): void
+    {
+        $this->connecterBackoffice(Role::SuperAdmin);
+
+        $this->enregistrer($this->complet(['filigranePrincipalRecto' => UploadedFile::fake()->image('armoiries.jpg', 1000, 1000)]))
+            ->assertSessionHasErrors(['filigranePrincipalRecto' => 'Filigrane principal recto : format refusé. Seul le format PNG est accepté (de préférence à fond transparent).']);
+        $this->enregistrer($this->complet(['filigranePrincipalRecto' => UploadedFile::fake()->image('armoiries.png', 1000, 1000)->size(6000)]))
+            ->assertSessionHasErrors(['filigranePrincipalRecto' => 'Filigrane principal recto : fichier trop lourd. 5 Mo au plus.']);
+        $this->enregistrer($this->complet(['filigraneSecondaireVerso' => UploadedFile::fake()->image('chapeau.png', 700, 500)]))
+            ->assertSessionHasErrors(['filigraneSecondaireVerso' => 'Filigrane secondaire verso : image trop petite. Elle doit faire au moins 800 px sur son plus grand côté.']);
+
+        // 1000 × 300 : le plus grand côté suffit. Fichier à nom unique, aperçu de l'origine et de la version filigrane.
+        $this->enregistrer($this->complet(['filigranePrincipalVerso' => UploadedFile::fake()->image('silure.png', 1000, 300)]))->assertSessionHasNoErrors();
+        $this->assertMatchesRegularExpression('#^plateforme/filigrane-principal-verso-[0-9a-f-]{36}\.png$#', plateforme('carte.filigranePrincipalVerso'));
+        $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()->assertSee('data-filigrane-actuel="filigranePrincipalVerso"', false)
+            ->assertSee('Version filigrane (or, 14 %)');
+    }
+
+    public function test_le_numero_vert_est_celui_des_contacts_affiche_avec_des_espaces(): void
     {
         $this->connecterBackoffice(Role::SuperAdmin);
         $this->deposerArmoiriesEtLogo();
@@ -179,7 +207,7 @@ class CarteIdentificationReglagesTest extends TestCase
         $this->assertNotNull($numero);
 
         $this->post(route('admin.plateforme.apercu', 'carte'), $this->complet())->assertOk()
-            ->assertSee('<strong>'.$numero.'</strong>', false);
+            ->assertSee('data-champ="numero_vert">'.Telephone::formater($numero).'</strong>', false);
 
         // Numéro vert vidé dans les contacts : la carte n'est plus prête.
         $parametres = app(ParametresPlateforme::class);
@@ -241,13 +269,14 @@ class CarteIdentificationReglagesTest extends TestCase
             ->assertSee('data-face="recto"', false)->assertSee('data-face="verso"', false)
             ->assertSee('SPÉCIMEN')->assertSee('Nom saisi non enregistré')->assertSee('data:image/png;base64,', false)
             ->assertSee('Carte prête à être générée')
-            // Recto validé : titulaire, né(e) le, carte n°, expire le ; aucune information sur la boutique.
-            ->assertSeeInOrder(['Carte d’identification · Commerçant', 'Titulaire', 'Né(e) le', 'Carte n°', 'Expire le'])
+            // Recto validé : titre et type, titulaire, né(e) le, carte n°, expire le ; aucune information sur la boutique.
+            ->assertSeeInOrder(['Burkina Faso', 'Carte d’identification', 'COMMERÇANT', 'Titulaire', 'Né(e) le', 'Carte n°', 'Expire le'])
             ->assertDontSee('Emplacement')->assertDontSee('Activité');
 
         $this->assertNull(plateforme('carte.nomAutorite'));
         $this->assertSame($versions, DB::table('parametres_plateforme_versions')->count());
-        $this->assertSame($fichiers, Storage::disk('local')->allFiles());
+        // Seul le filigrane des armoiries peut être mis en cache (dérivé des armoiries, sans donnée saisie).
+        $this->assertSame($fichiers, array_values(array_filter(Storage::disk('local')->allFiles(), fn ($f) => ! str_starts_with($f, 'cartes/filigranes/'))));
     }
 
     public function test_la_signature_et_le_cachet_ne_sont_servis_par_aucune_adresse_publique(): void

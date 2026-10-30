@@ -136,7 +136,7 @@ class ParametresPlateformeTest extends TestCase
 
         // Prochain document (en-tête commun des futurs PDF : règlement de tranche).
         $tranche = Tranche::create([...TranchesController::valeursParDefaut(), 'valeur_unitaire' => 10_000, 'objectif_montant' => 3_000_000_000, 'nom' => 'Tranche 1', 'statut' => StatutTranche::Brouillon, 'version' => 0, 'cree_par' => $sa->id]);
-        $this->connecterBackoffice(Role::SuperAdmin);
+        $this->connecterBackoffice(Role::Regulateur);
         $this->get(route('admin.tranches.reglement', $tranche))->assertOk()->assertSee('Numéro vert 81 23 45 67');
     }
 

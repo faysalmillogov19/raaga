@@ -132,13 +132,14 @@ class NotificationsNavigationTest extends TestCase
         // Back-office : parent = dernier lien du fil d'Ariane (ici la liste des campagnes).
         $boutons($this->en($this->regulateur)->withSession(['succes' => 'Ok.'])->get(route('admin.boutiques.create'))->assertOk()->getContent(), route('admin.boutiques'));
         $boutons($this->en($this->regulateur)->get(route('admin.tableau'))->assertOk()->getContent(), route('admin.tableau'));
-        // Connexion au back-office.
+        // Pages d'authentification (back-office, connexion et inscription du site public) : ni Retour ni Suivant (30/10/2026).
         $this->app['auth']->forgetGuards();
         $this->flushSession();
-        $boutons($this->get(route('admin.connexion'))->assertOk()->getContent(), url('/'));
-        // Site public : page avec fil (contact), page sans fil (connexion) ; jamais sur l'accueil (pas de bande au-dessus du bandeau).
+        foreach ([route('admin.connexion'), route('connexion'), route('inscription')] as $url) {
+            $this->get($url)->assertOk()->assertDontSee('data-navigation-historique', false)->assertDontSee('data-historique-retour', false);
+        }
+        // Site public : page avec fil (contact) ; jamais sur l'accueil (pas de bande au-dessus du bandeau).
         $boutons($this->get(route('contact'))->assertOk()->getContent(), route('accueil'));
-        $boutons($this->get(route('connexion'))->assertOk()->getContent(), route('accueil'));
         $this->get(route('accueil'))->assertOk()->assertDontSee('data-navigation-historique', false)->assertDontSee('data-historique-retour', false);
 
         // Espace institutionnel.

@@ -17,7 +17,7 @@
 
     <main class="compte-fond min-h-[calc(100vh-5px)]">
         <div class="compte-carte">
-            <x-navigation-historique :parent="url('/')" class="mb-4" />
+            {{-- Pages d'authentification : ni « Retour » ni « Suivant » (30/10/2026). --}}
             <div class="flex items-center gap-3">
                 <x-public.armoiries class="compte-armoiries !mb-0" />
                 <span class="font-extrabold text-vert-fonce">{{ $espace->nom() }}</span>

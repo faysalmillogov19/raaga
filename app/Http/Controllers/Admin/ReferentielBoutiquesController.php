@@ -39,7 +39,7 @@ class ReferentielBoutiquesController extends Controller
 
     public function index(Request $request): Response|StreamedResponse|View
     {
-        Gate::authorize(Droit::SitesVoir->value);
+        Gate::authorize(Droit::BoutiquesReferentielVoir->value);
         $b = __('admin.referencement.boutiques');
         $c = $b['colonnes'];
         $sites = Site::query()->orderBy('code')->get(['id', 'code', 'nom']);
@@ -86,14 +86,14 @@ class ReferentielBoutiquesController extends Controller
     /** Export Excel des boutiques filtrées, au format du modèle « Locaux ». */
     public function exporter(Request $request, ReferentielExcel $excel): StreamedResponse
     {
-        Gate::authorize(Droit::SitesVoir->value);
+        Gate::authorize(Droit::BoutiquesReferentielVoir->value);
 
         return $excel->telechargerBoutiques($this->requete($this->filtres($request))->with(['site', 'type'])->orderBy('site_id')->orderBy('code')->get());
     }
 
     public function show(Boutique $boutique): View
     {
-        Gate::authorize(Droit::SitesVoir->value);
+        Gate::authorize(Droit::BoutiquesReferentielVoir->value);
 
         return view('admin.referencement.boutique', [
             'boutique' => $boutique->load(['site', 'type']),

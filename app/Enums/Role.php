@@ -63,7 +63,7 @@ enum Role: string
     public function description(): ?string
     {
         return match ($this) {
-            self::SuperAdmin => 'Support et assistance, comptes back-office, approbations, sécurité. Lecture seule sur les paramètres et le journal d’audit ; aucune décision financière.',
+            self::SuperAdmin => 'Support et assistance, comptes back-office, approbations, sécurité. Lecture seule sur les paramètres des paiements et des boutiques et sur le journal d’audit ; aucun accès aux souscriptions ni à l’investissement, aucune décision financière.',
             self::Admin => 'Support et assistance : aide aux utilisateurs, demandes, contenus du site, préparation des textes légaux ; vérification d’identité (KYC) des citoyens, sans aucun montant. Aucune décision financière.',
             self::Citoyen => "S'inscrire, déposer ses pièces, souscrire, payer, consulter son espace.",
             self::AgentGuichet => 'Profil du back-office : vérifie les cartes d’accès Raaga scannées, consulte le dossier du titulaire (sans aucun montant) et imprime sa carte après contrôle de sa pièce d’identité ; fait souscrire des actions à une personne présente (compte, identité validée sur place, encaissement) et tient sa caisse du jour.',

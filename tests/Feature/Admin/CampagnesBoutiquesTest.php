@@ -166,7 +166,8 @@ class CampagnesBoutiquesTest extends TestCase
         $campagne = $this->campagneSoumise();
         $superAdmin = User::factory()->role(Role::SuperAdmin)->create();
 
-        $this->en($superAdmin)->get(route('admin.boutiques.show', $campagne))->assertOk();
+        // Plus de consultation des campagnes depuis le 30/10/2026.
+        $this->en($superAdmin)->get(route('admin.boutiques.show', $campagne))->assertForbidden();
         $this->en($superAdmin)->post(route('admin.boutiques.confirmer', $campagne))->assertForbidden();
         $this->en($superAdmin)->get(route('admin.boutiques.create'))->assertForbidden();
         $this->en(User::factory()->role(Role::Admin)->create())->get(route('admin.boutiques'))->assertForbidden();

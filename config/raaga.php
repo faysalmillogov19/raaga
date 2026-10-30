@@ -234,6 +234,10 @@ return [
         // droit cartes.verifier : par compte, plus large.
         'tentatives_par_minute' => (int) env('RAAGA_CARTES_TENTATIVES', 30),
         'tentatives_agents_par_minute' => (int) env('RAAGA_CARTES_TENTATIVES_AGENTS', 300),
+        // Rendu de la carte d'identification (PNG 300 dpi et PDF) par Chrome sans interface : chemin du binaire
+        // (Chrome ou Chromium installé sur le serveur) et délai maximal d'un rendu, en secondes.
+        'chrome' => env('RAAGA_CHROME_BINAIRE', 'chrome'),
+        'chrome_delai' => (int) env('RAAGA_CHROME_DELAI', 30),
     ],
 
 ];

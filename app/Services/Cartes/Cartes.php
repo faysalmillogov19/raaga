@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Notifications\CarteEmise;
 use App\Notifications\PieceBientotExpiree;
 use App\Services\Audit\Journal;
+use App\Support\Plateforme\ReglagesCarte;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -316,6 +317,9 @@ class Cartes
             'type' => $type, 'user_id' => $user->id, 'statut' => $statut, 'courante' => true, 'jeton' => Str::random(64),
             'emise_le' => $statut === StatutCarte::Active ? now() : null, 'valide_jusqu_au' => $validite, 'contenu' => $contenu,
             'version' => 1, 'emise_par' => $acteur?->id, 'remplace_carte_id' => $ancienne?->id,
+            // Réimpression à l'identique : réglages de rendu en vigueur figés à l'émission (null s'il en manque un : ils
+            // seront figés à la première génération, une fois complets).
+            'reglages_rendu' => ReglagesCarte::instantane(),
         ]);
         $carte->forceFill(['numero' => sprintf('RG-C-%06d', $carte->id)])->save();
         $this->journal->ecrire($acteur, $statut === StatutCarte::Active ? 'carte.emise' : 'carte.en_attente', 'Carte', $carte->id, null,

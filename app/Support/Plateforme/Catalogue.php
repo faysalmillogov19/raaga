@@ -57,6 +57,21 @@ final class Catalogue
     ];
 
     /**
+     * Filigranes de la carte (facultatifs) : image en couleur déposée, convertie par le serveur en monochrome or, à
+     * l'opacité fixe de son rang (principal 14 %, secondaire 11 %). PNG, 5 Mo au plus, 800 px au moins sur le plus grand côté.
+     */
+    public const FILIGRANES = [
+        'filigranePrincipalRecto' => 0.14,
+        'filigraneSecondaireRecto' => 0.11,
+        'filigranePrincipalVerso' => 0.14,
+        'filigraneSecondaireVerso' => 0.11,
+    ];
+
+    public const FILIGRANE_MAX_KO = 5120;
+
+    public const FILIGRANE_MIN_PX = 800;
+
+    /**
      * Champs par section : nom => [type, longueur maximale éventuelle].
      *
      * @return array<string, array<string, array{0: string, 1?: int}>>
@@ -132,6 +147,10 @@ final class Catalogue
                 'nomAutorite' => ['texte', 120],
                 'signatureAutorite' => ['image_carte'],
                 'cachetAutorite' => ['image_carte'],
+                'filigranePrincipalRecto' => ['filigrane'],
+                'filigraneSecondaireRecto' => ['filigrane'],
+                'filigranePrincipalVerso' => ['filigrane'],
+                'filigraneSecondaireVerso' => ['filigrane'],
             ],
         ];
     }
@@ -150,7 +169,7 @@ final class Catalogue
     /** La section a-t-elle des champs image (formulaire envoyé en multipart) ? */
     public static function aDesImages(string $section): bool
     {
-        return collect(self::champs()[$section])->contains(fn (array $d) => in_array($d[0], ['image', 'image_carte'], true));
+        return collect(self::champs()[$section])->contains(fn (array $d) => in_array($d[0], ['image', 'image_carte', 'filigrane'], true));
     }
 
     /**
@@ -214,6 +233,14 @@ final class Catalogue
                 'expediteur' => [$champ => ['nullable', 'regex:/^[A-Za-z0-9]{1,11}$/']],
                 'image' => [$champ => ['nullable', 'file', 'mimes:svg,png', 'max:'.self::ARMOIRIES_MAX_KO]],
                 // PNG seulement (extension et contenu), poids, puis dimensions : un seul message, celui de la première règle en échec.
+                // Filigrane : PNG, poids, puis au moins 800 px sur le plus grand côté (règle « dimensions » impossible ici).
+                'filigrane' => [$champ => ['bail', 'nullable', 'file', 'mimes:png', 'mimetypes:image/png', 'max:'.self::FILIGRANE_MAX_KO,
+                    function (string $attribut, mixed $fichier, \Closure $echec) {
+                        $taille = @getimagesize($fichier->getRealPath());
+                        if (! $taille || max($taille[0], $taille[1]) < self::FILIGRANE_MIN_PX) {
+                            $echec(__('admin.plateforme.erreurs.filigrane_petit', ['champ' => __('admin.plateforme.champs.'.$attribut), 'px' => self::FILIGRANE_MIN_PX]));
+                        }
+                    }]],
                 'image_carte' => [$champ => ['bail', 'nullable', 'file', 'mimes:png', 'mimetypes:image/png', 'max:'.self::IMAGE_CARTE_MAX_KO,
                     'dimensions:min_width='.self::IMAGES_CARTE[$champ]['largeur'].(self::IMAGES_CARTE[$champ]['hauteur'] ? ',min_height='.self::IMAGES_CARTE[$champ]['hauteur'] : '')]],
                 'entier' => [$champ => ['nullable', 'integer', 'min:0', 'max:9000000000000000']],
@@ -312,7 +339,7 @@ final class Catalogue
                 'expediteur' => $texte($v),
                 'tel_bf' => ($c = Telephone::chiffresLocaux((string) $v)) === '' ? null : '+226'.$c,
                 'tel_intl' => $intl($v),
-                'image', 'image_carte' => $actuelles[$champ] ?? null,
+                'image', 'image_carte', 'filigrane' => $actuelles[$champ] ?? null,
                 'entier' => $entier($v),
                 'horaires' => [
                     'jours' => array_values(array_intersect(self::JOURS, (array) ($v['jours'] ?? []))),

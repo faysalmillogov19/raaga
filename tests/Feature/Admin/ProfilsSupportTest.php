@@ -112,8 +112,10 @@ class ProfilsSupportTest extends TestCase
         $tranche = $this->tranche();
         $this->connecterBackoffice(Role::SuperAdmin);
 
-        $this->get('/admin/parametres')->assertOk()->assertSee('Lecture seule')->assertSee(route('admin.tranches'), false);
-        $this->get("/admin/tranches/{$tranche->id}")->assertOk()->assertDontSee('Modifier les paramètres')->assertDontSee('Soumettre à confirmation');
+        // Plus de tranches ni de dividendes (25/10/2026), plus de campagnes de boutiques (30/10/2026).
+        // « Paramètres (lecture) » retiré le 30/10/2026 : plus rien à y consulter.
+        $this->get('/admin/parametres')->assertForbidden();
+        $this->get("/admin/tranches/{$tranche->id}")->assertForbidden();
     }
 
     public function test_le_super_admin_peut_inviter_un_admin(): void

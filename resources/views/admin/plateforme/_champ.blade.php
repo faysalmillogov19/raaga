@@ -119,6 +119,76 @@
             </div>
             @break
 
+        @case('filigrane')
+            {{-- Filigrane : image d'origine et sa version filigrane (or, opacité du rang), actuelles et nouvelles, sur le fond de la carte. --}}
+            @php
+                $opacite = \App\Support\Plateforme\Catalogue::FILIGRANES[$champ];
+                $chemin = \App\Support\Plateforme\ReglagesCarte::chemin($valeur);
+                $actuelle = \App\Support\Plateforme\ReglagesCarte::dataUri($chemin);
+                $actuelleFiligrane = $chemin ? \App\Support\Plateforme\ReglagesCarte::dataUri(app(\App\Services\Cartes\Filigrane::class)->chemin($chemin, $opacite)) : null;
+                $pct = (int) round($opacite * 100);
+            @endphp
+            <label for="{{ $id }}">{{ $libelle }}</label>
+            <div class="flex flex-wrap items-start gap-4"
+                 x-data="{
+                     nouvelle: null, filigrane: null, format: false,
+                     choisir(e) {
+                         const f = e.target.files[0];
+                         this.nouvelle = null; this.filigrane = null; this.format = false;
+                         if (! f) return;
+                         if (f.type !== 'image/png') { this.format = true; return; }
+                         const url = URL.createObjectURL(f);
+                         this.nouvelle = url;
+                         const img = new Image();
+                         img.onload = () => {
+                             // Même conversion que le serveur : or #B8902F, transparence d'après la luminosité, opacité du rang.
+                             const c = document.createElement('canvas');
+                             const k = Math.min(1, 400 / Math.max(img.width, img.height));
+                             c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+                             const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, c.width, c.height);
+                             const donnees = ctx.getImageData(0, 0, c.width, c.height); const d = donnees.data;
+                             for (let i = 0; i < d.length; i += 4) {
+                                 const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
+                                 const densite = Math.max(0, Math.min(1, (0.92 - lum) / 0.92));
+                                 const a = (d[i + 3] / 255) * densite * {{ $opacite }};
+                                 d[i] = 184; d[i + 1] = 144; d[i + 2] = 47; d[i + 3] = Math.round(a * 255);
+                             }
+                             ctx.putImageData(donnees, 0, 0);
+                             this.filigrane = c.toDataURL('image/png');
+                         };
+                         img.src = url;
+                     },
+                 }">
+                <figure class="m-0">
+                    <figcaption class="texte-carte text-[12px]">{{ $p('carte.actuelle') }}</figcaption>
+                    @if ($actuelle)
+                        <img src="{{ $actuelle }}" alt="{{ $libelle }} ({{ mb_strtolower($p('carte.actuelle')) }})" class="carte-id-damier carte-id-miniature mt-1 rounded border border-ligne p-1">
+                    @else
+                        <p class="mt-1 texte-carte">{{ $p('carte.aucune') }}</p>
+                    @endif
+                </figure>
+                @if ($actuelleFiligrane)
+                    <figure class="m-0">
+                        <figcaption class="texte-carte text-[12px]">{{ __('admin.plateforme.carte.version_filigrane', ['pct' => $pct]) }}</figcaption>
+                        <img src="{{ $actuelleFiligrane }}" alt="" class="carte-id-fond-carte carte-id-miniature mt-1 rounded border border-ligne p-1" data-filigrane-actuel="{{ $champ }}">
+                    </figure>
+                @endif
+                <figure class="m-0" x-show="nouvelle" x-cloak>
+                    <figcaption class="texte-carte text-[12px]">{{ $p('carte.nouvelle') }}</figcaption>
+                    <img :src="nouvelle" alt="" class="carte-id-damier carte-id-miniature mt-1 rounded border border-vert p-1">
+                </figure>
+                <figure class="m-0" x-show="filigrane" x-cloak>
+                    <figcaption class="texte-carte text-[12px]">{{ $p('carte.version_filigrane_nouvelle') }}</figcaption>
+                    <img :src="filigrane" alt="" class="carte-id-fond-carte carte-id-miniature mt-1 rounded border border-vert p-1">
+                </figure>
+                <div class="carte-id-depot">
+                    <input id="{{ $id }}" name="{{ $champ }}" type="file" accept=".png,image/png" @change="choisir($event)"
+                           @class(['champ', 'est-invalide' => $invalide]) @if ($aide) aria-describedby="{{ $id }}-aide" @endif>
+                    <p class="message-erreur" role="alert" x-show="format" x-cloak>{{ $p('carte.format_js') }}</p>
+                </div>
+            </div>
+            @break
+
         @case('horaires')
             <fieldset>
                 <legend class="font-bold text-encre">{{ $libelle }}</legend>

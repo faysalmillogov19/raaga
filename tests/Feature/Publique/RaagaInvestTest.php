@@ -175,17 +175,18 @@ class RaagaInvestTest extends TestCase
         ManifestationInteret::create(['user_id' => $this->citoyen()->id, 'profil' => 'ENTREPRISE', 'pays_residence' => 'Burkina Faso',
             'nombre_actions' => 12, 'valeur_action' => 10_000, 'montant' => 120_000, 'simulation_comprise_le' => now()]);
 
-        // RÉGULATEUR et ADMIN : liste, export et indicateurs du tableau de bord.
-        foreach ([$this->regulateur, User::factory()->role(Role::Admin)->create()] as $user) {
-            $this->en($user)->get(route('admin.interets'))->assertOk()->assertSee('INV-');
-            $this->en($user)->get(route('admin.interets', ['export' => 'csv']))->assertOk();
-            $this->en($user)->get(route('admin.tableau'))->assertOk()->assertSee('data-indicateurs-invest', false)->assertSee(format_fcfa(120_000));
-        }
+        // RÉGULATEUR : liste, export et indicateurs du tableau de bord.
+        $this->en($this->regulateur)->get(route('admin.interets'))->assertOk()->assertSee('INV-');
+        $this->en($this->regulateur)->get(route('admin.interets', ['export' => 'csv']))->assertOk();
+        $this->en($this->regulateur)->get(route('admin.tableau'))->assertOk()->assertSee('data-indicateurs-invest', false)->assertSee(format_fcfa(120_000));
 
-        // SUPER_ADMIN : ni liste, ni export, ni indicateurs.
-        $this->en($this->superAdmin)->get(route('admin.interets'))->assertForbidden();
-        $this->en($this->superAdmin)->get(route('admin.interets', ['export' => 'csv']))->assertForbidden();
-        $this->en($this->superAdmin)->get(route('admin.tableau'))->assertOk()->assertDontSee('data-indicateurs-invest', false);
+        // SUPER_ADMIN et ADMIN (depuis le 25/10/2026) : ni liste, ni export, ni indicateurs, ni paramètres d'investissement.
+        foreach ([$this->superAdmin, User::factory()->role(Role::Admin)->create()] as $user) {
+            $this->en($user)->get(route('admin.interets'))->assertForbidden();
+            $this->en($user)->get(route('admin.interets', ['export' => 'csv']))->assertForbidden();
+            $this->en($user)->get(route('admin.investissement'))->assertForbidden();
+            $this->en($user)->get(route('admin.tableau'))->assertOk()->assertDontSee('data-indicateurs-invest', false);
+        }
 
         // GESTIONNAIRE : ni liste, ni paramètres, ni indicateurs.
         $gestionnaire = User::factory()->role(Role::GestionnaireSites)->create();

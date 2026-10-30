@@ -75,8 +75,11 @@ class DelaisPaiementTest extends TestCase
         $this->assertSame($attendu, $lire());
         $this->assertSame('jour ouvré', Duree::query()->where('code', 'JOUR')->value('libelle'));
 
-        // Aucun écran : ni route de gestion, ni journal de validation.
-        $this->assertFalse(collect(app('router')->getRoutes())->contains(fn ($r) => str_contains($r->uri(), 'durees')));
+        // Une seule route (25/10/2026) : libellés modifiés directement par le SUPER_ADMIN ; ni création, ni suppression,
+        // ni changement de valeur, ni journal de validation.
+        $routes = collect(app('router')->getRoutes())->filter(fn ($r) => str_contains($r->uri(), 'durees'));
+        $this->assertSame(['admin.parametres-paiements.duree'], $routes->map->getName()->values()->all());
+        $this->assertSame(['PUT'], $routes->first()->methods());
         // (Seules les valeurs initiales des délais de paiement sont confirmées d'office par ReferentielsSeeder.)
         $this->assertSame(0, ParametrageDecision::query()->where('objet_type', '!=', 'delais')->count());
     }

@@ -5,7 +5,7 @@
     $gerer = auth()->user()->can(Droit::SitesGerer->value);
 @endphp
 
-<x-admin.layout :titre="$t['titre']" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $t['titre']]]">
+<x-admin.layout :titre="$t['titre']" :fil="[['libelle' => __('admin.sites.titre'), 'url' => auth()->user()->can(\App\Enums\Droit::SitesVoir->value) ? route('admin.sites') : null], ['libelle' => $t['titre']]]">
     @if ($gerer)
         <x-slot:actions>
             <x-admin.fenetre id="ajouter-type" :titre="$t['ajouter_titre']" :action="route('admin.sites.types.store')" :bouton="$t['ajouter']" declencheur-icone="plus" soumission>

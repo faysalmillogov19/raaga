@@ -164,8 +164,9 @@ class DividendesWorkflowTest extends TestCase
         $d = $this->distributionSoumise();
         $sa = $this->superAdmin;
 
-        $this->en($sa)->get(route('admin.dividendes'))->assertOk();
-        $this->en($sa)->get(route('admin.dividendes.show', $d))->assertOk();
+        // Plus de lecture depuis le 25/10/2026 : dividendes réservés au RÉGULATEUR et au VALIDATEUR.
+        $this->en($sa)->get(route('admin.dividendes'))->assertForbidden();
+        $this->en($sa)->get(route('admin.dividendes.show', $d))->assertForbidden();
 
         $this->en($sa)->get(route('admin.dividendes.create'))->assertForbidden();
         $this->en($sa)->post(route('admin.dividendes.store'), $this->formulaire(['exercice' => 2024]))->assertForbidden();

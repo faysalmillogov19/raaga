@@ -69,6 +69,18 @@
                         </ul>
                     @endif
                 </div>
+                {{-- Filigranes : facultatifs, avertissement non bloquant. --}}
+                @php($filigranesManquants = \App\Support\Plateforme\ReglagesCarte::filigranesManquants())
+                @if ($filigranesManquants !== [])
+                    <x-admin.message type="avertissement" class="mt-3 !mb-0" data-filigranes-manquants>
+                        <p>{{ $p('carte.filigranes_avertissement') }}</p>
+                        <ul class="mt-1 list-disc pl-5">
+                            @foreach ($filigranesManquants as $champ)
+                                <li data-filigrane-manquant="{{ $champ }}">{{ $p('carte.filigrane_non_renseigne', ['champ' => $p('champs.'.$champ)]) }}</li>
+                            @endforeach
+                        </ul>
+                    </x-admin.message>
+                @endif
             @endif
 
             @if ($modifiable)

@@ -192,6 +192,43 @@ class NiveauxZonesController extends Controller
         }, $circuit ? 'admin.zones.messages.modification_soumise' : 'admin.zones.messages.renommee'), $liste, $element, route('admin.referencement.zones.show', [$liste, $element->id]), 'modifier-element');
     }
 
+    /**
+     * SUPER_ADMIN : élément créé par le seeder (« par défaut ») mis à jour directement, sans VALIDATEUR : niveau
+     * (libellé, rang), zone et unité (libellé, description, ordre), moyen de paiement (libellé, famille, instructions,
+     * ordre, usages), et activation. Nouvelle version et journal. Ni création ni suppression, code jamais modifié ;
+     * refusé si une demande attend la décision du VALIDATEUR.
+     */
+    public function miseAJourDirecte(Request $request, string $liste, int $id): RedirectResponse
+    {
+        Gate::authorize(Droit::InstallationMettreAJour->value);
+        $element = $this->element($liste, $id);
+        $donnees = $request->validate([...$this->reglesLibres($liste), 'actif' => ['nullable', 'boolean']], [], __('admin.zones.attributs'));
+        if ($liste === 'moyens') {
+            $donnees['usages'] = $this->usages($request);
+        }
+        if (array_key_exists('ordre', $donnees)) {
+            $donnees['ordre'] ??= $element->ordre;
+        }
+        $donnees['actif'] = $request->boolean('actif');
+
+        return $this->executer($liste, $element, function () use ($request, $element, $donnees) {
+            if (! $element->par_defaut) {
+                throw new RegleGestionException(__('admin.parametrage.regles.direct_non_defaut'));
+            }
+            if ($element->statut === StatutTypeBoutique::AValider || $element->aModificationEnAttente()) {
+                throw new RegleGestionException(__('admin.parametrage.regles.direct_en_attente'));
+            }
+            $avant = $element->only(array_keys($donnees));
+            $element->fill($donnees);
+            if (! $element->isDirty()) {
+                return;
+            }
+            $element->save();
+            $element->creerVersion($request->user(), __('admin.parametrage.motifs.mise_a_jour_directe'));
+            $this->journal->ecrire($request->user(), $element::typeReferentiel().'.mise_a_jour_directe', class_basename($element), $element->id, $avant, $element->only(array_keys($donnees)));
+        }, 'admin.parametrage.messages.mis_a_jour');
+    }
+
     public function activer(Request $request, string $liste, int $id): RedirectResponse
     {
         return $this->activation($request, $liste, $this->element($liste, $id), true);

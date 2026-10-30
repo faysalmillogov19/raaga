@@ -39,6 +39,26 @@ class WorkflowParametrage
     }
 
     /**
+     * Mise à jour directe par le SUPER_ADMIN (entités créées par les seeders de référentiel) : la saisie devient tout de
+     * suite la version en vigueur, sans VALIDATEUR. Version figée, décision « confirmée » à son nom avec le motif, journal.
+     * Refusée si une proposition attend le VALIDATEUR (elle serait écrasée).
+     */
+    public function appliquerDirectement(Parametrable $objet, User $auteur): void
+    {
+        if ($objet->estSoumis()) {
+            throw new RegleGestionException(__('admin.parametrage.regles.direct_en_attente'));
+        }
+
+        DB::transaction(function () use ($objet, $auteur) {
+            $motif = __('admin.parametrage.motifs.mise_a_jour_directe');
+            $version = $objet->creerVersion($auteur, $motif);
+            $objet->marquerConfirme($auteur);
+            $this->decision($objet, $version->numero, DecisionParametrage::Confirme, $motif, $auteur);
+            $this->journal->ecrire($auteur, $objet->typeParametrage().'.mise_a_jour_directe', class_basename($objet), $objet->getKey(), null, ['version' => $version->numero]);
+        });
+    }
+
+    /**
      * Retrait de la validation par l'auteur de la soumission, tant que le VALIDATEUR n'a pas décidé : retour au
      * brouillon. La version soumise reste dans l'historique (ajout seul) ; le retrait est tracé au journal.
      */

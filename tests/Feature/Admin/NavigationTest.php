@@ -17,17 +17,20 @@ class NavigationTest extends TestCase
 {
     use ConnexionBackoffice, RefreshDatabase;
 
-    /** Écrans hors menu mais accessibles en lecture (le SUPER_ADMIN y arrive par « Paramètres (lecture) »). */
+    /**
+     * Écrans hors menu mais accessibles en lecture (le SUPER_ADMIN y arrive par « Paramètres (lecture) »). Depuis le 25/10/2026,
+     * plus de tranches, paramètres d'investissement, dividendes ni simulations : réservés au RÉGULATEUR et au VALIDATEUR.
+     */
     private const LECTURE_HORS_MENU = [
-        'superadmin' => ['tranches', 'investissement', 'boutiques', 'dividendes', 'simulations', 'referentiels'],
+        'superadmin' => ['referentiels'],
         // RÉGULATEUR : « Mes brouillons » est atteint par « Mes soumissions › Brouillons » (même page, filtrée).
         'regulateur' => ['brouillons'],
     ];
 
     /** Écrans autorisés par profil (d'après le tableau des droits) ; le menu les montre tous, sauf les pages en préparation. */
     private const MENUS = [
-        'superadmin' => ['tableau', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'grille', 'imports_sites', 'imports_boutiques', 'assistance', 'demandes', 'contenus', 'institutions', 'registre_a', 'approbations', 'utilisateurs', 'phase', 'plateforme', 'securite', 'audit', 'parametres', 'connexions', 'unites', 'moyens', 'delais'],
-        'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme', 'interets', 'kyc', 'guichet', 'photos_personnel'],
+        'superadmin' => ['tableau', 'types', 'niveaux', 'zones', 'assistance', 'demandes', 'contenus', 'institutions', 'approbations', 'utilisateurs', 'plateforme', 'securite', 'audit', 'connexions', 'unites', 'moyens', 'delais'],
+        'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme', 'kyc', 'guichet', 'photos_personnel'],
         'agent_guichet' => ['tableau', 'guichet', 'guichet_souscription', 'guichet_caisse'],
         'controleur_paiements' => ['tableau', 'paiements', 'remboursements'],
         'gestionnaire_sites' => ['tableau', 'brouillons', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'imports_sites', 'imports_boutiques'],

@@ -27,6 +27,11 @@ class CarteIdentificationTestSeeder extends Seeder
             'nomAutorite' => 'TEST · Nom de l’autorité',
             'signatureAutorite' => $this->deposer('signature-autorite', $this->signature()),
             'cachetAutorite' => $this->deposer('cachet-autorite', $this->cachet()),
+            // Filigranes : images en couleur sur fond blanc, marquées TEST (le serveur les convertit en or).
+            'filigranePrincipalRecto' => $this->deposer('filigrane-principal-recto', $this->filigrane(1000, 1000, [0, 107, 60])),
+            'filigraneSecondaireRecto' => $this->deposer('filigrane-secondaire-recto', $this->filigrane(900, 900, [150, 30, 30])),
+            'filigranePrincipalVerso' => $this->deposer('filigrane-principal-verso', $this->filigrane(1200, 700, [40, 60, 120])),
+            'filigraneSecondaireVerso' => $this->deposer('filigrane-secondaire-verso', $this->filigrane(1000, 800, [120, 80, 20])),
         ], null);
     }
 
@@ -48,6 +53,22 @@ class CarteIdentificationTestSeeder extends Seeder
         imagealphablending($image, false);
         imagefill($image, 0, 0, imagecolorallocatealpha($image, 0, 0, 0, 127));
         imagealphablending($image, true);
+
+        return $image;
+    }
+
+    /** Filigrane de test : fond blanc, forme colorée et mot « TEST » en grand. */
+    private function filigrane(int $largeur, int $hauteur, array $rgb): \GdImage
+    {
+        $image = imagecreatetruecolor($largeur, $hauteur);
+        imagefill($image, 0, 0, imagecolorallocate($image, 255, 255, 255));
+        $couleur = imagecolorallocate($image, ...$rgb);
+        imagefilledellipse($image, intdiv($largeur, 2), intdiv($hauteur, 2), (int) ($largeur * 0.8), (int) ($hauteur * 0.8), $couleur);
+        imagefilledellipse($image, intdiv($largeur, 2), intdiv($hauteur, 2), (int) ($largeur * 0.6), (int) ($hauteur * 0.6), imagecolorallocate($image, 255, 255, 255));
+        $mot = imagecreatetruecolor(40, 16);
+        imagefill($mot, 0, 0, imagecolorallocate($mot, 255, 255, 255));
+        imagestring($mot, 5, 2, 0, 'TEST', imagecolorallocate($mot, ...$rgb));
+        imagecopyresampled($image, $mot, (int) ($largeur * 0.3), (int) ($hauteur * 0.4), 0, 0, (int) ($largeur * 0.4), (int) ($hauteur * 0.2), 40, 16);
 
         return $image;
     }

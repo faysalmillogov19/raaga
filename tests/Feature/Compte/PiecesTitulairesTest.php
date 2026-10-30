@@ -31,6 +31,7 @@ use Tests\Support\ActeursParametrage;
 use Tests\Support\Boutiques;
 use Tests\Support\DossierKyc;
 use Tests\Support\FakeSmsProvider;
+use Tests\Support\ReglagesCarteComplets;
 use Tests\TestCase;
 
 /**
@@ -41,7 +42,7 @@ use Tests\TestCase;
  */
 class PiecesTitulairesTest extends TestCase
 {
-    use ActeursParametrage, RefreshDatabase;
+    use ActeursParametrage, RefreshDatabase, ReglagesCarteComplets;
 
     private User $admin;
 
@@ -185,6 +186,8 @@ class PiecesTitulairesTest extends TestCase
 
     public function test_carte_d_une_personne_morale_raison_sociale_et_representant(): void
     {
+        // Réglages de la carte au complet (avant le dossier d'identité : le disque privé simulé est réinitialisé).
+        $this->completerReglagesCarte();
         $morale = $this->citoyen(TypeTitulaire::Morale, ['statut_kyc' => StatutKyc::EnAttente]);
         DossierKyc::complet($morale);
         app(DossiersIdentite::class)->conforme($morale, $this->admin, null, now()->addYears(3)->toDateString());
@@ -200,6 +203,11 @@ class PiecesTitulairesTest extends TestCase
         $this->assertSame('Issa KABORE', $carte->contenu['nom']);
         $this->actingAs($morale)->get(route('espace.carte'))->assertOk()->assertSee('data-raison-sociale', false)
             ->assertSee('Société Kaboré et Fils')->assertSee('Représentant légal :', false)->assertSee('Issa KABORE');
+        // Recto : raison sociale, puis le représentant légal et sa date de naissance.
+        $donnees = app(RenduCarte::class)->donnees($carte);
+        $this->assertSame(['Société Kaboré et Fils', 'Issa KABORE'], [$donnees['titulaire'], $donnees['representant']]);
+        $this->assertSame($morale->date_naissance?->format('d/m/Y'), $donnees['ne_le']);
+        $this->exigerChrome();
         $this->assertNotFalse(imagecreatefromstring(app(RenduCarte::class)->png($carte)));
 
         // Au guichet : raison sociale en titre, puis le représentant.

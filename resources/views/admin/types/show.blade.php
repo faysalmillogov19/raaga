@@ -8,7 +8,7 @@
     $enAttente = $type->statut === StatutTypeBoutique::AValider || $type->attribuable_demande !== null;
 @endphp
 
-<x-admin.layout :titre="$titre" :fil="[['libelle' => __('admin.sites.titre'), 'url' => route('admin.sites')], ['libelle' => $t['titre'], 'url' => route('admin.sites.types')], ['libelle' => $titre]]">
+<x-admin.layout :titre="$titre" :fil="[['libelle' => __('admin.sites.titre'), 'url' => auth()->user()->can(\App\Enums\Droit::SitesVoir->value) ? route('admin.sites') : null], ['libelle' => $t['titre'], 'url' => route('admin.sites.types')], ['libelle' => $titre]]">
     {{-- État et décisions --}}
     <section class="bo-carte !mt-0" aria-labelledby="etat-titre">
         <h2 id="etat-titre" class="!text-[1.15rem]">{{ __('admin.parametrage.statut') }} : {{ $type->statut->label() }}
@@ -76,6 +76,23 @@
                         <x-slot:declencheur>{{ $t['actions']['supprimer'] }}</x-slot:declencheur>
                     </x-admin.confirmation>
                 @endif
+            @endif
+            {{-- SUPER_ADMIN : type créé par le seeder (par défaut), mis à jour directement sans validation. --}}
+            @if ($type->par_defaut && ! $enAttente && ! $type->aModificationEnAttente() && auth()->user()->can(Droit::InstallationMettreAJour->value))
+                <x-admin.fenetre id="mettre-a-jour-type" :titre="__('admin.parametrage.direct.titre')" :action="route('admin.sites.types.direct', $type)" methode="PUT"
+                                 :bouton="__('admin.parametrage.direct.enregistrer')">
+                    <x-slot:declencheur>{{ __('admin.parametrage.direct.bouton') }}</x-slot:declencheur>
+                    <p class="texte-carte mb-3">{{ __('admin.parametrage.direct.aide') }}</p>
+                    <div class="adm-fenetre-grille">
+                        <x-admin.champ nom="code_affiche" id="direct-code" :libelle="$t['champs']['code']" type="verrouille" :valeur="$type->code ?? ''" :aide="$t['code_fige']" />
+                        <x-admin.champ nom="libelle" id="direct-libelle" :libelle="$t['champs']['libelle']" :valeur="$type->libelle" maxlength="80" required />
+                        <x-admin.champ nom="description" id="direct-description" :libelle="$t['champs']['description']" :valeur="$type->description" maxlength="300" class="adm-plein" />
+                        <x-admin.champ nom="description_citoyen" id="direct-description-citoyen" :libelle="$t['champs']['description_citoyen']" :valeur="$type->description_citoyen" type="zone" maxlength="300" class="adm-plein" />
+                        <x-admin.champ nom="ordre" id="direct-ordre" :libelle="$t['champs']['ordre']" :valeur="$type->ordre" type="number" min="0" max="9999" required />
+                        <x-admin.champ nom="attribuable" id="direct-attribuable" :libelle="$t['champs']['attribuable']" type="interrupteur" :valeur="$type->attribuable" />
+                        <x-admin.champ nom="actif" id="direct-actif" :libelle="__('admin.parametrage.direct.actif_element')" type="interrupteur" :valeur="$type->actif" />
+                    </div>
+                </x-admin.fenetre>
             @endif
         </div>
         @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror

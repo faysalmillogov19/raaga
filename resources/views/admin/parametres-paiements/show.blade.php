@@ -69,6 +69,25 @@
                 </x-admin.confirmation>
             @endif
 
+            {{-- SUPER_ADMIN : mise à jour directe des délais créés par le seeder, appliquée sans validation (sauf proposition en attente). --}}
+            @if (auth()->user()->can(Droit::InstallationMettreAJour->value) && ! $fiche->estSoumis())
+                <x-admin.fenetre id="mettre-a-jour-delais" :titre="__('admin.parametrage.direct.titre')" :action="route('admin.parametres-paiements.direct')" methode="PUT"
+                                 :bouton="__('admin.parametrage.direct.enregistrer')">
+                    <x-slot:declencheur>{{ __('admin.parametrage.direct.bouton') }}</x-slot:declencheur>
+                    <p class="texte-carte mb-3">{{ __('admin.parametrage.direct.aide') }}</p>
+                    @foreach (ParametresPaiements::DELAIS as $d => [$valeurDefaut, $dureeDefaut])
+                        @php($duree = Duree::parId($fiche->{'delai_'.$d.'_duree_id'}))
+                        <fieldset class="adm-fenetre-grille mt-5" data-direct-delai="{{ $d }}">
+                            <legend class="adm-plein font-semibold">{{ $i['delais'][$d] }}</legend>
+                            <x-admin.champ :nom="'delai_'.$d.'_valeur'" :libelle="$i['valeur']" type="number" min="1" max="999999" obligatoire
+                                           :valeur="$fiche->{'delai_'.$d.'_valeur'} ?? $valeurDefaut" />
+                            <x-admin.champ :nom="'delai_'.$d.'_duree'" :libelle="$i['duree']" type="liste" obligatoire :options="$optionsDurees"
+                                           :valeur="$duree?->code ?? $dureeDefaut" :vide="$i['choisir_duree']" />
+                        </fieldset>
+                    @endforeach
+                </x-admin.fenetre>
+            @endif
+
             @can(Droit::MoyensPaiementConfirmer->value)
                 @if ($fiche->estSoumis())
                     <x-admin.confirmation etape="confirmer" id="confirmer" :titre="__('admin.parametrage.actions.confirmer')" :message="__('admin.parametrage.confirmations.confirmer')"
@@ -91,6 +110,40 @@
             <div class="mt-2"><x-admin.differentiel :differentiel="$differentiel" :libelles="$libelles" :premiere="$premiereVersion" /></div>
         </section>
     @endif
+
+    {{-- SUPER_ADMIN : durées créées par le seeder ; libellés modifiables directement, valeur en secondes fixe. --}}
+    @can(Droit::InstallationMettreAJour->value)
+        @php($dd = $i['durees'])
+        <section class="bo-carte" aria-labelledby="durees-titre" data-durees>
+            <h2 id="durees-titre" class="!text-[1.15rem]">{{ $dd['titre'] }}</h2>
+            <p class="texte-carte mt-1">{{ $dd['intro'] }}</p>
+            <div class="mt-3 overflow-x-auto">
+                <table class="bo-tableau">
+                    <thead><tr><th scope="col">{{ $dd['colonnes']['code'] }}</th><th scope="col">{{ $dd['colonnes']['libelle'] }}</th><th scope="col">{{ $dd['colonnes']['pluriel'] }}</th>
+                        <th scope="col" class="montant">{{ $dd['colonnes']['secondes'] }}</th><th scope="col"><span class="sr-only">{{ $dd['modifier'] }}</span></th></tr></thead>
+                    <tbody>
+                        @foreach ($durees as $duree)
+                            <tr data-duree="{{ $duree->code }}">
+                                <td class="font-mono">{{ $duree->code }}</td><td>{{ $duree->libelle }}</td><td>{{ $duree->libelle_pluriel }}</td>
+                                <td class="montant">{{ format_nombre($duree->secondes) }}</td>
+                                <td>
+                                    <x-admin.fenetre :id="'duree-'.$duree->id" :titre="$dd['modifier'].' · '.$duree->code" :action="route('admin.parametres-paiements.duree', $duree)" methode="PUT"
+                                                     :bouton="__('admin.parametrage.direct.enregistrer')" declencheur-variante="secondaire">
+                                        <x-slot:declencheur>{{ $dd['modifier'] }}</x-slot:declencheur>
+                                        <p class="texte-carte mb-3">{{ __('admin.parametrage.direct.aide') }}</p>
+                                        <div class="adm-fenetre-grille">
+                                            <x-admin.champ nom="libelle" :id="'duree-'.$duree->id.'-libelle'" :libelle="$dd['colonnes']['libelle']" :valeur="$duree->libelle" maxlength="30" obligatoire />
+                                            <x-admin.champ nom="libelle_pluriel" :id="'duree-'.$duree->id.'-pluriel'" :libelle="$dd['colonnes']['pluriel']" :valeur="$duree->libelle_pluriel" maxlength="30" obligatoire />
+                                        </div>
+                                    </x-admin.fenetre>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endcan
 
     @if ($fiche->exists)
         @include('admin.parametrage._historique', ['versions' => $versions, 'decisions' => $decisions])

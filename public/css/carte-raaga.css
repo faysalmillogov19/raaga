@@ -1,0 +1,195 @@
+/*
+ * Carte d'identification Raaga, maquette validée le 24/10/2026 : format ISO ID-1 (85,6 × 54 mm, coins de 3 mm), unités
+ * en mm (maquette : 10 px = 1 mm). Feuille autonome : intégrée au document rendu par Chrome (PNG 300 dpi et PDF) et
+ * chargée par l'aperçu du back-office. Préfixe « cr- » ; aucune classe utilitaire.
+ */
+@font-face { font-family: 'Public Sans Carte'; src: url('../fonts/public-sans-400.woff2') format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Public Sans Carte'; src: url('../fonts/public-sans-600.woff2') format('woff2'); font-weight: 600; }
+@font-face { font-family: 'Public Sans Carte'; src: url('../fonts/public-sans-700.woff2') format('woff2'); font-weight: 700; }
+@font-face { font-family: 'Public Sans Carte'; src: url('../fonts/public-sans-800.woff2') format('woff2'); font-weight: 800; }
+
+.cr-face {
+    position: relative;
+    width: 85.6mm;
+    height: 54mm;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 0.1mm solid #E2D6B8;
+    border-radius: 3mm;
+    background: #FBF8F1;
+    color: #1E1A14;
+    font-family: 'Public Sans Carte', 'Public Sans', sans-serif;
+    font-size: 1.4mm;
+    line-height: 1.2;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.cr-face p { margin: 0; }
+.cr-abs { position: absolute; }
+.cr-decor { position: absolute; left: 0; top: 0; width: 85.6mm; height: 54mm; }
+.cr-libelle { font-size: 1.2mm; letter-spacing: 0.12em; color: #7A6638; text-transform: uppercase; }
+
+/* Recto */
+/* Filigranes (déjà en or et à leur opacité) : boîte fixe, image contenue sans déformation. */
+.cr-filigrane { position: absolute; object-fit: contain; }
+/* Recto principal : centre de la carte, derrière la colonne du titulaire, environ 55 % de la hauteur. */
+.cr-filigrane-recto-principal { left: 44.8mm; top: 27mm; width: 40mm; height: 29.7mm; transform: translate(-50%, -50%); }
+/* Recto secondaire : en bas à gauche, entre le QR code et la frise, environ 20 % de la hauteur, sans déborder sur le texte. */
+.cr-filigrane-recto-secondaire { left: 4.4mm; top: 37.8mm; width: 20.8mm; height: 10.8mm; }
+.cr-entete { position: absolute; left: 4mm; top: 2.4mm; display: flex; align-items: center; gap: 1.6mm; }
+.cr-entete-armoiries { display: block; height: 8.8mm; width: auto; }
+.cr-pays { font-size: 1.4mm; letter-spacing: 0.14em; color: #8A6A1E; text-transform: uppercase; }
+.cr-titre { margin-top: 0.2mm !important; font-size: 1.7mm; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.cr-titre span { color: #8A6A1E; }
+.cr-qr {
+    position: absolute;
+    left: 4.4mm;
+    top: 26.5mm;
+    transform: translateY(-50%);
+    box-sizing: border-box;
+    padding: 0.6mm;
+    border: 0.4mm solid #B8902F;
+    border-radius: 1.8mm;
+    background: #FFFFFF;
+}
+.cr-qr svg { display: block; }
+.cr-qr-logo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+    padding: 0.3mm;
+    border-radius: 0.6mm;
+    background: #FFFFFF;
+}
+.cr-qr-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.cr-infos { position: absolute; left: 27.6mm; top: 18.2mm; width: 34.4mm; display: flex; flex-direction: column; gap: 1.8mm; }
+.cr-titulaire {
+    margin-top: 0.4mm !important;
+    font-size: 2.4mm;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    line-height: 1.15;
+    text-transform: uppercase;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.cr-representant { margin-top: 0.4mm !important; font-size: 1.3mm; color: #4A3F2A; }
+.cr-grille { display: grid; grid-template-columns: 15mm 1fr; row-gap: 1.6mm; column-gap: 2.4mm; }
+.cr-valeur { margin-top: 0.4mm !important; font-size: 1.7mm; font-weight: 700; white-space: nowrap; }
+.cr-photo {
+    position: absolute;
+    right: 4.4mm;
+    top: 15mm;
+    width: 18mm;
+    height: 23mm;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 0.3mm solid #B8902F;
+    border-radius: 1.4mm;
+    background: #F3EBD8;
+    color: #6B5B3A;
+    font-size: 1.4mm;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4mm;
+}
+.cr-photo:has(img) { padding: 0; }
+.cr-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Pied commun : frise (tuile frise.svg répétée), microtexte, bandeau tricolore. */
+.cr-frise { position: absolute; left: 0; bottom: 2.6mm; width: 85.6mm; height: 2.2mm; }
+.cr-face[data-face=recto] .cr-frise { background: #FBF8F1; }
+.cr-microtexte {
+    position: absolute;
+    left: 2.6mm;
+    right: 2.6mm;
+    bottom: 1.3mm;
+    font-size: 0.5mm;
+    letter-spacing: 0.04em;
+    color: #A8915C;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.cr-bande { position: absolute; left: 0; right: 0; bottom: 0; height: 1mm; display: flex; }
+.cr-bande span:nth-child(1) { flex: 48; background: #CE1126; }
+.cr-bande span:nth-child(2) { flex: 4; background: #FCD116; }
+.cr-bande span:nth-child(3) { flex: 48; background: #00843D; }
+
+/* Verso */
+/* Verso principal : centré derrière la colonne de gauche, environ 50 % de sa largeur. */
+.cr-filigrane-verso-principal { left: 27.25mm; top: 29.9mm; width: 22.8mm; height: 30mm; transform: translate(-50%, -50%); }
+/* Verso secondaire : en bas à droite, sous le cachet, environ 25 % de la hauteur. */
+.cr-filigrane-verso-secondaire { right: 4.4mm; bottom: 5.4mm; width: 27mm; height: 13.5mm; object-position: center bottom; }
+.cr-bandeau {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 3.6mm;
+    height: 6.8mm;
+    box-sizing: border-box;
+    padding: 0 4.4mm;
+    display: flex;
+    align-items: center;
+    border-top: 0.1mm solid #B8902F;
+    border-bottom: 0.1mm solid #B8902F;
+    background: #F1E7CF;
+}
+.cr-bandeau-titre { font-size: 1.6mm; letter-spacing: 0.16em; color: #8A6A1E; text-transform: uppercase; }
+.cr-bandeau-numero { margin-left: auto; font-size: 2mm; font-weight: 700; letter-spacing: 0.14em; }
+.cr-corps { position: absolute; left: 4.4mm; right: 4.4mm; top: 13.2mm; bottom: 7.4mm; display: flex; gap: 4mm; }
+.cr-gauche { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+.cr-mentions { display: flex; flex-direction: column; gap: 1.4mm; }
+.cr-mentions p { font-size: 1.7mm; line-height: 1.5; color: #3A3122; }
+.cr-code-barres { box-sizing: border-box; padding: 1.2mm 2.4mm 0.8mm; border: 0.1mm solid #D8C89F; border-radius: 0.8mm; background: #FFFFFF; }
+.cr-code-barres svg { display: block; width: 100%; height: 8.8mm; }
+.cr-code-texte { margin-top: 0.5mm !important; font-family: 'Courier New', monospace; font-size: 1.4mm; letter-spacing: 0.18em; text-align: center; }
+.cr-legende { margin-top: 0.6mm !important; font-size: 1.2mm; color: #7A6638; }
+.cr-separateur { width: 0.1mm; background: #DCCDA6; }
+.cr-droite { width: 27mm; display: flex; flex-direction: column; justify-content: center; }
+.cr-qualite {
+    margin-top: 0.4mm !important;
+    font-size: 1.4mm;
+    color: #4A3F2A;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.cr-signature { display: block; max-width: 22mm; height: 7.2mm; margin-top: 1.2mm; object-fit: contain; object-position: left center; }
+.cr-nom-autorite { margin-top: 0.4mm !important; font-size: 1.6mm; font-weight: 700; }
+.cr-cachet { display: block; width: 9.2mm; height: 9.2mm; margin-top: 1.6mm; object-fit: contain; }
+
+/* Aperçu du back-office : titulaire fictif, filigrane SPÉCIMEN (jamais sur une carte réelle). */
+.cr-specimen {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(-24deg);
+    color: rgba(206, 17, 38, 0.3);
+    font-size: 9mm;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    pointer-events: none;
+}
+.cr-manque { color: #CE1126; font-weight: 600; }
+.cr-signature-vide { height: auto; padding: 2.4mm 0; font-size: 1.2mm; }
+.cr-cachet-vide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 0.2mm dashed #B8902F;
+    border-radius: 50%;
+    color: #8A6A1E;
+    font-size: 1.2mm;
+    text-align: center;
+}
+.cr-apercu-faces { display: flex; flex-wrap: wrap; gap: 8mm; }
+.cr-apercu-faces .cr-face { zoom: 1.5; }

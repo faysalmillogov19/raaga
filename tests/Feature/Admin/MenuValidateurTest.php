@@ -113,14 +113,16 @@ class MenuValidateurTest extends TestCase
         $this->get(route('admin.sites'))->assertOk()->assertDontSee(route('admin.referencement.capacites', ['site' => $site->id]), false);
         $this->get(route('admin.boutiques'))->assertOk()->assertDontSee('href="'.route('admin.boutiques.grilles').'"', false);
 
-        // Les profils qui font ce travail y ont toujours accès (le SUPER_ADMIN garde ses lectures).
+        // Les profils qui font ce travail y ont toujours accès (le SUPER_ADMIN garde ses lectures, sauf les démarches du
+        // site public depuis le 25/10/2026 : souscription réservée au RÉGULATEUR et au VALIDATEUR).
         foreach ($retires as $cle => $repreneur) {
             $this->connecterBackoffice($repreneur);
             $this->get(MenuBackoffice::url(MenuBackoffice::entree($cle)))->assertOk();
         }
         $this->connecterBackoffice(Role::SuperAdmin);
+        // Depuis le 30/10/2026, plus de capacités ni de grille non plus (référencement des sites retiré au SUPER_ADMIN).
         foreach (['capacites', 'grille', 'phase'] as $cle) {
-            $this->get(MenuBackoffice::url(MenuBackoffice::entree($cle)))->assertOk();
+            $this->get(MenuBackoffice::url(MenuBackoffice::entree($cle)))->assertForbidden();
         }
     }
 
@@ -234,7 +236,7 @@ class MenuValidateurTest extends TestCase
 
     public function test_autres_profils_inchanges(): void
     {
-        foreach ([Role::SuperAdmin, Role::GestionnaireSites, Role::ControleurPaiements, Role::Admin] as $role) {
+        foreach ([Role::GestionnaireSites, Role::ControleurPaiements, Role::Admin] as $role) {
             $user = $this->connecterBackoffice($role);
             $this->assertSame(collect($this->ancienMenu($user))->pluck('cle')->all(), collect(MenuBackoffice::pour($user))->flatten(1)->pluck('cle')->all(), $role->value);
             $this->get('/admin')->assertOk()->assertDontSee('data-intertitre', false)->assertDontSee('sous-menu-gestion_boutiques', false);

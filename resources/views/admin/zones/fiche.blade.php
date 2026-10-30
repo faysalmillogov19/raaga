@@ -64,6 +64,28 @@
                     </x-admin.confirmation>
                 @endif
             @endif
+            {{-- SUPER_ADMIN : élément créé par le seeder (par défaut), mis à jour directement sans validation. --}}
+            @if ($element->par_defaut && $element->statut !== StatutTypeBoutique::AValider && ! $element->aModificationEnAttente()
+                && auth()->user()->can(\App\Enums\Droit::InstallationMettreAJour->value))
+                <x-admin.fenetre id="mettre-a-jour-element" :titre="__('admin.parametrage.direct.titre')" :action="route('admin.referencement.zones.direct', [$liste, $element->id])" methode="PUT"
+                                 :bouton="__('admin.parametrage.direct.enregistrer')">
+                    <x-slot:declencheur>{{ __('admin.parametrage.direct.bouton') }}</x-slot:declencheur>
+                    <p class="texte-carte mb-3">{{ __('admin.parametrage.direct.aide') }}</p>
+                    <div class="adm-fenetre-grille">
+                        <x-admin.champ nom="code_affiche" id="direct-code" :libelle="$z['colonnes']['code']" type="verrouille" :valeur="$element->code" :aide="$z['code_fige']" />
+                        <x-admin.champ nom="libelle" id="direct-libelle" :libelle="$z['colonnes']['libelle']" :valeur="$element->libelle" maxlength="100" required />
+                        @if ($niveaux)
+                            <x-admin.champ nom="rang" id="direct-rang" :libelle="$z['colonnes']['rang']" :valeur="$element->rang" type="number" min="-9" max="99" required :aide="$z['rang_aide']" />
+                        @else
+                            @unless ($unites)
+                                <x-admin.champ nom="ordre" id="direct-ordre" :libelle="$z['colonnes']['ordre']" :valeur="$element->ordre" type="number" min="0" max="9999" />
+                            @endunless
+                            <x-admin.champ nom="description" id="direct-description" :libelle="$z['colonnes']['description']" :valeur="$element->description" maxlength="300" class="adm-plein" />
+                        @endif
+                        <x-admin.champ nom="actif" id="direct-actif" :libelle="__('admin.parametrage.direct.actif_element')" type="interrupteur" :valeur="$element->actif" />
+                    </div>
+                </x-admin.fenetre>
+            @endif
         </div>
         @if ($gerer && ! $supprimable)<p class="texte-carte mt-2">{{ $element->par_defaut ? $z['regles']['defaut'] : $z['regles']['utilisee'] }}</p>@endif
         @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror

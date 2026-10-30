@@ -58,6 +58,16 @@
                     <x-slot:declencheur>{{ $element->actif ? $z['desactiver'] : $z['activer'] }}</x-slot:declencheur>
                 </x-admin.confirmation>
             @endif
+            {{-- SUPER_ADMIN : mise à jour directe d'un moyen créé par le seeder (par défaut), appliquée sans validation. --}}
+            @if ($element->par_defaut && ! $enAttente && auth()->user()->can(\App\Enums\Droit::InstallationMettreAJour->value))
+                <x-admin.fenetre id="mettre-a-jour-moyen" :titre="__('admin.parametrage.direct.titre')" :action="route('admin.referencement.zones.direct', ['moyens', $element->id])" methode="PUT"
+                                 :bouton="__('admin.parametrage.direct.enregistrer')">
+                    <x-slot:declencheur>{{ __('admin.parametrage.direct.bouton') }}</x-slot:declencheur>
+                    <p class="texte-carte mb-3">{{ __('admin.parametrage.direct.aide') }}</p>
+                    @include('admin.moyens-paiement._champs', ['m' => $element, 'prefixe' => 'direct'])
+                    <x-admin.champ nom="actif" id="direct-actif" :libelle="__('admin.parametrage.direct.actif')" type="interrupteur" :valeur="$element->actif" />
+                </x-admin.fenetre>
+            @endif
         </div>
         @if ($gerer)<p class="texte-carte mt-2">{{ $p['regles']['jamais_supprime'] }}</p>@endif
         @error('motif') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror

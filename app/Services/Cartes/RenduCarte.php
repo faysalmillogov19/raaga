@@ -6,271 +6,255 @@ use App\Enums\TypeCarte;
 use App\Models\Carte;
 use App\Models\KycDocument;
 use App\Services\Kyc\VerificationIdentite;
+use App\Support\ImagesPlateforme;
+use App\Support\Plateforme\Catalogue;
+use App\Support\Plateforme\ReglagesCarte;
+use App\Support\Telephone;
 use BaconQrCode\Common\ErrorCorrectionLevel;
 use BaconQrCode\Encoder\ByteMatrix;
 use BaconQrCode\Encoder\Encoder;
-use Barryvdh\DomPDF\Facade\Pdf;
-use GdImage;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 /**
- * Rendu de la carte d'accès Raaga, toujours depuis son état courant (la carte se régénère après chaque changement ;
- * le nom du fichier porte la version) : QR code (adresse de vérification seule), image PNG 300 ppp au format carte
- * bancaire (85,6 × 54 mm), PDF de même format prêt pour une imprimante classique ou à cartes. Aucune ressource distante.
+ * Rendu de la carte d'identification Raaga (maquette validée le 24/10/2026), toujours depuis l'état courant de la carte
+ * (le nom du fichier porte la version) : un seul gabarit HTML (resources/views/cartes) rendu par Chrome sans interface
+ * en PNG 300 dpi (1011 × 638 px par face) et en PDF d'une page par face (85,6 × 54 mm), et affiché tel quel dans
+ * l'aperçu du back-office. Armoiries, logo, signature, cachet, textes de l'autorité et numéro vert : ceux figés sur la
+ * carte à son émission (réimpression à l'identique), sinon ceux en vigueur, qui sont alors figés.
  */
 class RenduCarte
 {
-    /** Format carte bancaire ISO/CEI 7810 ID-1 à 300 ppp. */
-    public const LARGEUR = 1012;
+    /** Format ISO/CEI 7810 ID-1 (85,6 × 54 mm) à 300 dpi. */
+    public const LARGEUR = 1011;
 
     public const HAUTEUR = 638;
 
-    /** Couleurs de la charte Raaga. */
-    private const VERT = [0, 132, 61];
+    /** Taille imprimée minimale du QR code (symbole, hors marge blanche), en mm. */
+    public const QR_MM = 18;
 
-    private const VERT_FONCE = [0, 92, 43];
+    /** Logo au centre du QR code (logo unique de l'onglet 1) : zone carrée blanche, part de la largeur du symbole (correction H). */
+    public const QR_LOGO = 0.22;
 
-    private const ROUGE = [206, 17, 38];
+    public function __construct(private readonly NavigateurChrome $navigateur, private readonly Filigrane $filigrane) {}
 
-    private const JAUNE = [252, 209, 22];
-
-    private const ENCRE = [24, 32, 28];
-
-    private const GRIS = [90, 102, 114];
-
-    /** Matrice du QR code : uniquement l'URL de vérification (jeton aléatoire), sans aucune donnée personnelle. */
+    /** Matrice du QR code : uniquement l'URL de vérification (jeton aléatoire), correction H (logo au centre). */
     public function matrice(Carte $carte): ByteMatrix
     {
-        return Encoder::encode($carte->urlVerification(), ErrorCorrectionLevel::M())->getMatrix();
+        return Encoder::encode($carte->urlVerification(), ErrorCorrectionLevel::H())->getMatrix();
     }
 
     /** QR code en SVG (affichage à l'écran, plein écran pour le scan). */
     public function qrSvg(Carte $carte, string $titre = ''): string
     {
-        $m = $this->matrice($carte);
+        return $this->svgQr($this->matrice($carte), $titre, '#000', 2);
+    }
+
+    public function nomFichier(Carte $carte, string $extension, ?string $face = null): string
+    {
+        return 'carte-raaga-'.strtolower($carte->numero).'-v'.$carte->version.($face ? '-'.$face : '').'.'.$extension;
+    }
+
+    /** Image PNG d'une face (recto ou verso), 300 dpi. */
+    public function png(Carte $carte, string $face = 'recto'): string
+    {
+        return $this->pngFaces($carte)[$face] ?? throw new RuntimeException("Face inconnue : {$face}.");
+    }
+
+    /** @return array{recto: string, verso: string} */
+    public function pngFaces(Carte $carte): array
+    {
+        $images = $this->navigateur->captures($this->html($this->donnees($carte), 'png'), ['[data-face=recto]', '[data-face=verso]'], self::LARGEUR, self::HAUTEUR);
+
+        return ['recto' => $images['[data-face=recto]'], 'verso' => $images['[data-face=verso]']];
+    }
+
+    /** PDF : une page par face, 85,6 × 54 mm. */
+    public function pdf(Carte $carte): string
+    {
+        return $this->navigateur->pdf($this->html($this->donnees($carte), 'pdf'));
+    }
+
+    /**
+     * Réglages de rendu de la carte : ceux figés à son émission ; à défaut (carte émise avant ces réglages), ceux en
+     * vigueur, figés à cette première génération. Génération refusée si un réglage manque.
+     *
+     * @return array<string, string>
+     */
+    public function reglages(Carte $carte): array
+    {
+        if ($carte->reglages_rendu) {
+            return $carte->reglages_rendu;
+        }
+        $instantane = ReglagesCarte::instantane() ?? throw new ReglagesCarteManquants(ReglagesCarte::manquants());
+        $carte->forceFill(['reglages_rendu' => $instantane])->saveQuietly();
+
+        return $instantane;
+    }
+
+    /**
+     * Données affichées par le gabarit pour une carte réelle.
+     *
+     * @return array<string, mixed>
+     */
+    public function donnees(Carte $carte): array
+    {
+        $reglages = $this->reglages($carte);
+        $c = $carte->contenu ?? [];
+        $user = $carte->user;
+        $naissance = data_get($user?->identite_validee, 'date_naissance') ?? $user?->date_naissance;
+        $expire = $carte->valide_jusqu_au ? CarbonImmutable::parse($carte->valide_jusqu_au) : null;
+
+        return [
+            'type' => mb_strtoupper($carte->type->label()),
+            // Personne morale : raison sociale, puis le représentant légal (nom, date de naissance et photo).
+            'titulaire' => (string) ($c['raison_sociale'] ?? $c['nom'] ?? ''),
+            'representant' => ! empty($c['raison_sociale']) ? ($c['nom'] ?? null) : null,
+            'ne_le' => $naissance ? CarbonImmutable::parse($naissance)->format('d/m/Y') : null,
+            'numero' => $carte->numero,
+            'expire' => $expire?->format('d/m/Y'),
+            'code' => $carte->numero.($expire ? '-'.$expire->format('my') : ''),
+            'photo' => $this->photo($c),
+            'qr' => $this->matrice($carte),
+            ...$this->images($reglages),
+            'qualite' => $reglages['qualite'],
+            'nom_autorite' => $reglages['nom'],
+            'numero_vert' => Telephone::formater($reglages['numero_vert']),
+            'specimen' => false,
+        ];
+    }
+
+    /**
+     * Données de l'aperçu du back-office : titulaire fictif marqué SPÉCIMEN, réglages saisis (même non enregistrés).
+     * Un réglage absent laisse sa place vide ; rien n'est enregistré.
+     *
+     * @param  array<string, mixed>  $valeurs  valeurs de la section « carte » (formulaire)
+     * @param  array<string, string|null>  $images  champ => chemin absolu (image choisie ou en vigueur)
+     * @return array<string, mixed>
+     */
+    public function specimen(array $valeurs, array $images, TypeCarte $type = TypeCarte::Commercant): array
+    {
+        $expire = CarbonImmutable::today()->addYears(5);
+        $chemin = fn (?string $relatif) => ReglagesCarte::chemin($relatif);
+        // Armoiries et logo : l'image affichée par le champ (déposée, sinon fournie avec le code).
+        $armoiries = ImagesPlateforme::chemin('armoiries');
+        $numeroVert = plateforme('contacts.numeroVert');
+        // Filigranes : image choisie dans le formulaire (convertie sans rien enregistrer) ou celle en vigueur.
+        $filigranes = [];
+        foreach (Catalogue::FILIGRANES as $champ => $opacite) {
+            $source = $images[$champ] ?? null;
+            $filigranes[$champ] = $source ? 'data:image/png;base64,'.base64_encode($this->filigrane->png($source, $opacite)) : null;
+        }
+
+        return [
+            'type' => mb_strtoupper($type->label()),
+            'titulaire' => __('carte.specimen'),
+            'representant' => null,
+            'ne_le' => '01/01/1990',
+            'numero' => 'RG-C-000000',
+            'expire' => $expire->format('d/m/Y'),
+            'code' => 'RG-C-000000-'.$expire->format('my'),
+            'photo' => null,
+            'qr' => Encoder::encode(route('cartes.verifier', str_repeat('0', 64)), ErrorCorrectionLevel::H())->getMatrix(),
+            'armoiries' => $this->dataUri($armoiries),
+            'logo' => $this->dataUri(ImagesPlateforme::chemin('logoHorizontal')),
+            'filigranes' => $filigranes,
+            'signature' => $this->dataUri($images['signatureAutorite'] ?? null),
+            'cachet' => $this->dataUri($images['cachetAutorite'] ?? null),
+            'qualite' => $valeurs['qualiteAutorite'] ?? null,
+            'nom_autorite' => $valeurs['nomAutorite'] ?? null,
+            'numero_vert' => $numeroVert ? Telephone::formater($numeroVert) : null,
+            'specimen' => true,
+        ];
+    }
+
+    /**
+     * Document HTML autonome du rendu : « png » (mis à l'échelle, 1 px CSS = 1 px à 300 dpi) ou « pdf » (@page en mm).
+     *
+     * @param  array<string, mixed>  $donnees
+     */
+    public function html(array $donnees, string $mode): string
+    {
+        return view('cartes.document', [
+            'd' => $donnees,
+            'mode' => $mode,
+            'styles' => (string) file_get_contents(public_path('css/carte-raaga.css')),
+            'polices' => collect([400, 600, 700, 800])->mapWithKeys(fn (int $g) => [$g => $this->dataUri(public_path("fonts/public-sans-{$g}.woff2"), 'font/woff2')])->all(),
+            // 85,6 mm en px CSS (96 par pouce) ramenés à 1011 px.
+            'echelle' => self::LARGEUR / (85.6 * 96 / 25.4),
+        ])->render();
+    }
+
+    /** QR code en SVG avec sa marge blanche (en modules) ; une unité = un module. */
+    public function svgQr(ByteMatrix $m, string $titre = '', string $couleur = '#1E1A14', int $marge = 0): string
+    {
         $n = $m->getWidth();
         $chemin = '';
         for ($y = 0; $y < $n; $y++) {
             for ($x = 0; $x < $n; $x++) {
                 if ($m->get($x, $y) === 1) {
-                    $chemin .= 'M'.($x + 2).' '.($y + 2).'h1v1h-1z';
+                    $chemin .= 'M'.($x + $marge).' '.($y + $marge).'h1v1h-1z';
                 }
             }
         }
-        $t = $n + 4;
+        $t = $n + 2 * $marge;
 
         return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '.$t.' '.$t.'" shape-rendering="crispEdges" role="img" aria-label="'.e($titre).'">'
-            .'<rect width="'.$t.'" height="'.$t.'" fill="#fff"/><path fill="#000" d="'.$chemin.'"/></svg>';
+            .'<rect width="'.$t.'" height="'.$t.'" fill="#fff"/><path fill="'.$couleur.'" d="'.$chemin.'"/></svg>';
     }
 
-    public function nomFichier(Carte $carte, string $extension): string
+    /**
+     * Images figées : armoiries, logo, signature, cachet, et les filigranes (facultatifs, convertis en or à l'opacité de
+     * leur rang), intégrées au document.
+     *
+     * @param  array<string, string|null>  $reglages
+     * @return array<string, mixed>
+     */
+    private function images(array $reglages): array
     {
-        return 'carte-raaga-'.strtolower($carte->numero).'-v'.$carte->version.'.'.$extension;
+        $chemins = [];
+        foreach (['armoiries', 'logo', 'signature', 'cachet'] as $cle) {
+            $chemins[$cle] = ReglagesCarte::chemin($reglages[$cle] ?? null)
+                ?? throw new RuntimeException("Rendu de la carte : fichier introuvable ({$cle} : {$reglages[$cle]}).");
+        }
+
+        $filigranes = [];
+        foreach (Catalogue::FILIGRANES as $champ => $opacite) {
+            // Carte émise avant les filigranes, ou filigrane vide à l'émission : rien n'est affiché.
+            $source = ReglagesCarte::chemin($reglages[$champ] ?? null);
+            $filigranes[$champ] = $source ? $this->dataUri($this->filigrane->chemin($source, $opacite)) : null;
+        }
+
+        return [
+            'armoiries' => $this->dataUri($chemins['armoiries']),
+            'logo' => $this->dataUri($chemins['logo']),
+            'filigranes' => $filigranes,
+            'signature' => $this->dataUri($chemins['signature']),
+            'cachet' => $this->dataUri($chemins['cachet']),
+        ];
     }
 
-    /** Image PNG de la carte (300 ppp). */
-    public function png(Carte $carte): string
+    /** Photo du titulaire : le selfie validé du dossier d'identité, intégré au document. */
+    private function photo(array $contenu): ?string
     {
-        $image = $this->dessiner($carte);
-        ob_start();
-        imagepng($image, null, 6);
+        if (empty($contenu['photo'])) {
+            return null;
+        }
+        $chemin = KycDocument::query()->whereKey($contenu['photo'])->value('chemin_fichier');
+        $donnees = $chemin ? Storage::disk(VerificationIdentite::DISQUE)->get($chemin) : null;
 
-        return (string) ob_get_clean();
+        return $donnees ? 'data:'.(new \finfo(FILEINFO_MIME_TYPE))->buffer($donnees).';base64,'.base64_encode($donnees) : null;
     }
 
-    /** PDF au format carte bancaire (85,6 × 54 mm, sans marge), image de la carte à 300 ppp. */
-    public function pdf(Carte $carte): string
+    private function dataUri(?string $chemin, ?string $type = null): ?string
     {
-        $html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>@page{margin:0}html,body{margin:0;padding:0}'
-            .'img{display:block;width:85.6mm;height:54mm}</style></head><body>'
-            .'<img src="data:image/png;base64,'.base64_encode($this->png($carte)).'" alt="'.e($carte->numero).'"></body></html>';
-
-        // 85,6 × 54 mm en points (1 mm = 72 / 25,4 pt).
-        return Pdf::loadHTML($html)->setPaper([0, 0, 242.65, 153.07])
-            ->setOption(['isRemoteEnabled' => false, 'defaultFont' => 'DejaVu Sans', 'dpi' => 300])
-            ->output();
-    }
-
-    private function dessiner(Carte $carte): GdImage
-    {
-        $c = $carte->contenu ?? [];
-        $t = __('public.cartes.carte');
-        $img = imagecreatetruecolor(self::LARGEUR, self::HAUTEUR);
-        imageantialias($img, true);
-        $couleur = fn (array $rgb) => imagecolorallocate($img, ...$rgb);
-        $blanc = $couleur([255, 255, 255]);
-        imagefilledrectangle($img, 0, 0, self::LARGEUR, self::HAUTEUR, $blanc);
-
-        // Bandeau : couleur selon le type (vert : commerçant, vert foncé : actionnaire, encre : personnel).
-        $fond = $couleur(match ($carte->type) {
-            TypeCarte::Commercant => self::VERT,
-            TypeCarte::Actionnaire => self::VERT_FONCE,
-            TypeCarte::Personnel => self::ENCRE,
-        });
-        imagefilledrectangle($img, 0, 0, self::LARGEUR, 132, $fond);
-        // Logo : « R » sur carré blanc arrondi, puis la marque et le type de carte.
-        $this->rectangleArrondi($img, 36, 30, 108, 102, 16, $blanc);
-        $this->texte($img, 'R', 50, 52, 96, $fond, true);
-        $this->texte($img, 'Raaga', 30, 128, 80, $blanc, true);
-        $this->texte($img, mb_strtoupper(__('public.cartes.carte.carte_acces')), 15, 130, 108, $blanc);
-        $type = mb_strtoupper($carte->type->label());
-        $this->texte($img, $type, 26, self::LARGEUR - 40 - $this->largeurTexte($type, 26, true), 80, $blanc, true);
-
-        // Liseré aux couleurs nationales, en pied.
-        imagefilledrectangle($img, 0, self::HAUTEUR - 14, (int) (self::LARGEUR / 2), self::HAUTEUR, $couleur(self::ROUGE));
-        imagefilledrectangle($img, (int) (self::LARGEUR / 2), self::HAUTEUR - 14, self::LARGEUR, self::HAUTEUR, $couleur(self::VERT));
-        imagefilledrectangle($img, (int) (self::LARGEUR / 2) - 20, self::HAUTEUR - 14, (int) (self::LARGEUR / 2) + 20, self::HAUTEUR, $couleur(self::JAUNE));
-
-        // Photo (selfie validé) ou initiale.
-        $this->photo($img, $c, 36, 164, 210, 262);
-
-        // Informations.
-        $encre = $couleur(self::ENCRE);
-        $gris = $couleur(self::GRIS);
-        $x = 276;
-        $y = 196;
-        // Personne morale : raison sociale en titre, puis le représentant légal (nom et photo).
-        foreach ($this->couper((string) ($c['raison_sociale'] ?? $c['nom'] ?? ''), 30, 450, true) as $ligne) {
-            $this->texte($img, $ligne, 30, $x, $y, $encre, true);
-            $y += 42;
+        if (! $chemin || ! is_file($chemin)) {
+            return null;
         }
-        if (! empty($c['raison_sociale'])) {
-            foreach ($this->couper($t['representant'].' '.($c['nom'] ?? ''), 19, 450) as $ligne) {
-                $this->texte($img, $ligne, 19, $x, $y, $encre);
-                $y += 30;
-            }
-        }
-        $y += 8;
-        $lignes = [];
-        $emplacements = $c['emplacements'] ?? [];
-        foreach (array_slice($emplacements, 0, 3) as $e) {
-            $lignes[] = [$e['code'].' · '.$e['site'], true];
-        }
-        if (count($emplacements) > 3) {
-            $lignes[] = [__('public.cartes.carte.autres_emplacements', ['n' => count($emplacements) - 3]), false];
-        }
-        if (! empty($c['numero_actionnaire'])) {
-            $lignes[] = [$t['numero_actionnaire'].' '.$c['numero_actionnaire'], true];
-        }
-        if (! empty($c['fonction'])) {
-            $lignes[] = [$c['fonction'], true];
-        }
-        foreach ($lignes as [$ligne, $gras]) {
-            foreach ($this->couper($ligne, 19, 450, $gras) as $morceau) {
-                $this->texte($img, $morceau, 19, $x, $y, $encre, $gras);
-                $y += 30;
-            }
-        }
-        $this->texte($img, $t['numero'].' '.$carte->numero, 19, $x, 540, $gris);
-        if ($carte->valide_jusqu_au) {
-            $this->texte($img, $t['valide_jusqu_au'].' '.$carte->valide_jusqu_au->format('d/m/Y'), 19, $x, 572, $encre, true);
-        }
+        $contenu = (string) file_get_contents($chemin);
+        $type ??= str_ends_with(strtolower($chemin), '.svg') ? 'image/svg+xml' : (new \finfo(FILEINFO_MIME_TYPE))->buffer($contenu);
 
-        // QR code (adresse de vérification seule).
-        $this->qr($img, $this->matrice($carte), 746, 330, 230);
-
-        return $img;
-    }
-
-    private function qr(GdImage $img, ByteMatrix $m, int $x0, int $y0, int $cote): void
-    {
-        $n = $m->getWidth();
-        $module = intdiv($cote, $n + 2);
-        $marge = intdiv($cote - $module * $n, 2);
-        $noir = imagecolorallocate($img, 0, 0, 0);
-        imagefilledrectangle($img, $x0, $y0 - $cote / 2, $x0 + $cote, (int) ($y0 + $cote / 2), imagecolorallocate($img, 255, 255, 255));
-        $haut = (int) ($y0 - $cote / 2);
-        for ($y = 0; $y < $n; $y++) {
-            for ($x = 0; $x < $n; $x++) {
-                if ($m->get($x, $y) === 1) {
-                    imagefilledrectangle($img, $x0 + $marge + $x * $module, $haut + $marge + $y * $module,
-                        $x0 + $marge + ($x + 1) * $module - 1, $haut + $marge + ($y + 1) * $module - 1, $noir);
-                }
-            }
-        }
-    }
-
-    /** @param array<string, mixed> $c */
-    private function photo(GdImage $img, array $c, int $x, int $y, int $l, int $h): void
-    {
-        $source = null;
-        if (! empty($c['photo'])) {
-            $chemin = KycDocument::query()->whereKey($c['photo'])->value('chemin_fichier');
-            $donnees = $chemin ? Storage::disk(VerificationIdentite::DISQUE)->get($chemin) : null;
-            $source = $donnees ? @imagecreatefromstring($donnees) : null;
-        }
-        if ($source instanceof GdImage) {
-            // Recadrage « cover » au format de la photo.
-            [$sl, $sh] = [imagesx($source), imagesy($source)];
-            $echelle = max($l / $sl, $h / $sh);
-            $cl = (int) round($l / $echelle);
-            $ch = (int) round($h / $echelle);
-            imagecopyresampled($img, $source, $x, $y, (int) (($sl - $cl) / 2), (int) (($sh - $ch) / 2), $l, $h, $cl, $ch);
-
-            return;
-        }
-        imagefilledrectangle($img, $x, $y, $x + $l, $y + $h, imagecolorallocate($img, 232, 240, 235));
-        $initiale = mb_strtoupper(mb_substr((string) ($c['nom'] ?? ''), 0, 1));
-        $this->texte($img, $initiale, 72, $x + (int) (($l - $this->largeurTexte($initiale, 72, true)) / 2), $y + (int) ($h / 2) + 36,
-            imagecolorallocate($img, ...self::GRIS), true);
-    }
-
-    private function rectangleArrondi(GdImage $img, int $x1, int $y1, int $x2, int $y2, int $r, int $couleur): void
-    {
-        imagefilledrectangle($img, $x1 + $r, $y1, $x2 - $r, $y2, $couleur);
-        imagefilledrectangle($img, $x1, $y1 + $r, $x2, $y2 - $r, $couleur);
-        foreach ([[$x1 + $r, $y1 + $r], [$x2 - $r, $y1 + $r], [$x1 + $r, $y2 - $r], [$x2 - $r, $y2 - $r]] as [$cx, $cy]) {
-            imagefilledellipse($img, $cx, $cy, 2 * $r, 2 * $r, $couleur);
-        }
-    }
-
-    private function police(bool $gras): string
-    {
-        return base_path('vendor/dompdf/dompdf/lib/fonts/DejaVuSans'.($gras ? '-Bold' : '').'.ttf');
-    }
-
-    private function texte(GdImage $img, string $texte, int $taille, int $x, int $y, int $couleur, bool $gras = false): void
-    {
-        if (function_exists('imagettftext') && is_file($this->police($gras))) {
-            imagettftext($img, $taille * 0.75, 0, $x, $y, $couleur, $this->police($gras), $texte);
-
-            return;
-        }
-        imagestring($img, 5, $x, $y - 15, $this->ascii($texte), $couleur);
-    }
-
-    private function largeurTexte(string $texte, int $taille, bool $gras = false): int
-    {
-        if (! function_exists('imagettfbbox') || ! is_file($this->police($gras))) {
-            return strlen($texte) * 9;
-        }
-        $b = imagettfbbox($taille * 0.75, 0, $this->police($gras), $texte);
-
-        return (int) abs($b[2] - $b[0]);
-    }
-
-    /** @return list<string> lignes d'au plus $largeur pixels (2 lignes au maximum, la dernière abrégée). */
-    private function couper(string $texte, int $taille, int $largeur, bool $gras = false): array
-    {
-        $lignes = [''];
-        foreach (preg_split('/\s+/u', trim($texte)) ?: [] as $mot) {
-            $essai = trim(end($lignes).' '.$mot);
-            if ($this->largeurTexte($essai, $taille, $gras) <= $largeur || end($lignes) === '') {
-                $lignes[array_key_last($lignes)] = $essai;
-            } else {
-                $lignes[] = $mot;
-            }
-        }
-        $lignes = array_slice($lignes, 0, 2);
-        while ($this->largeurTexte($lignes[array_key_last($lignes)], $taille, $gras) > $largeur && mb_strlen($lignes[array_key_last($lignes)]) > 2) {
-            $lignes[array_key_last($lignes)] = mb_substr($lignes[array_key_last($lignes)], 0, -2).'…';
-        }
-
-        return $lignes;
-    }
-
-    private function ascii(string $texte): string
-    {
-        return (string) iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texte);
+        return 'data:'.$type.';base64,'.base64_encode($contenu);
     }
 }

@@ -120,7 +120,13 @@ class SitesTest extends TestCase
         // L'ADMIN (support) n'a pas accès au référencement.
         $this->en(User::factory()->role(Role::Admin)->create())->get(route('admin.sites'))->assertForbidden();
 
-        foreach ([$this->regulateur, User::factory()->role(Role::SuperAdmin)->create()] as $profil) {
+        // Le SUPER_ADMIN n'a plus accès aux sites ni aux boutiques depuis le 30/10/2026.
+        $superAdmin = User::factory()->role(Role::SuperAdmin)->create();
+        foreach ([route('admin.sites'), route('admin.sites.show', $site), route('admin.referencement.boutiques', ['site' => $site->id])] as $url) {
+            $this->en($superAdmin)->get($url)->assertForbidden();
+        }
+
+        foreach ([$this->regulateur] as $profil) {
             $this->en($profil)->get(route('admin.sites'))->assertOk();
             $this->en($profil)->get(route('admin.sites.show', $site))->assertOk();
             $this->en($profil)->get(route('admin.referencement.boutiques', ['site' => $site->id]))->assertOk()->assertSee('RAA-R1-A-001')->assertDontSee('Ajouter des boutiques');

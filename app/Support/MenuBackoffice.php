@@ -32,7 +32,7 @@ final class MenuBackoffice
     /** Icône de chaque menu dépliant (barre latérale réduite en icônes). */
     public const ICONES_MENUS = ['referentiels' => 'referentiels', 'modalites' => 'dividendes', 'imports' => 'importer', 'a_valider' => 'taches',
         'tarification' => 'dividendes', 'location' => 'boutiques', 'invest' => 'tranches', 'site_public' => 'plateforme', 'soumissions' => 'taches',
-        'gestion_boutiques' => 'boutiques', 'controle' => 'audit', 'actions_a' => 'institutions'];
+        'gestion_boutiques' => 'boutiques', 'controle' => 'audit', 'actions_a' => 'institutions', 'parametres_generaux' => 'parametres'];
 
     /**
      * Pages d'attente (« Page en préparation », SectionController::show) : entrées retirées des menus de tous les profils
@@ -92,7 +92,7 @@ final class MenuBackoffice
             'referencement' => [
                 ['cle' => 'sites', 'route' => 'admin.sites', 'droit' => Droit::SitesVoir, 'icone' => 'lieu', 'etape' => 0,
                     'exclure' => ['admin.sites.types', 'admin.sites.types.*', 'admin.sites.excel.*', 'admin.sites.boutiques-excel.*']],
-                ['cle' => 'boutiques_referentiel', 'route' => 'admin.referencement.boutiques', 'droit' => Droit::SitesVoir, 'icone' => 'boutiques', 'etape' => 0],
+                ['cle' => 'boutiques_referentiel', 'route' => 'admin.referencement.boutiques', 'droit' => Droit::BoutiquesReferentielVoir, 'icone' => 'boutiques', 'etape' => 0],
                 ['cle' => 'capacites', 'route' => 'admin.referencement.capacites', 'droit' => Droit::CapacitesVoir, 'icone' => 'simulations', 'etape' => 0],
                 ['cle' => 'grille', 'route' => 'admin.boutiques.grilles', 'droit' => Droit::GrilleVoir, 'icone' => 'dividendes', 'etape' => 0],
                 // Unités de loyer (M2, UNITE, REDEVANCE) : près de la grille tarifaire, pour le RÉGULATEUR (SUPER_ADMIN en lecture).
@@ -258,6 +258,33 @@ final class MenuBackoffice
     }
 
     /**
+     * Menu du SUPER_ADMIN (30/10/2026) : « Paramètres d'administration » réunit, en tête du groupe
+     * Administration, les éléments créés par les seeders de référentiel qu'il met à jour directement (délais et durées,
+     * moyens de paiement, types de boutiques, unités, niveaux, zones). Les paramètres de la plateforme restent à part.
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    public static function superAdmin(): array
+    {
+        $dans = fn (string $menu, string $cle) => [...self::entree($cle), 'sous_menu' => $menu];
+
+        return [
+            'pilotage' => [self::entree('tableau')],
+            'support' => [self::entree('assistance'), self::entree('demandes'), self::entree('contenus')],
+            'actions_a' => [self::entree('institutions')],
+            'administration' => [
+                ...array_map(fn (string $cle) => $dans('parametres_generaux', $cle), ['delais', 'moyens', 'types', 'unites', 'niveaux', 'zones']),
+                self::entree('utilisateurs'),
+                self::entree('plateforme'),
+                self::entree('approbations'),
+                self::entree('securite'),
+                self::entree('connexions'),
+                self::entree('audit'),
+            ],
+        ];
+    }
+
+    /**
      * Entrées visibles pour l'utilisateur, groupées ; les groupes vides sont retirés.
      *
      * @return array<string, list<array{cle: string, route: string, droit: Droit, icone: string, etape: int}>>
@@ -270,6 +297,7 @@ final class MenuBackoffice
             match (true) {
                 $user->hasRole(Role::Regulateur) => self::regulateur(),
                 $user->hasRole(Role::Validateur) => self::validateur(),
+                $user->hasRole(Role::SuperAdmin) => self::superAdmin(),
                 default => self::definition(),
             },
         ));

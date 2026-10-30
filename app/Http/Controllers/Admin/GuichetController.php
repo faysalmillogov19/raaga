@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\CarteImprimee;
 use App\Services\Audit\Journal;
 use App\Services\Cartes\RenduCarte;
+use App\Services\Cartes\ReglagesCarteManquants;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -69,10 +70,16 @@ class GuichetController extends Controller
         if (! $carte->courante || ! $carte->estValide()) {
             return back()->withErrors(['piece_verifiee' => __('admin.guichet.erreurs.non_imprimable')]);
         }
+        try {
+            $pdf = $rendu->pdf($carte);
+        } catch (ReglagesCarteManquants $e) {
+            // Génération impossible : rien n'est tracé ni notifié.
+            return back()->withErrors(['piece_verifiee' => $e->getMessage()]);
+        }
         $this->journal->ecrire($request->user(), 'carte.imprimee', 'Carte', $carte->id, null, ['numero' => $carte->numero, 'version' => $carte->version]);
         $carte->user->notify(new CarteImprimee($carte));
 
-        return response($rendu->pdf($carte), 200, [
+        return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="'.$rendu->nomFichier($carte, 'pdf').'"',
             'Cache-Control' => 'private, no-store',

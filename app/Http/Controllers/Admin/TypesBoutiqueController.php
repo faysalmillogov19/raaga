@@ -156,6 +156,41 @@ class TypesBoutiqueController extends Controller
         }, $type->par_defaut || $citoyenChange ? 'admin.types.messages.demande' : 'admin.types.messages.modifie'), 'type', $type, route('admin.sites.types.show', $type), 'modifier-type');
     }
 
+    /**
+     * SUPER_ADMIN : type créé par le seeder (« par défaut ») mis à jour directement, sans VALIDATEUR : libellé,
+     * description, description pour le citoyen, ordre, « réservable » et activation. Nouvelle version et journal. Ni
+     * création ni suppression, code jamais modifié ; refusé si une demande attend la décision du VALIDATEUR.
+     */
+    public function miseAJourDirecte(Request $request, TypeBoutique $type): RedirectResponse
+    {
+        Gate::authorize(Droit::InstallationMettreAJour->value);
+        $donnees = $request->validate([
+            ...$this->reglesLibres($type),
+            'description_citoyen' => ['nullable', 'string', 'max:300'],
+            'attribuable' => ['nullable', 'boolean'],
+            'actif' => ['nullable', 'boolean'],
+        ], [], __('admin.types.attributs'));
+        $donnees['attribuable'] = $request->boolean('attribuable');
+        $donnees['actif'] = $request->boolean('actif');
+
+        return $this->executer($type, function () use ($request, $type, $donnees) {
+            if (! $type->par_defaut) {
+                throw new RegleGestionException(__('admin.parametrage.regles.direct_non_defaut'));
+            }
+            if ($type->statut === StatutTypeBoutique::AValider || $type->aModificationEnAttente() || $type->attribuable_demande !== null) {
+                throw new RegleGestionException(__('admin.parametrage.regles.direct_en_attente'));
+            }
+            $avant = $type->only(array_keys($donnees));
+            $type->forceFill($donnees);
+            if (! $type->isDirty()) {
+                return;
+            }
+            $type->save();
+            $type->creerVersion($request->user(), __('admin.parametrage.motifs.mise_a_jour_directe'));
+            $this->journal->ecrire($request->user(), 'type_boutique.mise_a_jour_directe', 'TypeBoutique', $type->id, $avant, $type->only(array_keys($donnees)));
+        }, 'admin.parametrage.messages.mis_a_jour');
+    }
+
     /** Demande de changement d'« réservable » : effective après validation. */
     public function demanderAttribuable(Request $request, TypeBoutique $type): RedirectResponse
     {

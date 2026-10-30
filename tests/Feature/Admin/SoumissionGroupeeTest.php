@@ -133,11 +133,12 @@ class SoumissionGroupeeTest extends TestCase
 
     public function test_super_admin_sans_case_ni_bouton(): void
     {
-        $this->en($this->superAdmin)->get(route('admin.sites'))->assertOk()
-            ->assertDontSee('name="elements[]"', false)->assertDontSee('Soumettre à validation')->assertDontSee('À soumettre (');
+        // Plus d'accès aux sites depuis le 30/10/2026.
+        $this->en($this->superAdmin)->get(route('admin.sites'))->assertForbidden();
         $this->en($this->superAdmin)->post(route('admin.soumission.soumettre'), ['elements' => [$this->cle('SAR')]])->assertForbidden();
         $this->en($this->superAdmin)->post(route('admin.phase.proposer'), ['presentation_actions' => 1, 'souscription_actions' => 0, 'motif' => 'Ouverture prochaine'])->assertForbidden();
-        $this->en($this->superAdmin)->get(route('admin.phase'))->assertOk()->assertDontSee('Proposer une décision');
+        // Démarches du site public : plus d'accès depuis le 25/10/2026 (RÉGULATEUR et VALIDATEUR seuls).
+        $this->en($this->superAdmin)->get(route('admin.phase'))->assertForbidden();
     }
 
     public function test_le_regulateur_propose_une_demarche(): void

@@ -16,6 +16,29 @@ class MatriceDroitsTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Interfaces de souscription et d'investissement (tranches, paramètres d'investissement, manifestations d'intérêt,
+     * dividendes, simulations, souscriptions, registres) : RÉGULATEUR et VALIDATEUR seuls. Restent ailleurs, par décision :
+     * la souscription au guichet (AGENT DE GUICHET), le rapprochement des paiements (CONTRÔLEUR DES PAIEMENTS) et la
+     * gestion des institutions (actions A).
+     */
+    public function test_seuls_le_regulateur_et_le_validateur_accedent_a_la_souscription_et_a_l_investissement(): void
+    {
+        $reserves = [Droit::TranchesVoir, Droit::TranchesSaisir, Droit::TranchesConfirmer, Droit::TranchesPiloter, Droit::InteretsVoir,
+            Droit::DividendesVoir, Droit::DividendesSaisir, Droit::DividendesConfirmer, Droit::DividendesPayer, Droit::SimulationsVoir,
+            Droit::SimulationsLancer, Droit::AllocationExecuter, Droit::SouscriptionsVoir, Droit::RegistreVoir, Droit::RegistreExporter,
+            Droit::RegistreAVoir, Droit::RegistreAExporter];
+
+        foreach (Role::cases() as $role) {
+            if (in_array($role, [Role::Regulateur, Role::Validateur], true)) {
+                continue;
+            }
+            foreach ($reserves as $droit) {
+                $this->assertNotContains($droit, Droit::pour($role), "{$role->value} : {$droit->value}");
+            }
+        }
+    }
+
     public function test_quatre_yeux_aucun_profil_ne_cumule_saisie_et_confirmation(): void
     {
         foreach (Role::cases() as $role) {
@@ -81,8 +104,17 @@ class MatriceDroitsTest extends TestCase
 
         foreach ([...Droit::support(), Droit::TextesLegauxPublier, Droit::ApprobationsTraiter, Droit::SecuriteGerer,
             Droit::UtilisateursGerer, Droit::ConnexionsVoir, Droit::AuditVoir,
-            Droit::ParametresVoir, Droit::TranchesVoir, Droit::DividendesVoir, Droit::SimulationsVoir, Droit::ReferentielsVoir] as $droit) {
+            Droit::ReferentielsVoir] as $droit) {
             $this->assertTrue($superAdmin->can($droit->value), $droit->value);
+        }
+
+        // Plus aucun accès aux interfaces de souscription et d'investissement (25/10/2026), sauf la mise à jour directe
+        // des entités créées par les seeders de référentiel (délais et moyens de paiement par défaut), qu'il est seul à avoir.
+        foreach ([Droit::TranchesVoir, Droit::DividendesVoir, Droit::SimulationsVoir, Droit::RegistreAVoir, Droit::InteretsVoir, Droit::PhaseVoir] as $droit) {
+            $this->assertFalse($superAdmin->can($droit->value), $droit->value);
+        }
+        foreach (Role::cases() as $role) {
+            $this->assertSame($role === Role::SuperAdmin, in_array(Droit::InstallationMettreAJour, Droit::pour($role), true), $role->value);
         }
 
         // Plus de lecture des opérations (KYC, alertes, souscriptions, registre) ni des observations.
@@ -96,9 +128,9 @@ class MatriceDroitsTest extends TestCase
     {
         $admin = User::factory()->role(Role::Admin)->create();
 
-        // Support, plus la liste des manifestations d'intérêt RAAGA Invest et les vérifications d'identité (que le SUPER_ADMIN n'a pas).
+        // Support, plus les vérifications d'identité (que le SUPER_ADMIN n'a pas) ; plus de manifestations d'intérêt (25/10/2026).
         foreach (Droit::cases() as $droit) {
-            $this->assertSame(in_array($droit, [...Droit::support(), Droit::InteretsVoir, Droit::KycVoir, Droit::KycVoirPieces, Droit::KycTraiter, Droit::CartesVerifier, Droit::CartesGerer], true),
+            $this->assertSame(in_array($droit, [...Droit::support(), Droit::KycVoir, Droit::KycVoirPieces, Droit::KycTraiter, Droit::CartesVerifier, Droit::CartesGerer], true),
                 $admin->can($droit->value), $droit->value);
         }
         $this->assertFalse(User::factory()->role(Role::SuperAdmin)->create()->can(Droit::InteretsVoir->value));

@@ -153,8 +153,9 @@ class TranchesWorkflowTest extends TestCase
         $tranche = $this->trancheSoumise();
         $sa = $this->superAdmin;
 
-        $this->en($sa)->get(route('admin.tranches'))->assertOk();
-        $this->en($sa)->get(route('admin.tranches.show', $tranche))->assertOk();
+        // Plus de lecture depuis le 25/10/2026 : tranches réservées au RÉGULATEUR et au VALIDATEUR.
+        $this->en($sa)->get(route('admin.tranches'))->assertForbidden();
+        $this->en($sa)->get(route('admin.tranches.show', $tranche))->assertForbidden();
 
         $this->en($sa)->get(route('admin.tranches.create'))->assertForbidden();
         $this->en($sa)->post(route('admin.tranches.store'), $this->formulaire())->assertForbidden();

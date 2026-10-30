@@ -58,8 +58,9 @@
     @endif
 
     <main id="contenu" @class(['flex-1', 'nuit-page' => $nuit && $sombre]) tabindex="-1">
-        {{-- Page sans fil d'Ariane (espace, connexion…) : boutons Retour et Suivant en haut du contenu ; jamais sur l'accueil. --}}
-        @unless (\App\Support\NavigationHistorique::placee() || request()->routeIs('accueil'))
+        {{-- Page sans fil d'Ariane (espace…) : boutons Retour et Suivant en haut du contenu ; jamais sur l'accueil ni sur les
+             pages d'authentification (connexion, inscription), depuis le 30/10/2026. --}}
+        @unless (\App\Support\NavigationHistorique::placee() || request()->routeIs('accueil', 'connexion', 'connexion.*', 'inscription'))
             <div class="conteneur pt-4"><x-navigation-historique :parent="route('accueil')" /></div>
         @endunless
         <x-public.encadre-demarche />

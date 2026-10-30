@@ -37,7 +37,8 @@ class MenuReferentielsTest extends TestCase
 
     public static function profils(): array
     {
-        return ['SUPER_ADMIN' => [Role::SuperAdmin], 'GESTIONNAIRE_SITES' => [Role::GestionnaireSites]];
+        // Le SUPER_ADMIN a les mêmes écrans dans « Paramètres d’administration » (30/10/2026).
+        return ['GESTIONNAIRE_SITES' => [Role::GestionnaireSites]];
     }
 
     #[DataProvider('profils')]
@@ -66,10 +67,11 @@ class MenuReferentielsTest extends TestCase
         $html = $this->get(route('admin.tableau'))->assertOk()->getContent();
         $this->assertLessThan($position($html, 'href="'.route('admin.sites').'"'), $position($html, 'aria-controls="sous-menu-referentiels"'));
 
-        // SUPER_ADMIN : à sa place, après les imports.
+        // SUPER_ADMIN (30/10/2026) : pas de menu « Référentiels », ses écrans sont dans « Paramètres d’administration ».
         $this->connecterBackoffice(Role::SuperAdmin);
         $html = $this->get(route('admin.tableau'))->assertOk()->getContent();
-        $this->assertGreaterThan($position($html, 'href="'.route('admin.referencement.imports.entite', 'boutiques').'"'), $position($html, 'aria-controls="sous-menu-referentiels"'));
+        $this->assertFalse($position($html, 'aria-controls="sous-menu-referentiels"'));
+        $this->assertNotFalse($position($html, 'aria-controls="sous-menu-parametres_generaux"'));
     }
 
     public function test_entree_absente_sans_aucun_droit(): void

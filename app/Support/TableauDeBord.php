@@ -43,7 +43,7 @@ final class TableauDeBord
             // Financier : cautions des candidatures en attente de paiement (virements et espèces à rapprocher).
             'cautions' => $user->can(Droit::BoutiquesVoir->value)
                 ? fn () => [ReservationBoutique::query()->where('statut', StatutReservationBoutique::PreReservee)->count(), [$k['cautions_aide'], 'avertissement'], route('admin.boutiques')] : null,
-            'boutiques' => $user->can(Droit::SitesVoir->value)
+            'boutiques' => $user->can(Droit::BoutiquesReferentielVoir->value)
                 ? fn () => [Boutique::query()->where('statut', '!=', StatutBoutique::Retiree)->count(), [trans_choice('admin.tableau.cartes.sites_n', $s = Site::query()->count(), ['n' => $s]), 'ok'], route('admin.referencement.boutiques')] : null,
             'sites' => $user->can(Droit::SitesGerer->value)
                 ? fn () => [Site::query()->count(), [trans_choice('admin.tableau.cartes.sites_soumis', $s = Site::query()->where('statut', StatutSite::Soumis)->count(), ['n' => $s]), 'info'], route('admin.sites')] : null,
