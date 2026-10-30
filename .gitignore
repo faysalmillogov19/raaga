@@ -37,3 +37,9 @@ Thumbs.db
 
 # Captures d'écran (contrôles visuels) : gardées en local, jamais dans le dépôt.
 /docs/captures/
+
+# Documents de travail (compte rendu, présentation, maquette de la carte) : gardés en local, jamais dans le dépôt.
+/docs/Raaga - Fonctionnement de la plateforme.docx
+/docs/presentation/
+/maquette-carte-recto-verso.html
+/maquette-carte-recto-verso.png
