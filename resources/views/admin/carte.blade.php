@@ -1,5 +1,6 @@
 {{--
-    « Ma carte » du personnel : carte PERSONNEL émise par le SUPER_ADMIN (ou message tant qu'elle n'est pas émise), puis
+    « Ma carte » du personnel : carte PERSONNEL émise par le SUPER_ADMIN (ou message tant qu'elle n'est pas émise), recto
+    et verso du gabarit des cartes générées (« en cours de préparation » si un réglage de la carte manque), puis
     la photo de la carte, déposée ici et validée par l'ADMIN avant de figurer sur la carte.
 --}}
 @php
@@ -15,10 +16,12 @@
             @if ($carte->statut !== \App\Enums\StatutCarte::Active)
                 <x-admin.message type="avertissement">{{ $carte->statut->label() }} : {{ $m['inactive'] }}</x-admin.message>
             @endif
-            @if ($qr)
-                <x-carte-actions :carte="$carte" :qr="$qr" />
+            @if ($faces === null)
+                <x-admin.message type="info" data-carte-preparation>{{ __('carte.preparation') }}</x-admin.message>
+            @elseif ($qr)
+                <x-carte-actions :carte="$carte" :qr="$qr" :faces="$faces" />
             @else
-                <x-carte-raaga :carte="$carte" />
+                <x-carte-identification :faces="$faces" />
             @endif
         @endif
     </div>

@@ -274,6 +274,13 @@ button.plan-case:focus-visible {
     margin-top: 4px;
 }
 
+/* Sous-menu hors de l'intertitre qui précède (« Paramètres de la plateforme ») : séparé par un trait. */
+.adm-sous-entree-separee {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--side-border);
+}
+
 .adm-sous-lien.adm-sous-lien-vide:not(.bo-lien-actif) {
     color: var(--side-muted);
     font-weight: 400;
@@ -546,122 +553,7 @@ html:has(body.adm) {
     min-width: 0;
 }
 
-/* Carte d'accès Raaga à l'écran : bandeau aux couleurs du type, photo, informations, QR code ; liseré national en pied. */
-.carte-raaga {
-    container-type: inline-size;
-    max-width: 560px;
-    border-radius: 16px;
-    overflow: hidden;
-    background: #fff;
-    color: #18201C;
-    box-shadow: 0 1px 2px rgba(16, 24, 20, .08), 0 8px 24px rgba(16, 24, 20, .10);
-    border: 1px solid #DCE5DF;
-    position: relative;
-}
-/* Liseré aux couleurs nationales (rouge, étoile jaune, vert), comme sur la carte imprimée. */
-.carte-raaga::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 6px;
-    background: linear-gradient(90deg, #CE1126 0 48%, #FCD116 48% 52%, #00843D 52% 100%);
-}
-.carte-raaga-entete {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    background: #00843D;
-    color: #fff;
-}
-.carte-raaga-actionnaire .carte-raaga-entete { background: #005C2B; }
-.carte-raaga-personnel .carte-raaga-entete { background: #18201C; }
-.carte-raaga-logo {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    background: #fff;
-    color: #00843D;
-    font-weight: 800;
-    font-size: 1.25rem;
-}
-.carte-raaga-personnel .carte-raaga-logo { color: #18201C; }
-.carte-raaga-marque {
-    font-weight: 800;
-    font-size: 1.2rem;
-}
-.carte-raaga-type {
-    margin-left: auto;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    font-size: .85rem;
-}
-.carte-raaga-corps {
-    display: grid;
-    grid-template-columns: 84px minmax(0, 1fr);
-    gap: 14px;
-    padding: 16px 16px 22px;
-}
-.carte-raaga-photo {
-    width: 84px;
-    height: 105px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #E8F0EB;
-    color: #5A6672;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    font-weight: 700;
-}
-.carte-raaga-photo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.carte-raaga-infos {
-    font-size: .92rem;
-    line-height: 1.45;
-}
-.carte-raaga-infos p + p,
-.carte-raaga-infos ul + p { margin-top: 2px; }
-.carte-raaga-nom {
-    font-size: 1.15rem;
-    font-weight: 700;
-    line-height: 1.25;
-    margin-bottom: 6px;
-}
-.carte-raaga-representant {
-    margin: -2px 0 6px;
-}
-.carte-raaga-emplacements {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 6px;
-}
-.carte-raaga-numero { color: #5A6672; }
-.carte-raaga-qr {
-    grid-column: 1 / -1;
-    justify-self: center;
-    width: 168px;
-}
-.carte-raaga-qr svg {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-@container (min-width: 500px) {
-    .carte-raaga-corps { grid-template-columns: 96px minmax(0, 1fr) 132px; }
-    .carte-raaga-photo { width: 96px; height: 120px; }
-    .carte-raaga-qr { grid-column: auto; width: 132px; align-self: center; }
-}
+/* Carte à l'écran : boutons sous la carte (gabarit resources/views/cartes/_faces, styles dans carte-raaga.css). */
 .carte-raaga-actions {
     display: flex;
     flex-wrap: wrap;

@@ -150,7 +150,8 @@ class CartesEmissionTest extends TestCase
         $this->assertSame(StatutCarte::Active, $carte->statut);
         $this->assertSame(['nom' => 'OUEDRAOGO', 'prenoms' => 'Awa'], array_intersect_key($citoyen->fresh()->identite_validee, ['nom' => 1, 'prenoms' => 1]));
         Notification::assertSentTo($citoyen, CarteEmise::class);
-        $this->actingAs($citoyen)->get(route('espace.carte'))->assertOk()->assertSee($carte->numero)->assertDontSee('En attente de vérification');
+        // Réglages de la carte non renseignés ici : la carte émise est annoncée « en cours de préparation » (30/10/2026).
+        $this->actingAs($citoyen)->get(route('espace.carte'))->assertOk()->assertSee('data-carte-preparation', false)->assertDontSee('En attente de vérification');
     }
 
     public function test_identite_douteuse_pas_de_carte_commercant_revoquee_actionnaire_suspendue_puis_regularisee(): void

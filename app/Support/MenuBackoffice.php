@@ -272,10 +272,13 @@ final class MenuBackoffice
             'pilotage' => [self::entree('tableau')],
             'support' => [self::entree('assistance'), self::entree('demandes'), self::entree('contenus')],
             'actions_a' => [self::entree('institutions')],
+            // Menu « Paramètres » (30/10/2026), deux sous-entrées : « Paramètres d'administration » (intertitre des entités
+            // créées par les seeders, fonctionnement interne) et « Paramètres de la plateforme » (ce que voit le public).
             'administration' => [
-                ...array_map(fn (string $cle) => $dans('parametres_generaux', $cle), ['delais', 'moyens', 'types', 'unites', 'niveaux', 'zones']),
+                ...array_map(fn (string $cle) => [...$dans('parametres_generaux', $cle), 'intertitre' => 'parametres_administration'],
+                    ['delais', 'moyens', 'types', 'unites', 'niveaux', 'zones']),
+                [...$dans('parametres_generaux', 'plateforme'), 'separee' => true],
                 self::entree('utilisateurs'),
-                self::entree('plateforme'),
                 self::entree('approbations'),
                 self::entree('securite'),
                 self::entree('connexions'),

@@ -168,8 +168,11 @@ class MiseAJourDirecteTest extends TestCase
     {
         $this->connecterBackoffice(Role::SuperAdmin);
 
-        $this->get('/admin')->assertOk()->assertSee('Paramètres d’administration')
-            ->assertSeeInOrder(['Paramètres d’administration', 'Délais de paiement', 'Moyens de paiement', 'Types de boutiques', 'Unités', 'Niveaux', 'Zones', 'Utilisateurs back-office'])
+        // Menu « Paramètres » : intertitre « Paramètres d'administration » (six entrées), puis « Paramètres de la plateforme ».
+        $this->get('/admin')->assertOk()->assertSee('aria-controls="sous-menu-parametres_generaux"', false)
+            ->assertSee('data-intertitre="parametres_administration"', false)->assertSee('adm-sous-entree-separee', false)
+            ->assertSeeInOrder(['<span class="adm-libelle">Paramètres</span>', 'Paramètres d’administration', 'Délais de paiement', 'Moyens de paiement',
+                'Types de boutiques', 'Unités', 'Niveaux', 'Zones', 'Paramètres de la plateforme', 'Utilisateurs back-office'], false)
             ->assertDontSee('href="'.route('admin.sites').'"', false)->assertDontSee('href="'.route('admin.boutiques.grilles').'"', false)
             ->assertDontSee('href="'.route('admin.parametres').'"', false);
     }

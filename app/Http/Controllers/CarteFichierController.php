@@ -4,18 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Enums\TypeCarte;
 use App\Models\Carte;
-use App\Services\Cartes\RenduCarte;
 use App\Services\Cartes\ReglagesCarteManquants;
+use App\Services\Cartes\RenduCarte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Téléchargement de sa carte par le titulaire : PDF (une page par face, 85,6 × 54 mm) ou image PNG d'une face (recto
  * par défaut, ?face=verso), générés depuis l'état courant de la carte (le nom du fichier porte sa version). Réservé au
  * titulaire, pour une carte courante et active. Si un réglage de la carte manque, le titulaire revient sur sa carte avec
- * un message sans détail technique ; la cause est inscrite au journal de l'application.
+ * « Votre carte est en cours de préparation » ; si le rendu échoue pour une autre raison (Chrome indisponible…), avec
+ * « réessayez plus tard ou contactez l'assistance ». La cause est inscrite au journal de l'application.
  */
 class CarteFichierController extends Controller
 {
@@ -30,8 +32,11 @@ class CarteFichierController extends Controller
         } catch (ReglagesCarteManquants $e) {
             Log::warning('Carte non générée : réglages manquants.', ['carte' => $carte->numero, 'manquants' => $e->manquants]);
 
-            return redirect()->back(fallback: $carte->type === TypeCarte::Personnel ? route('admin.carte') : route('espace.carte', ['type' => strtolower($carte->type->value)]))
-                ->with('erreur', __('carte.indisponible'));
+            return $this->retour($carte, 'carte.preparation');
+        } catch (Throwable $e) {
+            Log::error('Carte non générée : échec du rendu.', ['carte' => $carte->numero, 'erreur' => $e->getMessage()]);
+
+            return $this->retour($carte, 'carte.indisponible');
         }
 
         return response($contenu, 200, [
@@ -40,5 +45,12 @@ class CarteFichierController extends Controller
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+    }
+
+    /** Retour sur la carte du titulaire, avec le message. */
+    private function retour(Carte $carte, string $message): RedirectResponse
+    {
+        return redirect()->back(fallback: $carte->type === TypeCarte::Personnel ? route('admin.carte') : route('espace.carte', ['type' => strtolower($carte->type->value)]))
+            ->with('erreur', __($message));
     }
 }

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Services\Paiement\OuverturePaiements;
 use App\Services\Securite\ComptesDemo;
 use App\Support\GardeFouBase;
+use App\Support\ImagesPlateforme;
 use Illuminate\Console\Command;
 
 /**
@@ -14,6 +15,8 @@ use Illuminate\Console\Command;
  *  - AVERTISSEMENT (code 0) : aucun opérateur réel (« paiements fermés »), coordonnées des comptes de destination
  *    manquantes (RAAGA_SEQUESTRE_*, RAAGA_COMPTE_LOCATION_*). Les paiements restent alors fermés (voir OuverturePaiements).
  *    Clé des portiques (RAAGA_CLE_PORTIQUES) vide : l'interface de vérification des cartes pour les portiques refuse tout.
+ *    Armoiries ou logo de la carte pris dans les fichiers fournis avec le code (rien de déposé) et de moins de 600 px de
+ *    haut : flous à l'impression de la carte (30/10/2026).
  * --strict : les avertissements deviennent bloquants (avant l'ouverture d'une campagne).
  * Contrôle aussi que les commandes du poste de développement (raaga:inventaire) refusent de tourner ici : BLOQUANT sinon.
  */
@@ -24,6 +27,12 @@ class VerifierProduction extends Command
     protected $description = 'Vérifie la configuration de production : bloquants (démo, paiement simulé) et avertissements (opérateur, comptes de destination, clé des portiques).';
 
     /** Variables des comptes de destination : clé de configuration => nom de la variable d'environnement. */
+    /** Hauteur minimale (px) des armoiries et du logo imprimés sur la carte. */
+    public const HAUTEUR_IMPRESSION = 600;
+
+    /** Images de l'onglet « Identité » imprimées sur la carte : champ => libellé de l'avertissement. */
+    public const IMAGES_CARTE = ['armoiries' => 'armoiries', 'logoHorizontal' => 'logo'];
+
     public const VARIABLES = [
         'raaga.compte_sequestre.titulaire' => 'RAAGA_SEQUESTRE_TITULAIRE',
         'raaga.compte_sequestre.banque' => 'RAAGA_SEQUESTRE_BANQUE',
@@ -64,6 +73,15 @@ class VerifierProduction extends Command
 
         if (blank(config('raaga.cartes.cle_portiques'))) {
             $avertissements[] = 'Variable manquante : RAAGA_CLE_PORTIQUES (interface de vérification des cartes pour les portiques fermée : toute demande est refusée).';
+        }
+
+        // Carte d'identification : armoiries et logo par défaut trop petits pour l'impression (un fichier déposé n'est pas contrôlé ici).
+        foreach (self::IMAGES_CARTE as $champ => $libelle) {
+            $chemin = ImagesPlateforme::deposee($champ) ? null : ImagesPlateforme::chemin($champ);
+            $hauteur = $chemin && is_file($chemin) ? (getimagesize($chemin)[1] ?? 0) : null;
+            if ($hauteur !== null && $hauteur < self::HAUTEUR_IMPRESSION) {
+                $avertissements[] = ucfirst($libelle).' par défaut en basse résolution ('.$hauteur.' px de haut, '.self::HAUTEUR_IMPRESSION.' attendus pour l’impression de la carte), déposer la version officielle dans « Paramètres de la plateforme », section Identité.';
+            }
         }
 
         foreach ($bloquants as $message) {

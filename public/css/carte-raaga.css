@@ -193,3 +193,9 @@
 }
 .cr-apercu-faces { display: flex; flex-wrap: wrap; gap: 8mm; }
 .cr-apercu-faces .cr-face { zoom: 1.5; }
+
+/* Carte à l'écran (« Ma carte » du titulaire, site public et back-office) : recto puis verso, à l'échelle de l'écran. */
+.cr-ecran { display: flex; flex-wrap: wrap; gap: 6mm; }
+.cr-ecran .cr-face { zoom: 1.5; box-shadow: 0 0.3mm 1.6mm rgba(30, 26, 20, .14); }
+@media (max-width: 639px) { .cr-ecran .cr-face { zoom: 1; } }
+@media (max-width: 359px) { .cr-ecran .cr-face { zoom: .88; } }

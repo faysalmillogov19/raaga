@@ -14,12 +14,14 @@ use App\Models\ReservationBoutique;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
 use App\Models\User;
+use App\Services\Plateforme\ParametresPlateforme;
 use Database\Seeders\ComptesDemoSeeder;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\ReferentielsSeeder;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\Boutiques;
@@ -93,8 +95,39 @@ class VerrousProductionTest extends TestCase
             ->expectsOutputToContain('Mise en production refusée : 3 point(s) bloquant(s).');
     }
 
+    /** Logo de l'onglet « Identité » déposé, de la hauteur donnée (le logo fourni avec le code ne fait que 96 px de haut). */
+    private function deposerLogo(int $hauteur): void
+    {
+        $image = imagecreatetruecolor($hauteur * 3, $hauteur);
+        ob_start();
+        imagepng($image);
+        Storage::disk('local')->put('plateforme/logoHorizontal-test.png', (string) ob_get_clean());
+        $parametres = app(ParametresPlateforme::class);
+        $parametres->enregistrer('identite', [...$parametres->section('identite'), 'logoHorizontal' => 'plateforme/logoHorizontal-test.png'], null);
+    }
+
+    public function test_armoiries_et_logo_par_defaut_en_basse_resolution_avertissement(): void
+    {
+        Storage::fake('local');
+        config(['raaga.demo' => false, ...self::COMPTES]);
+        $this->operateurReel();
+
+        // Rien de déposé : armoiries fournies (998 px de haut) acceptées, logo fourni (96 px) signalé.
+        $this->artisan('raaga:verifier-production')->assertSuccessful()
+            ->expectsOutputToContain('AVERTISSEMENT : Logo par défaut en basse résolution (96 px de haut, 600 attendus')
+            ->doesntExpectOutputToContain('Armoiries par défaut en basse résolution')
+            ->expectsOutputToContain('Aucun point bloquant (1 avertissement(s)');
+
+        // Logo déposé : plus d'avertissement, même trop petit (seuls les fichiers par défaut sont contrôlés ici).
+        $this->deposerLogo(120);
+        $this->operateurReel();
+        $this->artisan('raaga:verifier-production --strict')->assertSuccessful()->expectsOutputToContain('Prêt pour la production');
+    }
+
     public function test_avertissements_sans_blocage_puis_strict(): void
     {
+        Storage::fake('local');
+        $this->deposerLogo(600);
         // Aucun opérateur réel, comptes de destination et clé des portiques manquants : avertissements, code 0 (services fermés).
         config(['raaga.demo' => false, 'raaga.paiement.fournisseur' => null, 'raaga.compte_sequestre' => [], 'raaga.compte_location' => ['titulaire' => 'Raaga SA'],
             'raaga.cartes.cle_portiques' => '']);

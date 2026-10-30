@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StatutCarte;
 use App\Enums\TypeCarte;
 use App\Http\Controllers\Controller;
 use App\Services\Cartes\Cartes;
@@ -24,6 +25,7 @@ class MaCarteController extends Controller
         return view('admin.carte', [
             'carte' => $carte,
             'qr' => $carte?->estValide() ? $rendu->qrSvg($carte, __('public.cartes.carte.qr')) : null,
+            'faces' => $carte && $carte->statut !== StatutCarte::EnAttente ? $rendu->ecran($carte) : null,
             'photo' => PhotosPersonnel::derniere($request->user()),
         ]);
     }

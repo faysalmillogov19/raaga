@@ -1,14 +1,12 @@
-@props(['carte', 'qr'])
+@props(['carte', 'qr', 'faces'])
 
 {{--
-    Carte active du titulaire : la carte avec son QR code, l'affichage plein écran pour le scan (QR code en grand, sur
-    fond blanc), le téléchargement en PDF (format carte bancaire) et en image PNG.
+    Carte active du titulaire : le recto et le verso de la carte (gabarit des cartes générées), l'affichage plein écran
+    pour le scan (QR code en grand, sur fond blanc), le téléchargement en PDF (format carte bancaire) et en image PNG.
 --}}
 @php($a = __('public.cartes.actions'))
 <div x-data="{ ouvrir() { this.$refs.plein.showModal(); this.$refs.plein.requestFullscreen?.().catch(() => {}) }, fermer() { document.fullscreenElement && document.exitFullscreen(); this.$refs.plein.close() } }">
-    <x-carte-raaga :carte="$carte">
-        <x-slot:qr>{!! $qr !!}</x-slot:qr>
-    </x-carte-raaga>
+    <x-carte-identification :faces="$faces" />
 
     <div class="carte-raaga-actions">
         <button type="button" class="btn-primaire" @click="ouvrir()" data-plein-ecran>

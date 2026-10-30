@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Compte;
 
+use App\Enums\StatutCarte;
 use App\Enums\StatutKyc;
 use App\Enums\TypeCarte;
 use App\Http\Controllers\Controller;
@@ -27,6 +28,8 @@ class CarteController extends Controller
             'choisi' => $choisi,
             'carte' => $cartes[$choisi],
             'qr' => $cartes[$choisi]?->estValide() ? $rendu->qrSvg($cartes[$choisi], __('public.cartes.carte.qr')) : null,
+            // Recto et verso du gabarit de la carte, ou null tant qu'elle ne peut pas être rendue (« en cours de préparation »).
+            'faces' => $cartes[$choisi] && $cartes[$choisi]->statut !== StatutCarte::EnAttente ? $rendu->ecran($cartes[$choisi]) : null,
             'kycConforme' => $user->statut_kyc === StatutKyc::Valide,
         ]);
     }

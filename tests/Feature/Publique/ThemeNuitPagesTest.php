@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Tests\Support\ParametresInvestissementConfirmes;
+use Tests\Support\ReglagesCarteComplets;
 use Tests\TestCase;
 
 /**
@@ -32,7 +33,7 @@ use Tests\TestCase;
  */
 class ThemeNuitPagesTest extends TestCase
 {
-    use ParametresInvestissementConfirmes, RefreshDatabase;
+    use ParametresInvestissementConfirmes, RefreshDatabase, ReglagesCarteComplets;
 
     private function citoyen(StatutKyc $kyc = StatutKyc::Valide): User
     {
@@ -110,9 +111,10 @@ class ThemeNuitPagesTest extends TestCase
             'contenu' => ['nom' => 'Awa OUEDRAOGO', 'emplacements' => []]]);
         $carte->forceFill(['numero' => sprintf('RG-C-%06d', $carte->id)])->save();
 
-        // La carte Raaga garde son rendu : c'est un document.
+        // La carte Raaga garde son rendu (recto et verso du gabarit) : c'est un document.
+        $this->completerReglagesCarte();
         $this->actingAs($awa)->get(route('espace.carte', ['type' => 'commercant']))->assertOk()
-            ->assertSee('nuit-page', false)->assertSee('carte-raaga', false);
+            ->assertSee('nuit-page', false)->assertSee('data-carte-identification', false);
         $this->app['auth']->forgetGuards();
         $this->get(route('cartes.verifier', $carte->jeton))->assertOk()->assertSee('nuit-page', false)->assertSee('verif-carte-valide', false);
     }

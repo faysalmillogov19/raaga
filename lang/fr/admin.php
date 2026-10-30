@@ -227,7 +227,7 @@ return [
         'gestion_boutiques' => 'Boutiques',
         'controle' => 'Contrôle',
         'actions_a' => 'Actions A',
-        'parametres_generaux' => 'Paramètres d’administration',
+        'parametres_generaux' => 'Paramètres',
     ],
 
     // Intertitres des menus dépliants (rubriques de « À valider » du VALIDATEUR).
@@ -236,6 +236,7 @@ return [
         'finances' => 'Finances',
         'campagnes' => 'Campagnes & réservations',
         'contenus' => 'Contenus & identités',
+        'parametres_administration' => 'Paramètres d’administration',
     ],
 
     // Libellés propres au menu du VALIDATEUR.

@@ -57,7 +57,7 @@ class CartesRenduTest extends TestCase
         $page = $this->actingAs($this->titulaire)->get(route('espace.carte', ['type' => 'commercant']))->assertOk()
             ->assertSee('<svg', false)->assertSee('data-plein-ecran', false)->assertSee('Afficher en plein écran')
             ->assertSee(route('cartes.fichier', [$carte, 'pdf']), false)->assertSee(route('cartes.fichier', [$carte, 'png']), false)
-            ->assertSee('RAA-R1-A-045');
+            ->assertSee('data-carte-identification', false)->assertDontSee('RAA-R1-A-045');
         // Le jeton n'apparaît jamais en clair dans la page (seul le QR code le porte).
         $page->assertDontSee($carte->jeton);
 
@@ -111,7 +111,7 @@ class CartesRenduTest extends TestCase
         $carte = $this->carte(StatutCarte::Active, TypeCarte::Personnel, $admin);
         $carte->forceFill(['contenu' => ['nom' => 'Rasmata OUÉDRAOGO', 'fonction' => 'Administrateur']])->save();
 
-        $this->get(route('admin.carte'))->assertOk()->assertSee('Administrateur')->assertSee('data-plein-ecran', false)
+        $this->get(route('admin.carte'))->assertOk()->assertSee('Rasmata OUÉDRAOGO')->assertSee('data-plein-ecran', false)
             ->assertSee(route('cartes.fichier', [$carte, 'png']), false);
         $this->get(route('cartes.fichier', [$carte, 'png']))->assertOk()->assertHeader('Content-Type', 'image/png');
     }

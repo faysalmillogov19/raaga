@@ -12,8 +12,8 @@ use App\Models\User;
 use App\Services\Cartes\Cartes;
 use App\Services\Cartes\Code128;
 use App\Services\Cartes\Filigrane;
-use App\Services\Cartes\RenduCarte;
 use App\Services\Cartes\ReglagesCarteManquants;
+use App\Services\Cartes\RenduCarte;
 use App\Services\Plateforme\ParametresPlateforme;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -110,10 +110,14 @@ class CarteIdentificationRenduTest extends TestCase
         }
 
         // Impression au guichet : refusée avec le détail des réglages, rien n'est tracé.
-        // Titulaire : retour sur sa carte avec un message sans détail technique (ni page d'erreur, ni mention des réglages).
+        // Titulaire : retour sur sa carte avec « en cours de préparation » (ni page d'erreur, ni mention des réglages) ;
+        // sa page « Ma carte » le dit à la place de la carte, sans bouton de téléchargement.
         $this->actingAs($carte->user)->from(route('espace.carte', ['type' => 'commercant']))->get(route('cartes.fichier', [$carte, 'pdf']))
             ->assertRedirect(route('espace.carte', ['type' => 'commercant']))
-            ->assertSessionHas('erreur', 'Votre carte ne peut pas être téléchargée pour le moment. Réessayez plus tard ou contactez l’assistance.');
+            ->assertSessionHas('erreur', 'Votre carte est en cours de préparation. Elle sera disponible prochainement.');
+        $this->get(route('espace.carte', ['type' => 'commercant']))->assertOk()->assertSee('data-carte-preparation', false)
+            ->assertSee('Votre carte est en cours de préparation. Elle sera disponible prochainement.')
+            ->assertDontSee('data-carte-identification', false)->assertDontSee('data-telecharger', false)->assertDontSee('Cachet');
         $this->app['auth']->forgetGuards();
         $this->connecterBackoffice(Role::AgentGuichet);
         $this->from(route('admin.guichet.carte', $carte->jeton))->post(route('admin.guichet.imprimer', $carte->jeton), ['piece_verifiee' => '1'])
@@ -125,6 +129,48 @@ class CarteIdentificationRenduTest extends TestCase
         $this->completerReglagesCarte();
         $this->assertSame('Le Maire de l’Arrondissement N°1', app(RenduCarte::class)->donnees($carte)['qualite']);
         $this->assertNotNull($carte->fresh()->reglages_rendu);
+    }
+
+    public function test_autre_echec_du_rendu_message_technique_pour_le_titulaire(): void
+    {
+        $this->completerReglagesCarte();
+        $carte = $this->carte();
+        // Chrome introuvable : la génération échoue pour une autre raison qu'un réglage manquant.
+        config(['raaga.cartes.chrome' => 'C:/introuvable/chrome.exe']);
+
+        $this->actingAs($carte->user)->from(route('espace.carte', ['type' => 'commercant']))->get(route('cartes.fichier', [$carte, 'png']))
+            ->assertRedirect(route('espace.carte', ['type' => 'commercant']))
+            ->assertSessionHas('erreur', 'Votre carte ne peut pas être téléchargée pour le moment. Réessayez plus tard ou contactez l’assistance.');
+    }
+
+    public function test_ma_carte_affiche_le_recto_et_le_verso_du_gabarit_sans_boutique(): void
+    {
+        $this->completerReglagesCarte();
+        $carte = $this->carte(contenu: ['emplacements' => [['code' => 'RAA-R1-A-045', 'site' => 'Marché de Rood Woko']]]);
+
+        // Site public : recto et verso du gabarit (titulaire, né(e) le, carte n°, expire le), aucune boutique ni marché.
+        $this->actingAs($carte->user)->get(route('espace.carte', ['type' => 'commercant']))->assertOk()
+            ->assertSee('data-carte-identification', false)->assertSee('data-face="recto"', false)->assertSee('data-face="verso"', false)
+            ->assertSee('Aïcha OUATTARA')->assertSee('Expire le')->assertSee('31/12/2028')->assertSee('14/03/1988')->assertSee($carte->numero)
+            ->assertSee('Le Maire de l’Arrondissement N°1')->assertSee('css/carte-raaga.css', false)
+            ->assertDontSee('RAA-R1-A-045')->assertDontSee('Rood Woko')->assertDontSee('SPÉCIMEN')->assertSee('data-plein-ecran', false);
+
+        // Carte suspendue : la carte reste affichée, sans plein écran ni téléchargement.
+        $carte->forceFill(['statut' => StatutCarte::Suspendue])->save();
+        $this->get(route('espace.carte', ['type' => 'commercant']))->assertOk()->assertSee('data-carte-identification', false)
+            ->assertDontSee('data-plein-ecran', false)->assertDontSee('data-telecharger', false);
+
+        // Back-office : « Ma carte » du personnel, même gabarit ; réglage manquant : « en cours de préparation ».
+        $this->app['auth']->forgetGuards();
+        $admin = $this->connecterBackoffice(Role::Admin);
+        $personnel = $this->carte(TypeCarte::Personnel, $admin, ['nom' => 'Rasmata OUÉDRAOGO', 'fonction' => 'Administrateur']);
+        $this->get(route('admin.carte'))->assertOk()->assertSee('data-carte-identification', false)->assertSee('Rasmata OUÉDRAOGO')
+            ->assertSee('data-plein-ecran', false)->assertSee(route('cartes.fichier', [$personnel, 'png']), false);
+        $this->app['auth']->forgetGuards();
+        $this->carte(TypeCarte::Personnel, $this->connecterBackoffice(Role::Admin));
+        $this->completerReglagesCarte(['cachetAutorite' => null]);
+        $this->get(route('admin.carte'))->assertOk()->assertSee('data-carte-preparation', false)
+            ->assertDontSee('data-carte-identification', false);
     }
 
     public function test_recto_et_verso_de_chaque_type_en_png_et_en_pdf(): void

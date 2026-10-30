@@ -1,7 +1,8 @@
 {{--
     « Ma carte » du citoyen : un onglet par type (commerçant, actionnaire) ; carte active, suspendue, ou « En attente de
-    vérification d'identité » tant que le dossier n'est pas conforme. Carte active : QR code, plein écran pour le scan,
-    téléchargement en PDF et en image PNG.
+    vérification d'identité » tant que le dossier n'est pas conforme. Carte : recto et verso du gabarit des cartes générées ;
+    carte active : plein écran pour le scan, téléchargement en PDF et en image PNG. Réglage de la carte manquant : « en
+    cours de préparation ».
 --}}
 @php
     $m = __('public.cartes.ma_carte');
@@ -28,10 +29,12 @@
                 @if ($carte->statut !== \App\Enums\StatutCarte::Active)
                     <x-public.alerte variante="attention" class="mb-4" :titre="$carte->statut->label()" data-carte-inactive>{{ $m['inactive'] }}</x-public.alerte>
                 @endif
-                @if ($qr)
-                    <x-carte-actions :carte="$carte" :qr="$qr" />
+                @if ($faces === null)
+                    <x-public.alerte variante="info" data-carte-preparation>{{ __('carte.preparation') }}</x-public.alerte>
+                @elseif ($qr)
+                    <x-carte-actions :carte="$carte" :qr="$qr" :faces="$faces" />
                 @else
-                    <x-carte-raaga :carte="$carte" />
+                    <x-carte-identification :faces="$faces" />
                 @endif
             @endif
         </section>

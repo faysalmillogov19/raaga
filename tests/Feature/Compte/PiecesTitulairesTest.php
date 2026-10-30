@@ -201,8 +201,8 @@ class PiecesTitulairesTest extends TestCase
         $this->assertSame(StatutCarte::Active, $carte->statut);
         $this->assertSame('Société Kaboré et Fils', $carte->contenu['raison_sociale']);
         $this->assertSame('Issa KABORE', $carte->contenu['nom']);
-        $this->actingAs($morale)->get(route('espace.carte'))->assertOk()->assertSee('data-raison-sociale', false)
-            ->assertSee('Société Kaboré et Fils')->assertSee('Représentant légal :', false)->assertSee('Issa KABORE');
+        $this->actingAs($morale)->get(route('espace.carte'))->assertOk()->assertSee('data-carte-identification', false)
+            ->assertSee('Société Kaboré et Fils')->assertSee('Représentant : Issa KABORE');
         // Recto : raison sociale, puis le représentant légal et sa date de naissance.
         $donnees = app(RenduCarte::class)->donnees($carte);
         $this->assertSame(['Société Kaboré et Fils', 'Issa KABORE'], [$donnees['titulaire'], $donnees['representant']]);

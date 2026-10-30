@@ -7,7 +7,8 @@
     Barre latérale réduite en icônes : survol ou clic → petit panneau flottant. Badge = somme des sous-menus.
     Réutilisable : MenuBackoffice regroupe les entrées marquées « sous_menu » => {cle}. Intertitres (« intertitre » sur
     les entrées, par exemple les rubriques de « À valider ») : badge = somme de leurs sous-menus. Sous-menu marqué
-    « grise_si_vide » sans élément : grisé, sans compteur.
+    « grise_si_vide » sans élément : grisé, sans compteur. Sous-menu marqué « separee » : hors de l'intertitre qui
+    précède, sous un trait (« Paramètres de la plateforme » dans le menu « Paramètres » du SUPER_ADMIN).
 --}}
 @php
     use App\Support\MenuBackoffice;
@@ -49,7 +50,7 @@
                         @endif
                     </li>
                 @endif
-                <li>
+                <li @class(['adm-sous-entree-separee' => $entree['separee'] ?? false])>
                     <a href="{{ MenuBackoffice::url($entree) }}" @class(['bo-lien', 'adm-sous-lien', 'adm-sous-lien-vide' => $vide, 'bo-lien-actif' => $actif]) @if ($actif) aria-current="page" @endif>
                         <span class="adm-libelle">{{ $entree['libelle'] ?? __('admin.menu.'.$entree['cle']) }}</span>
                         @if ($n)

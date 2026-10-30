@@ -14,14 +14,15 @@ use BaconQrCode\Common\ErrorCorrectionLevel;
 use BaconQrCode\Encoder\ByteMatrix;
 use BaconQrCode\Encoder\Encoder;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 /**
  * Rendu de la carte d'identification Raaga (maquette validée le 24/10/2026), toujours depuis l'état courant de la carte
  * (le nom du fichier porte la version) : un seul gabarit HTML (resources/views/cartes) rendu par Chrome sans interface
- * en PNG 300 dpi (1011 × 638 px par face) et en PDF d'une page par face (85,6 × 54 mm), et affiché tel quel dans
- * l'aperçu du back-office. Armoiries, logo, signature, cachet, textes de l'autorité et numéro vert : ceux figés sur la
+ * en PNG 300 dpi (1011 × 638 px par face) et en PDF d'une page par face (85,6 × 54 mm), et affiché tel quel à l'écran
+ * (« Ma carte » du titulaire, aperçu du back-office). Armoiries, logo, signature, cachet, textes de l'autorité et numéro vert : ceux figés sur la
  * carte à son émission (réimpression à l'identique), sinon ceux en vigueur, qui sont alors figés.
  */
 class RenduCarte
@@ -91,6 +92,23 @@ class RenduCarte
         $carte->forceFill(['reglages_rendu' => $instantane])->saveQuietly();
 
         return $instantane;
+    }
+
+    /**
+     * Données de la carte affichée à l'écran (« Ma carte ») : celles du rendu PNG et PDF, ou null si la carte ne peut pas
+     * encore être rendue (réglage manquant, fichier introuvable) ; la cause est inscrite au journal.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function ecran(Carte $carte): ?array
+    {
+        try {
+            return $this->donnees($carte);
+        } catch (RuntimeException $e) {
+            Log::warning('Carte non affichée : '.$e->getMessage(), ['carte' => $carte->numero]);
+
+            return null;
+        }
     }
 
     /**
