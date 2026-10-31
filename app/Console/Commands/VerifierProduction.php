@@ -2,11 +2,16 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\GenererFichiersCarte;
+use App\Services\Cartes\NavigateurChrome;
 use App\Services\Paiement\OuverturePaiements;
 use App\Services\Securite\ComptesDemo;
 use App\Support\GardeFouBase;
 use App\Support\ImagesPlateforme;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 /**
  * Contrôles avant mise en production, à deux niveaux (appelé par deploy.sh) :
@@ -17,6 +22,9 @@ use Illuminate\Console\Command;
  *    Clé des portiques (RAAGA_CLE_PORTIQUES) vide : l'interface de vérification des cartes pour les portiques refuse tout.
  *    Armoiries ou logo de la carte pris dans les fichiers fournis avec le code (rien de déposé) et de moins de 600 px de
  *    haut : flous à l'impression de la carte (30/10/2026).
+ *  - fichiers des cartes générés en tâche de fond par Chrome (30/10/2026) : BLOQUANT si Chrome ne démarre pas (essai
+ *    réel) ou si la file d'attente n'est pas réelle (sync, null) ou sans sa table ; AVERTISSEMENT pour les générations de
+ *    carte en échec (avec leur nombre) et les tâches en attente depuis plus de 10 minutes (worker arrêté).
  * --strict : les avertissements deviennent bloquants (avant l'ouverture d'une campagne).
  * Contrôle aussi que les commandes du poste de développement (raaga:inventaire) refusent de tourner ici : BLOQUANT sinon.
  */
@@ -42,7 +50,10 @@ class VerifierProduction extends Command
         'raaga.compte_location.numero' => 'RAAGA_COMPTE_LOCATION_NUMERO',
     ];
 
-    public function handle(ComptesDemo $comptes): int
+    /** Attente (minutes) au-delà de laquelle une tâche non traitée signale un worker arrêté. */
+    public const ATTENTE_WORKER = 10;
+
+    public function handle(ComptesDemo $comptes, NavigateurChrome $chrome): int
     {
         $bloquants = [];
         $avertissements = [];
@@ -84,6 +95,13 @@ class VerifierProduction extends Command
             }
         }
 
+        $this->fileAttente($bloquants, $avertissements);
+        try {
+            $chrome->essai();
+        } catch (Throwable $e) {
+            $bloquants[] = 'Chrome ne démarre pas (RAAGA_CHROME_BINAIRE) : les fichiers des cartes ne peuvent pas être générés. '.$e->getMessage();
+        }
+
         foreach ($bloquants as $message) {
             $this->error('✗ BLOQUANT : '.$message);
         }
@@ -103,5 +121,42 @@ class VerifierProduction extends Command
             : '✓ Aucun point bloquant ('.count($avertissements).' avertissement(s) : services concernés fermés tant qu’ils ne sont pas réglés).');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * File d'attente des fichiers des cartes : connexion réelle et sa table, générations en échec, worker en marche.
+     *
+     * @param  list<string>  $bloquants
+     * @param  list<string>  $avertissements
+     */
+    private function fileAttente(array &$bloquants, array &$avertissements): void
+    {
+        $connexion = (string) config('queue.default');
+        $pilote = config('queue.connections.'.$connexion.'.driver');
+        if (in_array($pilote, [null, 'sync', 'null'], true)) {
+            $bloquants[] = 'QUEUE_CONNECTION='.$connexion.' : les fichiers des cartes doivent être générés en tâche de fond (QUEUE_CONNECTION=database et worker « php artisan queue:work » permanent).';
+
+            return;
+        }
+        if ($pilote === 'database') {
+            $table = (string) config('queue.connections.'.$connexion.'.table', 'jobs');
+            if (! Schema::hasTable($table)) {
+                $bloquants[] = 'Table de la file d’attente absente ('.$table.') : lancez « php artisan migrate ».';
+
+                return;
+            }
+            $enAttente = DB::table($table)->whereNull('reserved_at')->where('available_at', '<', now()->subMinutes(self::ATTENTE_WORKER)->getTimestamp())->count();
+            if ($enAttente > 0) {
+                $avertissements[] = $enAttente.' tâche(s) en attente depuis plus de '.self::ATTENTE_WORKER.' minutes : le worker de la file d’attente (php artisan queue:work) ne tourne pas.';
+            }
+        }
+
+        $echecs = (string) config('queue.failed.table', 'failed_jobs');
+        if (Schema::hasTable($echecs)) {
+            $n = DB::table($echecs)->where('payload', 'like', '%'.class_basename(GenererFichiersCarte::class).'%')->count();
+            if ($n > 0) {
+                $avertissements[] = $n.' génération(s) de fichiers de carte en échec (cause au journal de l’application) : relancez « php artisan raaga:cartes-fichiers --toutes --manquants ».';
+            }
+        }
     }
 }

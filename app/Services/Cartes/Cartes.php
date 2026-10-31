@@ -282,8 +282,9 @@ class Cartes
     }
 
     /**
-     * Contenu affiché : nom (identité validée seulement), photo (selfie validé), et selon le type les emplacements, le
-     * numéro d'actionnaire ou la fonction. Jamais de montant ni de nombre d'actions.
+     * Contenu affiché : nom (identité validée seulement), date de naissance, photo (selfie validé), et selon le type les
+     * emplacements, le numéro d'actionnaire ou la fonction. Jamais de montant ni de nombre d'actions. Toute donnée
+     * imprimée y figure : sa modification donne une nouvelle version de la carte, donc de nouveaux fichiers.
      *
      * @return array<string, mixed>
      */
@@ -292,8 +293,10 @@ class Cartes
         $identite = (array) ($user->identite_validee ?? []);
         $photo = KycDocument::query()->where('user_id', $user->id)->where('type', TypeDocumentKyc::Selfie)->where('statut', StatutDocumentKyc::Valide)
             ->latest('id')->value('id');
+        $naissance = $identite['date_naissance'] ?? $user->date_naissance;
         $contenu = [
             'nom' => trim(($identite['prenoms'] ?? $user->prenoms ?? '').' '.($identite['nom'] ?? $user->nom ?? '')) ?: $user->name,
+            'date_naissance' => $naissance ? CarbonImmutable::parse($naissance)->toDateString() : null,
             'photo' => $photo,
         ];
         // Personne morale : raison sociale, avec le nom et la photo du représentant légal (identité validée).

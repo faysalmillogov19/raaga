@@ -6,6 +6,7 @@ use App\Enums\StatutCarte;
 use App\Enums\TypeCarte;
 use App\Http\Controllers\Controller;
 use App\Services\Cartes\Cartes;
+use App\Services\Cartes\FichiersCarte;
 use App\Services\Cartes\PhotosPersonnel;
 use App\Services\Cartes\RenduCarte;
 use Illuminate\Http\RedirectResponse;
@@ -18,9 +19,13 @@ use Illuminate\View\View;
  */
 class MaCarteController extends Controller
 {
-    public function show(Request $request, RenduCarte $rendu): View
+    public function show(Request $request, RenduCarte $rendu, FichiersCarte $fichiers): View
     {
         $carte = Cartes::courante($request->user(), TypeCarte::Personnel);
+        // Fichiers absents : préparés avant le premier téléchargement.
+        if ($carte) {
+            $fichiers->demander($carte);
+        }
 
         return view('admin.carte', [
             'carte' => $carte,

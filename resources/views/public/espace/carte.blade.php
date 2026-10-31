@@ -29,6 +29,9 @@
                 @if ($carte->statut !== \App\Enums\StatutCarte::Active)
                     <x-public.alerte variante="attention" class="mb-4" :titre="$carte->statut->label()" data-carte-inactive>{{ $m['inactive'] }}</x-public.alerte>
                 @endif
+                @if ($qr && $carte->fichiersEnEchec())
+                    <x-public.alerte variante="attention" class="mb-4" data-carte-echec>{{ __('carte.echec') }}</x-public.alerte>
+                @endif
                 @if ($faces === null)
                     <x-public.alerte variante="info" data-carte-preparation>{{ __('carte.preparation') }}</x-public.alerte>
                 @elseif ($qr)

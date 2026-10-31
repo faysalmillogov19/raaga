@@ -20,7 +20,7 @@ use RuntimeException;
 
 /**
  * Rendu de la carte d'identification Raaga (maquette validée le 24/10/2026), toujours depuis l'état courant de la carte
- * (le nom du fichier porte la version) : un seul gabarit HTML (resources/views/cartes) rendu par Chrome sans interface
+ * (le nom du fichier porte la version ; fichiers générés à l'avance en tâche de fond, voir FichiersCarte) : un seul gabarit HTML (resources/views/cartes) rendu par Chrome sans interface
  * en PNG 300 dpi (1011 × 638 px par face) et en PDF d'une page par face (85,6 × 54 mm), et affiché tel quel à l'écran
  * (« Ma carte » du titulaire, aperçu du back-office). Armoiries, logo, signature, cachet, textes de l'autorité et numéro vert : ceux figés sur la
  * carte à son émission (réimpression à l'identique), sinon ceux en vigueur, qui sont alors figés.
@@ -121,7 +121,8 @@ class RenduCarte
         $reglages = $this->reglages($carte);
         $c = $carte->contenu ?? [];
         $user = $carte->user;
-        $naissance = data_get($user?->identite_validee, 'date_naissance') ?? $user?->date_naissance;
+        // Date de naissance figée dans le contenu ; carte émise avant (30/10/2026) : celle du titulaire.
+        $naissance = array_key_exists('date_naissance', $c) ? $c['date_naissance'] : (data_get($user?->identite_validee, 'date_naissance') ?? $user?->date_naissance);
         $expire = $carte->valide_jusqu_au ? CarbonImmutable::parse($carte->valide_jusqu_au) : null;
 
         return [

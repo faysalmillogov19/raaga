@@ -2,6 +2,7 @@
 
 namespace Tests\Support;
 
+use App\Services\Cartes\NavigateurChrome;
 use App\Services\Plateforme\ParametresPlateforme;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\ExecutableFinder;
@@ -18,6 +19,7 @@ trait ReglagesCarteComplets
         if (! is_file($binaire) && (new ExecutableFinder)->find($binaire) === null) {
             $this->markTestSkipped('Chrome introuvable (RAAGA_CHROME_BINAIRE) : rendu des cartes non testé.');
         }
+        $this->app->instance(NavigateurChrome::class, new NavigateurChrome);
     }
 
     /**

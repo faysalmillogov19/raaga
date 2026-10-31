@@ -16,6 +16,9 @@
             @if ($carte->statut !== \App\Enums\StatutCarte::Active)
                 <x-admin.message type="avertissement">{{ $carte->statut->label() }} : {{ $m['inactive'] }}</x-admin.message>
             @endif
+            @if ($qr && $carte->fichiersEnEchec())
+                <x-admin.message type="avertissement" data-carte-echec>{{ __('carte.echec') }}</x-admin.message>
+            @endif
             @if ($faces === null)
                 <x-admin.message type="info" data-carte-preparation>{{ __('carte.preparation') }}</x-admin.message>
             @elseif ($qr)

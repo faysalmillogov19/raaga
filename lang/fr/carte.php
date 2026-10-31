@@ -26,6 +26,6 @@ return [
     'verso' => 'Verso',
     // Réglage de la carte manquant (titulaire) : rien de technique. Autre échec du rendu : réessayer ou contacter l'assistance.
     'preparation' => 'Votre carte est en cours de préparation. Elle sera disponible prochainement.',
-    'indisponible' => 'Votre carte ne peut pas être téléchargée pour le moment. Réessayez plus tard ou contactez l’assistance.',
+    'echec' => 'Votre carte n’a pas pu être préparée. Contactez l’assistance.',
     'reglages_manquants' => 'La carte ne peut pas être générée : réglages manquants (:champs). Un SUPER_ADMIN doit les renseigner dans « Paramètres de la plateforme ».',
 ];

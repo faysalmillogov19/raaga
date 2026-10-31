@@ -9,6 +9,7 @@ use App\Models\Carte;
 use App\Models\KycDocument;
 use App\Models\User;
 use App\Services\Cartes\Cartes;
+use App\Services\Cartes\FichiersCarte;
 use App\Services\Cartes\PhotosPersonnel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,8 @@ use Illuminate\View\View;
 /**
  * Gestion des cartes d'accès. ADMIN : demande de révocation (motif), réémission après une perte (à la demande du
  * titulaire, nouveau numéro et nouveau QR code), validation des photos du personnel. VALIDATEUR : confirme ou rejette la
- * révocation demandée (depuis « À valider »).
+ * révocation demandée (depuis « À valider »). SUPER_ADMIN et agent de guichet : relance de la génération des fichiers d'une
+ * carte en échec définitif (alerte du tableau de bord), tracée au journal d'audit.
  */
 class CartesController extends Controller
 {
@@ -46,6 +48,17 @@ class CartesController extends Controller
         $nouvelle = $this->cartes->reemettre($titulaire, $type, $request->user(), $courante ? 'perte' : 'reemission');
 
         return redirect()->route('admin.guichet.titulaire', $titulaire)->avecSucces('admin.cartes.messages.reemise', ['numero' => $nouvelle->numero]);
+    }
+
+    public function relancerFichiers(Request $request, Carte $carte, FichiersCarte $fichiers): RedirectResponse
+    {
+        Gate::authorize(Droit::CartesFichiersRelancer->value);
+        if (! $carte->fichiersEnEchec()) {
+            return back()->with('erreur', __('admin.cartes.erreurs.pas_en_echec'));
+        }
+        $fichiers->relancer($carte, $request->user());
+
+        return back()->avecSucces('admin.cartes.messages.fichiers_relances', ['numero' => $carte->numero]);
     }
 
     public function confirmer(Request $request, Carte $carte): RedirectResponse

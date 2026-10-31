@@ -131,18 +131,6 @@ class CarteIdentificationRenduTest extends TestCase
         $this->assertNotNull($carte->fresh()->reglages_rendu);
     }
 
-    public function test_autre_echec_du_rendu_message_technique_pour_le_titulaire(): void
-    {
-        $this->completerReglagesCarte();
-        $carte = $this->carte();
-        // Chrome introuvable : la génération échoue pour une autre raison qu'un réglage manquant.
-        config(['raaga.cartes.chrome' => 'C:/introuvable/chrome.exe']);
-
-        $this->actingAs($carte->user)->from(route('espace.carte', ['type' => 'commercant']))->get(route('cartes.fichier', [$carte, 'png']))
-            ->assertRedirect(route('espace.carte', ['type' => 'commercant']))
-            ->assertSessionHas('erreur', 'Votre carte ne peut pas être téléchargée pour le moment. Réessayez plus tard ou contactez l’assistance.');
-    }
-
     public function test_ma_carte_affiche_le_recto_et_le_verso_du_gabarit_sans_boutique(): void
     {
         $this->completerReglagesCarte();

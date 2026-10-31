@@ -136,6 +136,8 @@ enum Droit: string
     // ADMIN : demande de révocation (motif), réémission après perte, photos du personnel ; VALIDATEUR : confirme la révocation.
     case CartesGerer = 'cartes.gerer';
     case CartesRevocationConfirmer = 'cartes.revocation_confirmer';
+    // SUPER_ADMIN et agent de guichet : alerte des cartes dont les fichiers n'ont pas pu être générés, et relance.
+    case CartesFichiersRelancer = 'cartes.fichiers_relancer';
 
     case ConformiteVoir = 'conformite.voir';
     case ConformiteTraiter = 'conformite.traiter';
@@ -200,7 +202,7 @@ enum Droit: string
             self::SimulationsLancer, self::AllocationExecuter,
             self::InstallationMettreAJour,
             self::KycTraiter, self::ConformiteTraiter, self::KycAnnulationConfirmer,
-            self::CartesImprimer, self::CartesGerer, self::CartesRevocationConfirmer, self::GuichetSouscrire,
+            self::CartesImprimer, self::CartesGerer, self::CartesRevocationConfirmer, self::CartesFichiersRelancer, self::GuichetSouscrire,
             self::SouscriptionsRapprocher, self::RemboursementsApprouver, self::RemboursementsSuivre, self::RelancesEnvoyer,
             self::PaiementsCorrectionsConfirmer,
             self::ObservationsRepondre,
@@ -310,6 +312,8 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::UnitesVoir, self::MoyensPaiementVoir,
                 self::ReferentielsBoutiquesVoir, self::ModalitesPaiementVoir, self::InstallationMettreAJour,
+                // Fichiers des cartes en échec (30/10/2026) : alerte et relance de la génération.
+                self::CartesFichiersRelancer,
             ],
             // Support et assistance. Depuis le 25/10/2026, plus la liste des manifestations d'intérêt RAAGA Invest :
             // interfaces de souscription et d'investissement réservées au RÉGULATEUR et au VALIDATEUR.
@@ -361,7 +365,7 @@ enum Droit: string
             // Agent de guichet (profil du back-office) : vérifie les cartes scannées, consulte le dossier du titulaire
             // (aucun montant) et imprime sa carte après contrôle de sa pièce d'identité ; fait souscrire des actions à une
             // personne présente (compte, identité validée sur place, encaissement) et tient sa caisse du jour.
-            Role::AgentGuichet => [self::TableauDeBordVoir, self::CartesVerifier, self::CartesImprimer, self::GuichetSouscrire],
+            Role::AgentGuichet => [self::TableauDeBordVoir, self::CartesVerifier, self::CartesImprimer, self::CartesFichiersRelancer, self::GuichetSouscrire],
             Role::Regulateur => [
                 self::TableauDeBordVoir, self::BrouillonsVoir, self::InteretsVoir,
                 self::PhaseVoir, self::PhaseProposer,

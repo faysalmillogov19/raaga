@@ -6,6 +6,7 @@ use App\Contracts\PaymentProvider;
 use App\Enums\Role;
 use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutKyc;
+use App\Jobs\GenererFichiersCarte;
 use App\Models\AuditLog;
 use App\Models\MoyenPaiement;
 use App\Models\Niveau;
@@ -14,6 +15,7 @@ use App\Models\ReservationBoutique;
 use App\Models\TypeBoutique;
 use App\Models\Unite;
 use App\Models\User;
+use App\Services\Cartes\NavigateurChrome;
 use App\Services\Plateforme\ParametresPlateforme;
 use Database\Seeders\ComptesDemoSeeder;
 use Database\Seeders\DatabaseSeeder;
@@ -22,6 +24,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\Boutiques;
@@ -40,6 +43,13 @@ class VerrousProductionTest extends TestCase
         'raaga.compte_location' => ['titulaire' => 'Raaga SA location', 'banque' => 'Banque B', 'numero' => 'BF00 2'],
         'raaga.cartes.cle_portiques' => 'cle-des-portiques',
     ];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // File d'attente réelle, comme en production (les tests tournent par défaut en « sync »).
+        config(['queue.default' => 'database']);
+    }
 
     /** Opérateur de paiement réel (doublure). */
     private function operateurReel(): void
@@ -248,6 +258,36 @@ class VerrousProductionTest extends TestCase
         $this->assertSame('Premier étage', $r1->fresh()->libelle);
         $this->assertFalse($mag->fresh()->actif);
         $this->assertTrue(DB::table('zones')->where('code', 'KIO')->exists());
+    }
+
+    public function test_fichiers_des_cartes_file_d_attente_chrome_et_echecs(): void
+    {
+        Storage::fake('local');
+        $this->deposerLogo(600);
+        config(['raaga.demo' => false, ...self::COMPTES]);
+        $this->operateurReel();
+
+        // File d'attente « sync » : les fichiers seraient générés pendant la requête.
+        config(['queue.default' => 'sync']);
+        $this->artisan('raaga:verifier-production')->assertFailed()
+            ->expectsOutputToContain('BLOQUANT : QUEUE_CONNECTION=sync : les fichiers des cartes doivent être générés en tâche de fond');
+        config(['queue.default' => 'database']);
+
+        // Chrome ne démarre pas (essai réel simulé) : bloquant.
+        $this->app->make(NavigateurChrome::class)->panne = true;
+        $this->artisan('raaga:verifier-production')->assertFailed()->expectsOutputToContain('BLOQUANT : Chrome ne démarre pas (RAAGA_CHROME_BINAIRE)');
+        $this->app->make(NavigateurChrome::class)->panne = false;
+
+        // Générations de carte en échec (avec leur nombre) et tâche en attente depuis plus de 10 minutes : avertissements.
+        foreach ([1, 2] as $carte) {
+            DB::table('failed_jobs')->insert(['uuid' => (string) Str::uuid(), 'connection' => 'database', 'queue' => 'default', 'exception' => 'Chrome',
+                'payload' => json_encode(['displayName' => GenererFichiersCarte::class]), 'failed_at' => now()]);
+        }
+        DB::table('jobs')->insert(['queue' => 'default', 'payload' => '{}', 'attempts' => 0, 'available_at' => now()->subMinutes(15)->getTimestamp(), 'created_at' => now()->subMinutes(15)->getTimestamp()]);
+        $this->artisan('raaga:verifier-production')->assertSuccessful()
+            ->expectsOutputToContain('AVERTISSEMENT : 2 génération(s) de fichiers de carte en échec')
+            ->expectsOutputToContain('AVERTISSEMENT : 1 tâche(s) en attente depuis plus de 10 minutes')
+            ->expectsOutputToContain('Aucun point bloquant (2 avertissement(s)');
     }
 
     public function test_ordre_de_deploy_sh(): void

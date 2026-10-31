@@ -2,11 +2,15 @@
 
 namespace Tests;
 
+use App\Jobs\GenererFichiersCarte;
+use App\Services\Cartes\NavigateurChrome;
 use App\Services\Documents\GenerateurPdf;
 use App\Services\Medias\ConversionWebp;
 use App\Support\GardeFouBase;
 use Database\Seeders\ParametresPlateformeSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Queue;
+use Tests\Support\ChromeFactice;
 use Tests\Support\ConversionWebpFactice;
 use Tests\Support\PdfFactice;
 
@@ -36,6 +40,10 @@ abstract class TestCase extends BaseTestCase
         // Doublures rapides (conversion WebP, mise en page PDF) ; les vrais traitements sont testés une fois chacun.
         $this->app->instance(ConversionWebp::class, new ConversionWebpFactice);
         $this->app->instance(GenerateurPdf::class, new PdfFactice);
+        // Chrome simulé (rendu réel : exigerChrome()) ; génération des fichiers des cartes retenue dans la file
+        // d'attente simulée (les tests qui la vérifient exécutent le job eux-mêmes).
+        $this->app->instance(NavigateurChrome::class, new ChromeFactice);
+        Queue::fake([GenererFichiersCarte::class]);
     }
 
     /** Vraie conversion WebP (test de bout en bout). */

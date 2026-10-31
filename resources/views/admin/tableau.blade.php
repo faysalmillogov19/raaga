@@ -31,6 +31,39 @@
         </div>
     @endif
 
+    {{-- SUPER_ADMIN et agent de guichet : cartes dont les fichiers n'ont pas pu être générés (trois essais), avec relance. --}}
+    @can(Droit::CartesFichiersRelancer->value)
+        @php($cartesEnEchec = \App\Services\Cartes\FichiersCarte::enEchec())
+        @if ($cartesEnEchec->isNotEmpty())
+            @php($e = __('admin.cartes.echecs'))
+            <section class="bo-carte mb-4" aria-labelledby="cartes-echec-titre" role="alert" data-cartes-echec>
+                <h2 id="cartes-echec-titre" class="!text-[1.05rem]">{{ trans_choice('admin.cartes.echecs.titre', $cartesEnEchec->count(), ['n' => format_nombre($cartesEnEchec->count())]) }}</h2>
+                <p class="texte-carte mt-1">{{ $e['intro'] }}</p>
+                <div class="mt-3 overflow-x-auto">
+                    <table class="bo-tableau">
+                        <thead><tr>@foreach ($e['colonnes'] as $colonne)<th scope="col">{{ $colonne }}</th>@endforeach</tr></thead>
+                        <tbody>
+                            @foreach ($cartesEnEchec as $carteEchec)
+                                <tr data-carte-echec="{{ $carteEchec->numero }}">
+                                    <td class="font-semibold">{{ $carteEchec->numero }}</td>
+                                    <td>{{ $carteEchec->contenu['raison_sociale'] ?? $carteEchec->contenu['nom'] ?? '' }}</td>
+                                    <td>{{ $carteEchec->fichiers_echec_le->format('d/m/Y à H:i') }}</td>
+                                    <td>{{ $carteEchec->fichiers_echec_cause }}</td>
+                                    <td>
+                                        <form method="POST" action="{{ route('admin.cartes.fichiers.relancer', $carteEchec) }}">
+                                            @csrf
+                                            <x-admin.bouton type="submit" taille="petit" variante="contour">{{ $e['relancer'] }}</x-admin.bouton>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
+    @endcan
+
     {{-- GESTIONNAIRE et RÉGULATEUR : brouillons et rejetés non soumis au VALIDATEUR. --}}
     @can(Droit::BrouillonsVoir->value)
         @php($brouillons = \App\Services\Validation\SoumissionGroupee::nombreBrouillons(auth()->user()))

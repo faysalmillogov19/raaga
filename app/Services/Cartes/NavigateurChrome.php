@@ -7,6 +7,8 @@ use HeadlessChromium\BrowserFactory;
 use HeadlessChromium\Clip;
 use HeadlessChromium\Communication\Message;
 use HeadlessChromium\Page;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -14,9 +16,22 @@ use Throwable;
  * Rendu par Chrome sans interface (chrome-php) : le gabarit HTML de la carte, autonome (styles, polices et images
  * intégrés, aucune ressource distante), devient un PNG par face ou un PDF d'une page par face. Une session Chrome par
  * rendu, toujours fermée. Binaire : config raaga.cartes.chrome (RAAGA_CHROME_BINAIRE).
+ *
+ * Dossiers de travail dans storage/framework/chrome (ignoré par git) : un profil par session, supprimé à la fermeture,
+ * (sous Windows, Chrome peut le garder verrouillé un instant : les profils restants de plus d'une heure sont supprimés
+ * au démarrage suivant) et un dossier temporaire désigné à Chrome par TEMP, TMP et TMPDIR. Le worker de la file d'attente peut tourner dans un
+ * environnement sans dossier temporaire utilisable (panne du 30/10/2026 sous « php artisan serve »).
  */
 class NavigateurChrome
 {
+    public const DOSSIER = 'framework/chrome';
+
+    /** Essai réel : Chrome démarre, affiche une page et se ferme (raaga:verifier-production). */
+    public function essai(): void
+    {
+        $this->avecPage('<!DOCTYPE html><html><body>Raaga</body></html>', 200, fn (Page $page) => $page->evaluate('document.body.textContent')->getReturnValue());
+    }
+
     /**
      * Capture des éléments désignés (sélecteurs CSS), à la taille exacte demandée en pixels, fond transparent hors de
      * l'élément (coins arrondis). Le gabarit est déjà mis à l'échelle (1 px CSS = 1 px de l'image).
@@ -75,7 +90,8 @@ class NavigateurChrome
      */
     private function avecPage(string $html, int $largeur, callable $action): mixed
     {
-        $navigateur = $this->ouvrir($largeur);
+        $profil = storage_path(self::DOSSIER.'/profils/'.Str::random(16));
+        $navigateur = $this->ouvrir($largeur, $profil);
         try {
             $page = $navigateur->createPage();
             $page->setHtml($html, (int) config('raaga.cartes.chrome_delai', 30) * 1000);
@@ -85,13 +101,25 @@ class NavigateurChrome
             return $action($page);
         } finally {
             $navigateur->close();
+            File::deleteDirectory($profil);
         }
     }
 
-    private function ouvrir(int $largeur): Browser
+    private function ouvrir(int $largeur, string $profil): Browser
     {
+        $temporaire = storage_path(self::DOSSIER.'/tmp');
+        File::ensureDirectoryExists($profil);
+        foreach (File::directories(dirname($profil)) as $ancien) {
+            if (filemtime($ancien) < time() - 3600) {
+                File::deleteDirectory($ancien);
+            }
+        }
+        File::ensureDirectoryExists($temporaire);
+
         try {
             return (new BrowserFactory((string) config('raaga.cartes.chrome')))->createBrowser([
+                'userDataDir' => $profil,
+                'envVariables' => ['TEMP' => $temporaire, 'TMP' => $temporaire, 'TMPDIR' => $temporaire],
                 'headless' => true,
                 'noSandbox' => true,
                 'windowSize' => [$largeur, 1400],
@@ -100,6 +128,8 @@ class NavigateurChrome
                 'enableImages' => true,
             ]);
         } catch (Throwable $e) {
+            File::deleteDirectory($profil);
+
             throw new RuntimeException('Rendu de la carte impossible : Chrome ne démarre pas (RAAGA_CHROME_BINAIRE). '.$e->getMessage(), 0, $e);
         }
     }

@@ -277,7 +277,7 @@ class CartesVerificationTest extends TestCase
 
         $agent = User::factory()->role(Role::AgentGuichet)->create();
         foreach (Droit::cases() as $droit) {
-            $this->assertSame(in_array($droit, [Droit::TableauDeBordVoir, Droit::CartesVerifier, Droit::CartesImprimer, Droit::GuichetSouscrire], true), $agent->can($droit->value), $droit->value);
+            $this->assertSame(in_array($droit, [Droit::TableauDeBordVoir, Droit::CartesVerifier, Droit::CartesImprimer, Droit::CartesFichiersRelancer, Droit::GuichetSouscrire], true), $agent->can($droit->value), $droit->value);
         }
 
         // L'ancienne adresse /guichet renvoie au back-office ; le menu propose « Guichet ».

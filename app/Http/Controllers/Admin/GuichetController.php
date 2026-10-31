@@ -10,8 +10,10 @@ use App\Models\ReservationBoutique;
 use App\Models\User;
 use App\Notifications\CarteImprimee;
 use App\Services\Audit\Journal;
-use App\Services\Cartes\RenduCarte;
+use App\Services\Cartes\FichiersCarte;
 use App\Services\Cartes\ReglagesCarteManquants;
+use App\Services\Cartes\RenduCarte;
+use App\Support\Plateforme\ReglagesCarte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -60,9 +62,11 @@ class GuichetController extends Controller
 
     /**
      * Impression au guichet, après contrôle de la pièce d'identité du titulaire : PDF au format carte bancaire (imprimante
-     * classique ou à cartes), impression tracée au journal d'audit, titulaire notifié.
+     * classique ou à cartes), impression tracée au journal d'audit, titulaire notifié. Le PDF est celui généré à l'avance
+     * en tâche de fond ; pas encore prêt : génération demandée, rien n'est tracé ni notifié (réglage de la carte manquant :
+     * l'agent en voit le détail, à transmettre au SUPER_ADMIN).
      */
-    public function imprimer(Request $request, string $jeton, RenduCarte $rendu): Response|RedirectResponse
+    public function imprimer(Request $request, string $jeton, FichiersCarte $fichiers, RenduCarte $rendu): Response|RedirectResponse
     {
         Gate::authorize(Droit::CartesImprimer->value);
         $request->validate(['piece_verifiee' => ['accepted']], ['piece_verifiee.accepted' => __('admin.guichet.erreurs.piece')]);
@@ -70,12 +74,18 @@ class GuichetController extends Controller
         if (! $carte->courante || ! $carte->estValide()) {
             return back()->withErrors(['piece_verifiee' => __('admin.guichet.erreurs.non_imprimable')]);
         }
-        try {
-            $pdf = $rendu->pdf($carte);
-        } catch (ReglagesCarteManquants $e) {
-            // Génération impossible : rien n'est tracé ni notifié.
-            return back()->withErrors(['piece_verifiee' => $e->getMessage()]);
+        if (! $fichiers->prets($carte)) {
+            if ($carte->fichiersEnEchec()) {
+                return back()->withErrors(['piece_verifiee' => __('admin.guichet.erreurs.echec')]);
+            }
+            if (! $carte->reglages_rendu && ReglagesCarte::instantane() === null) {
+                return back()->withErrors(['piece_verifiee' => (new ReglagesCarteManquants(ReglagesCarte::manquants()))->getMessage()]);
+            }
+            $fichiers->demander($carte);
+
+            return back()->withErrors(['piece_verifiee' => __('admin.guichet.erreurs.preparation')]);
         }
+        $pdf = $fichiers->lire($carte, 'pdf');
         $this->journal->ecrire($request->user(), 'carte.imprimee', 'Carte', $carte->id, null, ['numero' => $carte->numero, 'version' => $carte->version]);
         $carte->user->notify(new CarteImprimee($carte));
 

@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Enums\StatutCarte;
 use App\Enums\StatutKyc;
 use App\Enums\TypeCarte;
+use App\Jobs\GenererFichiersCarte;
 use App\Models\AuditLog;
 use App\Models\Carte;
 use App\Models\User;
@@ -15,6 +16,8 @@ use BaconQrCode\Common\ErrorCorrectionLevel;
 use BaconQrCode\Encoder\Encoder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\Support\ConnexionBackoffice;
 use Tests\Support\ReglagesCarteComplets;
@@ -22,7 +25,8 @@ use Tests\TestCase;
 
 /**
  * Carte côté titulaire (QR code, plein écran, PDF d'une page par face au format ID-1, PNG 300 dpi par face, régénération
- * par version) et impression au guichet (pièce vérifiée, impression tracée, titulaire notifié). Rendu réel par Chrome.
+ * par version) et impression au guichet (pièce vérifiée, impression tracée, titulaire notifié). Fichiers générés à
+ * l'avance par le job (rendu réel par Chrome), puis servis tels quels.
  */
 class CartesRenduTest extends TestCase
 {
@@ -51,6 +55,12 @@ class CartesRenduTest extends TestCase
         return $carte;
     }
 
+    /** Job de génération des fichiers de la version courante, exécuté comme par le worker. */
+    private function generer(Carte $carte): void
+    {
+        $this->app->call([new GenererFichiersCarte($carte->id, $carte->fresh()->version), 'handle']);
+    }
+
     public function test_ma_carte_affiche_le_qr_code_le_plein_ecran_et_les_telechargements(): void
     {
         $carte = $this->carte();
@@ -76,6 +86,12 @@ class CartesRenduTest extends TestCase
         $this->exigerChrome();
         $carte = $this->carte();
 
+        // Fichiers pas encore prêts : « en cours de préparation », génération demandée en tâche de fond.
+        $this->actingAs($this->titulaire)->get(route('cartes.fichier', [$carte, 'pdf']))
+            ->assertRedirect(route('espace.carte', ['type' => 'commercant']))->assertSessionHas('erreur', __('carte.preparation'));
+        Queue::assertPushed(GenererFichiersCarte::class, fn (GenererFichiersCarte $job) => $job->carteId === $carte->id && $job->version === 1);
+        $this->generer($carte);
+
         $pdf = $this->actingAs($this->titulaire)->get(route('cartes.fichier', [$carte, 'pdf']))->assertOk()
             ->assertHeader('Content-Type', 'application/pdf')->assertHeader('Cache-Control', 'no-store, private');
         $this->assertStringContainsString('carte-raaga-'.strtolower($carte->numero).'-v1.pdf', $pdf->headers->get('Content-Disposition'));
@@ -93,9 +109,14 @@ class CartesRenduTest extends TestCase
         $this->assertStringContainsString('-verso.png', $verso->headers->get('Content-Disposition'));
         $this->assertNotSame($png->getContent(), $verso->getContent());
 
-        // Régénération : chaque changement de contenu donne une nouvelle version, et un nouveau fichier.
+        // Régénération : chaque changement de contenu donne une nouvelle version, et de nouveaux fichiers (les anciens
+        // sont supprimés).
         $carte->forceFill(['version' => 2])->save();
+        Queue::assertPushed(GenererFichiersCarte::class, fn (GenererFichiersCarte $job) => $job->carteId === $carte->id && $job->version === 2);
+        $this->get(route('cartes.fichier', [$carte, 'png']))->assertSessionHas('erreur', __('carte.preparation'));
+        $this->generer($carte);
         $this->assertStringContainsString('-v2-recto.png', $this->get(route('cartes.fichier', [$carte, 'png']))->headers->get('Content-Disposition'));
+        $this->assertSame(['cartes/fichiers/'.$carte->id.'/v2'], Storage::disk('local')->directories('cartes/fichiers/'.$carte->id));
 
         // Seul le titulaire télécharge sa carte.
         $this->actingAs(User::factory()->role(Role::Citoyen)->create())->get(route('cartes.fichier', [$carte, 'pdf']))->assertForbidden();
@@ -110,6 +131,7 @@ class CartesRenduTest extends TestCase
         $admin = $this->connecterBackoffice(Role::Admin, ['name' => 'Rasmata OUÉDRAOGO']);
         $carte = $this->carte(StatutCarte::Active, TypeCarte::Personnel, $admin);
         $carte->forceFill(['contenu' => ['nom' => 'Rasmata OUÉDRAOGO', 'fonction' => 'Administrateur']])->save();
+        $this->generer($carte);
 
         $this->get(route('admin.carte'))->assertOk()->assertSee('Rasmata OUÉDRAOGO')->assertSee('data-plein-ecran', false)
             ->assertSee(route('cartes.fichier', [$carte, 'png']), false);
@@ -129,6 +151,13 @@ class CartesRenduTest extends TestCase
         $this->from(route('admin.guichet.carte', $carte->jeton))->post(route('admin.guichet.imprimer', $carte->jeton))
             ->assertSessionHasErrors('piece_verifiee');
         $this->assertSame(0, AuditLog::query()->where('action', 'carte.imprimee')->count());
+
+        // PDF pas encore prêt : « en cours de préparation », rien n'est tracé ni notifié.
+        $this->from(route('admin.guichet.carte', $carte->jeton))->post(route('admin.guichet.imprimer', $carte->jeton), ['piece_verifiee' => '1'])
+            ->assertSessionHasErrors(['piece_verifiee' => 'La carte est en cours de préparation. Elle sera disponible prochainement.']);
+        $this->assertSame(0, AuditLog::query()->where('action', 'carte.imprimee')->count());
+        Notification::assertNothingSent();
+        $this->generer($carte);
 
         $pdf = $this->post(route('admin.guichet.imprimer', $carte->jeton), ['piece_verifiee' => '1'])->assertOk()
             ->assertHeader('Content-Type', 'application/pdf');

@@ -216,6 +216,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{carte}/revocation/confirmer', 'confirmer')->whereNumber('carte')->middleware('can:'.Droit::CartesRevocationConfirmer->value)->name('revocation.confirmer');
             Route::post('/{carte}/revocation/rejeter', 'rejeter')->whereNumber('carte')->middleware('can:'.Droit::CartesRevocationConfirmer->value)->name('revocation.rejeter');
             Route::get('/photos', 'photos')->middleware('can:'.Droit::CartesGerer->value)->name('photos');
+            // Fichiers de la carte en échec définitif : relance de la génération (SUPER_ADMIN, agent de guichet).
+            Route::post('/{carte}/fichiers/relancer', 'relancerFichiers')->whereNumber('carte')->middleware(['can:'.Droit::CartesFichiersRelancer->value, 'throttle:20,1'])->name('fichiers.relancer');
             Route::post('/photos/{document}/valider', 'validerPhoto')->whereNumber('document')->middleware('can:'.Droit::CartesGerer->value)->name('photos.valider');
             Route::post('/photos/{document}/refuser', 'refuserPhoto')->whereNumber('document')->middleware('can:'.Droit::CartesGerer->value)->name('photos.refuser');
         });

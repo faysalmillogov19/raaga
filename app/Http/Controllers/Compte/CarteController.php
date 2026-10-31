@@ -7,6 +7,7 @@ use App\Enums\StatutKyc;
 use App\Enums\TypeCarte;
 use App\Http\Controllers\Controller;
 use App\Services\Cartes\Cartes;
+use App\Services\Cartes\FichiersCarte;
 use App\Services\Cartes\RenduCarte;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,11 +18,15 @@ use Illuminate\View\View;
  */
 class CarteController extends Controller
 {
-    public function show(Request $request, RenduCarte $rendu, ?string $type = null): View
+    public function show(Request $request, RenduCarte $rendu, FichiersCarte $fichiers, ?string $type = null): View
     {
         $user = $request->user();
         $cartes = collect([TypeCarte::Commercant, TypeCarte::Actionnaire])->mapWithKeys(fn (TypeCarte $t) => [strtolower($t->value) => Cartes::courante($user, $t)]);
         $choisi = $type && $cartes->has($type) ? $type : ($cartes->filter()->keys()->first() ?? 'commercant');
+        // Fichiers absents (carte émise avant le 30/10/2026, génération en échec) : préparés avant le premier téléchargement.
+        if ($cartes[$choisi]) {
+            $fichiers->demander($cartes[$choisi]);
+        }
 
         return view('public.espace.carte', [
             'cartes' => $cartes,
