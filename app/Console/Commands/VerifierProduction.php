@@ -86,9 +86,11 @@ class VerifierProduction extends Command
             $avertissements[] = 'Variable manquante : RAAGA_CLE_PORTIQUES (interface de vérification des cartes pour les portiques fermée : toute demande est refusée).';
         }
 
-        // Carte d'identification : armoiries et logo par défaut trop petits pour l'impression (un fichier déposé n'est pas contrôlé ici).
+        // Carte d'identification : armoiries et logo par défaut trop petits pour l'impression (un fichier déposé n'est pas contrôlé
+        // ici, un SVG non plus : vectoriel, net à toute taille).
         foreach (self::IMAGES_CARTE as $champ => $libelle) {
             $chemin = ImagesPlateforme::deposee($champ) ? null : ImagesPlateforme::chemin($champ);
+            $chemin = $chemin && str_ends_with(strtolower($chemin), '.svg') ? null : $chemin;
             $hauteur = $chemin && is_file($chemin) ? (getimagesize($chemin)[1] ?? 0) : null;
             if ($hauteur !== null && $hauteur < self::HAUTEUR_IMPRESSION) {
                 $avertissements[] = ucfirst($libelle).' par défaut en basse résolution ('.$hauteur.' px de haut, '.self::HAUTEUR_IMPRESSION.' attendus pour l’impression de la carte), déposer la version officielle dans « Paramètres de la plateforme », section Identité.';

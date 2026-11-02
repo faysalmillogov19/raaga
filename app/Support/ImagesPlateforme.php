@@ -14,19 +14,19 @@ use Illuminate\Support\Facades\Storage;
 final class ImagesPlateforme
 {
     /**
-     * Fichiers fournis (valeur initiale). Le logo n'existe pour l'instant qu'en PNG : version 2x
-     * (et 1x pour le srcset). TODO: remplacer par les SVG vectorisés dès qu'ils sont fournis.
-     * Pas de version blanche fournie : null (le pied de page pose alors le logo sur un fond blanc).
+     * Fichiers fournis (valeur initiale). Logo Raaga en SVG (nouveau logo du 02/11/2026) : horizontal,
+     * horizontal blanc (pied de page sur fond foncé), symbole et icône (favicon). Les PNG gardent une
+     * version 2x et 1x pour le srcset.
      *
      * @var array<string, array{0: ?string, 1: ?string}> champ => [fichier 2x (ou SVG), fichier 1x]
      */
     public const DEFAUTS = [
         // Armoiries officielles du Burkina Faso, versionnées avec le code : affichées même si la base est vidée.
         'armoiries' => ['armoiries.png', null],
-        'logoHorizontal' => ['images/logo/raaga-logo-horizontal-96.png', 'images/logo/raaga-logo-horizontal-48.png'],
-        'logoHorizontalBlanc' => [null, null],
-        'logoSymbole' => ['images/logo/raaga-symbole-64.png', 'images/logo/raaga-symbole-32.png'],
-        'logoSymboleSimplifie' => ['images/logo/raaga-symbole-64.png', 'images/logo/raaga-symbole-32.png'],
+        'logoHorizontal' => ['images/logo/raaga-logo-horizontal.svg', null],
+        'logoHorizontalBlanc' => ['images/logo/raaga-logo-horizontal-blanc.svg', null],
+        'logoSymbole' => ['images/logo/raaga-symbole.svg', null],
+        'logoSymboleSimplifie' => ['images/logo/raaga-icone-favicon.svg', null],
     ];
 
     public static function existe(string $champ): bool

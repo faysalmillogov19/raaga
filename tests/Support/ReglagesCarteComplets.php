@@ -39,7 +39,7 @@ trait ReglagesCarteComplets
             'cachetAutorite' => 'plateforme/cachet-autorite-test.png',
         ];
         $disque->put($chemins['armoiries'], (string) file_get_contents(public_path('armoiries.png')));
-        $disque->put($chemins['logoHorizontal'], (string) file_get_contents(public_path($logo === 'horizontal' ? 'images/logo/raaga-logo-horizontal-96.png' : 'images/logo/raaga-symbole-64.png')));
+        $disque->put($chemins['logoHorizontal'], (string) file_get_contents(public_path($logo === 'horizontal' ? 'images/logo/raaga-logo-horizontal-email.png' : 'images/logo/icone-192.png')));
         $disque->put($chemins['signatureAutorite'], $this->pngTest(900, 300, [20, 40, 120]));
         $disque->put($chemins['cachetAutorite'], $this->pngTest(700, 700, [30, 60, 160]));
         if ($filigranes) {

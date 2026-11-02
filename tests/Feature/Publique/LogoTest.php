@@ -43,9 +43,10 @@ class LogoTest extends TestCase
 
         $accueil = $this->get('/')->assertOk();
 
+        // Pied de page sur fond foncé : version blanche du logo, sans cadre blanc.
         preg_match('/<footer.*?<\/footer>/s', $accueil->getContent(), $pied);
-        $this->assertStringContainsString($logo, $pied[0]);
-        $accueil->assertSee('srcset=', false);
+        $this->assertStringContainsString(e(ImagesPlateforme::url('logoHorizontalBlanc')), $pied[0]);
+        $this->assertStringNotContainsString('bg-white px-2 py-1.5', $pied[0]);
         $this->get('/connexion')->assertOk()->assertSee($logo, false);
         $this->assertStringContainsString('images/og-raaga.png', $accueil->getContent());
         $this->assertStringContainsString('rel="manifest"', $accueil->getContent());
@@ -72,11 +73,10 @@ class LogoTest extends TestCase
 
     public function test_les_fichiers_du_logo_sont_servis(): void
     {
-        foreach (['logoHorizontal', 'logoSymbole', 'logoSymboleSimplifie'] as $champ) {
-            $this->get(ImagesPlateforme::url($champ))->assertOk()->assertHeader('Content-Type', 'image/png');
+        // Nouveau logo (02/11/2026) : quatre SVG fournis avec le code, servis même base vide.
+        foreach (['logoHorizontal', 'logoHorizontalBlanc', 'logoSymbole', 'logoSymboleSimplifie'] as $champ) {
+            $this->get(ImagesPlateforme::url($champ))->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
         }
-        // Pas de version blanche fournie : pas d'adresse, et le pied de page pose le logo sur fond blanc.
-        $this->assertNull(ImagesPlateforme::url('logoHorizontalBlanc'));
         $this->get('/plateforme/images/inconnu')->assertNotFound();
 
         $this->get(route('manifeste'))->assertOk()->assertJsonPath('name', 'Raaga · Participation populaire')
@@ -100,7 +100,10 @@ class LogoTest extends TestCase
         $apres = ImagesPlateforme::url('logoHorizontal');
         $this->assertNotSame($avant, $apres);
         $this->get($apres)->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
-        $this->get('/')->assertSee(e($apres), false);
+        // Thème « lumière » (clair) : logo horizontal sur la carte de connexion.
+        $this->flushSession();
+        $this->app['auth']->forgetGuards();
+        $this->get('/connexion')->assertSee(e($apres), false);
     }
 
     public function test_aucun_symbole_unicode_ne_sert_d_icone_dans_les_pages_publiques(): void

@@ -122,11 +122,10 @@ class VerrousProductionTest extends TestCase
         config(['raaga.demo' => false, ...self::COMPTES]);
         $this->operateurReel();
 
-        // Rien de déposé : armoiries fournies (998 px de haut) acceptées, logo fourni (96 px) signalé.
+        // Rien de déposé : armoiries fournies (998 px de haut) et logo fourni en SVG (vectoriel, depuis le 02/11/2026) acceptés.
         $this->artisan('raaga:verifier-production')->assertSuccessful()
-            ->expectsOutputToContain('AVERTISSEMENT : Logo par défaut en basse résolution (96 px de haut, 600 attendus')
-            ->doesntExpectOutputToContain('Armoiries par défaut en basse résolution')
-            ->expectsOutputToContain('Aucun point bloquant (1 avertissement(s)');
+            ->doesntExpectOutputToContain('Logo par défaut en basse résolution')
+            ->doesntExpectOutputToContain('Armoiries par défaut en basse résolution');
 
         // Logo déposé : plus d'avertissement, même trop petit (seuls les fichiers par défaut sont contrôlés ici).
         $this->deposerLogo(120);
