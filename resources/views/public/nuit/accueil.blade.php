@@ -1,6 +1,7 @@
 {{--
     Accueil, thème « nuit » (maquette docs/maquettes/maquette-accueil-theme-nuit.html). Toutes les données viennent de la
-    base (App\Services\Publique\AccueilNuit) ; le téléphone illustré est décoratif (aria-hidden).
+    base (App\Services\Publique\AccueilNuit) ; le téléphone illustré est décoratif (aria-hidden) et toujours affiché : sans
+    boutique tarifée, libellés neutres à la place du code et des montants.
     Bandeau blanc toujours affiché (plus de carrousel). Carte « Investir » : même logique que le thème clair.
 --}}
 @php
@@ -34,37 +35,35 @@
                     <x-public.pilule variante="contour" href="#comment" class="nuit-pilule-grand">{{ $a['comment'] }}</x-public.pilule>
                 </div>
             </div>
-            @if ($exemple)
-                @php
-                    $t = $n['telephone'];
-                @endphp
-                <div class="nuit-scene" aria-hidden="true" data-exemple>
-                    <div class="nuit-telephone">
-                        <div class="nuit-telephone-ecran">
-                            <p class="nuit-telephone-petit">{{ __('public.entete.mon_espace') }}</p>
-                            <p class="nuit-telephone-code">{{ $exemple['code'] }}</p>
-                            <div class="nuit-telephone-anneau"><span>50 %</span><small>{{ $t['paye'] }}</small></div>
-                            <div class="nuit-telephone-grille">
-                                <div><p>{{ $t['loyer'] }}</p><p>{{ format_nombre($exemple['loyer']) }}</p></div>
-                                <div><p>{{ $t['caution'] }}</p><p class="nuit-vif">{{ $t['payee'] }}</p></div>
-                                <div><p>{{ $t['avance'] }}</p><p class="nuit-jaune">{{ $t['echeance'] }}</p></div>
-                                <div><p>{{ $t['carte'] }}</p><p>{{ $t['qr'] }}</p></div>
-                            </div>
+            @php
+                $t = $n['telephone'];
+            @endphp
+            <div class="nuit-scene" aria-hidden="true" data-exemple>
+                <div class="nuit-telephone">
+                    <div class="nuit-telephone-ecran">
+                        <p class="nuit-telephone-petit">{{ __('public.entete.mon_espace') }}</p>
+                        <p class="nuit-telephone-code">{{ $exemple['code'] ?? $t['ma_boutique'] }}</p>
+                        <div class="nuit-telephone-anneau"><span>50 %</span><small>{{ $t['paye'] }}</small></div>
+                        <div class="nuit-telephone-grille">
+                            <div><p>{{ $t['loyer'] }}</p><p>{{ $exemple['loyer'] !== null ? format_nombre($exemple['loyer']) : $t['mensuel'] }}</p></div>
+                            <div><p>{{ $t['caution'] }}</p><p class="nuit-vif">{{ $t['payee'] }}</p></div>
+                            <div><p>{{ $t['avance'] }}</p><p class="nuit-jaune">{{ $t['echeance'] }}</p></div>
+                            <div><p>{{ $t['carte'] }}</p><p>{{ $t['qr'] }}</p></div>
                         </div>
                     </div>
-                    @if ($exemple['moyens'])
-                        <div class="nuit-bulle nuit-bulle-moyens">
-                            @foreach ($exemple['moyens'] as $moyen)<p><span>{{ $moyen }}</span><span class="nuit-vif">✓</span></p>@endforeach
-                        </div>
-                    @endif
-                    <div class="nuit-bulle nuit-bulle-total">
-                        <p class="nuit-bulle-libelle">{{ $t['total'] }}</p>
-                        <p class="nuit-bulle-montant">{{ format_fcfa($exemple['total']) }}</p>
-                        <div class="nuit-bulle-barres"><span></span><span></span><span></span><span></span><span></span></div>
-                    </div>
-                    <div class="nuit-bulle nuit-bulle-carte"><p>{{ $t['carte_titre'] }}</p><p>{{ $t['carte_texte'] }}</p></div>
                 </div>
-            @endif
+                @if ($exemple['moyens'])
+                    <div class="nuit-bulle nuit-bulle-moyens">
+                        @foreach ($exemple['moyens'] as $moyen)<p><span>{{ $moyen }}</span><x-icon name="check" class="nuit-vif h-4 w-4 shrink-0" /></p>@endforeach
+                    </div>
+                @endif
+                <div class="nuit-bulle nuit-bulle-total">
+                    <p class="nuit-bulle-libelle">{{ $t['total'] }}</p>
+                    <p class="nuit-bulle-montant">{{ $exemple['total'] !== null ? format_fcfa($exemple['total']) : $t['caution_avance'] }}</p>
+                    <div class="nuit-bulle-barres"><span></span><span></span><span></span><span></span><span></span></div>
+                </div>
+                <div class="nuit-bulle nuit-bulle-carte"><p>{{ $t['carte_titre'] }}</p><p>{{ $t['carte_texte'] }}</p></div>
+            </div>
         </div>
     </section>
 

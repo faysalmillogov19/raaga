@@ -234,6 +234,8 @@
                                 'naissance' => $user->date_naissance?->format('d/m/Y'),
                                 'residence' => config('raaga.inscription.pays.'.($user->pays_residence ?: 'BF')),
                                 'region' => $user->region,
+                                'identifiant_fiscal' => $user->identifiant_fiscal_raaga,
+                                'numero_registre' => $user->numero_registre_raaga,
                             ] as $cle => $valeur)
                                 @if ($valeur)
                                     <div class="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4"><dt class="text-gris">{{ __('public.espace.profil.'.$cle) }}</dt><dd class="font-semibold text-encre">{{ $valeur }}</dd></div>

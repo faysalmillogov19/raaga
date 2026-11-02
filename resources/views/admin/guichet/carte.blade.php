@@ -45,6 +45,10 @@
                             @endforeach
                         </dd>
                     @endif
+                    @if (! empty($c['identifiant_fiscal']))
+                        <dt>{{ $g['identifiant_fiscal'] }}</dt><dd class="font-mono" data-identifiant-fiscal>{{ $c['identifiant_fiscal'] }}</dd>
+                        <dt>{{ $g['numero_registre'] }}</dt><dd class="font-mono" data-numero-registre>{{ $c['numero_registre'] }}</dd>
+                    @endif
                     @if (! empty($c['numero_actionnaire']))
                         <dt>{{ $g['numero_actionnaire'] }}</dt><dd>{{ $c['numero_actionnaire'] }}</dd>
                     @endif

@@ -134,6 +134,9 @@ class RenduCarte
             'numero' => $carte->numero,
             'expire' => $expire?->format('d/m/Y'),
             'code' => $carte->numero.($expire ? '-'.$expire->format('my') : ''),
+            // Carte de commerçant (02/11/2026) : identifiants Raaga au verso ; absents d'une carte émise avant.
+            'identifiant_fiscal' => $c['identifiant_fiscal'] ?? null,
+            'numero_registre' => $c['numero_registre'] ?? null,
             'photo' => $this->photo($c),
             'qr' => $this->matrice($carte),
             ...$this->images($reglages),
@@ -174,6 +177,8 @@ class RenduCarte
             'numero' => 'RG-C-000000',
             'expire' => $expire->format('d/m/Y'),
             'code' => 'RG-C-000000-'.$expire->format('my'),
+            'identifiant_fiscal' => $type === TypeCarte::Commercant ? 'RG-F-000000' : null,
+            'numero_registre' => $type === TypeCarte::Commercant ? 'RG-R-'.$expire->subYears(5)->year.'-000000' : null,
             'photo' => null,
             'qr' => Encoder::encode(route('cartes.verifier', str_repeat('0', 64)), ErrorCorrectionLevel::H())->getMatrix(),
             'armoiries' => $this->dataUri($armoiries),

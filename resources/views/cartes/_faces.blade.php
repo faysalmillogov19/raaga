@@ -90,7 +90,13 @@
 
     <div class="cr-corps">
         <div class="cr-gauche">
-            <div class="cr-mentions">
+            <div @class(['cr-mentions', 'cr-mentions-serrees' => $d['identifiant_fiscal'] ?? null])>
+                @if ($d['identifiant_fiscal'] ?? null)
+                    <p>{{ __('carte.identifiant_fiscal') }} <strong data-champ="identifiant_fiscal">{{ $d['identifiant_fiscal'] }}</strong></p>
+                @endif
+                @if ($d['numero_registre'] ?? null)
+                    <p>{{ __('carte.numero_registre') }} <strong data-champ="numero_registre">{{ $d['numero_registre'] }}</strong></p>
+                @endif
                 <p>{{ __('carte.personnelle') }}</p>
                 <p>{{ __('carte.perte') }}</p>
                 <p>{{ __('carte.numero_vert') }} <strong data-champ="numero_vert">{!! $manque($d['numero_vert']) !!}</strong></p>

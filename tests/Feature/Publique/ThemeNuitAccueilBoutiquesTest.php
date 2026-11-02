@@ -33,8 +33,10 @@ class ThemeNuitAccueilBoutiquesTest extends TestCase
 
         $page->assertSee('class="nuit-section-blanc nuit-hero"', false)->assertSee('Votre boutique au <span class="nuit-hero-accent">marché Raaga</span>', false)
             ->assertSee('Au premier arrivé, premier servi')->assertSee('href="#comment"', false)
-            // Sans boutique tarifée : pas de téléphone d'exemple.
-            ->assertDontSee('data-exemple', false)
+            // Sans boutique tarifée : téléphone toujours affiché, libellés neutres à la place du code et des montants.
+            ->assertSee('data-exemple', false)->assertSee('<p class="nuit-telephone-code">Ma boutique</p>', false)
+            ->assertSee('Mensuel')->assertSee('<p class="nuit-bulle-montant">Caution + avance</p>', false)
+            ->assertDontSee('FCFA</p>', false)
             ->assertSee(__('public.nuit.accueil.quoi_texte_sans_site'))
             ->assertSee('id="comment"', false)->assertSee('Contre la fraude')
             ->assertSee('Prochaine campagne bientôt')

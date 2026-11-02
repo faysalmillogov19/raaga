@@ -22,7 +22,8 @@ use Illuminate\View\View;
 
 /**
  * Guichet (Agent de guichet, ADMIN) : vérification d'une carte scannée (photo, nom, type, emplacements, statut en grand,
- * chaque scan tracé au journal d'audit), recherche par numéro de carte, dossier du titulaire (sans aucun montant).
+ * chaque scan tracé au journal d'audit), recherche par numéro de carte (ou identifiant fiscal et numéro de registre
+ * Raaga d'un commerçant), dossier du titulaire (sans aucun montant).
  */
 class GuichetController extends Controller
 {
@@ -35,12 +36,23 @@ class GuichetController extends Controller
         return view('admin.guichet.index');
     }
 
-    /** Numéro de carte (RG-C-000123) ou adresse scannée : ouvre la vérification de la carte. */
+    /**
+     * Numéro de carte (RG-C-000123) ou adresse scannée : ouvre la vérification de la carte. Identifiant fiscal
+     * (RG-F-000123) ou numéro de registre Raaga (RG-R-2026-000123) : ouvre le dossier du commerçant.
+     */
     public function rechercher(Request $request): RedirectResponse
     {
         Gate::authorize(Droit::CartesVerifier->value);
         $saisie = trim((string) $request->validate(['carte' => ['required', 'string', 'max:300']])['carte']);
         $jeton = preg_match('#/c/([A-Za-z0-9]+)#', $saisie, $m) ? $m[1] : null;
+        if (! $jeton && preg_match('#^RG-[FR]-#i', $saisie)) {
+            $commercant = User::query()->where('identifiant_fiscal_raaga', mb_strtoupper($saisie))->orWhere('numero_registre_raaga', mb_strtoupper($saisie))->first();
+            if (! $commercant?->cartes()->exists()) {
+                return back()->withErrors(['carte' => __('admin.guichet.erreurs.commercant_introuvable')])->withInput();
+            }
+
+            return redirect()->route('admin.guichet.titulaire', $commercant);
+        }
         $carte = Carte::query()->when($jeton, fn ($q) => $q->where('jeton', $jeton), fn ($q) => $q->where('numero', mb_strtoupper($saisie)))->first();
         if (! $carte) {
             return back()->withErrors(['carte' => __('admin.guichet.erreurs.introuvable')])->withInput();

@@ -146,6 +146,8 @@
 .cr-gauche { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
 .cr-mentions { display: flex; flex-direction: column; gap: 1.4mm; }
 .cr-mentions p { font-size: 1.7mm; line-height: 1.5; color: #3A3122; }
+/* Carte de commerçant : identifiants Raaga en plus des mentions, espacement réduit pour tenir au-dessus du code-barres. */
+.cr-mentions-serrees { gap: 0.8mm; }
 .cr-code-barres { box-sizing: border-box; padding: 1.2mm 2.4mm 0.8mm; border: 0.1mm solid #D8C89F; border-radius: 0.8mm; background: #FFFFFF; }
 .cr-code-barres svg { display: block; width: 100%; height: 8.8mm; }
 .cr-code-texte { margin-top: 0.5mm !important; font-family: 'Courier New', monospace; font-size: 1.4mm; letter-spacing: 0.18em; text-align: center; }

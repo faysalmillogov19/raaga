@@ -63,6 +63,7 @@ class User extends Authenticatable
             'piece_expire_le' => 'date',
             'type_titulaire' => TypeTitulaire::class,
             'kyc_maj_demandee_le' => 'datetime',
+            'identifiants_raaga_le' => 'datetime',
             'piece_avertie_le' => 'datetime',
             // Investisseur : date limite de correction d'une identité invalide, puis gel des actions (attestation et carte bloquées).
             'kyc_actions_a_corriger_avant' => 'datetime',

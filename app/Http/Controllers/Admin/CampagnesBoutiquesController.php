@@ -383,7 +383,9 @@ class CampagnesBoutiquesController extends Controller
         // Retour sur « Attributions à faire » quand l'attribution y a été faite.
         $retour = url()->previous() === route('admin.boutiques.attributions') ? route('admin.boutiques.attributions') : route('admin.boutiques.show', $campagne);
 
-        return redirect($retour)->avecSucces('admin.boutiques.messages.attribuee');
+        $commercant = $reservation->user()->first();
+
+        return redirect($retour)->avecSucces('admin.boutiques.messages.attribuee', ['fiscal' => $commercant->identifiant_fiscal_raaga, 'registre' => $commercant->numero_registre_raaga]);
     }
 
     /** Sites confirmés qui ont des boutiques réservables. */

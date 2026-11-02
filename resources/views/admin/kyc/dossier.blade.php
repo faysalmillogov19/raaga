@@ -73,6 +73,10 @@
             @endif
             <div><dt class="texte-carte">{{ $k['numero_piece'] }}</dt><dd class="font-mono" data-numero-piece>{{ $recto?->numero ?? $citoyen->numero_piece }}</dd></div>
             <div><dt class="texte-carte">{{ $k['expire_le'] }}</dt><dd>{{ ($recto?->expire_le ?? $citoyen->piece_expire_le)?->format('d/m/Y') }}</dd></div>
+            @if ($citoyen->identifiant_fiscal_raaga)
+                <div><dt class="texte-carte">{{ __('admin.guichet.identifiant_fiscal') }}</dt><dd class="font-mono" data-identifiant-fiscal>{{ $citoyen->identifiant_fiscal_raaga }}</dd></div>
+                <div><dt class="texte-carte">{{ __('admin.guichet.numero_registre') }}</dt><dd class="font-mono" data-numero-registre>{{ $citoyen->numero_registre_raaga }}</dd></div>
+            @endif
             <div><dt class="texte-carte">{{ $d['champs']['statut'] }}</dt><dd class="font-bold">{{ $k['statuts'][$citoyen->statut_kyc?->value ?? 'NON_SOUMIS'] }}</dd></div>
         </dl>
     </section>

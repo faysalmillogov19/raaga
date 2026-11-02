@@ -283,7 +283,7 @@ class Cartes
 
     /**
      * Contenu affiché : nom (identité validée seulement), date de naissance, photo (selfie validé), et selon le type les
-     * emplacements, le numéro d'actionnaire ou la fonction. Jamais de montant ni de nombre d'actions. Toute donnée
+     * emplacements avec l'identifiant fiscal et le numéro de registre Raaga, le numéro d'actionnaire ou la fonction. Jamais de montant ni de nombre d'actions. Toute donnée
      * imprimée y figure : sa modification donne une nouvelle version de la carte, donc de nouveaux fichiers.
      *
      * @return array<string, mixed>
@@ -308,7 +308,8 @@ class Cartes
             TypeCarte::Commercant => [...$contenu, 'emplacements' => ReservationBoutique::query()->where('user_id', $user->id)
                 ->where('statut', StatutReservationBoutique::Attribuee)->with('boutique.site')->get()
                 ->map(fn (ReservationBoutique $r) => ['code' => $r->boutique?->code, 'site' => $r->boutique?->site?->nom])
-                ->sortBy('code')->values()->all()],
+                ->sortBy('code')->values()->all(),
+                'identifiant_fiscal' => $user->identifiant_fiscal_raaga, 'numero_registre' => $user->numero_registre_raaga],
             TypeCarte::Actionnaire => [...$contenu, 'numero_actionnaire' => sprintf('RG-A-%06d', $user->id)],
             TypeCarte::Personnel => [...$contenu, 'fonction' => $user->codeRole()?->label()],
         };

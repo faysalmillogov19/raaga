@@ -97,27 +97,23 @@ class AccueilNuit
 
     /**
      * Exemple du téléphone illustré (accueil) : une boutique disponible du type le plus courant et ses montants, deux moyens
-     * de paiement mobiles actifs. Null sans boutique tarifée.
+     * de paiement mobiles actifs. Le téléphone est toujours affiché (02/11/2026) : sans site ni boutique tarifée, code et
+     * montants à null (la vue affiche des libellés neutres, jamais de chiffre inventé).
      *
-     * @return array{code: string, loyer: int, total: int, moyens: list<string>}|null
+     * @return array{code: ?string, loyer: ?int, total: ?int, moyens: list<string>}
      */
-    public function exemple(?CampagneBoutiques $campagne): ?array
+    public function exemple(?CampagneBoutiques $campagne): array
     {
         $site = $this->sitePrincipal();
-        if (! $site) {
-            return null;
-        }
-        $candidates = Boutique::query()->where('site_id', $site->id)->whereIn('statut', [StatutBoutique::Disponible, StatutBoutique::EnCampagne])
-            ->whereNotNull('surface')->with('site', 'type')->orderBy('niveau')->orderBy('bloc')->orderBy('numero')->limit(200)->get();
+        $candidates = $site ? Boutique::query()->where('site_id', $site->id)->whereIn('statut', [StatutBoutique::Disponible, StatutBoutique::EnCampagne])
+            ->whereNotNull('surface')->with('site', 'type')->orderBy('niveau')->orderBy('bloc')->orderBy('numero')->limit(200)->get() : collect();
         $boutique = $candidates->first(fn (Boutique $b) => ReservationsBoutiques::tarifer($b) !== null);
         $tarif = $boutique ? ReservationsBoutiques::tarifer($boutique) : null;
-        if (! $tarif) {
-            return null;
-        }
         $moyens = ($campagne?->moyensCaution() ?? MoyenPaiement::proposables())
             ->filter(fn (MoyenPaiement $m) => $m->estMobile())->take(2)->map(fn (MoyenPaiement $m) => $m->libelle)->values()->all();
 
-        return ['code' => $boutique->code, 'loyer' => $tarif['loyer_mensuel'], 'total' => $tarif['caution'] + $tarif['avance'], 'moyens' => $moyens];
+        return ['code' => $tarif ? $boutique->code : null, 'loyer' => $tarif['loyer_mensuel'] ?? null,
+            'total' => $tarif ? $tarif['caution'] + $tarif['avance'] : null, 'moyens' => $moyens];
     }
 
     /**

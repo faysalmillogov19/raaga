@@ -62,7 +62,7 @@ class ReservationsBoutiques
         return $user->estPersonneMorale() ? [TypeDocumentKyc::Ifu] : TypeDocumentKyc::piecesIdentite();
     }
 
-    public function __construct(private readonly Journal $journal) {}
+    public function __construct(private readonly Journal $journal, private readonly IdentifiantsCommercant $identifiants) {}
 
     /**
      * Boutiques réservables d'une campagne : sur ses sites et de ses types (attribuables, actifs et validés au
@@ -263,6 +263,8 @@ class ReservationsBoutiques
     /**
      * Avance confirmée (par le circuit de paiement) et date du contrat renseignée : la réservation et la boutique passent
      * « attribuées » (VALIDATEUR). La référence de l'avance est celle du paiement confirmé, jamais saisie à la main.
+     * Première boutique attribuée : identifiant fiscal et numéro de registre Raaga du commerçant (avant l'émission de sa
+     * carte, qui les imprime).
      */
     public function attribuer(ReservationBoutique $reservation, string $contratSigneLe, User $validateur): void
     {
@@ -278,6 +280,7 @@ class ReservationsBoutiques
             if (! $reservation->user->kycValide()) {
                 throw ValidationException::withMessages(['contrat_signe_le' => __('admin.boutiques.erreurs.identite_non_validee')]);
             }
+            $this->identifiants->attribuer($reservation->user, $validateur, now());
             $reservation->forceFill(['statut' => StatutReservationBoutique::Attribuee, 'attribuee_le' => now(), 'contrat_signe_le' => $contratSigneLe])->save();
             $reservation->boutique->changerStatut(StatutBoutique::Attribuee, 'attribution', $reservation, $validateur);
             $this->journal->ecrire($validateur, 'reservation_boutique.attribuee', 'ReservationBoutique', $reservation->id, null,

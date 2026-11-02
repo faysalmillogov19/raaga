@@ -12,6 +12,8 @@ return [
     'photo' => 'Photo du titulaire',
     'qr' => 'QR code de vérification de la carte',
     'carte_raaga' => 'Carte Raaga',
+    'identifiant_fiscal' => 'Identifiant fiscal Raaga :',
+    'numero_registre' => 'N° de registre Raaga :',
     'personnelle' => 'Carte personnelle et incessible.',
     'perte' => 'En cas de perte ou de vol, signalez-la au guichet.',
     'numero_vert' => 'Numéro vert :',
