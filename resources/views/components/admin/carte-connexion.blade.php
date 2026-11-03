@@ -13,9 +13,7 @@
     <x-assets />
 </head>
 <body class="site-public bo font-public">
-    <x-public.bande-tricolore />
-
-    <main class="compte-fond min-h-[calc(100vh-5px)]">
+    <main class="compte-fond min-h-screen">
         <div class="compte-carte">
             {{-- Pages d'authentification : ni « Retour » ni « Suivant » (30/10/2026). --}}
             <div class="flex items-center gap-3">

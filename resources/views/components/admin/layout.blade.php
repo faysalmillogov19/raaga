@@ -1,7 +1,7 @@
 @props(['titre', 'fil' => [], 'sousTitre' => null])
 
 {{--
-    Cadre unique des pages /admin : bandeau tricolore, barre latérale (groupes, liens, compteurs), barre du haut
+    Cadre unique des pages /admin (sans bande tricolore depuis le 03/11/2026) : barre latérale (groupes, liens, compteurs), barre du haut
     (menu, recherche globale, actions en attente, notifications, thème, profil), puis le contenu : fil d'Ariane,
     titre, sous-titre et actions (slot « actions »), cartes. Thème clair ou Forêt mémorisé pour chaque utilisateur.
 --}}
@@ -39,7 +39,6 @@
 <body class="site-public bo adm theme-{{ $theme }}" data-layout="admin"
       x-data="cadreAdmin({ theme: @js($theme), urlTheme: @js(route('admin.preferences.theme')), urlLues: @js(route('admin.notifications.lues')) })"
       :class="{ 'theme-clair': theme !== 'foret', 'theme-foret': theme === 'foret' }">
-    <div class="adm-bandeau" aria-hidden="true"></div>
     <a href="#contenu" class="sr-only focus:not-sr-only">{{ __('admin.cadre.aller_contenu') }}</a>
 
     <div class="adm-cadre" :class="{ 'adm-ferme': ! ouvert }">

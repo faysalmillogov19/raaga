@@ -3229,3 +3229,12 @@ html,
 .carte-id-fond-carte {
     background: #FBF8F1;
 }
+
+/* Espace institutionnel : plus de bande tricolore au-dessus du cadre (03/11/2026), le cadre occupe toute la hauteur
+ * (app.css, figé, retirait les 5 px de la bande). */
+.bo-inst .bo-cadre {
+    min-height: 100vh;
+}
+.bo-inst .bo-lateral {
+    height: 100vh;
+}

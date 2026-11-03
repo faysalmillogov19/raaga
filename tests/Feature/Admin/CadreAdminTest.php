@@ -29,7 +29,7 @@ class CadreAdminTest extends TestCase
 
         foreach ($pages as $url) {
             $this->get($url)->assertOk()
-                ->assertSee('data-layout="admin"', false)->assertSee('class="adm-bandeau"', false)->assertSee('class="adm-lateral"', false)
+                ->assertSee('data-layout="admin"', false)->assertDontSee('adm-bandeau"', false)->assertDontSee('bande-tricolore', false)->assertSee('class="adm-lateral"', false)
                 ->assertSee('class="adm-haut"', false)->assertSee('id="recherche-globale"', false)->assertSee('class="adm-fil"', false)
                 ->assertSee('class="adm-titre bo-titre"', false)->assertSee($user->name);
         }

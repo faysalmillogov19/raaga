@@ -81,21 +81,12 @@ body.adm {
 .adm .border-ligne { border-color: var(--line); }
 .adm .texte-carte { color: var(--muted); }
 
-/* ------------------------------------------------------------------ Cadre */
-
-.adm-bandeau {
-    position: fixed;
-    inset: 0 0 auto;
-    z-index: 40;
-    height: 4px;
-    background: linear-gradient(90deg, var(--tricolore-rouge) 0 33.34%, var(--tricolore-jaune) 33.34% 66.67%, var(--tricolore-vert) 66.67%);
-}
+/* ------------------------------------------------------------------ Cadre (sans bande tricolore depuis le 03/11/2026) */
 
 .adm-cadre {
     display: grid;
     grid-template-columns: 248px minmax(0, 1fr);
     min-height: 100vh;
-    padding-top: 4px;
 }
 
 .adm-cadre.adm-ferme {
@@ -109,10 +100,10 @@ body.adm {
 /* Barre latérale */
 .adm-lateral {
     position: sticky;
-    top: 4px;
+    top: 0;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 4px);
+    height: 100vh;
     overflow-y: auto;
     background: var(--side);
     border-right: 1px solid var(--side-border);
@@ -293,7 +284,7 @@ body.adm {
 
 .adm-haut {
     position: sticky;
-    top: 4px;
+    top: 0;
     z-index: 30;
     display: flex;
     align-items: center;

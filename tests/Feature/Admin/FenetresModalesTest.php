@@ -39,6 +39,8 @@ class FenetresModalesTest extends TestCase
         $script = file_get_contents(public_path('js/app.js'));
         $this->assertStringContainsString('dialogue.showModal()', $script);
         $this->assertDoesNotMatchRegularExpression('/dialog(ue)?\.show\(\)/', $script);
+        // Contenu remplacé après l'envoi (import confirmé…) : la page défile de nouveau, le verrou est levé (03/11/2026).
+        $this->assertStringContainsString("verrouillerPage(document.querySelector('dialog.adm-fenetre[open]') !== null);", $script);
         foreach (glob(resource_path('views/admin/{,*/}*.blade.php'), GLOB_BRACE) as $vue) {
             if (! str_contains($vue, '_capacites')) {
                 $this->assertStringNotContainsString('<details', file_get_contents($vue), $vue);

@@ -1,6 +1,6 @@
 @props(['titre', 'fil' => []])
 
-{{-- Espace investisseurs institutionnels : identité visuelle du site (couleurs, police, bande tricolore), mise en page d'application. --}}
+{{-- Espace investisseurs institutionnels : identité visuelle du site (couleurs, police ; plus de bande tricolore depuis le 03/11/2026), mise en page d'application. --}}
 @php
     $user = Auth::user();
     $institution = $user->institution;
@@ -31,8 +31,6 @@
     <x-assets />
 </head>
 <body class="site-public bo bo-inst font-public">
-    <x-public.bande-tricolore />
-
     <div class="bo-cadre" x-data="menuBackoffice" :class="{ 'bo-replie': replie }">
         <aside class="bo-lateral">
             <div class="bo-marque">

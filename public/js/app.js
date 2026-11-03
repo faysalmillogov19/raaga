@@ -619,6 +619,9 @@ const remplacerContenu = (html, url, focusId) => {
         return;
     }
     actuel.innerHTML = nouveau.innerHTML;
+    // La fenêtre envoyée faisait partie de l'ancien contenu : retirée avant que sa fermeture soit traitée, elle laissait
+    // la page verrouillée (plus de défilement après un import, par exemple). Verrou levé s'il ne reste aucune fenêtre ouverte.
+    verrouillerPage(document.querySelector('dialog.adm-fenetre[open]') !== null);
     document.title = doc.title;
     if (url && url !== window.location.href) {
         window.history.pushState({}, '', url);
