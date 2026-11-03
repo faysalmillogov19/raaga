@@ -2797,7 +2797,7 @@ html,
 /* ================================================================== Thème « lumière » (défaut, config raaga.theme_public)
  * Même mise en page que le thème « nuit » (classe .theme-nuit conservée sur le body), en couleurs claires : la classe
  * .theme-lumiere redéfinit les variables --nuit-* (mêmes rôles), puis corrige les quelques couleurs écrites en dur.
- * Le pied de page et le téléphone illustré de l'accueil gardent leurs couleurs sombres. Maquettes de référence :
+ * Le téléphone illustré de l'accueil garde ses couleurs sombres ; pied de page clair depuis le 03/11/2026. Maquettes de référence :
  * docs/maquettes/maquette-*-theme-clair.html (non déployées). Contraste d'au moins 4,5:1. */
 .theme-nuit.theme-lumiere {
     --nuit-fond: #FFFFFF;
@@ -2816,8 +2816,7 @@ html,
     --nuit-erreur: #B3261E;
     --texte-doux: #5E6B63;
 }
-/* Zones restées sombres : pied de page, téléphone illustré (écran) et bulles sombres de l'accueil. */
-.theme-lumiere .pied-public,
+/* Zones restées sombres : téléphone illustré (écran) et bulles sombres de l'accueil. */
 .theme-lumiere .nuit-telephone-ecran,
 .theme-lumiere .nuit-bulle-moyens,
 .theme-lumiere .nuit-bulle-carte {
@@ -2844,9 +2843,26 @@ html,
     outline-offset: 2px;
     box-shadow: 0 0 0 6px #FCD116;
 }
-.theme-lumiere .pied-public a:focus-visible {
-    outline-color: #FCD116;
-    box-shadow: none;
+
+/* Pied de page clair (03/11/2026) : fond gris très clair séparé du contenu par un filet, titres foncés, liens gris
+ * foncé puis vert au survol, logo en couleur (components/public/pied.blade.php). Contraste d'au moins 4,5:1. */
+.theme-lumiere .pied-public {
+    background: #F5F7F5;
+    color: #5E6B63;
+    border-top: 1px solid #D9E0DB;
+}
+.theme-lumiere .pied-public .pied-titre,
+.theme-lumiere .pied-public .text-white {
+    color: #16201A;
+}
+.theme-lumiere .pied-public .pied-lien {
+    color: #2E3A33;
+}
+.theme-lumiere .pied-public .pied-lien:hover {
+    color: #005C2B;
+}
+.theme-lumiere .pied-public .\!text-white {
+    color: #005C2B !important;
 }
 
 /* Liens : vert foncé, survol vert Raaga (maquettes). */

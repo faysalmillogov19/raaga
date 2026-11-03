@@ -25,8 +25,6 @@
     <x-assets :scripts="false" />
 </head>
 <body @class(['site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased', 'theme-nuit' => $nuit, 'theme-lumiere' => $lumiere])>
-    <div class="bande-tricolore" aria-hidden="true"></div>
-
     <header class="cadre-erreur-entete border-b border-gris-clair">
         <div class="conteneur flex min-h-[72px] items-center">
             {{-- Comme sur le site : armoiries seules dans l'en-tête. --}}
@@ -57,7 +55,5 @@
             @endif
         </div>
     </main>
-
-    <div class="bande-tricolore" aria-hidden="true"></div>
 </body>
 </html>

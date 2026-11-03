@@ -168,8 +168,12 @@ class ThemeLumiereTest extends TestCase
             '--nuit-bordure: #D9E0DB;', '--nuit-bouton: #005C2B;', '--nuit-jaune-texte: #8A6A00;'] as $variable) {
             $this->assertStringContainsString($variable, $css);
         }
-        // Pied de page sombre conservé, cases « disponible » du plan claires.
-        $this->assertStringContainsString('.theme-lumiere .pied-public,', $css);
+        // Pied de page clair (03/11/2026), cases « disponible » du plan claires.
+        $this->assertStringContainsString(".theme-lumiere .pied-public {
+    background: #F5F7F5;", str_replace("
+", "
+", $css));
+        $this->assertStringNotContainsString('.theme-lumiere .pied-public,', $css);
         $this->assertStringContainsString('.theme-lumiere .nuit-plan-disponible { --c: #005C2B; --c-fond: #E8F4EC; }', $css);
     }
 }

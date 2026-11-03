@@ -42,8 +42,6 @@
         {{ __('public.site.aller_au_contenu') }}
     </a>
 
-    <x-public.bande-tricolore />
-
     <x-public.bandeau />
 
     @if ($nuit)
@@ -67,7 +65,6 @@
         {{ $slot }}
     </main>
 
-    <x-public.bande-tricolore />
     <x-public.pied />
     <x-notification />
 </body>

@@ -41,12 +41,19 @@ class LogoTest extends TestCase
         $this->assertStringContainsString(".theme-nuit .nuit-entete-armoiries {\n    display: block;\n    height: 44px;\n    width: auto;\n}", str_replace("\r\n", "\n", $css));
         $this->assertStringNotContainsString('nuit-entete-logo-image', $css);
 
+        config(['raaga.theme_public' => 'lumiere']);
         $accueil = $this->get('/')->assertOk();
+        // Plus de bande rouge et verte au-dessus de l'en-tête ni du pied de page (03/11/2026).
+        $accueil->assertDontSee('bande-tricolore', false);
 
-        // Pied de page sur fond foncé : version blanche du logo, sans cadre blanc.
+        // Thème « lumière » : pied de page clair, logo en couleur (03/11/2026) ; thème « nuit » : logo blanc sans cadre blanc.
         preg_match('/<footer.*?<\/footer>/s', $accueil->getContent(), $pied);
+        $this->assertStringContainsString($logo, $pied[0]);
+        config(['raaga.theme_public' => 'nuit']);
+        preg_match('/<footer.*?<\/footer>/s', $this->get('/')->assertOk()->getContent(), $pied);
         $this->assertStringContainsString(e(ImagesPlateforme::url('logoHorizontalBlanc')), $pied[0]);
         $this->assertStringNotContainsString('bg-white px-2 py-1.5', $pied[0]);
+        config(['raaga.theme_public' => 'lumiere']);
         $this->get('/connexion')->assertOk()->assertSee($logo, false);
         $this->assertStringContainsString('images/og-raaga.png', $accueil->getContent());
         $this->assertStringContainsString('rel="manifest"', $accueil->getContent());

@@ -11,7 +11,8 @@
     <div class="conteneur pied-grille py-10">
         <div>
             <a href="{{ route('accueil') }}" class="inline-flex min-h-[44px] items-center">
-                <x-logo variante="blanc" class="h-[52px]" :alt="$identite['nomPlateforme'].' – '.__('public.menu.accueil')" />
+                {{-- Thème « lumière » : pied de page clair, logo en couleur ; thèmes « nuit » et « clair » : fond sombre, logo blanc. --}}
+                <x-logo :variante="\App\Support\ThemePublic::lumiere() ? 'horizontal' : 'blanc'" class="h-[52px]" :alt="$identite['nomPlateforme'].' – '.__('public.menu.accueil')" />
             </a>
             {{-- Phrase sur la souscription populaire (actions) : seulement quand la présentation des actions est activée. --}}
             @if (\App\Support\Phase::presentationActions())
