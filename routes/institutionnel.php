@@ -21,17 +21,17 @@ Route::prefix('institutionnel')->name('institutionnel.')->group(function () {
     Route::controller(ConnexionController::class)->prefix('connexion')->name('connexion')
         ->group(function () {
             Route::get('/', 'create')->defaults('espace', 'institutionnel');
-            Route::post('/', 'store')->defaults('espace', 'institutionnel')->middleware('throttle:20,1');
+            Route::post('/', 'store')->defaults('espace', 'institutionnel')->middleware('throttle:20,1')->name('.envoyer');
             Route::get('/totp', 'totp')->defaults('espace', 'institutionnel')->name('.totp');
-            Route::post('/totp', 'verifierTotp')->defaults('espace', 'institutionnel')->middleware('throttle:20,1');
+            Route::post('/totp', 'verifierTotp')->defaults('espace', 'institutionnel')->middleware('throttle:20,1')->name('.totp.verifier');
             Route::get('/enrolement', 'enrolement')->defaults('espace', 'institutionnel')->name('.enrolement');
-            Route::post('/enrolement', 'confirmerEnrolement')->defaults('espace', 'institutionnel')->middleware('throttle:20,1');
+            Route::post('/enrolement', 'confirmerEnrolement')->defaults('espace', 'institutionnel')->middleware('throttle:20,1')->name('.enrolement.confirmer');
             Route::get('/codes-secours', 'codesSecours')->defaults('espace', 'institutionnel')->name('.codes-secours');
-            Route::post('/codes-secours', 'terminerEnrolement')->defaults('espace', 'institutionnel');
+            Route::post('/codes-secours', 'terminerEnrolement')->defaults('espace', 'institutionnel')->name('.codes-secours.terminer');
         });
 
     Route::get('/invitation/{jeton}', [InvitationController::class, 'show'])->defaults('espace', 'institutionnel')->name('invitation');
-    Route::post('/invitation/{jeton}', [InvitationController::class, 'store'])->defaults('espace', 'institutionnel')->middleware('throttle:10,1');
+    Route::post('/invitation/{jeton}', [InvitationController::class, 'store'])->defaults('espace', 'institutionnel')->middleware('throttle:10,1')->name('invitation.accepter');
 
     Route::middleware('backoffice:institutionnel')->group(function () {
         Route::post('/deconnexion', [ConnexionController::class, 'destroy'])->defaults('espace', 'institutionnel')->name('deconnexion');

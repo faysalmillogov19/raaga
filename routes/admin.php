@@ -59,20 +59,22 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('admin')->name('admin.')->group(function () {
 
     // Connexion : e-mail + mot de passe, puis TOTP (ou enrôlement à la première connexion).
+    // Un nom par route : dans un groupe nommé, une route sans nom prend celui du groupe, et deux routes de même nom
+    // font échouer « php artisan route:cache » au déploiement.
     Route::controller(ConnexionController::class)->prefix('connexion')->name('connexion')->group(function () {
         Route::get('/', 'create');
-        Route::post('/', 'store')->middleware('throttle:20,1');
+        Route::post('/', 'store')->middleware('throttle:20,1')->name('.envoyer');
         Route::get('/totp', 'totp')->name('.totp');
-        Route::post('/totp', 'verifierTotp')->middleware('throttle:20,1');
+        Route::post('/totp', 'verifierTotp')->middleware('throttle:20,1')->name('.totp.verifier');
         Route::get('/enrolement', 'enrolement')->name('.enrolement');
-        Route::post('/enrolement', 'confirmerEnrolement')->middleware('throttle:20,1');
+        Route::post('/enrolement', 'confirmerEnrolement')->middleware('throttle:20,1')->name('.enrolement.confirmer');
         Route::get('/codes-secours', 'codesSecours')->name('.codes-secours');
-        Route::post('/codes-secours', 'terminerEnrolement');
+        Route::post('/codes-secours', 'terminerEnrolement')->name('.codes-secours.terminer');
     });
 
     // Lien d'invitation ou de nouvel accès (jeton à usage unique, valable 48 h).
     Route::get('/invitation/{jeton}', [InvitationController::class, 'show'])->name('invitation');
-    Route::post('/invitation/{jeton}', [InvitationController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('/invitation/{jeton}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitation.accepter');
 
     // Anciennes adresses du référentiel (avant le groupe « Référencement ») : redirection permanente.
     Route::get('/sites/{chemin?}', function (?string $chemin = null) {
@@ -89,11 +91,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         };
 
         return redirect(url('admin/'.$nouveau).(request()->getQueryString() ? '?'.request()->getQueryString() : ''), 301);
-    })->where('chemin', '.*');
+    })->where('chemin', '.*')->name('anciennes-adresses.sites');
     Route::get('/referencement/sites/{site}/{chemin}', fn (string $site) => redirect(url('admin/referencement/boutiques').'?site='.$site, 301))
-        ->whereNumber('site')->where('chemin', '(boutiques|excel)(/.*)?');
+        ->whereNumber('site')->where('chemin', '(boutiques|excel)(/.*)?')->name('anciennes-adresses.boutiques-du-site');
     Route::get('/boutiques/grilles/{chemin?}', fn (?string $chemin = null) => redirect(url('admin/referencement/grille'.($chemin ? '/'.$chemin : '')), 301))
-        ->where('chemin', '.*');
+        ->where('chemin', '.*')->name('anciennes-adresses.grilles');
 
     Route::middleware('backoffice')->group(function () {
         Route::post('/deconnexion', [ConnexionController::class, 'destroy'])->name('deconnexion');

@@ -66,6 +66,19 @@ class VerrousProductionTest extends TestCase
         });
     }
 
+    /**
+     * « php artisan route:cache » (déploiement) refuse deux routes de même nom. Dans un groupe nommé, une route sans nom
+     * prend celui du groupe : le POST de la connexion portait le même nom que la page (incident du 03/11/2026).
+     */
+    public function test_chaque_nom_de_route_est_unique_pour_la_mise_en_cache(): void
+    {
+        $doublons = collect(app('router')->getRoutes()->getRoutes())->filter(fn ($r) => $r->getName() !== null)
+            ->groupBy(fn ($r) => $r->getName())->filter(fn ($routes) => $routes->count() > 1)
+            ->map(fn ($routes) => $routes->map(fn ($r) => implode('|', $r->methods()).' '.$r->uri())->all())->all();
+
+        $this->assertSame([], $doublons, 'Routes de même nom : donner un nom propre à chacune.');
+    }
+
     public function test_le_seeder_de_demo_refuse_de_s_executer_en_production(): void
     {
         $this->app['env'] = 'production';
