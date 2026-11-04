@@ -27,8 +27,8 @@ use Illuminate\Support\Str;
  * d'identité conforme ou douteux, compte désactivé) appelle synchroniser() : l'état attendu de la carte est recalculé
  * et appliqué (émission, mise à jour du contenu, suspension, révocation), sous verrou du titulaire.
  *
- * COMMERÇANT : dès sa première boutique attribuée ; numéro de carte = IFU du titulaire (depuis le 03/11/2026, RG-C sans
- * IFU) ; sexe, lieu de naissance, activité, site(s), groupe sanguin (avec consentement), lieu de résidence, personne à
+ * COMMERÇANT : dès sa première boutique attribuée ; numéro de carte = numéro Raaga, c'est-à-dire l'IFU du titulaire,
+ * seul numéro du commerçant (sans IFU : carte en attente, sans numéro) ; sexe, lieu de naissance, activité, site(s), groupe sanguin (avec consentement), lieu de résidence, personne à
  * prévenir ; validité = durée réglée par le SUPER_ADMIN (3 ans par défaut) à compter de l'émission. ACTIONNAIRE : dès sa première inscription au registre ; numéro d'actionnaire,
  * sans nombre d'actions ni montant ; validité 1 an, renouvelée tant qu'il détient des actions. Les deux ne sont émises
  * que si le dossier d'identité est conforme (sinon : en attente) ; jamais au-delà de l'expiration de la pièce ; identité
@@ -260,8 +260,10 @@ class Cartes
             $validite = $validite->min(CarbonImmutable::parse($user->piece_expire_le));
         }
 
-        // Actions gelées (identité non corrigée dans le délai) : carte d'actionnaire bloquée jusqu'au dégel.
-        $conforme = $user->statut_kyc === StatutKyc::Valide && ! $validite->isPast() && ! ($type === TypeCarte::Actionnaire && $user->actionsGelees());
+        // Actions gelées (identité non corrigée dans le délai) : carte d'actionnaire bloquée jusqu'au dégel. Commerçant sans
+        // numéro Raaga (IFU) : carte en attente.
+        $conforme = $user->statut_kyc === StatutKyc::Valide && ! $validite->isPast() && ! ($type === TypeCarte::Actionnaire && $user->actionsGelees())
+            && ($type !== TypeCarte::Commercant || filled($user->ifu));
         $statut = match (true) {
             $conforme => StatutCarte::Active,
             // Identité douteuse : aucune carte ; une carte déjà émise est suspendue jusqu'à régularisation.
@@ -343,10 +345,17 @@ class Cartes
         ];
     }
 
-    /** Numéro imprimé : l'IFU pour la carte de commerçant (03/11/2026), sinon RG-C suivi du numéro de la carte. */
-    private static function numero(User $user, TypeCarte $type, Carte $carte): string
+    /**
+     * Numéro imprimé. Carte de commerçant : le numéro Raaga, c'est-à-dire son IFU, seul numéro du commerçant (comité
+     * restreint du 03/11/2026) ; sans IFU, aucun numéro. Autres cartes : RG-C suivi du numéro de la carte.
+     */
+    private static function numero(User $user, TypeCarte $type, Carte $carte): ?string
     {
-        return $type === TypeCarte::Commercant && filled($user->ifu) ? $user->ifu : sprintf('RG-C-%06d', $carte->id);
+        if ($type === TypeCarte::Commercant) {
+            return filled($user->ifu) ? $user->ifu : null;
+        }
+
+        return sprintf('RG-C-%06d', $carte->id);
     }
 
     private function creer(User $user, TypeCarte $type, StatutCarte $statut, array $contenu, ?CarbonImmutable $validite, ?User $acteur, ?Carte $ancienne = null): Carte

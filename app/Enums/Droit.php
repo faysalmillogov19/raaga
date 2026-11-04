@@ -62,6 +62,10 @@ enum Droit: string
     case ReferentielsVoir = 'referentiels.voir';
     case ReferentielsGerer = 'referentiels.gerer';
 
+    // Secteurs d'activité des commerçants et guichets agréés (04/11/2026) : SUPER_ADMIN, sans validation.
+    case SecteursGerer = 'secteurs.gerer';
+    case GuichetsGerer = 'guichets.gerer';
+
     case TranchesVoir = 'tranches.voir';
     case TranchesSaisir = 'tranches.saisir';
     case TranchesConfirmer = 'tranches.confirmer';
@@ -200,7 +204,7 @@ enum Droit: string
             self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer, self::MoyensPaiementGerer, self::MoyensPaiementConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
-            self::InstallationMettreAJour,
+            self::InstallationMettreAJour, self::SecteursGerer, self::GuichetsGerer,
             self::KycTraiter, self::ConformiteTraiter, self::KycAnnulationConfirmer,
             self::CartesImprimer, self::CartesGerer, self::CartesRevocationConfirmer, self::CartesFichiersRelancer, self::GuichetSouscrire,
             self::SouscriptionsRapprocher, self::RemboursementsApprouver, self::RemboursementsSuivre, self::RelancesEnvoyer,
@@ -312,6 +316,8 @@ enum Droit: string
                 self::ReferentielsVoir,
                 self::UnitesVoir, self::MoyensPaiementVoir,
                 self::ReferentielsBoutiquesVoir, self::ModalitesPaiementVoir, self::InstallationMettreAJour,
+                // Secteurs d'activité et guichets agréés (04/11/2026) : ajout, modification, activation.
+                self::SecteursGerer, self::GuichetsGerer,
                 // Fichiers des cartes en échec (30/10/2026) : alerte et relance de la génération.
                 self::CartesFichiersRelancer,
             ],

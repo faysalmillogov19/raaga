@@ -219,8 +219,8 @@ class CarteIdentificationReglagesTest extends TestCase
             ->assertSee('SPÉCIMEN')->assertSee('data:image/png;base64,', false)
             ->assertSee('Carte prête à être générée')
             // Recto de la maquette du 03/11/2026 : n° de carte (IFU), identité, secteur, site, dates ; jamais le code d'une boutique.
-            ->assertSeeInOrder(['Burkina Faso', 'Carte d’identification', 'COMMERÇANT', 'N° de carte (IFU)', 'Nom et prénom(s)', 'Sexe', 'Né(e) le', 'À',
-                'Secteur d’activité', 'Site', 'Établie le', 'Expire le', 'Groupe sanguin', 'Lieu de résidence', 'Personne à prévenir', 'N° IFU · Expiration'])
+            ->assertSeeInOrder(['Burkina Faso', 'Carte d’identification', 'COMMERÇANT', 'Numéro Raaga', 'Nom et prénom(s)', 'Sexe', 'Né(e) le', 'À',
+                'Secteur d’activité', 'Site', 'Établie le', 'Expire le', 'Groupe sanguin', 'Lieu de résidence', 'Personne à prévenir', 'Numéro Raaga · Expiration'])
             ->assertDontSee('Emplacement');
 
         $this->assertNull(plateforme('carte.dureeValiditeAnnees'));

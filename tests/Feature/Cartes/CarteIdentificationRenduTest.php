@@ -192,7 +192,7 @@ class CarteIdentificationRenduTest extends TestCase
             foreach (['recto-principal', 'recto-secondaire', 'verso-principal', 'verso-secondaire'] as $place) {
                 $this->assertStringContainsString('class="cr-filigrane cr-filigrane-'.$place.'"', $html);
             }
-            $this->assertStringContainsString($type === TypeCarte::Commercant ? 'N° IFU · Expiration' : 'N° de carte · Expiration', $html);
+            $this->assertStringContainsString($type === TypeCarte::Commercant ? 'Numéro Raaga · Expiration' : 'N° de carte · Expiration', $html);
             // Bandeau tricolore retiré (comité restreint du 03/11/2026).
             $this->assertStringNotContainsString('cr-bande"', $html);
 

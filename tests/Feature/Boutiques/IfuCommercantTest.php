@@ -4,6 +4,7 @@ namespace Tests\Feature\Boutiques;
 
 use App\Enums\Role;
 use App\Enums\StatutBoutique;
+use App\Enums\StatutCarte;
 use App\Enums\StatutDocumentKyc;
 use App\Enums\StatutKyc;
 use App\Enums\StatutReservationBoutique;
@@ -84,7 +85,7 @@ class IfuCommercantTest extends TestCase
         $boutique = Boutiques::boutique('A', 1);
 
         $this->actingAs($citoyen)->get(route('boutiques.boutique', $boutique->code))->assertOk()
-            ->assertSee('data-ifu-reservation', false)->assertSee('Votre IFU')->assertSee('name="ifu"', false)->assertSee('name="attestation_ifu"', false);
+            ->assertSee('data-ifu-reservation', false)->assertSee('Votre numéro Raaga')->assertSee('Numéro Raaga (IFU)')->assertSee('name="ifu"', false)->assertSee('name="attestation_ifu"', false);
 
         // Sans IFU, sans attestation, IFU déjà pris : rien n'est enregistré.
         $this->candidater($citoyen, $boutique, ['attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf')])
@@ -149,10 +150,16 @@ class IfuCommercantTest extends TestCase
         $this->assertStringContainsString('00012345A', $html);
         $this->assertStringNotContainsString('Identifiant fiscal', $html);
 
-        // Les autres cartes gardent leur numéro RG-C.
+        // Le numéro Raaga (IFU) est le seul numéro du commerçant : sans IFU, carte en attente, sans numéro, jamais de RG-C.
         $sansIfu = $this->citoyen(['ifu' => null]);
         $this->attribuer($sansIfu, Boutiques::boutique('A', 2));
-        $this->assertMatchesRegularExpression('/^RG-C-\d{6}$/', Cartes::courante($sansIfu, TypeCarte::Commercant)->numero);
+        $enAttente = Cartes::courante($sansIfu, TypeCarte::Commercant);
+        $this->assertSame([StatutCarte::EnAttente, null], [$enAttente->statut, $enAttente->numero]);
+        // IFU donné ensuite : la carte prend ce numéro et devient active.
+        $sansIfu->forceFill(['ifu' => '00054321B'])->save();
+        $active = app(Cartes::class)->synchroniser($sansIfu->fresh(), TypeCarte::Commercant);
+        $this->assertSame([StatutCarte::Active, '00054321B'], [$active->statut, $active->numero]);
+        $this->assertStringContainsString('Numéro Raaga', $html);
     }
 
     public function test_guichet_dossier_et_profil_du_commercant(): void
@@ -168,14 +175,14 @@ class IfuCommercantTest extends TestCase
         }
         $this->en($agent)->from(route('admin.guichet'))->post(route('admin.guichet.rechercher'), ['carte' => 'RG-F-'.sprintf('%06d', $citoyen->id)])
             ->assertSessionHasErrors('carte');
-        $this->en($agent)->get(route('admin.guichet.titulaire', $citoyen))->assertOk()->assertSee('N° IFU')->assertSee('00012345A')
+        $this->en($agent)->get(route('admin.guichet.titulaire', $citoyen))->assertOk()->assertSee('Numéro Raaga')->assertDontSee('N° IFU')->assertSee('00012345A')
             ->assertDontSee('Identifiant fiscal Raaga');
 
         $admin = User::factory()->role(Role::Admin)->create();
         $this->en($admin)->get(route('admin.kyc.dossier', $citoyen))->assertOk()->assertSee('data-ifu', false)->assertSee('00012345A');
 
         $this->app['auth']->forgetGuards();
-        $this->actingAs($citoyen)->get('/espace?onglet=profil')->assertOk()->assertSee('Numéro IFU')->assertSee('00012345A')
+        $this->actingAs($citoyen)->get('/espace?onglet=profil')->assertOk()->assertSee('Numéro Raaga')->assertDontSee('Numéro IFU')->assertSee('00012345A')
             ->assertDontSee('Identifiant fiscal Raaga');
     }
 

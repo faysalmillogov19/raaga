@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\DividendesController;
 use App\Http\Controllers\Admin\GrillesTarifairesController;
 use App\Http\Controllers\Admin\GuichetCaisseController;
 use App\Http\Controllers\Admin\GuichetController;
+use App\Http\Controllers\Admin\GuichetsAgreesController;
 use App\Http\Controllers\Admin\GuichetSouscriptionController;
 use App\Http\Controllers\Admin\HistoriqueDecisionsController;
 use App\Http\Controllers\Admin\ImportBoutiquesController;
@@ -39,6 +40,7 @@ use App\Http\Controllers\Admin\ProfilController;
 use App\Http\Controllers\Admin\ReferentielBoutiquesController;
 use App\Http\Controllers\Admin\RegistreAController;
 use App\Http\Controllers\Admin\RemboursementsController;
+use App\Http\Controllers\Admin\SecteursActiviteController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SiteFinancesController;
 use App\Http\Controllers\Admin\SitesController;
@@ -336,6 +338,25 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{type}/rejeter', 'rejeter')->whereNumber('type')->middleware('can:'.Droit::SitesConfirmer->value)->name('.rejeter');
             // SUPER_ADMIN : mise à jour directe d'un type créé par le seeder, sans validation.
             Route::put('/{type}/direct', 'miseAJourDirecte')->whereNumber('type')->middleware('can:'.Droit::InstallationMettreAJour->value)->name('.direct');
+        });
+
+        // Secteurs d'activité des commerçants (SUPER_ADMIN) : ajout, modification, activation ; jamais de suppression.
+        Route::controller(SecteursActiviteController::class)->prefix('parametres/secteurs-activite')->name('secteurs')->middleware('can:'.Droit::SecteursGerer->value)->group(function () {
+            Route::get('/', 'index');
+            Route::post('/', 'store')->name('.store');
+            Route::put('/{secteur}', 'update')->whereNumber('secteur')->name('.update');
+            Route::post('/{secteur}/activer', 'activer')->whereNumber('secteur')->name('.activer');
+            Route::post('/{secteur}/desactiver', 'desactiver')->whereNumber('secteur')->name('.desactiver');
+        });
+
+        // Guichets agréés affichés sur « Trouver un guichet » (SUPER_ADMIN) : ajout, modification, activation, suppression.
+        Route::controller(GuichetsAgreesController::class)->prefix('parametres/guichets')->name('guichets-agrees')->middleware('can:'.Droit::GuichetsGerer->value)->group(function () {
+            Route::get('/', 'index');
+            Route::post('/', 'store')->name('.store');
+            Route::put('/{guichet}', 'update')->whereNumber('guichet')->name('.update');
+            Route::post('/{guichet}/activer', 'activer')->whereNumber('guichet')->name('.activer');
+            Route::post('/{guichet}/desactiver', 'desactiver')->whereNumber('guichet')->name('.desactiver');
+            Route::delete('/{guichet}', 'destroy')->whereNumber('guichet')->name('.destroy');
         });
 
         // Sites (référentiel, en amont des campagnes) : GESTIONNAIRE DES SITES ET BOUTIQUES saisit, VALIDATEUR confirme.

@@ -136,7 +136,7 @@ class InscriptionTest extends TestCase
         $this->verifierNumero();
         $morale = fn (array $donnees = []) => $this->identite(['type_titulaire' => 'MORALE', 'raison_sociale' => 'Tissages du Faso SARL', 'forme_morale' => 'ENTREPRISE', ...$donnees]);
 
-        $this->get('/inscription')->assertSee('name="ifu"', false)->assertSee('Numéro IFU');
+        $this->get('/inscription')->assertSee('name="ifu"', false)->assertSee('Numéro Raaga (IFU)');
         foreach (['' => 'Saisissez un numéro IFU valide : 8 chiffres suivis d’une lettre.', '1234567A' => 'Saisissez un numéro IFU valide : 8 chiffres suivis d’une lettre.'] as $saisie => $message) {
             $this->from('/inscription')->post('/inscription/identite', $morale(['ifu' => $saisie]))->assertSessionHasErrors(['ifu' => $message]);
         }

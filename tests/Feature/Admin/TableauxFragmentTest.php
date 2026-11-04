@@ -24,7 +24,7 @@ class TableauxFragmentTest extends TestCase
     /** Tous les tableaux de données du back-office (identifiants passés à Tableau::pour ou ImportsController::journal). */
     private const TABLEAUX = ['boutiques', 'campagnes', 'reservations', 'capacites', 'cautions', 'finances', 'grilles', 'historique', 'interets', 'kyc',
         'remboursements', 'sites', 'types', 'utilisateurs', 'niveaux', 'zones', 'unites', 'moyens', 'paiements-souscriptions', 'paiements-cautions',
-        'imports_sites', 'imports_boutiques', 'derniers-imports'];
+        'imports_sites', 'imports_boutiques', 'derniers-imports', 'secteurs', 'guichets'];
 
     private const PROFILS = [Role::SuperAdmin, Role::Admin, Role::Validateur, Role::Regulateur, Role::GestionnaireSites, Role::ControleurPaiements];
 

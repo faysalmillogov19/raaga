@@ -85,8 +85,8 @@ class CarteCommercantMaquetteTest extends TestCase
                 $d['groupe_sanguin'], $d['residence'], $d['personne_prevenir'], $d['code']]);
 
         $html = app(RenduCarte::class)->html($d, 'pdf');
-        $this->assertStringContainsString('N° de carte (IFU)', $html);
-        foreach (['Sexe', 'Né(e) le', 'Secteur d’activité', 'Établie le', 'Expire le', 'Groupe sanguin', 'Lieu de résidence', 'Personne à prévenir', 'N° 12345678X', 'N° IFU · Expiration'] as $texte) {
+        $this->assertStringContainsString('Numéro Raaga', $html);
+        foreach (['Sexe', 'Né(e) le', 'Secteur d’activité', 'Établie le', 'Expire le', 'Groupe sanguin', 'Lieu de résidence', 'Personne à prévenir', 'N° 12345678X', 'Numéro Raaga · Expiration'] as $texte) {
             $this->assertStringContainsString($texte, $html);
         }
         // Sans consentement : « Non renseigné » ; jamais de code de boutique ni de bandeau tricolore.

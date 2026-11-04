@@ -148,6 +148,9 @@ final class MenuBackoffice
                 ['cle' => 'plateforme', 'route' => 'admin.plateforme', 'droit' => Droit::PlateformeVoir, 'icone' => 'plateforme', 'etape' => 0, 'module' => 'admin'],
                 ['cle' => 'securite', 'route' => 'admin.securite', 'droit' => Droit::SecuriteGerer, 'icone' => 'securite', 'etape' => 6, 'module' => 'admin'],
                 ['cle' => 'connexions', 'route' => 'admin.connexions', 'droit' => Droit::ConnexionsVoir, 'icone' => 'connexions', 'etape' => 1],
+                // Secteurs d'activité des commerçants et guichets agréés (SUPER_ADMIN, 04/11/2026).
+                ['cle' => 'secteurs', 'route' => 'admin.secteurs', 'droit' => Droit::SecteursGerer, 'icone' => 'referentiels', 'etape' => 0],
+                ['cle' => 'guichets_agrees', 'route' => 'admin.guichets-agrees', 'droit' => Droit::GuichetsGerer, 'icone' => 'lieu', 'etape' => 0],
                 ['cle' => 'referentiels', 'route' => 'admin.referentiels', 'droit' => Droit::ReferentielsVoir, 'icone' => 'referentiels', 'etape' => 2, 'masque_si' => $parametres],
                 ['cle' => 'parametres', 'route' => 'admin.parametres', 'droit' => Droit::ParametresVoir, 'icone' => 'parametres', 'etape' => 0, 'module' => 'admin'],
             ],
@@ -276,7 +279,7 @@ final class MenuBackoffice
             // créées par les seeders, fonctionnement interne) et « Paramètres de la plateforme » (ce que voit le public).
             'administration' => [
                 ...array_map(fn (string $cle) => [...$dans('parametres_generaux', $cle), 'intertitre' => 'parametres_administration'],
-                    ['delais', 'moyens', 'types', 'unites', 'niveaux', 'zones']),
+                    ['delais', 'moyens', 'types', 'unites', 'niveaux', 'zones', 'secteurs', 'guichets_agrees']),
                 [...$dans('parametres_generaux', 'plateforme'), 'separee' => true],
                 self::entree('utilisateurs'),
                 self::entree('approbations'),
