@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\ExecutableFinder;
 
 /**
- * Réglages de la carte d'identification au complet (armoiries et symbole déposés, autorité, signature, cachet ;
- * numéro vert des contacts par défaut), sur un disque privé simulé. Rendu réel par Chrome : test ignoré sans Chrome.
+ * Réglages de la carte d'identification au complet (armoiries et symbole déposés ; organisme émetteur : dénomination
+ * sociale des paramètres par défaut), sur un disque privé simulé. Rendu réel par Chrome : test ignoré sans Chrome.
  */
 trait ReglagesCarteComplets
 {
@@ -35,13 +35,9 @@ trait ReglagesCarteComplets
         $chemins = [
             'armoiries' => 'plateforme/armoiries-test.png',
             'logoHorizontal' => 'plateforme/logo-horizontal-test.png',
-            'signatureAutorite' => 'plateforme/signature-autorite-test.png',
-            'cachetAutorite' => 'plateforme/cachet-autorite-test.png',
         ];
         $disque->put($chemins['armoiries'], (string) file_get_contents(public_path('armoiries.png')));
         $disque->put($chemins['logoHorizontal'], (string) file_get_contents(public_path($logo === 'horizontal' ? 'images/logo/raaga-logo-horizontal-email.png' : 'images/logo/icone-192.png')));
-        $disque->put($chemins['signatureAutorite'], $this->pngTest(900, 300, [20, 40, 120]));
-        $disque->put($chemins['cachetAutorite'], $this->pngTest(700, 700, [30, 60, 160]));
         if ($filigranes) {
             foreach (['filigranePrincipalRecto' => [0, 107, 60], 'filigraneSecondaireRecto' => [150, 30, 30],
                 'filigranePrincipalVerso' => [40, 60, 120], 'filigraneSecondaireVerso' => [120, 80, 20]] as $champ => $rgb) {
@@ -52,17 +48,22 @@ trait ReglagesCarteComplets
 
         $parametres = app(ParametresPlateforme::class);
         $parametres->enregistrer('identite', [...$parametres->section('identite'), 'armoiries' => $chemins['armoiries'], 'logoHorizontal' => $chemins['logoHorizontal']], null);
+        // Organisme émetteur imprimé sur la carte.
+        $parametres->enregistrer('mentions', [...$parametres->section('mentions'), 'denominationSociale' => 'Raaga SA'], null);
         $parametres->enregistrer('carte', [
             ...$parametres->section('carte'),
-            'qualiteAutorite' => 'Le Maire de l’Arrondissement N°1',
-            'nomAutorite' => 'Awa OUÉDRAOGO',
-            'signatureAutorite' => $chemins['signatureAutorite'],
-            'cachetAutorite' => $chemins['cachetAutorite'],
             ...array_intersect_key($chemins, array_flip(['filigranePrincipalRecto', 'filigraneSecondaireRecto', 'filigranePrincipalVerso', 'filigraneSecondaireVerso'])),
             ...$carte,
         ], null);
 
         return $chemins;
+    }
+
+    /** Réglage requis retiré : la dénomination sociale (organisme émetteur imprimé sur la carte). */
+    protected function retirerDenomination(): void
+    {
+        $parametres = app(ParametresPlateforme::class);
+        $parametres->enregistrer('mentions', [...$parametres->section('mentions'), 'denominationSociale' => null], null);
     }
 
     /** PNG en couleur sur fond blanc opaque (image de filigrane telle que déposée), ellipse de la couleur donnée. */

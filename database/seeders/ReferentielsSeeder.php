@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeders de référentiel lancés à chaque déploiement (deploy.sh) : paramètres de la plateforme, niveaux, zones, types
+ * Seeders de référentiel lancés à chaque déploiement (deploy.sh) : paramètres de la plateforme et de la carte, niveaux, zones, types
  * de boutiques, unités, durées des délais, délais de paiement initiaux (confirmés d'office), moyens de paiement, découpage
  * administratif du Burkina Faso (régions, provinces, communes, depuis le 03/11/2026). Idempotents : ils créent seulement ce qui manque et ne modifient ni ne
  * suppriment jamais une ligne existante (les modifications faites par le GESTIONNAIRE ou le RÉGULATEUR sont gardées).
@@ -15,7 +15,7 @@ class ReferentielsSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([ParametresPlateformeSeeder::class, DureesSeeder::class, ParametresPaiementsSeeder::class, ReferentielsSitesSeeder::class, MoyensPaiementSeeder::class,
+        $this->call([ParametresPlateformeSeeder::class, ParametresCarteSeeder::class, DureesSeeder::class, ParametresPaiementsSeeder::class, ReferentielsSitesSeeder::class, MoyensPaiementSeeder::class,
             RegionsSeeder::class, ProvincesSeeder::class, CommunesSeeder::class, FamillesSecteursSeeder::class, SecteursActiviteSeeder::class]);
     }
 }

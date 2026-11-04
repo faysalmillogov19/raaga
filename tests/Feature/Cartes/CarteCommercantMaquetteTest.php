@@ -19,9 +19,11 @@ use App\Services\Cartes\RenduCarte;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Support\Plateforme\ReglagesCarte;
 use Database\Seeders\CommunesSeeder;
+use Database\Seeders\ParametresCarteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\Support\ActeursParametrage;
 use Tests\Support\Boutiques;
@@ -32,8 +34,9 @@ use Tests\TestCase;
  * Carte de commerçant selon la maquette du comité restreint du 03/11/2026 : numéro = IFU, sexe, date et lieu de
  * naissance, secteur, site(s), établie le, expire le ; au verso groupe sanguin (seulement avec consentement, sinon « Non
  * renseigné »), lieu de résidence, personne à prévenir, code-barres IFU et expiration MMAA ; QR code sans l'IFU ; aucun
- * bandeau tricolore ; validité de 3 ans par défaut, réglable ; signature et cachet fournis par défaut ; toute
- * modification donne une nouvelle version.
+ * bandeau tricolore ; validité de 3 ans par défaut, réglable ; organisme émetteur et code de contrôle à la place de
+ * l'autorité, de la signature, du cachet et du numéro vert ; seeder des paramètres ; toute modification donne une
+ * nouvelle version.
  */
 class CarteCommercantMaquetteTest extends TestCase
 {
@@ -129,22 +132,43 @@ class CarteCommercantMaquetteTest extends TestCase
         $this->assertSame([$version + 1, 'OUATTARA Salif'], [$mise->version, $mise->contenu['personne_prevenir']['nom']]);
     }
 
-    public function test_duree_de_validite_reglable_et_signature_et_cachet_par_defaut(): void
+    public function test_duree_de_validite_reglable_et_organisme_emetteur_sans_autorite(): void
     {
-        // Sans signature ni cachet déposés : ceux fournis avec le code ; la carte peut être générée.
-        $this->completerReglagesCarte(['signatureAutorite' => null, 'cachetAutorite' => null]);
+        $this->completerReglagesCarte();
         $this->assertTrue(ReglagesCarte::prete());
-        $this->assertSame(['public:images/carte/signature-defaut.png', 'public:images/carte/cachet-defaut.png'],
-            [ReglagesCarte::instantane()['signature'], ReglagesCarte::instantane()['cachet']]);
-
         $parametres = app(ParametresPlateforme::class);
         $parametres->enregistrer('carte', [...$parametres->section('carte'), 'dureeValiditeAnnees' => 5], null);
         $user = $this->commercant();
         $this->attribuer($user, Boutiques::boutique('A', 1));
         $carte = Cartes::courante($user, TypeCarte::Commercant);
         $this->assertSame(now()->addYears(5)->subDay()->toDateString(), $carte->valide_jusqu_au->toDateString());
+
         $d = app(RenduCarte::class)->donnees($carte);
-        $this->assertStringStartsWith('data:image/png;base64,', $d['signature']);
-        $this->assertStringStartsWith('data:image/png;base64,', $d['cachet']);
+        $this->assertSame(['Raaga SA', $carte->code_controle], [$d['emetteur'], $d['controle']]);
+        $html = app(RenduCarte::class)->html($d, 'pdf');
+        foreach (['Carte émise par', 'Carte émise électroniquement, valable sans signature.', 'Code de contrôle', $carte->code_controle] as $texte) {
+            $this->assertStringContainsString($texte, $html);
+        }
+        foreach (['Numéro vert', 'autorité de délivrance', 'Cachet'] as $absent) {
+            $this->assertStringNotContainsString($absent, $html);
+        }
+    }
+
+    public function test_seeder_des_parametres_de_la_carte_sans_ecraser_les_reglages(): void
+    {
+        Storage::fake('local');
+        $this->seed(ParametresCarteSeeder::class);
+        $this->assertSame(3, (int) plateforme('carte.dureeValiditeAnnees'));
+        foreach (array_keys(ParametresCarteSeeder::FILIGRANES) as $champ) {
+            $this->assertNotNull(ReglagesCarte::chemin(plateforme('carte.'.$champ)), $champ);
+        }
+        $this->assertNull(plateforme('carte.filigraneSecondaireRecto'));
+
+        // Réglages du SUPER_ADMIN gardés ; seeder relancé : rien ne change.
+        $parametres = app(ParametresPlateforme::class);
+        $parametres->enregistrer('carte', [...$parametres->section('carte'), 'dureeValiditeAnnees' => 4], null);
+        $avant = $parametres->section('carte');
+        $this->seed(ParametresCarteSeeder::class);
+        $this->assertSame($avant, app(ParametresPlateforme::class)->section('carte'));
     }
 }

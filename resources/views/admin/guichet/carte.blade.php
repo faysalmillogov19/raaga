@@ -37,6 +37,9 @@
                 <dl class="bo-definitions mt-3">
                     <dt>{{ $g['type'] }}</dt><dd>{{ $carte->type->label() }}</dd>
                     <dt>{{ $g['numero'] }}</dt><dd>{{ $carte->numero }}</dd>
+                    {{-- Code de contrôle : identique à celui imprimé au verso, sinon carte modifiée ou dépassée. --}}
+                    <dt>{{ $g['code_controle'] }}</dt><dd><span class="font-mono font-bold" data-code-controle>{{ $carte->code_controle }}</span>
+                        <span class="block texte-carte">{{ $g['code_controle_aide'] }}</span></dd>
                     @if (! empty($c['emplacements']))
                         <dt>{{ $g['emplacements'] }}</dt>
                         <dd data-emplacements>

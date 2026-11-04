@@ -51,10 +51,8 @@ final class Catalogue
     /** Images de la carte d'identification : PNG à fond transparent, 2 Mo au plus, dimensions minimales (px). */
     public const IMAGE_CARTE_MAX_KO = 2048;
 
-    public const IMAGES_CARTE = [
-        'signatureAutorite' => ['largeur' => 600, 'hauteur' => null],
-        'cachetAutorite' => ['largeur' => 600, 'hauteur' => 600],
-    ];
+    /** Plus aucune image de l'autorité sur la carte (comité restreint du 03/11/2026) : type « image_carte » gardé sans champ. */
+    public const IMAGES_CARTE = [];
 
     /**
      * Filigranes de la carte (facultatifs) : image en couleur déposée, convertie par le serveur en monochrome or, à
@@ -142,10 +140,6 @@ final class Catalogue
             // Carte d'identification : réglages lus par le rendu des cartes, tous requis pour générer une carte (le numéro
             // vert imprimé au verso est celui des contacts d'assistance).
             'carte' => [
-                'qualiteAutorite' => ['texte', 120],
-                'nomAutorite' => ['texte', 120],
-                'signatureAutorite' => ['image_carte'],
-                'cachetAutorite' => ['image_carte'],
                 'dureeValiditeAnnees' => ['entier'],
                 'filigranePrincipalRecto' => ['filigrane'],
                 'filigraneSecondaireRecto' => ['filigrane'],

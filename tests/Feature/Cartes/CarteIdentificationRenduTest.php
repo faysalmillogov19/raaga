@@ -70,34 +70,46 @@ class CarteIdentificationRenduTest extends TestCase
 
     public function test_les_reglages_sont_figes_a_l_emission_et_une_reimpression_les_reutilise(): void
     {
-        $anciens = $this->completerReglagesCarte();
+        $this->completerReglagesCarte();
         $agent = User::factory()->role(Role::Admin)->create(['date_naissance' => '1990-01-01']);
         $carte = app(Cartes::class)->emettrePersonnel($agent, User::factory()->role(Role::SuperAdmin)->create());
-        $this->assertSame($anciens['signatureAutorite'], $carte->reglages_rendu['signature']);
-        $this->assertSame('Awa OUÉDRAOGO', $carte->reglages_rendu['nom']);
+        $this->assertSame('Raaga SA', $carte->reglages_rendu['emetteur']);
 
-        // Nouvelle signature et nouvelle autorité dans les paramètres.
-        $nouvelle = 'plateforme/signature-autorite-nouvelle.png';
-        Storage::disk('local')->put($nouvelle, $this->pngTest(900, 300, [200, 0, 0]));
+        // Nouvelle dénomination de l'organisme émetteur.
         $parametres = app(ParametresPlateforme::class);
-        $parametres->enregistrer('carte', [...$parametres->section('carte'), 'signatureAutorite' => $nouvelle, 'nomAutorite' => 'Issa KABORÉ'], null);
+        $parametres->enregistrer('mentions', [...$parametres->section('mentions'), 'denominationSociale' => 'Raaga Marchés SA'], null);
 
-        // Réimpression : l'ancienne signature et l'ancien nom.
-        $donnees = app(RenduCarte::class)->donnees($carte->fresh());
-        $ancienneSignature = 'data:image/png;base64,'.base64_encode(Storage::disk('local')->get($anciens['signatureAutorite']));
-        $this->assertSame($ancienneSignature, $donnees['signature']);
-        $this->assertSame('Awa OUÉDRAOGO', $donnees['nom_autorite']);
-
-        // Nouvelle émission : les paramètres en vigueur.
+        // Réimpression : l'ancienne dénomination ; nouvelle émission : celle en vigueur.
+        $this->assertSame('Raaga SA', app(RenduCarte::class)->donnees($carte->fresh())['emetteur']);
         $reemise = app(Cartes::class)->reemettre($agent, TypeCarte::Personnel, $agent);
-        $this->assertSame($nouvelle, $reemise->reglages_rendu['signature']);
-        $this->assertSame('Issa KABORÉ', app(RenduCarte::class)->donnees($reemise)['nom_autorite']);
-        Storage::disk('local')->assertExists([$anciens['signatureAutorite'], $nouvelle]);
+        $this->assertSame('Raaga Marchés SA', app(RenduCarte::class)->donnees($reemise)['emetteur']);
+    }
+
+    public function test_code_de_controle_lie_aux_donnees_imprimees_et_recherche_au_guichet(): void
+    {
+        $this->completerReglagesCarte();
+        $carte = $this->carte();
+        $code = $carte->fresh()->code_controle;
+        $this->assertMatchesRegularExpression('/^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/', $code);
+        $this->assertSame($code, app(RenduCarte::class)->donnees($carte->fresh())['controle']);
+        $this->assertSame($code, Carte::calculerCode($carte->numero, $carte->version, $carte->valide_jusqu_au->toDateString(), $carte->contenu));
+
+        // Nouvelle version (données imprimées modifiées) : nouveau code ; l'ancien ne retrouve plus la carte.
+        $carte->forceFill(['contenu' => [...$carte->contenu, 'nom' => 'Aïcha OUATTARA SANOU'], 'version' => 2])->save();
+        $this->assertNotSame($code, $carte->fresh()->code_controle);
+
+        $this->connecterBackoffice(Role::AgentGuichet);
+        $nouveau = $carte->fresh()->code_controle;
+        $this->post(route('admin.guichet.rechercher'), ['carte' => strtolower(str_replace('-', ' ', $nouveau))])->assertRedirect(route('admin.guichet.carte', $carte->jeton));
+        $this->from(route('admin.guichet'))->post(route('admin.guichet.rechercher'), ['carte' => $code])->assertSessionHasErrors('carte');
+        $this->get(route('admin.guichet.carte', $carte->jeton))->assertOk()->assertSee('data-code-controle', false)->assertSee($nouveau)
+            ->assertSee('Il doit être identique à celui imprimé au verso de la carte.', false);
     }
 
     public function test_la_generation_s_arrete_si_un_reglage_manque(): void
     {
-        $this->completerReglagesCarte(['nomAutorite' => null]);
+        $this->completerReglagesCarte();
+        $this->retirerDenomination();
         $carte = $this->carte();
         $this->assertNull($carte->reglages_rendu);
 
@@ -105,8 +117,8 @@ class CarteIdentificationRenduTest extends TestCase
             app(RenduCarte::class)->donnees($carte);
             $this->fail('La génération aurait dû être refusée.');
         } catch (ReglagesCarteManquants $e) {
-            $this->assertSame(['nomAutorite'], $e->manquants);
-            $this->assertStringContainsString('Nom de l’autorité de délivrance', $e->getMessage());
+            $this->assertSame(['denominationSociale'], $e->manquants);
+            $this->assertStringContainsString('Dénomination sociale', $e->getMessage());
         }
 
         // Impression au guichet : refusée avec le détail des réglages, rien n'est tracé.
@@ -117,17 +129,17 @@ class CarteIdentificationRenduTest extends TestCase
             ->assertSessionHas('erreur', 'Votre carte est en cours de préparation. Elle sera disponible prochainement.');
         $this->get(route('espace.carte', ['type' => 'commercant']))->assertOk()->assertSee('data-carte-preparation', false)
             ->assertSee('Votre carte est en cours de préparation. Elle sera disponible prochainement.')
-            ->assertDontSee('data-carte-identification', false)->assertDontSee('data-telecharger', false)->assertDontSee('Nom de l’autorité');
+            ->assertDontSee('data-carte-identification', false)->assertDontSee('data-telecharger', false)->assertDontSee('Dénomination sociale');
         $this->app['auth']->forgetGuards();
         $this->connecterBackoffice(Role::AgentGuichet);
         $this->from(route('admin.guichet.carte', $carte->jeton))->post(route('admin.guichet.imprimer', $carte->jeton), ['piece_verifiee' => '1'])
-            ->assertSessionHasErrors(['piece_verifiee' => (new ReglagesCarteManquants(['nomAutorite']))->getMessage()]);
+            ->assertSessionHasErrors(['piece_verifiee' => (new ReglagesCarteManquants(['denominationSociale']))->getMessage()]);
         $this->assertSame(0, AuditLog::query()->where('action', 'carte.imprimee')->count());
         $this->assertNull($carte->fresh()->reglages_rendu);
 
         // Réglage complété : la carte, émise avant, fige les réglages à sa première génération.
         $this->completerReglagesCarte();
-        $this->assertSame('Le Maire de l’Arrondissement N°1', app(RenduCarte::class)->donnees($carte)['qualite']);
+        $this->assertSame('Raaga SA', app(RenduCarte::class)->donnees($carte)['emetteur']);
         $this->assertNotNull($carte->fresh()->reglages_rendu);
     }
 
@@ -140,7 +152,7 @@ class CarteIdentificationRenduTest extends TestCase
         $this->actingAs($carte->user)->get(route('espace.carte', ['type' => 'commercant']))->assertOk()
             ->assertSee('data-carte-identification', false)->assertSee('data-face="recto"', false)->assertSee('data-face="verso"', false)
             ->assertSee('Aïcha OUATTARA')->assertSee('Expire le')->assertSee('31/12/2028')->assertSee('14/03/1988')->assertSee($carte->numero)
-            ->assertSee('Le Maire de l’Arrondissement N°1')->assertSee('css/carte-raaga.css', false)
+            ->assertSee('Carte émise par')->assertSee('Raaga SA')->assertSee('css/carte-raaga.css', false)
             ->assertDontSee('RAA-R1-A-045')->assertSee('Marché de Rood Woko')->assertDontSee('SPÉCIMEN')->assertSee('data-plein-ecran', false);
 
         // Carte suspendue : la carte reste affichée, sans plein écran ni téléchargement.
@@ -156,7 +168,8 @@ class CarteIdentificationRenduTest extends TestCase
             ->assertSee('data-plein-ecran', false)->assertSee(route('cartes.fichier', [$personnel, 'png']), false);
         $this->app['auth']->forgetGuards();
         $this->carte(TypeCarte::Personnel, $this->connecterBackoffice(Role::Admin));
-        $this->completerReglagesCarte(['nomAutorite' => null]);
+        $this->completerReglagesCarte();
+        $this->retirerDenomination();
         $this->get(route('admin.carte'))->assertOk()->assertSee('data-carte-preparation', false)
             ->assertDontSee('data-carte-identification', false);
     }
@@ -171,8 +184,8 @@ class CarteIdentificationRenduTest extends TestCase
             $carte = $this->carte($type);
             $donnees = $rendu->donnees($carte);
             $this->assertSame(mb_strtoupper($type->label()), $donnees['type']);
-            $this->assertSame([$carte->numero.'-1228', '14/03/1988', '31/12/2028', '+226 80 00 00 00'],
-                [$donnees['code'], $donnees['ne_le'], $donnees['expire'], $donnees['numero_vert']]);
+            $this->assertSame([$carte->numero.'-1228', '14/03/1988', '31/12/2028', 'Raaga SA'],
+                [$donnees['code'], $donnees['ne_le'], $donnees['expire'], $donnees['emetteur']]);
 
             $html = $rendu->html($donnees, 'pdf');
             $this->assertStringNotContainsString('Emplacement', $html);

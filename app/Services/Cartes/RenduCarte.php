@@ -22,7 +22,7 @@ use RuntimeException;
  * Rendu de la carte d'identification Raaga (maquette validée le 24/10/2026), toujours depuis l'état courant de la carte
  * (le nom du fichier porte la version ; fichiers générés à l'avance en tâche de fond, voir FichiersCarte) : un seul gabarit HTML (resources/views/cartes) rendu par Chrome sans interface
  * en PNG 300 dpi (1011 × 638 px par face) et en PDF d'une page par face (85,6 × 54 mm), et affiché tel quel à l'écran
- * (« Ma carte » du titulaire, aperçu du back-office). Armoiries, logo, signature, cachet, textes de l'autorité et numéro vert : ceux figés sur la
+ * (« Ma carte » du titulaire, aperçu du back-office). Armoiries, logo, filigranes et organisme émetteur : ceux figés sur la
  * carte à son émission (réimpression à l'identique), sinon ceux en vigueur, qui sont alors figés.
  */
 class RenduCarte
@@ -149,9 +149,9 @@ class RenduCarte
             'photo' => $this->photo($c),
             'qr' => $this->matrice($carte),
             ...$this->images($reglages),
-            'qualite' => $reglages['qualite'],
-            'nom_autorite' => $reglages['nom'],
-            'numero_vert' => Telephone::formater($reglages['numero_vert']),
+            // Organisme émetteur et code de contrôle à la place de l'autorité, de la signature et du cachet.
+            'emetteur' => $reglages['emetteur'] ?? plateforme('mentions.denominationSociale'),
+            'controle' => $carte->code_controle ?? Carte::calculerCode($carte->numero, (int) $carte->version, $carte->valide_jusqu_au?->toDateString(), $c),
             'specimen' => false,
         ];
     }
@@ -170,7 +170,6 @@ class RenduCarte
         $chemin = fn (?string $relatif) => ReglagesCarte::chemin($relatif);
         // Armoiries et logo : l'image affichée par le champ (déposée, sinon fournie avec le code).
         $armoiries = ImagesPlateforme::chemin('armoiries');
-        $numeroVert = plateforme('contacts.numeroVert');
         // Filigranes : image choisie dans le formulaire (convertie sans rien enregistrer) ou celle en vigueur.
         $filigranes = [];
         foreach (Catalogue::FILIGRANES as $champ => $opacite) {
@@ -203,11 +202,8 @@ class RenduCarte
             'armoiries' => $this->dataUri($armoiries),
             'logo' => $this->dataUri(ImagesPlateforme::chemin('logoHorizontal')),
             'filigranes' => $filigranes,
-            'signature' => $this->dataUri($images['signatureAutorite'] ?? ReglagesCarte::chemin(ReglagesCarte::DEFAUTS['signatureAutorite'])),
-            'cachet' => $this->dataUri($images['cachetAutorite'] ?? ReglagesCarte::chemin(ReglagesCarte::DEFAUTS['cachetAutorite'])),
-            'qualite' => $valeurs['qualiteAutorite'] ?? null,
-            'nom_autorite' => $valeurs['nomAutorite'] ?? null,
-            'numero_vert' => $numeroVert ? Telephone::formater($numeroVert) : null,
+            'emetteur' => plateforme('mentions.denominationSociale'),
+            'controle' => Carte::calculerCode($numero, 1, $expire->toDateString(), []),
             'specimen' => true,
         ];
     }
@@ -248,7 +244,7 @@ class RenduCarte
     }
 
     /**
-     * Images figées : armoiries, logo, signature, cachet, et les filigranes (facultatifs, convertis en or à l'opacité de
+     * Images figées : armoiries, logo, et les filigranes (facultatifs, convertis en or à l'opacité de
      * leur rang), intégrées au document.
      *
      * @param  array<string, string|null>  $reglages
@@ -257,7 +253,7 @@ class RenduCarte
     private function images(array $reglages): array
     {
         $chemins = [];
-        foreach (['armoiries', 'logo', 'signature', 'cachet'] as $cle) {
+        foreach (['armoiries', 'logo'] as $cle) {
             $chemins[$cle] = ReglagesCarte::chemin($reglages[$cle] ?? null)
                 ?? throw new RuntimeException("Rendu de la carte : fichier introuvable ({$cle} : {$reglages[$cle]}).");
         }
@@ -273,8 +269,6 @@ class RenduCarte
             'armoiries' => $this->dataUri($chemins['armoiries']),
             'logo' => $this->dataUri($chemins['logo']),
             'filigranes' => $filigranes,
-            'signature' => $this->dataUri($chemins['signature']),
-            'cachet' => $this->dataUri($chemins['cachet']),
         ];
     }
 

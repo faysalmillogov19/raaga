@@ -39,10 +39,6 @@ class ParametresPlateformeSeeder extends Seeder
                     ['libelle' => 'CNSS, CARFO et autres', 'montant' => 6_791_000_000, 'couleur' => 'gris', 'approximatif' => true, 'ordre' => 3],
                 ],
             ],
-            // Carte de commerçant : 3 ans de validité à compter de l'émission (comité restreint du 03/11/2026).
-            'carte' => [
-                'dureeValiditeAnnees' => 3,
-            ],
             'messages' => [
                 'messageAntiFraude' => 'Raaga ne vous demandera jamais votre mot de passe par téléphone, SMS ou courriel.',
             ],

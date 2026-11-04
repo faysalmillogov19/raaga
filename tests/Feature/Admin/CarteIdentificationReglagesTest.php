@@ -7,7 +7,6 @@ use App\Models\AuditLog;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Support\ImagesPlateforme;
 use App\Support\Plateforme\ReglagesCarte;
-use App\Support\Telephone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +17,9 @@ use Tests\TestCase;
 
 /**
  * Section « Carte d'identification » des paramètres de la plateforme : réservée au SUPER_ADMIN, enregistrée sans
- * validation, images PNG contrôlées et jamais écrasées, état « prête » ou « réglages manquants » (armoiries et logo
- * déposés, numéro vert des contacts), journal, aperçu.
+ * validation, durée de validité et filigranes (PNG contrôlés, jamais écrasés), état « prête » ou « réglages manquants »
+ * (armoiries, logo, dénomination sociale de l'organisme émetteur), journal, aperçu. Plus d'autorité, de signature, de
+ * cachet ni de numéro vert sur la carte (comité restreint du 03/11/2026).
  */
 class CarteIdentificationReglagesTest extends TestCase
 {
@@ -47,13 +47,7 @@ class CarteIdentificationReglagesTest extends TestCase
 
     private function complet(array $surcharges = []): array
     {
-        return [
-            'qualiteAutorite' => 'Le Maire de l’Arrondissement N°1',
-            'nomAutorite' => 'Awa OUÉDRAOGO',
-            'signatureAutorite' => $this->pngTransparent('signature.png', 900, 300),
-            'cachetAutorite' => $this->pngTransparent('cachet.png', 700, 700),
-            ...$surcharges,
-        ];
+        return ['dureeValiditeAnnees' => 3, ...$surcharges];
     }
 
     /** Armoiries et logo déposés dans les paramètres (à défaut, la carte prend les fichiers fournis par le code). */
@@ -88,7 +82,7 @@ class CarteIdentificationReglagesTest extends TestCase
         $this->enregistrer($this->complet())->assertForbidden();
         $this->post(route('admin.plateforme.apercu', 'carte'), $this->complet())->assertForbidden();
 
-        $this->assertNull(plateforme('carte.nomAutorite'));
+        $this->assertNull(plateforme('carte.dureeValiditeAnnees'));
         $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
@@ -105,54 +99,27 @@ class CarteIdentificationReglagesTest extends TestCase
         $this->connecterBackoffice(Role::SuperAdmin);
         $this->deposerArmoiriesEtLogo();
 
-        $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()
-            ->assertSee('data-etat-carte="manquant"', false)->assertSee('Réglages manquants')
-            ->assertSee('data-manquant="qualiteAutorite"', false)->assertDontSee('data-manquant="signatureAutorite"', false)->assertDontSee('data-manquant="armoiries"', false);
-
-        $this->enregistrer($this->complet())->assertSessionHasNoErrors()->assertSessionHas('succes')->assertSessionMissing('avertissement_plateforme');
-
-        $this->assertSame('Le Maire de l’Arrondissement N°1', plateforme('carte.qualiteAutorite'));
-        $this->assertTrue(ReglagesCarte::prete());
+        // Rien à saisir pour l'autorité : armoiries, logo et dénomination sociale suffisent.
         $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()
             ->assertSee('data-etat-carte="pret"', false)->assertSee('Carte prête à être générée')
-            ->assertSee('data-image-actuelle="signatureAutorite"', false);
+            ->assertDontSee('name="nomAutorite"', false)->assertDontSee('name="signatureAutorite"', false)->assertDontSee('name="cachetAutorite"', false)
+            ->assertSee('name="dureeValiditeAnnees"', false);
+
+        $this->enregistrer($this->complet(['dureeValiditeAnnees' => 4]))->assertSessionHasNoErrors()->assertSessionHas('succes');
+        $this->assertSame(4, (int) plateforme('carte.dureeValiditeAnnees'));
+        $this->assertTrue(ReglagesCarte::prete());
     }
 
-    public function test_vider_un_champ_obligatoire_fait_passer_l_etat_a_reglages_manquants(): void
+    public function test_sans_denomination_sociale_l_etat_passe_a_reglages_manquants(): void
     {
         $this->connecterBackoffice(Role::SuperAdmin);
         $this->deposerArmoiriesEtLogo();
-        $this->enregistrer($this->complet())->assertSessionHasNoErrors();
+        $parametres = app(ParametresPlateforme::class);
+        $parametres->enregistrer('mentions', [...$parametres->section('mentions'), 'denominationSociale' => null], null);
 
-        $this->enregistrer(['qualiteAutorite' => 'Le Maire de l’Arrondissement N°1', 'nomAutorite' => ''])
-            ->assertSessionHasNoErrors();
-
-        $this->assertNull(plateforme('carte.nomAutorite'));
-        $this->assertSame(['nomAutorite'], ReglagesCarte::manquants());
+        $this->assertSame(['denominationSociale'], ReglagesCarte::manquants());
         $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()
-            ->assertSee('data-etat-carte="manquant"', false)->assertSee('data-manquant="nomAutorite"', false)
-            ->assertDontSee('data-manquant="signatureAutorite"', false);
-    }
-
-    public function test_un_jpg_un_png_trop_lourd_et_un_png_trop_petit_sont_refuses_avec_le_bon_message(): void
-    {
-        $this->connecterBackoffice(Role::SuperAdmin);
-
-        $this->enregistrer($this->complet(['signatureAutorite' => UploadedFile::fake()->image('signature.jpg', 900, 300)]))
-            ->assertSessionHasErrors(['signatureAutorite' => 'Signature de l’autorité : format refusé. Seul le format PNG est accepté (de préférence à fond transparent).']);
-
-        $this->enregistrer($this->complet(['signatureAutorite' => UploadedFile::fake()->image('signature.png', 900, 300)->size(3000)]))
-            ->assertSessionHasErrors(['signatureAutorite' => 'Signature de l’autorité : fichier trop lourd. 2 Mo au plus.']);
-
-        $this->enregistrer($this->complet(['signatureAutorite' => $this->pngTransparent('signature.png', 500, 300)]))
-            ->assertSessionHasErrors(['signatureAutorite' => 'Signature de l’autorité : image trop petite. Elle doit faire au moins 600 px de large.']);
-
-        $this->enregistrer($this->complet(['cachetAutorite' => $this->pngTransparent('cachet.png', 700, 500)]))
-            ->assertSessionHasErrors(['cachetAutorite' => 'Cachet de l’autorité : image trop petite. Elle doit faire au moins 600 × 600 px.']);
-
-        // Rien n'a été enregistré ni déposé.
-        $this->assertNull(plateforme('carte.signatureAutorite'));
-        $this->assertSame([], Storage::disk('local')->allFiles());
+            ->assertSee('data-etat-carte="manquant"', false)->assertSee('data-manquant="denominationSociale"', false)->assertSee('(section Mentions légales)');
     }
 
     public function test_sans_depot_la_carte_utilise_les_armoiries_et_le_logo_fournis_par_defaut(): void
@@ -198,49 +165,32 @@ class CarteIdentificationReglagesTest extends TestCase
             ->assertSee('Version filigrane (or, 14 %)');
     }
 
-    public function test_le_numero_vert_est_celui_des_contacts_affiche_avec_des_espaces(): void
+    public function test_ni_autorite_ni_numero_vert_mais_l_organisme_emetteur_et_le_code_de_controle(): void
     {
         $this->connecterBackoffice(Role::SuperAdmin);
         $this->deposerArmoiriesEtLogo();
-        $this->enregistrer($this->complet())->assertSessionHasNoErrors();
-        $numero = plateforme('contacts.numeroVert');
-        $this->assertNotNull($numero);
 
         $this->post(route('admin.plateforme.apercu', 'carte'), $this->complet())->assertOk()
-            ->assertSee('data-champ="numero_vert">'.Telephone::formater($numero).'</strong>', false);
+            ->assertSeeInOrder(['Carte émise par', 'Raaga SA', 'Carte émise électroniquement, valable sans signature. Vérifiez-la en scannant le QR code.', 'Code de contrôle'])
+            ->assertDontSee('Numéro vert')->assertDontSee('L’autorité de délivrance', false)->assertDontSee('Cachet de l’autorité', false);
 
-        // Numéro vert vidé dans les contacts : la carte n'est plus prête.
+        // Le numéro vert reste un contact de Raaga, mais n'est plus un réglage de la carte.
         $parametres = app(ParametresPlateforme::class);
         $parametres->enregistrer('contacts', [...$parametres->section('contacts'), 'numeroVert' => null], null);
-        $this->assertSame(['numeroVert'], ReglagesCarte::manquants());
-        $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()
-            ->assertSee('data-manquant="numeroVert"', false)->assertSee('(section Contacts d’assistance)');
+        $this->assertSame([], ReglagesCarte::manquants());
     }
 
-    public function test_remplacer_la_signature_garde_l_ancien_fichier(): void
+    public function test_remplacer_un_filigrane_garde_l_ancien_fichier(): void
     {
         $this->connecterBackoffice(Role::SuperAdmin);
-        $this->enregistrer($this->complet())->assertSessionHasNoErrors();
-        $ancienne = plateforme('carte.signatureAutorite');
+        $this->enregistrer($this->complet(['filigranePrincipalVerso' => UploadedFile::fake()->image('silure.png', 1000, 600)]))->assertSessionHasNoErrors();
+        $ancien = plateforme('carte.filigranePrincipalVerso');
 
-        $this->enregistrer([...$this->complet(), 'cachetAutorite' => null, 'signatureAutorite' => $this->pngTransparent('signature-2.png', 1200, 400)])
-            ->assertSessionHasNoErrors();
-        $nouvelle = plateforme('carte.signatureAutorite');
+        $this->enregistrer($this->complet(['filigranePrincipalVerso' => UploadedFile::fake()->image('silure-2.png', 1200, 700)]))->assertSessionHasNoErrors();
+        $nouveau = plateforme('carte.filigranePrincipalVerso');
 
-        $this->assertNotSame($ancienne, $nouvelle);
-        $this->assertMatchesRegularExpression('#^plateforme/signature-autorite-[0-9a-f-]{36}\.png$#', $nouvelle);
-        Storage::disk('local')->assertExists([$ancienne, $nouvelle]);
-    }
-
-    public function test_une_image_sans_transparence_est_acceptee_avec_un_avertissement(): void
-    {
-        $this->connecterBackoffice(Role::SuperAdmin);
-
-        $this->enregistrer($this->complet(['cachetAutorite' => UploadedFile::fake()->image('cachet.png', 700, 700)]))
-            ->assertSessionHasNoErrors()->assertSessionHas('succes')
-            ->assertSessionHas('avertissement_plateforme', fn (string $m) => str_contains($m, '« Cachet de l’autorité »'));
-
-        $this->assertNotNull(plateforme('carte.cachetAutorite'));
+        $this->assertNotSame($ancien, $nouveau);
+        Storage::disk('local')->assertExists([$ancien, $nouveau]);
     }
 
     public function test_chaque_modification_est_inscrite_au_journal_avec_l_ancienne_et_la_nouvelle_valeur(): void
@@ -248,13 +198,12 @@ class CarteIdentificationReglagesTest extends TestCase
         $admin = $this->connecterBackoffice(Role::SuperAdmin);
         $this->enregistrer($this->complet())->assertSessionHasNoErrors();
 
-        $this->enregistrer(['qualiteAutorite' => 'Le Maire de l’Arrondissement N°1', 'nomAutorite' => 'Issa KABORÉ'])
-            ->assertSessionHasNoErrors();
+        $this->enregistrer($this->complet(['dureeValiditeAnnees' => 5]))->assertSessionHasNoErrors();
 
         $entree = AuditLog::query()->where('action', 'plateforme.modifiee')->where('entite_id', 'carte')->latest('id')->firstOrFail();
         $this->assertSame($admin->id, $entree->acteur_id);
-        $this->assertSame(['nomAutorite' => 'Awa OUÉDRAOGO'], $entree->ancienne_valeur);
-        $this->assertSame(['nomAutorite' => 'Issa KABORÉ'], $entree->nouvelle_valeur);
+        $this->assertSame(['dureeValiditeAnnees' => 3], $entree->ancienne_valeur);
+        $this->assertSame(['dureeValiditeAnnees' => 5], $entree->nouvelle_valeur);
         $this->assertNotNull($entree->created_at);
     }
 
@@ -265,30 +214,28 @@ class CarteIdentificationReglagesTest extends TestCase
         $fichiers = Storage::disk('local')->allFiles();
         $versions = DB::table('parametres_plateforme_versions')->count();
 
-        $this->post(route('admin.plateforme.apercu', 'carte'), $this->complet(['nomAutorite' => 'Nom saisi non enregistré']))->assertOk()
+        $this->post(route('admin.plateforme.apercu', 'carte'), $this->complet(['dureeValiditeAnnees' => 7]))->assertOk()
             ->assertSee('data-face="recto"', false)->assertSee('data-face="verso"', false)
-            ->assertSee('SPÉCIMEN')->assertSee('Nom saisi non enregistré')->assertSee('data:image/png;base64,', false)
+            ->assertSee('SPÉCIMEN')->assertSee('data:image/png;base64,', false)
             ->assertSee('Carte prête à être générée')
             // Recto de la maquette du 03/11/2026 : n° de carte (IFU), identité, secteur, site, dates ; jamais le code d'une boutique.
             ->assertSeeInOrder(['Burkina Faso', 'Carte d’identification', 'COMMERÇANT', 'N° de carte (IFU)', 'Nom et prénom(s)', 'Sexe', 'Né(e) le', 'À',
                 'Secteur d’activité', 'Site', 'Établie le', 'Expire le', 'Groupe sanguin', 'Lieu de résidence', 'Personne à prévenir', 'N° IFU · Expiration'])
             ->assertDontSee('Emplacement');
 
-        $this->assertNull(plateforme('carte.nomAutorite'));
+        $this->assertNull(plateforme('carte.dureeValiditeAnnees'));
         $this->assertSame($versions, DB::table('parametres_plateforme_versions')->count());
         // Seul le filigrane des armoiries peut être mis en cache (dérivé des armoiries, sans donnée saisie).
         $this->assertSame($fichiers, array_values(array_filter(Storage::disk('local')->allFiles(), fn ($f) => ! str_starts_with($f, 'cartes/filigranes/'))));
     }
 
-    public function test_la_signature_et_le_cachet_ne_sont_servis_par_aucune_adresse_publique(): void
+    public function test_les_filigranes_ne_sont_servis_par_aucune_adresse_publique(): void
     {
         $this->connecterBackoffice(Role::SuperAdmin);
-        $this->enregistrer($this->complet())->assertSessionHasNoErrors();
+        $this->enregistrer($this->complet(['filigranePrincipalVerso' => UploadedFile::fake()->image('silure.png', 1000, 600)]))->assertSessionHasNoErrors();
 
-        foreach (['signatureAutorite', 'cachetAutorite'] as $champ) {
-            $this->get('/plateforme/images/'.$champ)->assertNotFound();
-        }
+        $this->get('/plateforme/images/filigranePrincipalVerso')->assertNotFound();
         // La page des réglages intègre les images (data URI) sans exposer le chemin du fichier.
-        $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()->assertDontSee(plateforme('carte.signatureAutorite'));
+        $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()->assertDontSee(plateforme('carte.filigranePrincipalVerso'));
     }
 }

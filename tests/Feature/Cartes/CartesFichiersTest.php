@@ -163,10 +163,11 @@ class CartesFichiersTest extends TestCase
 
     public function test_reglage_manquant_avertissement_sans_nouvel_essai(): void
     {
-        $this->completerReglagesCarte(['nomAutorite' => null]);
+        $this->completerReglagesCarte();
+        $this->retirerDenomination();
         $carte = $this->carte();
 
-        Log::shouldReceive('warning')->once()->with('Fichiers de la carte non générés : réglages manquants.', ['carte' => $carte->numero, 'version' => 1, 'manquants' => ['nomAutorite']]);
+        Log::shouldReceive('warning')->once()->with('Fichiers de la carte non générés : réglages manquants.', ['carte' => $carte->numero, 'version' => 1, 'manquants' => ['denominationSociale']]);
         $this->generer($carte);
         $this->assertSame(0, $this->chrome->rendus);
     }
@@ -179,10 +180,9 @@ class CartesFichiersTest extends TestCase
         $rendus = $this->chrome->rendus;
         Queue::fake([GenererFichiersCarte::class]);
 
-        // Nouvelle signature et nouveau cachet : la carte émise garde ses réglages figés et ses fichiers.
-        Storage::disk('local')->put('plateforme/signature-nouvelle.png', $this->pngTest(900, 300, [200, 0, 0]));
+        // Nouvelle dénomination de l'émetteur : la carte émise garde ses réglages figés et ses fichiers.
         $parametres = app(ParametresPlateforme::class);
-        $parametres->enregistrer('carte', [...$parametres->section('carte'), 'signatureAutorite' => 'plateforme/signature-nouvelle.png', 'nomAutorite' => 'Issa KABORÉ'], null);
+        $parametres->enregistrer('mentions', [...$parametres->section('mentions'), 'denominationSociale' => 'Raaga Marchés SA'], null);
 
         Queue::assertNotPushed(GenererFichiersCarte::class);
         $this->assertSame($rendus, $this->chrome->rendus);

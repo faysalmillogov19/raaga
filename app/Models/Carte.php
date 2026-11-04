@@ -13,7 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Carte d'accès Raaga (RG-C-000123) : type, titulaire, statut, validité, jeton du QR code (URL de vérification, sans
- * donnée personnelle), contenu affiché et version. Une seule carte courante par titulaire et par type.
+ * donnée personnelle), contenu affiché et version. Une seule carte courante par titulaire et par type. Code de contrôle
+ * (« K7M2-Q9XP ») : calculé avec une clé du serveur à partir des données imprimées, recalculé à chaque enregistrement.
  */
 #[Fillable([
     'numero', 'type', 'user_id', 'statut', 'courante', 'jeton', 'emise_le', 'valide_jusqu_au', 'suspendue_le', 'revoquee_le',
@@ -50,8 +51,41 @@ class Carte extends Model
      * Fichiers de la carte (PNG, PDF) générés en tâche de fond, après validation de la transaction : à l'émission (carte
      * active numérotée), à chaque nouvelle version (données imprimées modifiées) et quand la carte redevient active.
      */
+    /** Alphabet du code de contrôle (base 32 de Crockford : ni I, ni L, ni O, ni U, pour éviter les confusions). */
+    private const ALPHABET_CONTROLE = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+    /**
+     * Code de contrôle imprimé : 40 bits d'une empreinte HMAC des données imprimées (numéro, version, validité,
+     * contenu), clé dérivée de celle de l'application. Une carte falsifiée ou d'une version dépassée ne le retrouve pas.
+     *
+     * @param  array<string, mixed>  $contenu
+     */
+    public static function calculerCode(?string $numero, int $version, ?string $validite, array $contenu): string
+    {
+        $empreinte = hash_hmac('sha256', (string) json_encode([$numero, $version, $validite, $contenu], JSON_UNESCAPED_UNICODE),
+            'carte-controle|'.config('app.key'), true);
+        $bits = '';
+        foreach (str_split(substr($empreinte, 0, 5)) as $octet) {
+            $bits .= str_pad(decbin(ord($octet)), 8, '0', STR_PAD_LEFT);
+        }
+        $code = implode('', array_map(fn (string $b) => self::ALPHABET_CONTROLE[bindec($b)], str_split($bits, 5)));
+
+        return substr($code, 0, 4).'-'.substr($code, 4);
+    }
+
+    /** Saisie au guichet (« k7m2 q9xp », « K7M2Q9XP ») ramenée au format imprimé, ou null si ce n'est pas un code. */
+    public static function normaliserCode(string $saisie): ?string
+    {
+        $code = preg_replace('/[^A-Z0-9]/', '', mb_strtoupper($saisie)) ?? '';
+
+        return strlen($code) === 8 && strspn($code, self::ALPHABET_CONTROLE) === 8 ? substr($code, 0, 4).'-'.substr($code, 4) : null;
+    }
+
     protected static function booted(): void
     {
+        static::saving(function (Carte $carte): void {
+            $carte->code_controle = self::calculerCode($carte->numero, (int) $carte->version, $carte->valide_jusqu_au?->toDateString(), (array) ($carte->contenu ?? []));
+        });
         $generer = function (Carte $carte): void {
             if ($carte->courante && $carte->statut === StatutCarte::Active && $carte->numero) {
                 GenererFichiersCarte::dispatch($carte->id, $carte->version)->afterCommit();

@@ -38,15 +38,19 @@ class GuichetController extends Controller
     }
 
     /**
-     * Numéro de carte (RG-C-000123, ou IFU pour une carte de commerçant) ou adresse scannée : ouvre la vérification de
-     * la carte courante portant ce numéro (à défaut, la dernière émise).
+     * Numéro de carte (RG-C-000123, ou IFU pour une carte de commerçant), code de contrôle imprimé (K7M2-Q9XP : seule
+     * la version en cours le porte) ou adresse scannée : ouvre la vérification de la carte (à défaut de carte courante
+     * portant ce numéro, la dernière émise).
      */
     public function rechercher(Request $request): RedirectResponse
     {
         Gate::authorize(Droit::CartesVerifier->value);
         $saisie = trim((string) $request->validate(['carte' => ['required', 'string', 'max:300']])['carte']);
         $jeton = preg_match('#/c/([A-Za-z0-9]+)#', $saisie, $m) ? $m[1] : null;
-        $carte = Carte::query()->when($jeton, fn ($q) => $q->where('jeton', $jeton), fn ($q) => $q->where('numero', str_starts_with(mb_strtoupper($saisie), 'RG-') ? mb_strtoupper($saisie) : Ifu::normaliser($saisie)))
+        $code = $jeton ? null : Carte::normaliserCode($saisie);
+        $carte = Carte::query()->when($jeton, fn ($q) => $q->where('jeton', $jeton), fn ($q) => $q->when($code,
+            fn ($q) => $q->where('code_controle', $code),
+            fn ($q) => $q->where('numero', str_starts_with(mb_strtoupper($saisie), 'RG-') ? mb_strtoupper($saisie) : Ifu::normaliser($saisie))))
             ->orderByRaw('courante is null')->latest('id')->first();
         if (! $carte) {
             return back()->withErrors(['carte' => __('admin.guichet.erreurs.introuvable')])->withInput();

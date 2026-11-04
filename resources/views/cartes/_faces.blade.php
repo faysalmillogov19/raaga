@@ -4,8 +4,9 @@
     Chrome et à l'écran. Recto : armoiries, BURKINA FASO, CARTE D'IDENTIFICATION + type, QR code avec logo (jeton de
     vérification seulement, jamais l'IFU), n° de carte (IFU du commerçant), nom et prénom(s), sexe, date et lieu de
     naissance, secteur d'activité, site(s), établie le, expire le, photo. Verso : groupe sanguin (« Non renseigné » sans
-    consentement), lieu de résidence, personne à prévenir, consignes, numéro vert, code-barres (IFU et expiration MMAA),
-    autorité, signature et cachet. Aucun bandeau tricolore.
+    consentement), lieu de résidence, personne à prévenir, consignes, code-barres (IFU et expiration MMAA) ; organisme
+    émetteur, logo, mention de carte électronique et code de contrôle, à la place de l'autorité, de la signature, du
+    cachet et du numéro vert. Aucun bandeau tricolore.
 --}}
 @php
     use App\Services\Cartes\Code128;
@@ -116,7 +117,7 @@
                     </div>
                     <div><p class="cr-libelle">{{ __('carte.personne_prevenir') }}</p><p class="cr-valeur" data-champ="personne_prevenir">{!! $manque($d['personne_prevenir']) !!}</p></div>
                 @endif
-                <p class="cr-texte">{{ __('carte.personnelle') }} {{ __('carte.perte') }} {{ __('carte.numero_vert') }} <strong data-champ="numero_vert">{!! $manque($d['numero_vert']) !!}</strong></p>
+                <p class="cr-texte">{{ __('carte.personnelle') }} {{ __('carte.perte') }}</p>
             </div>
             <div>
                 <div class="cr-code-barres">
@@ -128,11 +129,12 @@
         </div>
         <div class="cr-separateur" aria-hidden="true"></div>
         <div class="cr-droite">
-            <p class="cr-libelle">{{ __('carte.autorite') }}</p>
-            <p class="cr-qualite" data-champ="qualite">{!! $manque($d['qualite']) !!}</p>
-            @if ($d['signature'])<img class="cr-signature" src="{{ $d['signature'] }}" alt="{{ __('carte.signature') }}">@else<p class="cr-signature cr-signature-vide cr-manque">{{ __('carte.signature') }}</p>@endif
-            <p class="cr-nom-autorite" data-champ="nom_autorite">{!! $manque($d['nom_autorite']) !!}</p>
-            @if ($d['cachet'])<img class="cr-cachet" src="{{ $d['cachet'] }}" alt="{{ __('carte.cachet') }}">@else<p class="cr-cachet cr-cachet-vide">{{ __('carte.cachet') }}</p>@endif
+            <p class="cr-libelle">{{ __('carte.emise_par') }}</p>
+            <p class="cr-emetteur" data-champ="emetteur">{!! $manque($d['emetteur']) !!}</p>
+            @if ($d['logo'])<img class="cr-logo-emetteur" src="{{ $d['logo'] }}" alt="">@endif
+            <p class="cr-electronique">{{ __('carte.electronique') }}</p>
+            <p class="cr-libelle cr-libelle-controle">{{ __('carte.code_controle') }}</p>
+            <p class="cr-controle" data-champ="controle">{{ $d['controle'] }}</p>
         </div>
     </div>
 

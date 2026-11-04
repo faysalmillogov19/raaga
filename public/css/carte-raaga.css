@@ -153,18 +153,12 @@
 .cr-legende { margin-top: 0.6mm !important; font-size: 1.2mm; color: #7A6638; }
 .cr-separateur { width: 0.1mm; background: #DCCDA6; }
 .cr-droite { width: 27mm; display: flex; flex-direction: column; justify-content: center; }
-.cr-qualite {
-    margin-top: 0.4mm !important;
-    font-size: 1.4mm;
-    color: #4A3F2A;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.cr-signature { display: block; max-width: 22mm; height: 7.2mm; margin-top: 1.2mm; object-fit: contain; object-position: left center; }
-.cr-nom-autorite { margin-top: 0.4mm !important; font-size: 1.6mm; font-weight: 700; }
-.cr-cachet { display: block; width: 9.2mm; height: 9.2mm; margin-top: 1.6mm; object-fit: contain; }
+/* Organisme émetteur, logo, mention de carte électronique, code de contrôle (comité restreint du 03/11/2026). */
+.cr-emetteur { margin-top: 0.4mm !important; font-size: 1.8mm; font-weight: 700; }
+.cr-logo-emetteur { display: block; max-width: 16mm; height: 7mm; margin-top: 1.6mm; object-fit: contain; object-position: left center; }
+.cr-electronique { margin-top: 1.6mm !important; font-size: 1.2mm; line-height: 1.4; color: #4A3F2A; }
+.cr-libelle-controle { margin-top: 1.8mm !important; }
+.cr-controle { margin-top: 0.3mm !important; font-family: 'Courier New', monospace; font-size: 2mm; font-weight: 700; letter-spacing: 0.12em; }
 
 /* Aperçu du back-office : titulaire fictif, filigrane SPÉCIMEN (jamais sur une carte réelle). */
 .cr-specimen {
@@ -180,18 +174,6 @@
     pointer-events: none;
 }
 .cr-manque { color: #CE1126; font-weight: 600; }
-.cr-signature-vide { height: auto; padding: 2.4mm 0; font-size: 1.2mm; }
-.cr-cachet-vide {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    border: 0.2mm dashed #B8902F;
-    border-radius: 50%;
-    color: #8A6A1E;
-    font-size: 1.2mm;
-    text-align: center;
-}
 .cr-apercu-faces { display: flex; flex-wrap: wrap; gap: 8mm; }
 .cr-apercu-faces .cr-face { zoom: 1.5; }
 

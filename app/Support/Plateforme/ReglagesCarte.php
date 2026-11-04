@@ -7,34 +7,22 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * Réglages de la carte d'identification (section « carte » des paramètres de la plateforme) : état « prête à être
- * générée » ou liste des réglages manquants, images de l'autorité intégrées au rendu. La signature et le cachet sont
- * sur le disque privé et ne sont servis par aucune adresse : ils n'apparaissent que dans le rendu des cartes.
+ * générée » ou liste des réglages manquants, images intégrées au rendu. Les filigranes sont sur le disque privé et ne
+ * sont servis par aucune adresse : ils n'apparaissent que dans le rendu des cartes.
  */
 final class ReglagesCarte
 {
     /**
      * Réglages requis pour générer une carte, dans l'ordre d'affichage : [section, champ]. Armoiries et logo (le logo
-     * unique de l'onglet 1, aussi au centre du QR code) : l'image affichée par le champ, fichier déposé ou, à défaut,
-     * fichier fourni avec le code (décision du 30/10/2026). Numéro vert : celui des contacts d'assistance. Les filigranes
+     * unique de l'onglet 1, aussi au centre du QR code et au verso) : l'image affichée par le champ, fichier déposé ou, à
+     * défaut, fichier fourni avec le code (décision du 30/10/2026). Organisme émetteur : la dénomination sociale des
+     * mentions légales. Plus d'autorité, de signature, de cachet ni de numéro vert sur la carte (comité restreint du 03/11/2026). Les filigranes
      * sont facultatifs.
      */
-    /**
-     * Signature et cachet fournis avec le code, utilisés tant que le SUPER_ADMIN n'a pas déposé les siens (comité
-     * restreint du 03/11/2026).
-     */
-    public const DEFAUTS = [
-        'signatureAutorite' => 'public:images/carte/signature-defaut.png',
-        'cachetAutorite' => 'public:images/carte/cachet-defaut.png',
-    ];
-
     public const REQUIS = [
         ['identite', 'armoiries'],
         ['identite', 'logoHorizontal'],
-        ['carte', 'qualiteAutorite'],
-        ['carte', 'nomAutorite'],
-        ['carte', 'signatureAutorite'],
-        ['carte', 'cachetAutorite'],
-        ['contacts', 'numeroVert'],
+        ['mentions', 'denominationSociale'],
     ];
 
     /**
@@ -51,8 +39,8 @@ final class ReglagesCarte
         foreach (self::REQUIS as [$section, $champ]) {
             $present = match (true) {
                 $section === 'identite' => ImagesPlateforme::disponible($champ),
-                $section === 'contacts' => filled(plateforme('contacts.'.$champ)),
-                isset(Catalogue::IMAGES_CARTE[$champ]) => isset($nouvelles[$champ]) || self::chemin(self::imageCarte($champ, $carte)) !== null,
+                $section === 'mentions' => filled(plateforme('mentions.'.$champ)),
+                isset(Catalogue::IMAGES_CARTE[$champ]) => isset($nouvelles[$champ]) || self::chemin($carte[$champ] ?? null) !== null,
                 default => filled($carte[$champ] ?? null),
             };
             if (! $present) {
@@ -99,26 +87,10 @@ final class ReglagesCarte
         return [
             'armoiries' => self::image('armoiries'),
             'logo' => self::image('logoHorizontal'),
-            'signature' => self::imageCarte('signatureAutorite'),
-            'cachet' => self::imageCarte('cachetAutorite'),
-            'qualite' => plateforme('carte.qualiteAutorite'),
-            'nom' => plateforme('carte.nomAutorite'),
-            'numero_vert' => plateforme('contacts.numeroVert'),
+            'emetteur' => plateforme('mentions.denominationSociale'),
             // Filigranes (facultatifs) : chemin du fichier déposé, ou null.
             ...collect(Catalogue::FILIGRANES)->mapWithKeys(fn ($o, string $champ) => [$champ => self::chemin(plateforme('carte.'.$champ)) ? plateforme('carte.'.$champ) : null])->all(),
         ];
-    }
-
-    /**
-     * Signature ou cachet à utiliser : fichier déposé s'il existe, sinon celui fourni avec le code.
-     *
-     * @param  array<string, mixed>|null  $carte
-     */
-    public static function imageCarte(string $champ, ?array $carte = null): ?string
-    {
-        $depose = ($carte ?? plateforme('carte'))[$champ] ?? null;
-
-        return self::chemin($depose) !== null ? $depose : (self::DEFAUTS[$champ] ?? null);
     }
 
     /** Image de l'onglet 1 à figer : fichier déposé (chemin sur le disque privé), sinon fichier fourni (« public:… »). */
