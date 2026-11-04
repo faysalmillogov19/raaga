@@ -31,6 +31,7 @@
                     La boutique est alors pré-réservée à son nom. Le premier est celui dont la confirmation est enregistrée en premier par le serveur.
                     Une même personne, identifiée par son compte et par le numéro de sa pièce (personne physique) ou par son IFU (personne morale), peut réserver au plus, par type d’emplacement :
                     {{ $c->typesConcernes()->map(fn ($t) => $c->limitePour($t->id).' '.($t->code ? $t->code.' ('.$t->libelle.')' : $t->libelle))->implode(', ') }}.
+                    Dans tous les cas, un commerçant n’est jamais attributaire de plus de {{ \App\Services\Boutiques\ReservationsBoutiques::LIMITE_PAR_COMMERCANT }} boutiques, toutes campagnes et tous types confondus ; ses réservations en cours comptent.
                     Une réservation annulée ou expirée ne compte plus.</p></section>
 
             <section><h3>Article 4 : Caution et avance</h3>
@@ -39,7 +40,7 @@
                     L’avance est due avant la signature du contrat, au plus tard {{ \App\Models\ParametresPaiements::libelleEnVigueur('avance') }} après le passage de la boutique en « réservée » ; la date limite figure dans le dossier de réservation. La boutique est attribuée quand l’avance est payée et le contrat signé.</p></section>
 
             <section><h3>Article 5 : Vérification d’identité</h3>
-                <p>Les pièces jointes sont vérifiées. Personne physique : CNIB, CIB-AES ou passeport, avec numéro et date d’expiration, et selfie. Personne morale : RCCM, IFU, pièce d’identité et selfie du représentant légal, justificatif de pouvoir ; le dossier n’est conforme que si toutes ces pièces sont présentes et validées. Une identité reconnue douteuse peut entraîner l’annulation de la réservation : la boutique redevient disponible et la caution déjà payée est remboursée.</p></section>
+                <p>Les pièces jointes sont vérifiées. Personne physique : CNIB, CIB-AES ou passeport, avec numéro et date d’expiration, et selfie. Personne morale : IFU, pièce d’identité et selfie du représentant légal, justificatif de pouvoir ; le dossier n’est conforme que si toutes ces pièces sont présentes et validées. Une identité reconnue douteuse peut entraîner l’annulation de la réservation : la boutique redevient disponible et la caution déjà payée est remboursée.</p></section>
 
             <section class="encadre encadre-danger"><h3>Article 6 : Indépendance des actions</h3>
                 <p>L’achat d’actions <strong>ne donne aucun droit ni aucune priorité</strong> pour obtenir une boutique. La réservation et la caution ne donnent aucun droit sur les actions de Raaga.</p></section>

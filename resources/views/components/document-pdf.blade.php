@@ -1,5 +1,5 @@
 @props(['titre', 'pied' => null])
-{{-- Gabarit des documents PDF (dompdf) : styles en ligne, police DejaVu Sans (accents). --}}
+{{-- Gabarit des documents PDF (dompdf) : styles en ligne, police DejaVu Sans (accents) ; sans bandeau rouge et vert depuis le 04/11/2026. --}}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -15,12 +15,9 @@
         table.donnees th { width: 42%; color: #5E6B63; font-weight: normal; }
         .encadre { border: 1.5px solid #00843D; background: #E8F4EC; padding: 10px 12px; margin: 14px 0; }
         .pied { position: fixed; bottom: -12mm; left: 0; right: 0; font-size: 7.5pt; color: #5E6B63; border-top: 1px solid #D9E0DB; padding-top: 4px; }
-        .tricolore { height: 4px; background: #CE1126; margin-bottom: 10px; }
-        .tricolore span { display: block; height: 4px; width: 50%; margin-left: 50%; background: #00843D; }
     </style>
 </head>
 <body>
-    <div class="tricolore"><span></span></div>
     @include('documents._entete', ['pdf' => true])
     {{ $slot }}
     <div class="pied">{{ $pied ?? '' }}</div>

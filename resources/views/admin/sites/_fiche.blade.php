@@ -3,7 +3,7 @@
     $c = __('admin.sites.champs');
     $vide = __('admin.sites.fiche.non_renseigne');
     $lignes = [
-        'ville' => $site->localite(), 'arrondissement' => $site->arrondissement, 'region' => $site->region, 'adresse' => $site->adresse,
+        'ville' => $site->localite(), 'arrondissement' => $site->arrondissement, 'commune' => $site->commune?->libelleComplet(), 'adresse' => $site->adresse,
         'latitude' => $site->latitude !== null ? $site->latitude.' · '.$site->longitude : null,
         'maitre_ouvrage' => $site->maitre_ouvrage, 'maitre_oeuvre' => $site->maitre_oeuvre, 'phase' => $site->phase?->label(),
         'livraison_prevue' => $site->livraison_prevue?->translatedFormat('F Y'),

@@ -6,7 +6,8 @@
 {{--
     Champ de formulaire du back-office : libellé (astérisque devant si obligatoire), aide, erreur (bordure 2 px, message
     sous le champ, aria-invalid). Types : text (et number, email, date…), liste, zone (textarea), radio, case,
-    interrupteur (role="switch"), verrouille (valeur affichée, non modifiable).
+    interrupteur (role="switch"), verrouille (valeur affichée, non modifiable). Liste : une option dont la valeur est un
+    tableau devient un groupe (optgroup) de ses options.
 --}}
 @php
     $id ??= str_replace(['[', ']', '.'], ['-', '', '-'], $nom);
@@ -45,7 +46,15 @@
                     @if ($decrit) aria-describedby="{{ $decrit }}" @endif @if ($erreur) aria-invalid="true" @endif>
                 @if ($vide !== null)<option value="">{{ $vide }}</option>@endif
                 @foreach ($options as $cle => $texte)
-                    <option value="{{ $cle }}" @selected((string) $courante === (string) $cle)>{{ $texte }}</option>
+                    @if (is_array($texte))
+                        <optgroup label="{{ $cle }}">
+                            @foreach ($texte as $sousCle => $sousTexte)
+                                <option value="{{ $sousCle }}" @selected((string) $courante === (string) $sousCle)>{{ $sousTexte }}</option>
+                            @endforeach
+                        </optgroup>
+                    @else
+                        <option value="{{ $cle }}" @selected((string) $courante === (string) $cle)>{{ $texte }}</option>
+                    @endif
                 @endforeach
             </select>
         @elseif ($type === 'zone')

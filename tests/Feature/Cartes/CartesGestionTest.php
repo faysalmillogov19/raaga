@@ -48,7 +48,7 @@ class CartesGestionTest extends TestCase
 
     private function citoyen(StatutKyc $kyc = StatutKyc::Valide): User
     {
-        return User::factory()->role(Role::Citoyen)->create(['statut_kyc' => $kyc, 'nom' => 'OUEDRAOGO', 'prenoms' => 'Awa',
+        return User::factory()->role(Role::Citoyen)->avecIfu()->create(['statut_kyc' => $kyc, 'nom' => 'OUEDRAOGO', 'prenoms' => 'Awa',
             'piece_expire_le' => now()->addYears(10)->toDateString(),
             'identite_validee' => $kyc === StatutKyc::Valide ? ['nom' => 'OUEDRAOGO', 'prenoms' => 'Awa'] : null]);
     }
@@ -100,11 +100,12 @@ class CartesGestionTest extends TestCase
         $this->attribuer($citoyen, Boutiques::boutique('A', 2));
         $this->assertNull(Cartes::courante($citoyen, TypeCarte::Commercant));
 
-        // Seule une réémission par l'ADMIN redonne une carte (nouveau numéro, nouveau QR code).
+        // Seule une réémission par l'ADMIN redonne une carte (même numéro IFU, nouveau QR code).
         $this->en($this->admin)->post(route('admin.cartes.reemettre', [$citoyen, 'commercant']))->assertSessionHas('succes');
         $nouvelle = Cartes::courante($citoyen, TypeCarte::Commercant);
         $this->assertNotNull($nouvelle);
-        $this->assertNotSame($carte->numero, $nouvelle->numero);
+        $this->assertSame($citoyen->ifu, $nouvelle->numero);
+        $this->assertNotSame($carte->jeton, $nouvelle->jeton);
         $this->assertCount(2, $nouvelle->contenu['emplacements']);
     }
 
@@ -125,7 +126,7 @@ class CartesGestionTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['action' => 'carte.revocation_rejetee', 'entite_id' => $carte->id]);
     }
 
-    public function test_reemission_apres_perte_nouveau_numero_et_nouveau_qr_code(): void
+    public function test_reemission_apres_perte_meme_numero_ifu_et_nouveau_qr_code(): void
     {
         $citoyen = $this->citoyen();
         Boutiques::campagneOuverte();
@@ -138,7 +139,8 @@ class CartesGestionTest extends TestCase
 
         $this->assertSame(StatutCarte::Revoquee, $ancienne->fresh()->statut);
         $this->assertSame('perte', $ancienne->fresh()->motif);
-        $this->assertNotSame($ancienne->numero, $nouvelle->numero);
+        // Carte de commerçant : le numéro reste l'IFU du titulaire ; le QR code change.
+        $this->assertSame([$citoyen->ifu, $citoyen->ifu], [$ancienne->numero, $nouvelle->numero]);
         $this->assertNotSame($ancienne->jeton, $nouvelle->jeton);
         $this->assertSame($ancienne->id, $nouvelle->remplace_carte_id);
         $this->assertSame(StatutCarte::Active, $nouvelle->statut);

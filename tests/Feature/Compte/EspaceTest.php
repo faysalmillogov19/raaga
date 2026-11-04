@@ -52,7 +52,7 @@ class EspaceTest extends TestCase
     {
         return User::factory()->role(Role::Citoyen)->create([
             'name' => $prenoms.' KABORÉ', 'prenoms' => $prenoms, 'nom' => 'KABORÉ', 'telephone' => $telephone,
-            'statut_kyc' => $kyc, 'pays_residence' => 'BF', 'region' => 'Centre',
+            'statut_kyc' => $kyc, 'pays_residence' => 'BF',
         ]);
     }
 
@@ -151,7 +151,7 @@ class EspaceTest extends TestCase
         $this->actingAs($awa)->get('/espace?onglet=documents')->assertOk()->assertSee('Aucun document pour le moment');
         $this->actingAs($awa)->get('/espace?onglet=dividendes')->assertOk()->assertSee('Aucun dividende versé')->assertSee('Compte de versement des dividendes');
         $this->actingAs($awa)->get('/espace?onglet=profil')->assertOk()
-            ->assertSee('70 11 11 11')->assertSee('Centre')->assertSee('Bénéficiaire désigné')
+            ->assertSee('70 11 11 11')->assertSee('Bénéficiaire désigné')
             ->assertSee('href="'.route('espace.profil').'"', false);
     }
 }

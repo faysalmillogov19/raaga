@@ -8,7 +8,6 @@
 
     <table class="donnees">
         <tr><th>Institution</th><td><strong>{{ $institution->denomination }}</strong>@if ($institution->sigle) ({{ $institution->sigle }})@endif</td></tr>
-        @if ($institution->rccm)<tr><th>RCCM</th><td>{{ $institution->rccm }}</td></tr>@endif
         @if ($institution->ifu)<tr><th>IFU</th><td>{{ $institution->ifu }}</td></tr>@endif
         <tr><th>Convention de souscription</th><td>{{ $convention->reference }}</td></tr>
         <tr><th>Numéro de certificat</th><td>{{ $numero_certificat }}</td></tr>

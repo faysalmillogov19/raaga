@@ -58,7 +58,7 @@
                             <td class="whitespace-nowrap">{{ $u->telephone ? \App\Support\Telephone::formater($u->telephone) : '—' }}</td>
                             <td>{{ $u->codeRole()->label() }}</td>
                             <td>{{ $u->statut_kyc?->label() ?? '—' }}</td>
-                            <td>{{ $u->pays_residence === null ? '—' : ($u->pays_residence === 'BF' ? ($u->region ?? 'Burkina Faso') : __('admin.utilisateurs.diaspora').' · '.(config('raaga.inscription.pays')[$u->pays_residence] ?? $u->pays_residence)) }}</td>
+                            <td>{{ $u->pays_residence === null ? '—' : ($u->pays_residence === 'BF' ? ($u->commune?->nom ?? 'Burkina Faso') : __('admin.utilisateurs.diaspora').' · '.(config('raaga.inscription.pays')[$u->pays_residence] ?? $u->pays_residence)) }}</td>
                             <td class="whitespace-nowrap">{{ $u->created_at?->format('d/m/Y') }}</td>
                             <td>@include('admin.utilisateurs._statut', ['u' => $u, 'invitation' => false])</td>
                         </tr>

@@ -1,9 +1,11 @@
 {{--
-    Recto et verso de la carte d'identification (maquette validée le 24/10/2026), en mm. Variables : $d (RenduCarte::donnees
-    ou ::specimen). Toutes les images sont intégrées (data URI) : aucune adresse, rendu identique dans Chrome et à l'écran.
-    Recto : armoiries, BURKINA FASO, CARTE D'IDENTIFICATION + type, QR code avec logo, titulaire, né(e) le, carte n°,
-    expire le, photo. Aucune information sur la boutique ni sur l'activité. Filigranes : les quatre réglages de la section
-    « Carte d'identification », facultatifs ; logo du QR code : le logo unique de l'onglet « Identité ».
+    Recto et verso de la carte d'identification (maquette du comité restreint du 03/11/2026), en mm. Variables : $d
+    (RenduCarte::donnees ou ::specimen). Toutes les images sont intégrées (data URI) : aucune adresse, rendu identique dans
+    Chrome et à l'écran. Recto : armoiries, BURKINA FASO, CARTE D'IDENTIFICATION + type, QR code avec logo (jeton de
+    vérification seulement, jamais l'IFU), n° de carte (IFU du commerçant), nom et prénom(s), sexe, date et lieu de
+    naissance, secteur d'activité, site(s), établie le, expire le, photo. Verso : groupe sanguin (« Non renseigné » sans
+    consentement), lieu de résidence, personne à prévenir, consignes, numéro vert, code-barres (IFU et expiration MMAA),
+    autorité, signature et cachet. Aucun bandeau tricolore.
 --}}
 @php
     use App\Services\Cartes\Code128;
@@ -20,7 +22,8 @@
     $frise = fn (string $id) => '<svg class="cr-frise" aria-hidden="true" viewBox="0 0 856 22" preserveAspectRatio="none"><defs><g id="'.$id.'">'.$tuile.'</g></defs>'
         .implode('', array_map(fn (int $x) => '<use href="#'.$id.'" x="'.$x.'"/>', range(0, 840, 28))).'</svg>';
     $microtexte = str_repeat(__('carte.microtexte'), 16);
-    $manque = fn (?string $v) => filled($v) ? e($v) : '<span class="cr-manque">'.e(__('admin.plateforme.carte.non_renseigne')).'</span>';
+    // Valeur absente : signalée en rouge dans l'aperçu du back-office, « Non renseigné » sur une carte réelle.
+    $manque = fn (?string $v) => filled($v) ? e($v) : ($d['specimen'] ? '<span class="cr-manque">'.e(__('admin.plateforme.carte.non_renseigne')).'</span>' : e(__('carte.non_renseigne')));
 @endphp
 
 <div class="cr-face" data-face="recto" role="img" aria-label="{{ __('carte.recto') }}">
@@ -55,15 +58,31 @@
 
     <div class="cr-infos">
         <div>
-            <p class="cr-libelle">{{ __('carte.titulaire') }}</p>
+            <p class="cr-libelle">{{ $d['commercant'] ? __('carte.numero_ifu') : __('carte.numero') }}</p>
+            <p class="cr-numero" data-champ="numero">{{ $d['numero'] }}</p>
+        </div>
+        <div>
+            <p class="cr-libelle">{{ $d['representant'] ? __('carte.raison_sociale') : __('carte.titulaire') }}</p>
             <p class="cr-titulaire" data-champ="titulaire">{{ $d['titulaire'] }}</p>
             @if ($d['representant'])<p class="cr-representant">{{ __('carte.representant', ['nom' => $d['representant']]) }}</p>@endif
         </div>
-        <div class="cr-grille">
-            @if ($d['ne_le'])
-                <div><p class="cr-libelle">{{ __('carte.ne_le') }}</p><p class="cr-valeur" data-champ="ne_le">{{ $d['ne_le'] }}</p></div>
+        <div class="cr-grille {{ $d['commercant'] ? 'cr-grille-3' : '' }}">
+            @if ($d['commercant'])
+                <div><p class="cr-libelle">{{ __('carte.sexe') }}</p><p class="cr-valeur" data-champ="sexe">{!! $manque($d['sexe']) !!}</p></div>
             @endif
-            <div><p class="cr-libelle">{{ __('carte.numero') }}</p><p class="cr-valeur" data-champ="numero">{{ $d['numero'] }}</p></div>
+            <div><p class="cr-libelle">{{ __('carte.ne_le') }}</p><p class="cr-valeur" data-champ="ne_le">{!! $manque($d['ne_le']) !!}</p></div>
+            @if ($d['commercant'])
+                <div><p class="cr-libelle">{{ __('carte.lieu_naissance') }}</p><p class="cr-valeur" data-champ="lieu_naissance">{!! $manque($d['lieu_naissance']) !!}</p></div>
+            @endif
+        </div>
+        @if ($d['commercant'])
+            <div class="cr-grille">
+                <div><p class="cr-libelle">{{ __('carte.secteur') }}</p><p class="cr-valeur cr-valeur-long" data-champ="secteur">{!! $manque($d['secteur']) !!}</p></div>
+                <div><p class="cr-libelle">{{ str_contains((string) $d['sites'], ' · ') ? __('carte.sites') : __('carte.site') }}</p><p class="cr-valeur cr-valeur-long" data-champ="sites">{!! $manque($d['sites']) !!}</p></div>
+            </div>
+        @endif
+        <div class="cr-grille">
+            <div><p class="cr-libelle">{{ __('carte.etablie') }}</p><p class="cr-valeur" data-champ="etablie">{!! $manque($d['etablie']) !!}</p></div>
             <div><p class="cr-libelle">{{ __('carte.expire') }}</p><p class="cr-valeur" data-champ="expire">{{ $d['expire'] }}</p></div>
         </div>
     </div>
@@ -74,7 +93,6 @@
 
     {!! $frise('cr-frise-recto') !!}
     <div class="cr-microtexte" aria-hidden="true">{{ $microtexte }}</div>
-    <div class="cr-bande" aria-hidden="true"><span></span><span></span><span></span></div>
     @if ($d['specimen'])<span class="cr-specimen" aria-hidden="true">{{ __('carte.specimen') }}</span>@endif
 </div>
 
@@ -85,28 +103,27 @@
 
     <div class="cr-bandeau">
         <span class="cr-bandeau-titre">{{ __('carte.carte_raaga') }}</span>
-        <span class="cr-bandeau-numero">{{ $d['numero'] }}</span>
+        <span class="cr-bandeau-numero">{{ __('carte.numero_court', ['numero' => $d['numero']]) }}</span>
     </div>
 
     <div class="cr-corps">
         <div class="cr-gauche">
-            <div @class(['cr-mentions', 'cr-mentions-serrees' => $d['identifiant_fiscal'] ?? null])>
-                @if ($d['identifiant_fiscal'] ?? null)
-                    <p>{{ __('carte.identifiant_fiscal') }} <strong data-champ="identifiant_fiscal">{{ $d['identifiant_fiscal'] }}</strong></p>
+            <div class="cr-mentions">
+                @if ($d['commercant'])
+                    <div class="cr-grille">
+                        <div><p class="cr-libelle">{{ __('carte.groupe_sanguin') }}</p><p class="cr-valeur" data-champ="groupe_sanguin">{{ $d['groupe_sanguin'] ?? __('carte.non_renseigne') }}</p></div>
+                        <div><p class="cr-libelle">{{ __('carte.residence') }}</p><p class="cr-valeur" data-champ="residence">{!! $manque($d['residence']) !!}</p></div>
+                    </div>
+                    <div><p class="cr-libelle">{{ __('carte.personne_prevenir') }}</p><p class="cr-valeur" data-champ="personne_prevenir">{!! $manque($d['personne_prevenir']) !!}</p></div>
                 @endif
-                @if ($d['numero_registre'] ?? null)
-                    <p>{{ __('carte.numero_registre') }} <strong data-champ="numero_registre">{{ $d['numero_registre'] }}</strong></p>
-                @endif
-                <p>{{ __('carte.personnelle') }}</p>
-                <p>{{ __('carte.perte') }}</p>
-                <p>{{ __('carte.numero_vert') }} <strong data-champ="numero_vert">{!! $manque($d['numero_vert']) !!}</strong></p>
+                <p class="cr-texte">{{ __('carte.personnelle') }} {{ __('carte.perte') }} {{ __('carte.numero_vert') }} <strong data-champ="numero_vert">{!! $manque($d['numero_vert']) !!}</strong></p>
             </div>
             <div>
                 <div class="cr-code-barres">
                     {!! Code128::svg($d['code'], '#1E1A14', __('carte.code_barres')) !!}
                     <p class="cr-code-texte" data-champ="code">{{ $d['code'] }}</p>
                 </div>
-                <p class="cr-legende">{{ __('carte.legende_code_barres') }}</p>
+                <p class="cr-legende">{{ $d['commercant'] ? __('carte.legende_code_barres_ifu') : __('carte.legende_code_barres') }}</p>
             </div>
         </div>
         <div class="cr-separateur" aria-hidden="true"></div>
@@ -121,6 +138,5 @@
 
     {!! $frise('cr-frise-verso') !!}
     <div class="cr-microtexte" aria-hidden="true">{{ $microtexte }}</div>
-    <div class="cr-bande" aria-hidden="true"><span></span><span></span><span></span></div>
     @if ($d['specimen'])<span class="cr-specimen" aria-hidden="true">{{ __('carte.specimen') }}</span>@endif
 </div>

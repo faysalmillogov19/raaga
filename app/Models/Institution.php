@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
  * Cycle : INVITÉE → DOSSIER_EN_COURS → VÉRIFIÉE → ACTIVE (convention signée), ou SUSPENDUE.
  */
 #[Fillable([
-    'denomination', 'sigle', 'forme_juridique', 'rccm', 'ifu', 'adresse', 'secteur', 'statut', 'motif_suspension',
+    'denomination', 'sigle', 'forme_juridique', 'ifu', 'adresse', 'secteur', 'statut', 'motif_suspension',
     'rib_titulaire', 'rib_banque', 'rib_numero', 'interlocuteur_nom', 'interlocuteur_email', 'interlocuteur_telephone',
     'cree_par', 'verifiee_le',
 ])]
@@ -79,7 +79,8 @@ class Institution extends Model
      */
     public function piecesEnVigueur(): Collection
     {
-        return $this->documents()->get()->unique(fn (InstitutionDocument $d) => $d->type->value)->keyBy(fn ($d) => $d->type->value);
+        return $this->documents()->get()->filter(fn (InstitutionDocument $d) => in_array($d->type, TypeDocumentKyb::exiges(), true))
+            ->unique(fn (InstitutionDocument $d) => $d->type->value)->keyBy(fn ($d) => $d->type->value);
     }
 
     /** Toutes les pièces exigées sont déposées et validées. */
@@ -87,7 +88,7 @@ class Institution extends Model
     {
         $pieces = $this->piecesEnVigueur();
 
-        return collect(TypeDocumentKyb::cases())->every(fn (TypeDocumentKyb $t) => $pieces->get($t->value)?->statut === StatutDocumentKyc::Valide);
+        return collect(TypeDocumentKyb::exiges())->every(fn (TypeDocumentKyb $t) => $pieces->get($t->value)?->statut === StatutDocumentKyc::Valide);
     }
 
     /**

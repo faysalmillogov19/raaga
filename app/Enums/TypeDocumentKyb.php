@@ -13,6 +13,17 @@ enum TypeDocumentKyb: string
     case DecisionInvestissement = 'DECISION_INVESTISSEMENT';
     case Rib = 'RIB';
 
+    /**
+     * Pièces exigées du dossier KYB. L'extrait RCCM n'est plus demandé (03/11/2026) : le cas reste pour lire les pièces
+     * déjà déposées.
+     *
+     * @return list<self>
+     */
+    public static function exiges(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $t) => $t !== self::ExtraitRccm));
+    }
+
     public function label(): string
     {
         return match ($this) {

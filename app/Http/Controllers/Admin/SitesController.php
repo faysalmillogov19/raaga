@@ -61,7 +61,7 @@ class SitesController extends Controller
                 Colonne::make('nom', $c['nom'])->triable()->recherchable()
                     ->valeur(fn (Site $s) => new HtmlString('<a href="'.e(route('admin.sites.show', $s)).'" class="font-bold text-vert-fonce underline underline-offset-2">'.e($s->nom).'</a>'))
                     ->texte(fn (Site $s) => $s->nom),
-                Colonne::make('lieu', $c['lieu'])->triable('ville')->recherchable(['ville', 'commune', 'arrondissement'])
+                Colonne::make('lieu', $c['lieu'])->triable('ville')->recherchable(['ville', 'arrondissement'])
                     ->valeur(fn (Site $s) => trim(($s->localite() ?? '—').($s->arrondissement ? ' · '.$s->arrondissement : ''))),
                 Colonne::make('phase', $c['phase'])->triable()->valeur(fn (Site $s) => $s->phase?->label()),
                 Colonne::make('statut', $c['statut'])->triable()->valeur($statut)->texte(fn (Site $s) => $s->statut->label()),

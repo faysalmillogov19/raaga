@@ -178,12 +178,6 @@ return [
         // Version des conditions d'utilisation acceptées (tracée dans la table acceptations).
         'version_conditions' => '2026-10',
 
-        // Régions administratives (découpage en 13 régions — à mettre à jour si le découpage officiel change).
-        'regions' => [
-            'Boucle du Mouhoun', 'Cascades', 'Centre', 'Centre-Est', 'Centre-Nord', 'Centre-Ouest',
-            'Centre-Sud', 'Est', 'Hauts-Bassins', 'Nord', 'Plateau-Central', 'Sahel', 'Sud-Ouest',
-        ],
-
         // Pays de résidence proposés (code ISO 3166-1 alpha-2 => nom). ZZ = autre pays.
         'pays' => [
             'BF' => 'Burkina Faso',

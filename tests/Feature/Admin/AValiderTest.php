@@ -37,7 +37,7 @@ class AValiderTest extends TestCase
     /** Site avec une boutique, soumis au VALIDATEUR. */
     private function siteSoumis(string $code): Site
     {
-        $this->en($this->gestionnaire)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'region' => 'Centre', 'ville' => 'Ouagadougou'])
+        $this->en($this->gestionnaire)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'ville' => 'Ouagadougou'])
             ->assertSessionHasNoErrors();
         $site = Site::query()->where('code', $code)->sole();
         $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.store', $site), [
@@ -163,7 +163,7 @@ class AValiderTest extends TestCase
         $sar = $this->siteSoumis('SAR');
         $this->en($this->validateur)->post(route('admin.sites.confirmer', $sar))->assertSessionHas('succes');
         $this->en($this->validateur)->post(route('admin.sites.reviser', $sar), ['motif' => 'Ajout du bloc B'])->assertSessionHas('succes');
-        $this->en($this->gestionnaire)->put(route('admin.sites.update', $sar), ['code' => 'SAR', 'nom' => 'Marché moderne de Sarfalao', 'region' => 'Centre', 'ville' => 'Ouagadougou'])
+        $this->en($this->gestionnaire)->put(route('admin.sites.update', $sar), ['code' => 'SAR', 'nom' => 'Marché moderne de Sarfalao', 'ville' => 'Ouagadougou'])
             ->assertSessionHasNoErrors();
         $this->en($this->gestionnaire)->post(route('admin.sites.soumettre', $sar))->assertSessionHas('succes');
         $a04 = $this->siteSoumis('A04');

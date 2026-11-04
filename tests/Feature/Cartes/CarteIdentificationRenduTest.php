@@ -97,7 +97,7 @@ class CarteIdentificationRenduTest extends TestCase
 
     public function test_la_generation_s_arrete_si_un_reglage_manque(): void
     {
-        $this->completerReglagesCarte(['cachetAutorite' => null]);
+        $this->completerReglagesCarte(['nomAutorite' => null]);
         $carte = $this->carte();
         $this->assertNull($carte->reglages_rendu);
 
@@ -105,8 +105,8 @@ class CarteIdentificationRenduTest extends TestCase
             app(RenduCarte::class)->donnees($carte);
             $this->fail('La génération aurait dû être refusée.');
         } catch (ReglagesCarteManquants $e) {
-            $this->assertSame(['cachetAutorite'], $e->manquants);
-            $this->assertStringContainsString('Cachet de l’autorité', $e->getMessage());
+            $this->assertSame(['nomAutorite'], $e->manquants);
+            $this->assertStringContainsString('Nom de l’autorité de délivrance', $e->getMessage());
         }
 
         // Impression au guichet : refusée avec le détail des réglages, rien n'est tracé.
@@ -117,11 +117,11 @@ class CarteIdentificationRenduTest extends TestCase
             ->assertSessionHas('erreur', 'Votre carte est en cours de préparation. Elle sera disponible prochainement.');
         $this->get(route('espace.carte', ['type' => 'commercant']))->assertOk()->assertSee('data-carte-preparation', false)
             ->assertSee('Votre carte est en cours de préparation. Elle sera disponible prochainement.')
-            ->assertDontSee('data-carte-identification', false)->assertDontSee('data-telecharger', false)->assertDontSee('Cachet');
+            ->assertDontSee('data-carte-identification', false)->assertDontSee('data-telecharger', false)->assertDontSee('Nom de l’autorité');
         $this->app['auth']->forgetGuards();
         $this->connecterBackoffice(Role::AgentGuichet);
         $this->from(route('admin.guichet.carte', $carte->jeton))->post(route('admin.guichet.imprimer', $carte->jeton), ['piece_verifiee' => '1'])
-            ->assertSessionHasErrors(['piece_verifiee' => (new ReglagesCarteManquants(['cachetAutorite']))->getMessage()]);
+            ->assertSessionHasErrors(['piece_verifiee' => (new ReglagesCarteManquants(['nomAutorite']))->getMessage()]);
         $this->assertSame(0, AuditLog::query()->where('action', 'carte.imprimee')->count());
         $this->assertNull($carte->fresh()->reglages_rendu);
 
@@ -141,7 +141,7 @@ class CarteIdentificationRenduTest extends TestCase
             ->assertSee('data-carte-identification', false)->assertSee('data-face="recto"', false)->assertSee('data-face="verso"', false)
             ->assertSee('Aïcha OUATTARA')->assertSee('Expire le')->assertSee('31/12/2028')->assertSee('14/03/1988')->assertSee($carte->numero)
             ->assertSee('Le Maire de l’Arrondissement N°1')->assertSee('css/carte-raaga.css', false)
-            ->assertDontSee('RAA-R1-A-045')->assertDontSee('Rood Woko')->assertDontSee('SPÉCIMEN')->assertSee('data-plein-ecran', false);
+            ->assertDontSee('RAA-R1-A-045')->assertSee('Marché de Rood Woko')->assertDontSee('SPÉCIMEN')->assertSee('data-plein-ecran', false);
 
         // Carte suspendue : la carte reste affichée, sans plein écran ni téléchargement.
         $carte->forceFill(['statut' => StatutCarte::Suspendue])->save();
@@ -156,7 +156,7 @@ class CarteIdentificationRenduTest extends TestCase
             ->assertSee('data-plein-ecran', false)->assertSee(route('cartes.fichier', [$personnel, 'png']), false);
         $this->app['auth']->forgetGuards();
         $this->carte(TypeCarte::Personnel, $this->connecterBackoffice(Role::Admin));
-        $this->completerReglagesCarte(['cachetAutorite' => null]);
+        $this->completerReglagesCarte(['nomAutorite' => null]);
         $this->get(route('admin.carte'))->assertOk()->assertSee('data-carte-preparation', false)
             ->assertDontSee('data-carte-identification', false);
     }
@@ -179,7 +179,9 @@ class CarteIdentificationRenduTest extends TestCase
             foreach (['recto-principal', 'recto-secondaire', 'verso-principal', 'verso-secondaire'] as $place) {
                 $this->assertStringContainsString('class="cr-filigrane cr-filigrane-'.$place.'"', $html);
             }
-            $this->assertStringContainsString('N° de carte · Expiration', $html);
+            $this->assertStringContainsString($type === TypeCarte::Commercant ? 'N° IFU · Expiration' : 'N° de carte · Expiration', $html);
+            // Bandeau tricolore retiré (comité restreint du 03/11/2026).
+            $this->assertStringNotContainsString('cr-bande"', $html);
 
             $faces = $rendu->pngFaces($carte);
             foreach ($faces as $png) {

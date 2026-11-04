@@ -50,8 +50,8 @@ class RechercheSansAccentTest extends TestCase
     {
         $this->connecterBackoffice(Role::GestionnaireSites);
         $createur = User::factory()->role(Role::GestionnaireSites)->create()->id;
-        Site::query()->create(['code' => 'SEB', 'nom' => 'Marché de Sébé', 'region' => 'Centre', 'ville' => 'Bobo-Dioulasso', 'statut' => StatutSite::Brouillon, 'cree_par' => $createur]);
-        Site::query()->create(['code' => 'RAA', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'ville' => 'Ouagadougou', 'statut' => StatutSite::Brouillon, 'cree_par' => $createur]);
+        Site::query()->create(['code' => 'SEB', 'nom' => 'Marché de Sébé', 'ville' => 'Bobo-Dioulasso', 'statut' => StatutSite::Brouillon, 'cree_par' => $createur]);
+        Site::query()->create(['code' => 'RAA', 'nom' => 'Marché Raaga', 'ville' => 'Ouagadougou', 'statut' => StatutSite::Brouillon, 'cree_par' => $createur]);
 
         // Liste en tableau de données (colonnes recherchables), recherche globale du cadre.
         $this->get(route('admin.sites', ['q' => 'marche de sebe']))->assertSee('Marché de Sébé')->assertDontSee('Marché Raaga');

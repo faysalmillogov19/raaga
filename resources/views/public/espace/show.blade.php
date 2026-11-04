@@ -233,9 +233,14 @@
                                 'telephone' => $user->telephone ? Telephone::formaterLocal($user->telephone) : null,
                                 'naissance' => $user->date_naissance?->format('d/m/Y'),
                                 'residence' => config('raaga.inscription.pays.'.($user->pays_residence ?: 'BF')),
-                                'region' => $user->region,
-                                'identifiant_fiscal' => $user->identifiant_fiscal_raaga,
-                                'numero_registre' => $user->numero_registre_raaga,
+                                'commune' => $user->commune?->nom,
+                                'region' => $user->commune?->province?->region?->nom,
+                                'sexe' => $user->sexe ? __('public.verification.sexes.'.$user->sexe) : null,
+                                'lieu_naissance' => $user->lieu_naissance,
+                                'ifu' => $user->ifu,
+                                'secteur' => \App\Models\SecteurActivite::libellePour($user),
+                                'personne_prevenir' => $user->personne_prevenir_nom ? $user->personne_prevenir_nom.' · '.Telephone::formaterLocal((string) $user->personne_prevenir_telephone) : null,
+                                'groupe_sanguin' => $user->groupe_sanguin_consenti_le ? $user->groupe_sanguin : null,
                             ] as $cle => $valeur)
                                 @if ($valeur)
                                     <div class="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4"><dt class="text-gris">{{ __('public.espace.profil.'.$cle) }}</dt><dd class="font-semibold text-encre">{{ $valeur }}</dd></div>

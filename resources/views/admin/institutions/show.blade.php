@@ -15,11 +15,11 @@
                 <x-institutionnel.statut :statut="$institution->statut" />
             </div>
             <dl class="bo-definitions mt-3">
-                @foreach (['denomination', 'sigle', 'forme_juridique', 'rccm', 'ifu', 'adresse', 'secteur'] as $champ)
+                @foreach (['denomination', 'sigle', 'forme_juridique', 'ifu', 'adresse', 'secteur'] as $champ)
                     <dt>{{ $i['champs'][$champ] }}</dt><dd>{{ $institution->{$champ} ?? '—' }}</dd>
                 @endforeach
                 <dt>{{ $o['dossier'] }}</dt>
-                <dd>{{ __('institutionnel.bo.institutions.pieces', ['valides' => $pieces->where('statut', \App\Enums\StatutDocumentKyc::Valide)->count(), 'total' => count(TypeDocumentKyb::cases())]) }}</dd>
+                <dd>{{ __('institutionnel.bo.institutions.pieces', ['valides' => $pieces->where('statut', \App\Enums\StatutDocumentKyc::Valide)->count(), 'total' => count(TypeDocumentKyb::exiges())]) }}</dd>
             </dl>
             @if ($institution->motif_suspension)
                 <x-admin.message type="erreur" class="mt-3 !mb-0">{{ $institution->motif_suspension }}</x-admin.message>

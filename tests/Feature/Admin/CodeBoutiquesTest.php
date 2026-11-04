@@ -33,8 +33,8 @@ class CodeBoutiquesTest extends TestCase
         $this->gestionnaire = User::factory()->role(Role::GestionnaireSites)->create();
         $this->type = TypeBoutique::create(['code' => 'BOUT', 'libelle' => 'Boutique']);
         $this->site = Site::create([
-            'statut' => StatutSite::Brouillon, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'region' => 'Centre',
-            'commune' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation', 'cree_par' => $this->gestionnaire->id,
+            'statut' => StatutSite::Brouillon, 'code' => 'RAA', 'nom' => 'Marché Raaga',
+            'ville' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation', 'cree_par' => $this->gestionnaire->id,
         ]);
     }
 
@@ -93,7 +93,7 @@ class CodeBoutiquesTest extends TestCase
         // Le code d'un site soumis (ou confirmé) est figé lui aussi.
         $this->site->forceFill(['statut' => StatutSite::Soumis])->save();
         $this->en($this->gestionnaire)->put(route('admin.sites.update', $this->site), [
-            'code' => 'SAR', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'ville' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation',
+            'code' => 'SAR', 'nom' => 'Marché Raaga', 'ville' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation',
         ])->assertSessionHas('erreur');
         $this->assertSame('RAA', $this->site->fresh()->code);
     }

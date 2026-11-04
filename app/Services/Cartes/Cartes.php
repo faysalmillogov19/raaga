@@ -12,6 +12,7 @@ use App\Models\Carte;
 use App\Models\KycDocument;
 use App\Models\LigneRegistre;
 use App\Models\ReservationBoutique;
+use App\Models\SecteurActivite;
 use App\Models\User;
 use App\Notifications\CarteEmise;
 use App\Notifications\PieceBientotExpiree;
@@ -26,8 +27,9 @@ use Illuminate\Support\Str;
  * d'identité conforme ou douteux, compte désactivé) appelle synchroniser() : l'état attendu de la carte est recalculé
  * et appliqué (émission, mise à jour du contenu, suspension, révocation), sous verrou du titulaire.
  *
- * COMMERÇANT : dès sa première boutique attribuée ; emplacements (code et site) ; validité = fin du contrat le plus
- * lointain (signature + durée paramétrée). ACTIONNAIRE : dès sa première inscription au registre ; numéro d'actionnaire,
+ * COMMERÇANT : dès sa première boutique attribuée ; numéro de carte = IFU du titulaire (depuis le 03/11/2026, RG-C sans
+ * IFU) ; sexe, lieu de naissance, activité, site(s), groupe sanguin (avec consentement), lieu de résidence, personne à
+ * prévenir ; validité = durée réglée par le SUPER_ADMIN (3 ans par défaut) à compter de l'émission. ACTIONNAIRE : dès sa première inscription au registre ; numéro d'actionnaire,
  * sans nombre d'actions ni montant ; validité 1 an, renouvelée tant qu'il détient des actions. Les deux ne sont émises
  * que si le dossier d'identité est conforme (sinon : en attente) ; jamais au-delà de l'expiration de la pièce ; identité
  * douteuse : pas de carte, carte actionnaire suspendue. PERSONNEL : émise par le SUPER_ADMIN, 1 an, révoquée si le compte
@@ -76,8 +78,10 @@ class Cartes
             }
 
             $etaitActive = $courante->statut === StatutCarte::Active;
-            $change = $courante->contenu != $contenu || $courante->valide_jusqu_au?->toDateString() !== $validite?->toDateString();
+            $numero = self::numero($user, $type, $courante);
+            $change = $courante->contenu != $contenu || $courante->valide_jusqu_au?->toDateString() !== $validite?->toDateString() || $courante->numero !== $numero;
             $courante->forceFill([
+                'numero' => $numero,
                 'statut' => $statut,
                 'contenu' => $contenu,
                 'valide_jusqu_au' => $validite,
@@ -241,7 +245,9 @@ class Cartes
         }
 
         $validite = match ($type) {
-            TypeCarte::Commercant => $this->finContrats($user),
+            TypeCarte::Commercant => $this->aUneBoutique($user)
+                ? CarbonImmutable::parse($courante?->emise_le ?? today())->startOfDay()->addYears(self::dureeValidite())->subDay()
+                : null,
             TypeCarte::Actionnaire => $this->detientDesActions($user)
                 ? ($courante?->valide_jusqu_au?->isFuture() ? $courante->valide_jusqu_au->toImmutable() : CarbonImmutable::today()->addMonths((int) config('raaga.cartes.validite_actionnaire_mois')))
                 : null,
@@ -266,14 +272,16 @@ class Cartes
         return $statut === null ? null : [$statut, $this->contenu($user, $type), $validite];
     }
 
-    /** Fin du contrat le plus lointain des boutiques attribuées (signature + durée du contrat), ou null s'il n'y en a pas. */
-    private function finContrats(User $user): ?CarbonImmutable
+    /** Durée de validité de la carte de commerçant, en années (réglage de la carte, 3 ans par défaut). */
+    public static function dureeValidite(): int
     {
-        $annees = (int) config('raaga.cartes.duree_contrat_annees');
+        return max(1, (int) (plateforme('carte.dureeValiditeAnnees') ?: 3));
+    }
 
-        return ReservationBoutique::query()->where('user_id', $user->id)->where('statut', StatutReservationBoutique::Attribuee)->get()
-            ->map(fn (ReservationBoutique $r) => CarbonImmutable::parse($r->contrat_signe_le ?? $r->attribuee_le ?? now())->addYears($annees))
-            ->max();
+    /** Le titulaire est-il attributaire d'au moins une boutique ? */
+    private function aUneBoutique(User $user): bool
+    {
+        return ReservationBoutique::query()->where('user_id', $user->id)->where('statut', StatutReservationBoutique::Attribuee)->exists();
     }
 
     private function detientDesActions(User $user): bool
@@ -283,7 +291,7 @@ class Cartes
 
     /**
      * Contenu affiché : nom (identité validée seulement), date de naissance, photo (selfie validé), et selon le type les
-     * emplacements avec l'identifiant fiscal et le numéro de registre Raaga, le numéro d'actionnaire ou la fonction. Jamais de montant ni de nombre d'actions. Toute donnée
+     * emplacements, le numéro d'actionnaire ou la fonction. Jamais de montant ni de nombre d'actions. Toute donnée
      * imprimée y figure : sa modification donne une nouvelle version de la carte, donc de nouveaux fichiers.
      *
      * @return array<string, mixed>
@@ -295,7 +303,8 @@ class Cartes
             ->latest('id')->value('id');
         $naissance = $identite['date_naissance'] ?? $user->date_naissance;
         $contenu = [
-            'nom' => trim(($identite['prenoms'] ?? $user->prenoms ?? '').' '.($identite['nom'] ?? $user->nom ?? '')) ?: $user->name,
+            // Nom puis prénom(s), comme sur la pièce d'identité.
+            'nom' => trim(mb_strtoupper((string) ($identite['nom'] ?? $user->nom ?? ''), 'UTF-8').' '.($identite['prenoms'] ?? $user->prenoms ?? '')) ?: $user->name,
             'date_naissance' => $naissance ? CarbonImmutable::parse($naissance)->toDateString() : null,
             'photo' => $photo,
         ];
@@ -305,14 +314,39 @@ class Cartes
         }
 
         return match ($type) {
-            TypeCarte::Commercant => [...$contenu, 'emplacements' => ReservationBoutique::query()->where('user_id', $user->id)
+            TypeCarte::Commercant => [...$contenu, ...$this->commercant($user), 'emplacements' => ReservationBoutique::query()->where('user_id', $user->id)
                 ->where('statut', StatutReservationBoutique::Attribuee)->with('boutique.site')->get()
                 ->map(fn (ReservationBoutique $r) => ['code' => $r->boutique?->code, 'site' => $r->boutique?->site?->nom])
-                ->sortBy('code')->values()->all(),
-                'identifiant_fiscal' => $user->identifiant_fiscal_raaga, 'numero_registre' => $user->numero_registre_raaga],
+                ->sortBy('code')->values()->all()],
             TypeCarte::Actionnaire => [...$contenu, 'numero_actionnaire' => sprintf('RG-A-%06d', $user->id)],
             TypeCarte::Personnel => [...$contenu, 'fonction' => $user->codeRole()?->label()],
         };
+    }
+
+    /**
+     * Données propres à la carte de commerçant (comité restreint du 03/11/2026). Groupe sanguin : seulement avec le
+     * consentement du titulaire.
+     *
+     * @return array<string, mixed>
+     */
+    private function commercant(User $user): array
+    {
+        $user->loadMissing('commune');
+
+        return [
+            'sexe' => $user->sexe,
+            'lieu_naissance' => $user->lieu_naissance,
+            'secteur' => SecteurActivite::libellePour($user),
+            'groupe_sanguin' => $user->groupe_sanguin_consenti_le ? $user->groupe_sanguin : null,
+            'residence' => $user->commune?->nom,
+            'personne_prevenir' => filled($user->personne_prevenir_nom) ? ['nom' => $user->personne_prevenir_nom, 'telephone' => $user->personne_prevenir_telephone] : null,
+        ];
+    }
+
+    /** Numéro imprimé : l'IFU pour la carte de commerçant (03/11/2026), sinon RG-C suivi du numéro de la carte. */
+    private static function numero(User $user, TypeCarte $type, Carte $carte): string
+    {
+        return $type === TypeCarte::Commercant && filled($user->ifu) ? $user->ifu : sprintf('RG-C-%06d', $carte->id);
     }
 
     private function creer(User $user, TypeCarte $type, StatutCarte $statut, array $contenu, ?CarbonImmutable $validite, ?User $acteur, ?Carte $ancienne = null): Carte
@@ -325,7 +359,7 @@ class Cartes
             // seront figés à la première génération, une fois complets).
             'reglages_rendu' => ReglagesCarte::instantane(),
         ]);
-        $carte->forceFill(['numero' => sprintf('RG-C-%06d', $carte->id)])->save();
+        $carte->forceFill(['numero' => self::numero($user, $type, $carte)])->save();
         $this->journal->ecrire($acteur, $statut === StatutCarte::Active ? 'carte.emise' : 'carte.en_attente', 'Carte', $carte->id, null,
             ['numero' => $carte->numero, 'type' => $type->value, 'remplace' => $ancienne?->numero]);
 

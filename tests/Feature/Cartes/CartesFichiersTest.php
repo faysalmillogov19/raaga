@@ -163,10 +163,10 @@ class CartesFichiersTest extends TestCase
 
     public function test_reglage_manquant_avertissement_sans_nouvel_essai(): void
     {
-        $this->completerReglagesCarte(['cachetAutorite' => null]);
+        $this->completerReglagesCarte(['nomAutorite' => null]);
         $carte = $this->carte();
 
-        Log::shouldReceive('warning')->once()->with('Fichiers de la carte non générés : réglages manquants.', ['carte' => $carte->numero, 'version' => 1, 'manquants' => ['cachetAutorite']]);
+        Log::shouldReceive('warning')->once()->with('Fichiers de la carte non générés : réglages manquants.', ['carte' => $carte->numero, 'version' => 1, 'manquants' => ['nomAutorite']]);
         $this->generer($carte);
         $this->assertSame(0, $this->chrome->rendus);
     }

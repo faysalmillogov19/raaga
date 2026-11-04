@@ -94,16 +94,27 @@ class ListesAttente
 
     /**
      * Inscription sur une boutique. La pièce d'identité n'est demandée qu'à la première inscription de la campagne ;
-     * les suivantes reprennent son type et son numéro.
+     * les suivantes reprennent son type et son numéro. IFU obligatoire ; une personne physique le donne à sa première
+     * réservation, avec son attestation. Jamais plus de deux boutiques par commerçant : au-delà, rien n'est enregistré.
      *
      * @param  list<string>  $engagements  valeurs DocumentAccepte cochées
      *
      * @throws ValidationException
      */
     public function inscrire(CampagneBoutiques $campagne, User $user, Boutique $boutique, ?TypeDocumentKyc $typePiece, ?string $numeroPiece,
-        ?UploadedFile $piece, ?UploadedFile $rccm, array $engagements, string $ip, string $userAgent): InscriptionBoutique
+        ?UploadedFile $piece, array $engagements, string $ip, string $userAgent, ?string $ifu = null, ?UploadedFile $attestationIfu = null): InscriptionBoutique
     {
         $erreur = fn (string $cle, array $params = []) => throw ValidationException::withMessages(['boutique' => __('public.boutiques.erreurs.'.$cle, $params)]);
+        // IFU obligatoire pour souscrire à une boutique (comité restreint du 03/11/2026).
+        // Personne morale : le numéro de sa pièce est son IFU.
+        $ifu ??= $typePiece === TypeDocumentKyc::Ifu ? $numeroPiece : null;
+        if (blank($user->ifu) && blank($ifu)) {
+            throw ValidationException::withMessages(['ifu' => __('public.boutiques.erreurs.sans_ifu')]);
+        }
+        $attestationIfu = ReservationsBoutiques::attestationIfuAFournir($user) ? $attestationIfu : null;
+        if (ReservationsBoutiques::attestationIfuAFournir($user) && $attestationIfu === null) {
+            throw ValidationException::withMessages(['attestation_ifu' => __('public.boutiques.erreurs.attestation_ifu')]);
+        }
         if (! $user->telephone) {
             $erreur('telephone');
         }
@@ -120,13 +131,17 @@ class ListesAttente
                 throw ValidationException::withMessages(['piece' => __('public.boutiques.erreurs.piece_fichier')]);
             }
         }
+        // Deux boutiques au plus par commerçant (même compte, même pièce ou même IFU), avant tout paiement.
+        if (ReservationsBoutiques::restantCommercant($user, $numero) === 0) {
+            $erreur('limite_commercant');
+        }
         if (array_diff(array_map(fn ($d) => $d->value, ReservationsBoutiques::ENGAGEMENTS), $engagements)) {
             throw ValidationException::withMessages(['engagements' => __('public.boutiques.erreurs.engagements')]);
         }
 
         $chemins = [];
         try {
-            $inscription = DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $rccm, $deja, $ip, $userAgent, $erreur, &$chemins) {
+            $inscription = DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $deja, $ip, $userAgent, $erreur, $ifu, $attestationIfu, &$chemins) {
                 $campagne = CampagneBoutiques::query()->lockForUpdate()->findOrFail($campagne->id);
                 // Réservations ouvertes, ou relance en cours de cette boutique pour ce membre de la liste générale.
                 if (! $campagne->accepteReservations() && RelancesInteret::ouvertePour($boutique, $user)?->campagne_boutiques_id !== $campagne->id) {
@@ -150,7 +165,10 @@ class ListesAttente
                     'statut' => StatutInscriptionBoutique::EnAttente, 'type_piece' => $typePiece->value, 'numero_piece' => $numero, 'inscrite_le' => now(),
                 ]);
                 if (! $deja) {
-                    ReservationsBoutiques::deposerPiece($user, $typePiece, $numero, $piece, $rccm, $chemins);
+                    ReservationsBoutiques::deposerPiece($user, $typePiece, $numero, $piece, $chemins);
+                }
+                if ($attestationIfu) {
+                    ReservationsBoutiques::deposerAttestationIfu($user, $ifu ?? (string) $user->ifu, $attestationIfu, $chemins);
                 }
 
                 // Boutique libre et citoyen sous la limite de ce type : il en devient l'attributaire tout de suite. Si une
@@ -186,12 +204,14 @@ class ListesAttente
 
     /**
      * Le citoyen peut être retenu sur cette boutique : il n'a pas atteint, dans la campagne, la limite par personne de
-     * ce type (réservations en cours ou attribuées, sur son compte ou son numéro de pièce).
+     * ce type, ni les deux boutiques par commerçant toutes campagnes confondues (réservations en cours ou attribuées, sur
+     * son compte, son numéro de pièce ou son IFU).
      */
     private function eligible(InscriptionBoutique $inscription, CampagneBoutiques $campagne, Boutique $boutique): bool
     {
         return ReservationsBoutiques::activesDuType($campagne, $boutique->type_boutique_id, $inscription->user_id, array_filter([$inscription->numero_piece]))
-            < $campagne->limitePour($boutique->type_boutique_id);
+            < $campagne->limitePour($boutique->type_boutique_id)
+            && ReservationsBoutiques::restantCommercant($inscription->user, $inscription->numero_piece) > 0;
     }
 
     /** @param array{loyer_mensuel: int, caution: int, avance: int, mois_caution: int, mois_avance: int} $tarif */

@@ -89,7 +89,8 @@ class SimulationRecetteTest extends TestCase
         $this->assertNotNull($statut('60000017')->kyc_a_corriger_avant);
         // Preuves de virement en contrôle (souscription et caution), dossier d'identité à examiner.
         $this->assertSame(2, Paiement::query()->enControle()->count());
-        $this->assertSame(3, KycDocument::query()->where('user_id', $u('60000021')->id)->count());
+        // Recto, verso et selfie, plus l'attestation IFU.
+        $this->assertSame(4, KycDocument::query()->where('user_id', $u('60000021')->id)->count());
 
         // Relancée : rien de plus.
         $citoyens = User::query()->count();

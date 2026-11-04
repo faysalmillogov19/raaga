@@ -54,7 +54,7 @@ class VerificationTest extends TestCase
     {
         $this->actingAs($this->citoyen)->post('/espace/verification', [
             'type_piece' => 'CNIB', 'recto' => $this->photo('recto.jpg'), 'verso' => $this->photo('verso.png'), 'selfie' => $this->photo('selfie.jpg'),
-            'numero_piece' => 'B 1234 5678', 'piece_expire_le' => now()->addYears(5)->toDateString(),
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B 1234 5678', 'piece_expire_le' => now()->addYears(5)->toDateString(),
         ])->assertRedirect(route('espace.verification'))->assertSessionHasNoErrors();
     }
 
@@ -92,9 +92,9 @@ class VerificationTest extends TestCase
         $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo()])
             ->assertSessionHasErrors(['piece_expire_le', 'numero_piece']);
         $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
-            'numero_piece' => 'P0012345', 'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'P0012345', 'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
         $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
-            'numero_piece' => 'P0012345', 'piece_expire_le' => now()->addYears(4)->toDateString()])->assertSessionHasNoErrors();
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'P0012345', 'piece_expire_le' => now()->addYears(4)->toDateString()])->assertSessionHasNoErrors();
         $this->assertSame(now()->addYears(4)->toDateString(), $autre->fresh()->piece_expire_le->toDateString());
         $this->assertSame(2, $autre->kycDocuments()->count());
     }

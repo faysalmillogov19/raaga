@@ -40,7 +40,7 @@ class OrganisationController extends Controleur
     {
         $this->exigerSignataire();
         $donnees = $request->validate([
-            'type' => ['required', Rule::enum(TypeDocumentKyb::class)],
+            'type' => ['required', Rule::in(array_map(fn (TypeDocumentKyb $t) => $t->value, TypeDocumentKyb::exiges()))],
             'fichier' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ], [], ['fichier' => __('institutionnel.organisation.dossier')]);
 

@@ -1,5 +1,5 @@
 /*
- * Carte d'identification Raaga, maquette validée le 24/10/2026 : format ISO ID-1 (85,6 × 54 mm, coins de 3 mm), unités
+ * Carte d'identification Raaga, maquette du comité restreint du 03/11/2026 (bandeau tricolore retiré) : format ISO ID-1 (85,6 × 54 mm, coins de 3 mm), unités
  * en mm (maquette : 10 px = 1 mm). Feuille autonome : intégrée au document rendu par Chrome (PNG 300 dpi et PDF) et
  * chargée par l'aperçu du back-office. Préfixe « cr- » ; aucune classe utilitaire.
  */
@@ -44,7 +44,7 @@
 .cr-qr {
     position: absolute;
     left: 4.4mm;
-    top: 26.5mm;
+    top: 25mm;
     transform: translateY(-50%);
     box-sizing: border-box;
     padding: 0.6mm;
@@ -64,26 +64,30 @@
     background: #FFFFFF;
 }
 .cr-qr-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.cr-infos { position: absolute; left: 27.6mm; top: 18.2mm; width: 34.4mm; display: flex; flex-direction: column; gap: 1.8mm; }
+/* À droite du QR code (18 mm imprimés au moins, cadre compris : 27,6 mm), jusqu'à la photo. */
+.cr-infos { position: absolute; left: 27.6mm; top: 12.4mm; width: 34.4mm; display: flex; flex-direction: column; gap: 1.1mm; }
+.cr-numero { margin-top: 0.2mm !important; font-size: 2.3mm; font-weight: 800; letter-spacing: 0.12em; color: #8A6A1E; white-space: nowrap; }
 .cr-titulaire {
-    margin-top: 0.4mm !important;
-    font-size: 2.4mm;
+    margin-top: 0.2mm !important;
+    font-size: 2.2mm;
     font-weight: 800;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
     line-height: 1.15;
-    text-transform: uppercase;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 .cr-representant { margin-top: 0.4mm !important; font-size: 1.3mm; color: #4A3F2A; }
-.cr-grille { display: grid; grid-template-columns: 15mm 1fr; row-gap: 1.6mm; column-gap: 2.4mm; }
-.cr-valeur { margin-top: 0.4mm !important; font-size: 1.7mm; font-weight: 700; white-space: nowrap; }
+.cr-grille { display: grid; grid-template-columns: 17.4mm 1fr; column-gap: 1.4mm; }
+.cr-grille-3 { grid-template-columns: 5mm 11mm 1fr; }
+.cr-valeur { margin-top: 0.3mm !important; font-size: 1.5mm; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Activité, site(s) : deux lignes au plus. */
+.cr-valeur-long { white-space: normal; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .cr-photo {
     position: absolute;
     right: 4.4mm;
-    top: 15mm;
+    top: 13.2mm;
     width: 18mm;
     height: 23mm;
     box-sizing: border-box;
@@ -102,24 +106,20 @@
 .cr-photo:has(img) { padding: 0; }
 .cr-photo img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Pied commun : frise (tuile frise.svg répétée), microtexte, bandeau tricolore. */
-.cr-frise { position: absolute; left: 0; bottom: 2.6mm; width: 85.6mm; height: 2.2mm; }
+/* Pied commun : frise (tuile frise.svg répétée) et microtexte. */
+.cr-frise { position: absolute; left: 0; bottom: 1.8mm; width: 85.6mm; height: 2.2mm; }
 .cr-face[data-face=recto] .cr-frise { background: #FBF8F1; }
 .cr-microtexte {
     position: absolute;
-    left: 2.6mm;
-    right: 2.6mm;
-    bottom: 1.3mm;
+    left: 3mm;
+    right: 3mm;
+    bottom: 0.7mm;
     font-size: 0.5mm;
     letter-spacing: 0.04em;
     color: #A8915C;
     white-space: nowrap;
     overflow: hidden;
 }
-.cr-bande { position: absolute; left: 0; right: 0; bottom: 0; height: 1mm; display: flex; }
-.cr-bande span:nth-child(1) { flex: 48; background: #CE1126; }
-.cr-bande span:nth-child(2) { flex: 4; background: #FCD116; }
-.cr-bande span:nth-child(3) { flex: 48; background: #00843D; }
 
 /* Verso */
 /* Verso principal : centré derrière la colonne de gauche, environ 50 % de sa largeur. */
@@ -144,12 +144,11 @@
 .cr-bandeau-numero { margin-left: auto; font-size: 2mm; font-weight: 700; letter-spacing: 0.14em; }
 .cr-corps { position: absolute; left: 4.4mm; right: 4.4mm; top: 13.2mm; bottom: 7.4mm; display: flex; gap: 4mm; }
 .cr-gauche { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
-.cr-mentions { display: flex; flex-direction: column; gap: 1.4mm; }
-.cr-mentions p { font-size: 1.7mm; line-height: 1.5; color: #3A3122; }
-/* Carte de commerçant : identifiants Raaga en plus des mentions, espacement réduit pour tenir au-dessus du code-barres. */
-.cr-mentions-serrees { gap: 0.8mm; }
+.cr-mentions { display: flex; flex-direction: column; gap: 1.2mm; }
+.cr-mentions .cr-grille { grid-template-columns: 13mm 1fr; column-gap: 1.8mm; }
+.cr-texte { margin-top: 0.2mm !important; font-size: 1.3mm; line-height: 1.45; color: #3A3122; }
 .cr-code-barres { box-sizing: border-box; padding: 1.2mm 2.4mm 0.8mm; border: 0.1mm solid #D8C89F; border-radius: 0.8mm; background: #FFFFFF; }
-.cr-code-barres svg { display: block; width: 100%; height: 8.8mm; }
+.cr-code-barres svg { display: block; width: 100%; height: 5.8mm; }
 .cr-code-texte { margin-top: 0.5mm !important; font-family: 'Courier New', monospace; font-size: 1.4mm; letter-spacing: 0.18em; text-align: center; }
 .cr-legende { margin-top: 0.6mm !important; font-size: 1.2mm; color: #7A6638; }
 .cr-separateur { width: 0.1mm; background: #DCCDA6; }

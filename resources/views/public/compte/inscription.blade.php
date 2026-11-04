@@ -50,7 +50,7 @@
 
         @else
             @php
-                $valeurs = array_merge($saisie, array_filter(old() ?: [], fn ($cle) => in_array($cle, ['type_titulaire', 'raison_sociale', 'forme_morale', 'nom', 'prenoms', 'date_naissance', 'pays_residence', 'region'], true), ARRAY_FILTER_USE_KEY));
+                $valeurs = array_merge($saisie, array_filter(old() ?: [], fn ($cle) => in_array($cle, ['type_titulaire', 'raison_sociale', 'forme_morale', 'nom', 'prenoms', 'date_naissance', 'ifu', 'pays_residence', 'commune_id'], true), ARRAY_FILTER_USE_KEY));
                 $messages = __('public.compte.inscription.erreurs');
                 $messages['majeur'] = __('public.compte.inscription.erreurs.majeur', ['age' => config('raaga.inscription.age_minimum')]);
             @endphp
@@ -92,6 +92,16 @@
                             @error('forme_morale')<p class="message-erreur" role="alert">{{ $message }}</p>@enderror
                         </div>
                         <p class="texte-carte">{{ $t['representant'] }}</p>
+                        <div class="formulaire-champ" data-champ-ifu>
+                            <label for="ifu"><x-requis /> {{ __('public.compte.inscription.ifu') }}</label>
+                            <p id="ifu-aide" class="texte-carte">{{ __('public.compte.inscription.ifu_aide') }}</p>
+                            <input id="ifu" name="ifu" type="text" maxlength="30" autocomplete="off" autocapitalize="characters" :disabled="titulaire !== 'MORALE'"
+                                   class="champ @error('ifu') est-invalide @enderror" :class="{ 'est-invalide': erreurs.ifu }"
+                                   value="{{ $valeurs['ifu'] ?? '' }}" aria-describedby="ifu-aide ifu-erreur">
+                            <p id="ifu-erreur" class="message-erreur" role="alert"
+                               x-show="erreurs.ifu || @js($errors->has('ifu'))"
+                               x-text="erreurs.ifu || @js($errors->first('ifu'))">{{ $errors->first('ifu') }}</p>
+                        </div>
                     </div>
                 </div>
 
@@ -128,17 +138,21 @@
                 </div>
 
                 <div class="formulaire-champ" x-show="! diaspora" @if (($valeurs['pays_residence'] ?? 'BF') !== 'BF') x-cloak @endif>
-                    <label for="region">{{ __('public.compte.inscription.region') }}</label>
-                    <select id="region" name="region" class="champ @error('region') est-invalide @enderror"
-                            :class="{ 'est-invalide': erreurs.region }" :disabled="diaspora" aria-describedby="region-erreur">
+                    <label for="commune_id">{{ __('public.compte.inscription.commune') }}</label>
+                    <select id="commune_id" name="commune_id" class="champ @error('commune_id') est-invalide @enderror"
+                            :class="{ 'est-invalide': erreurs.commune_id }" :disabled="diaspora" aria-describedby="commune_id-erreur">
                         <option value="">{{ __('public.compte.inscription.choisir') }}</option>
-                        @foreach ($regions as $region)
-                            <option value="{{ $region }}" @selected(($valeurs['region'] ?? '') === $region)>{{ $region }}</option>
+                        @foreach ($communes as $province => $liste)
+                            <optgroup label="{{ $province }}">
+                                @foreach ($liste as $id => $nom)
+                                    <option value="{{ $id }}" @selected((string) ($valeurs['commune_id'] ?? '') === (string) $id)>{{ $nom }}</option>
+                                @endforeach
+                            </optgroup>
                         @endforeach
                     </select>
-                    <p id="region-erreur" class="message-erreur" role="alert"
-                       x-show="erreurs.region || @js($errors->has('region'))"
-                       x-text="erreurs.region || @js($errors->first('region'))">{{ $errors->first('region') }}</p>
+                    <p id="commune_id-erreur" class="message-erreur" role="alert"
+                       x-show="erreurs.commune_id || @js($errors->has('commune_id'))"
+                       x-text="erreurs.commune_id || @js($errors->first('commune_id'))">{{ $errors->first('commune_id') }}</p>
                 </div>
 
                 <label class="case-conditions" for="conditions">

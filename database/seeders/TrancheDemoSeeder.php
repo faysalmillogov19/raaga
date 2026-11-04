@@ -19,7 +19,8 @@ class TrancheDemoSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    public const NOM = 'Tranche de démonstration';
+    // Nom retenu le 03/11/2026 (avant : « Tranche de démonstration »).
+    public const NOM = 'Tranche 1 · Marché Raaga';
 
     public function run(): void
     {

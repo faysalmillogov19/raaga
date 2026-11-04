@@ -10,6 +10,7 @@ use App\Enums\StatutSouscription;
 use App\Enums\TypeDocumentKyc;
 use App\Http\Controllers\Compte\ValideTelephone;
 use App\Http\Controllers\Controller;
+use App\Models\Commune;
 use App\Models\Souscription;
 use App\Models\User;
 use App\Services\Auth\OtpException;
@@ -70,7 +71,7 @@ class GuichetSouscriptionController extends Controller
             'deja' => $citoyen && $tranche ? app(PreparationSouscription::class)->dejaEngage($tranche, $citoyen) : null,
             'engagements' => PreparationSouscription::ENGAGEMENTS,
             'pays' => config('raaga.inscription.pays'),
-            'regions' => config('raaga.inscription.regions'),
+            'communes' => $etape === 'compte' ? Commune::parProvince() : [],
         ]);
     }
 
@@ -154,20 +155,19 @@ class GuichetSouscriptionController extends Controller
             'type_piece' => ['nullable', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, TypeDocumentKyc::piecesIdentite()))],
             'numero_piece' => ['nullable', 'string', 'min:5', 'max:40'],
             'piece_expire_le' => ['nullable', 'date_format:Y-m-d', 'after:today'],
-            'numero_rccm' => ['nullable', 'string', 'min:4', 'max:60'],
-            'numero_ifu' => ['nullable', 'string', 'min:5', 'max:40'],
             'recto' => $fichier, 'verso' => $fichier, 'selfie' => $fichier,
-            'rccm' => $document, 'ifu' => $document, 'pouvoir' => $document,
+            'ifu' => $document, 'pouvoir' => $document,
             'piece_conforme' => ['accepted'],
+            ...VerificationIdentite::reglesInfos($citoyen),
         ], [...$e['fichiers'], 'type_piece.*' => $e['type'], 'piece_expire_le.*' => $e['expiration'], 'numero_piece.*' => $e['numero_piece'],
-            'numero_rccm.*' => $e['numero_rccm'], 'numero_ifu.*' => $e['numero_ifu'],
+            'sexe.*' => $e['sexe'], 'lieu_naissance.*' => $e['lieu_naissance'],
             'piece_conforme.accepted' => __('admin.guichet.souscription.erreurs.piece_conforme')], __('public.verification.attributs'));
 
         $this->guichet->validerIdentite(
             $request->user(), $citoyen,
             isset($donnees['type_piece']) ? TypeDocumentKyc::from($donnees['type_piece']) : null,
-            array_filter($request->only(['recto', 'verso', 'selfie', 'rccm', 'ifu', 'pouvoir'])),
-            array_intersect_key($donnees, array_flip(['numero_piece', 'piece_expire_le', 'numero_rccm', 'numero_ifu'])),
+            array_filter($request->only(['recto', 'verso', 'selfie', 'ifu', 'pouvoir'])),
+            array_intersect_key($donnees, array_flip(['numero_piece', 'piece_expire_le', 'sexe', 'lieu_naissance', 'numero_ifu'])),
         );
 
         return redirect()->route('admin.guichet-souscription');

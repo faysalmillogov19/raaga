@@ -48,8 +48,8 @@ class DossiersIdentite
     public function conforme(User $citoyen, User $admin, ?string $motif, ?string $pieceExpireLe = null): VerificationKyc
     {
         $this->examinable($citoyen, [StatutKyc::EnAttente]);
-        // Conforme seulement si toutes les pièces attendues sont présentes, avec leurs numéros (personne morale : RCCM,
-        // IFU, pièce du représentant légal, selfie, justificatif de pouvoir).
+        // Conforme seulement si toutes les pièces attendues sont présentes, avec leurs numéros (personne morale : IFU,
+        // pièce du représentant légal, selfie, justificatif de pouvoir).
         if (! $this->verification->complet($citoyen)) {
             throw ValidationException::withMessages(['pieces' => __('admin.kyc.erreurs.incomplet', ['pieces' => implode(', ',
                 array_map(fn (string $c) => __('admin.kyc.emplacements.'.$c), $this->verification->manquants($citoyen) ?: ['numeros']))])]);

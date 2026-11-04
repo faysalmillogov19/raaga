@@ -12,8 +12,8 @@ use Illuminate\Console\Command;
 
 /**
  * Dossiers d'identité anciens qui ne suivent plus les règles des pièces (17/10/2026) : pièce autre que CNIB, CIB-AES ou
- * passeport, numéro ou date d'expiration absents, pièce manquante, et pour une personne morale RCCM, IFU ou justificatif
- * de pouvoir absents. Rien n'est supprimé : le dossier est marqué « pièces à mettre à jour », le titulaire notifié, l'ADMIN
+ * passeport, numéro ou date d'expiration absents, pièce manquante, et pour une personne morale IFU ou justificatif de
+ * pouvoir absents. Rien n'est supprimé : le dossier est marqué « pièces à mettre à jour », le titulaire notifié, l'ADMIN
  * le voit dans « À traiter » et dans les vérifications d'identité ; pas de carte tant que le dossier n'est pas complété.
  * Les dossiers d'une identité reconnue douteuse (annulation confirmée) ne sont pas touchés.
  * --simuler : compte seulement, sans rien modifier.

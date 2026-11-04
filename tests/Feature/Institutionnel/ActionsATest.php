@@ -97,7 +97,11 @@ class ActionsATest extends TestCase
 
     private function verifierDossier(Institution $institution, User $signataire): void
     {
-        foreach (TypeDocumentKyb::cases() as $type) {
+        // L'extrait RCCM n'est plus demandé (03/11/2026) : refusé au dépôt.
+        $this->en($signataire)->post(route('institutionnel.organisation.pieces'), ['type' => TypeDocumentKyb::ExtraitRccm->value, 'fichier' => $this->pdf()])
+            ->assertSessionHasErrors('type');
+        $this->en($signataire)->get(route('institutionnel.organisation'))->assertOk()->assertDontSee('RCCM');
+        foreach (TypeDocumentKyb::exiges() as $type) {
             $this->en($signataire)->post(route('institutionnel.organisation.pieces'), ['type' => $type->value, 'fichier' => $this->pdf()])->assertSessionHas('succes');
         }
         $this->assertSame(StatutInstitution::DossierEnCours, $institution->fresh()->statut);

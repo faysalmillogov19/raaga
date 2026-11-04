@@ -31,7 +31,7 @@ class JournalValidationAjoutSeulTest extends TestCase
         $gestionnaire = User::factory()->role(Role::GestionnaireSites)->create();
         $this->en($gestionnaire)->post(route('admin.sites.types.store'), ['code' => 'BOUT', 'libelle' => 'Petite boutique', 'attribuable' => 1]);
         $this->en($this->validateur)->post(route('admin.sites.types.confirmer', TypeBoutique::query()->sole()))->assertSessionHas('succes');
-        $this->en($gestionnaire)->post(route('admin.sites.store'), ['code' => 'SAR', 'nom' => 'Marché SAR', 'region' => 'Centre', 'ville' => 'Ouagadougou']);
+        $this->en($gestionnaire)->post(route('admin.sites.store'), ['code' => 'SAR', 'nom' => 'Marché SAR', 'ville' => 'Ouagadougou']);
         $site = Site::query()->where('code', 'SAR')->sole();
         $this->en($gestionnaire)->post(route('admin.referencement.boutiques.store', $site), [
             'niveau' => 'R1', 'bloc' => 'A', 'numero' => 1, 'surface' => 9, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE',

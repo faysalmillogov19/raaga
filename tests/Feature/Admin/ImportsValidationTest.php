@@ -45,7 +45,7 @@ class ImportsValidationTest extends TestCase
         $this->en($this->validateur)->post(route('admin.sites.types.confirmer', TypeBoutique::query()->where('code', 'BOUT')->sole()))->assertSessionHas('succes');
         // SAR et RAA ont des boutiques ; A04 n'en a aucune.
         foreach (['SAR', 'RAA'] as $code) {
-            $this->en($this->gestionnaire)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'region' => 'Centre', 'ville' => 'Ouagadougou']);
+            $this->en($this->gestionnaire)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'ville' => 'Ouagadougou']);
             $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.store', $this->site($code)), [
                 'niveau' => 'R1', 'bloc' => 'A', 'numero' => 1, 'surface' => 9, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE',
             ]);

@@ -38,8 +38,8 @@ class BoutiquesHorsFicheSiteTest extends TestCase
         $this->creerActeurs();
         $this->gestionnaire = User::factory()->role(Role::GestionnaireSites)->create();
         $this->type = TypeBoutique::create(['code' => 'BOUT', 'libelle' => 'Boutique']);
-        $site = fn (string $code, string $nom, StatutSite $statut) => Site::create(['statut' => $statut, 'code' => $code, 'nom' => $nom, 'region' => 'Centre',
-            'commune' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $this->gestionnaire->id]);
+        $site = fn (string $code, string $nom, StatutSite $statut) => Site::create(['statut' => $statut, 'code' => $code, 'nom' => $nom,
+            'ville' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $this->gestionnaire->id]);
         $this->brouillon = $site('RAA', 'Marché Raaga', StatutSite::Brouillon);
         $this->confirme = $site('SAR', 'Marché de Sarfalao', StatutSite::Confirme);
         $this->confirme->boutiques()->create(['niveau' => 'R1', 'bloc' => 'A', 'numero' => '001', 'surface' => 9,

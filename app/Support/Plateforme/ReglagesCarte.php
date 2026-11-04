@@ -18,6 +18,15 @@ final class ReglagesCarte
      * fichier fourni avec le code (décision du 30/10/2026). Numéro vert : celui des contacts d'assistance. Les filigranes
      * sont facultatifs.
      */
+    /**
+     * Signature et cachet fournis avec le code, utilisés tant que le SUPER_ADMIN n'a pas déposé les siens (comité
+     * restreint du 03/11/2026).
+     */
+    public const DEFAUTS = [
+        'signatureAutorite' => 'public:images/carte/signature-defaut.png',
+        'cachetAutorite' => 'public:images/carte/cachet-defaut.png',
+    ];
+
     public const REQUIS = [
         ['identite', 'armoiries'],
         ['identite', 'logoHorizontal'],
@@ -43,7 +52,7 @@ final class ReglagesCarte
             $present = match (true) {
                 $section === 'identite' => ImagesPlateforme::disponible($champ),
                 $section === 'contacts' => filled(plateforme('contacts.'.$champ)),
-                isset(Catalogue::IMAGES_CARTE[$champ]) => isset($nouvelles[$champ]) || self::chemin($carte[$champ] ?? null) !== null,
+                isset(Catalogue::IMAGES_CARTE[$champ]) => isset($nouvelles[$champ]) || self::chemin(self::imageCarte($champ, $carte)) !== null,
                 default => filled($carte[$champ] ?? null),
             };
             if (! $present) {
@@ -90,14 +99,26 @@ final class ReglagesCarte
         return [
             'armoiries' => self::image('armoiries'),
             'logo' => self::image('logoHorizontal'),
-            'signature' => plateforme('carte.signatureAutorite'),
-            'cachet' => plateforme('carte.cachetAutorite'),
+            'signature' => self::imageCarte('signatureAutorite'),
+            'cachet' => self::imageCarte('cachetAutorite'),
             'qualite' => plateforme('carte.qualiteAutorite'),
             'nom' => plateforme('carte.nomAutorite'),
             'numero_vert' => plateforme('contacts.numeroVert'),
             // Filigranes (facultatifs) : chemin du fichier déposé, ou null.
             ...collect(Catalogue::FILIGRANES)->mapWithKeys(fn ($o, string $champ) => [$champ => self::chemin(plateforme('carte.'.$champ)) ? plateforme('carte.'.$champ) : null])->all(),
         ];
+    }
+
+    /**
+     * Signature ou cachet à utiliser : fichier déposé s'il existe, sinon celui fourni avec le code.
+     *
+     * @param  array<string, mixed>|null  $carte
+     */
+    public static function imageCarte(string $champ, ?array $carte = null): ?string
+    {
+        $depose = ($carte ?? plateforme('carte'))[$champ] ?? null;
+
+        return self::chemin($depose) !== null ? $depose : (self::DEFAUTS[$champ] ?? null);
     }
 
     /** Image de l'onglet 1 à figer : fichier déposé (chemin sur le disque privé), sinon fichier fourni (« public:… »). */

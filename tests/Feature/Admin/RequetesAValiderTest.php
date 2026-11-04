@@ -33,7 +33,7 @@ class RequetesAValiderTest extends TestCase
         // File variée : 4 sites soumis (auteurs différents), un type, une unité, une démarche.
         foreach (['SAR', 'A04', 'RAA', 'KOU'] as $i => $code) {
             $auteur = $i % 2 ? $gestionnaire : User::factory()->role(Role::GestionnaireSites)->create();
-            $this->en($auteur)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'region' => 'Centre', 'ville' => 'Ouagadougou']);
+            $this->en($auteur)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'ville' => 'Ouagadougou']);
             $site = Site::query()->where('code', $code)->sole();
             $this->en($auteur)->post(route('admin.referencement.boutiques.store', $site), [
                 'niveau' => 'R1', 'bloc' => 'A', 'numero' => 1, 'surface' => 9, 'type_boutique_id' => TypeBoutique::query()->where('code', 'BOUT')->value('id'), 'etat_physique' => 'LIVREE',
@@ -74,7 +74,7 @@ class RequetesAValiderTest extends TestCase
         // Trois sites soumis de plus, par d'autres auteurs : pas une requête de plus.
         foreach (['ZAB', 'DAP', 'KOM'] as $code) {
             $auteur = User::factory()->role(Role::GestionnaireSites)->create();
-            $this->en($auteur)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'region' => 'Centre', 'ville' => 'Ouagadougou']);
+            $this->en($auteur)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'ville' => 'Ouagadougou']);
             $site = Site::query()->where('code', $code)->sole();
             $this->en($auteur)->post(route('admin.referencement.boutiques.store', $site), [
                 'niveau' => 'R1', 'bloc' => 'A', 'numero' => 1, 'surface' => 9, 'type_boutique_id' => TypeBoutique::query()->where('code', 'BOUT')->value('id'), 'etat_physique' => 'LIVREE',

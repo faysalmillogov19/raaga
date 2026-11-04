@@ -49,7 +49,7 @@ class MenuValidateurTest extends TestCase
     {
         $auteur = User::factory()->role(Role::GestionnaireSites)->create();
         foreach (['SAR', 'KOU'] as $code) {
-            Site::create(['statut' => StatutSite::Soumis, 'code' => $code, 'nom' => 'Marché '.$code, 'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Avenue',
+            Site::create(['statut' => StatutSite::Soumis, 'code' => $code, 'nom' => 'Marché '.$code, 'ville' => 'Ouagadougou', 'adresse' => 'Avenue',
                 'version' => 1, 'cree_par' => $auteur->id, 'soumis_par' => $auteur->id, 'soumis_le' => now()]);
         }
         $campagne = Boutiques::campagneOuverte();
@@ -97,7 +97,7 @@ class MenuValidateurTest extends TestCase
 
     public function test_onglets_retires_refuses_et_profils_repreneurs_autorises(): void
     {
-        $site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Avenue',
+        $site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'ville' => 'Ouagadougou', 'adresse' => 'Avenue',
             'version' => 1, 'cree_par' => $this->validateur->id]);
         $retires = ['kyc' => Role::Admin, 'souscriptions' => Role::Regulateur, 'remboursements' => Role::ControleurPaiements, 'phase' => Role::Regulateur,
             'referentiels' => Role::Regulateur, 'capacites' => Role::GestionnaireSites, 'grille' => Role::Regulateur];

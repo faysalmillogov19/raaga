@@ -38,8 +38,8 @@ class ImportBoutiquesTest extends TestCase
         TypeBoutique::create(['code' => 'BOUT', 'libelle' => 'Boutique']);
         TypeBoutique::create(['code' => 'ETAL', 'libelle' => 'Étal']);
         $this->site = Site::create([
-            'statut' => StatutSite::Brouillon, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'region' => 'Centre',
-            'commune' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation', 'cree_par' => $this->gestionnaire->id,
+            'statut' => StatutSite::Brouillon, 'code' => 'RAA', 'nom' => 'Marché Raaga',
+            'ville' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation', 'cree_par' => $this->gestionnaire->id,
         ]);
     }
 

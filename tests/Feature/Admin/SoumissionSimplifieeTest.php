@@ -51,7 +51,7 @@ class SoumissionSimplifieeTest extends TestCase
 
     private function champsSite(string $code): array
     {
-        return ['code' => $code, 'nom' => 'Marché '.$code, 'region' => 'Centre', 'ville' => 'Ouagadougou'];
+        return ['code' => $code, 'nom' => 'Marché '.$code, 'ville' => 'Ouagadougou'];
     }
 
     public function test_enregistrer_et_soumettre_en_une_action(): void

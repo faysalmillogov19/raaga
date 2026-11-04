@@ -17,15 +17,20 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable([
     'name', 'nom', 'prenoms', 'email', 'telephone', 'password', 'role_id',
-    'date_naissance', 'nationalite', 'pays_residence', 'region',
+    'date_naissance', 'nationalite', 'pays_residence', 'commune_id', 'ifu',
     'statut_kyc', 'niveau_kyc', 'actif', 'institution_id', 'piece_expire_le',
-    'type_titulaire', 'raison_sociale', 'forme_morale',
+    'type_titulaire', 'raison_sociale', 'forme_morale', 'secteur_activite_id', 'secteur_activite_autre',
 ])]
-#[Hidden(['password', 'remember_token', 'totp_secret', 'codes_secours'])]
+#[Hidden(['password', 'remember_token', 'totp_secret', 'codes_secours', 'groupe_sanguin'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /** Groupes sanguins proposés au commerçant (donnée de santé déclarative, imprimée seulement avec son consentement). */
+    public const GROUPES_SANGUINS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+    public const SEXES = ['M', 'F'];
 
     /**
      * Le rôle est lu à chaque requête (middleware, navigation) : chargé d'office.
@@ -63,12 +68,14 @@ class User extends Authenticatable
             'piece_expire_le' => 'date',
             'type_titulaire' => TypeTitulaire::class,
             'kyc_maj_demandee_le' => 'datetime',
-            'identifiants_raaga_le' => 'datetime',
             'piece_avertie_le' => 'datetime',
             // Investisseur : date limite de correction d'une identité invalide, puis gel des actions (attestation et carte bloquées).
             'kyc_actions_a_corriger_avant' => 'datetime',
             'actions_gelees_le' => 'datetime',
             'identite_validee' => 'array',
+            // Donnée de santé : chiffrée en base, jamais dans les listes ni au journal.
+            'groupe_sanguin' => 'encrypted',
+            'groupe_sanguin_consenti_le' => 'datetime',
             // Secrets chiffrés en base avec la clé de l'application.
             'totp_secret' => 'encrypted',
             'codes_secours' => 'encrypted:array',
@@ -114,6 +121,18 @@ class User extends Authenticatable
     public function estVerrouille(): bool
     {
         return $this->verrouille_jusqua !== null && $this->verrouille_jusqua->isFuture();
+    }
+
+    /** Activité principale du commerçant, choisie à la candidature à une boutique. @return BelongsTo<SecteurActivite, $this> */
+    public function secteur(): BelongsTo
+    {
+        return $this->belongsTo(SecteurActivite::class, 'secteur_activite_id');
+    }
+
+    /** Commune de résidence au Burkina Faso (null dans la diaspora). @return BelongsTo<Commune, $this> */
+    public function commune(): BelongsTo
+    {
+        return $this->belongsTo(Commune::class);
     }
 
     /**

@@ -34,7 +34,7 @@ class InstitutionsController extends Controller
         return view('admin.institutions.index', [
             'institutions' => Institution::query()->withCount('utilisateurs')
                 ->with(['documents', 'conventions'])->orderBy('denomination')->paginate(25),
-            'totalPieces' => count(TypeDocumentKyb::cases()),
+            'totalPieces' => count(TypeDocumentKyb::exiges()),
         ]);
     }
 
@@ -137,7 +137,6 @@ class InstitutionsController extends Controller
             'denomination' => ['required', 'string', 'max:200'],
             'sigle' => ['nullable', 'string', 'max:40'],
             'forme_juridique' => ['nullable', 'string', 'max:80'],
-            'rccm' => ['nullable', 'string', 'max:60'],
             'ifu' => ['nullable', 'string', 'max:40'],
             'adresse' => ['nullable', 'string', 'max:300'],
             'secteur' => ['nullable', 'string', 'max:120'],
@@ -147,8 +146,8 @@ class InstitutionsController extends Controller
     /** Nombre de pièces validées (affichage de l'avancement du dossier). */
     public static function piecesValidees(Institution $institution): int
     {
-        return $institution->documents->unique(fn ($d) => $d->type->value)
-            ->where('statut', StatutDocumentKyc::Valide)->count();
+        return $institution->documents->filter(fn ($d) => in_array($d->type, TypeDocumentKyb::exiges(), true))
+            ->unique(fn ($d) => $d->type->value)->where('statut', StatutDocumentKyc::Valide)->count();
     }
 
     private function executer(Closure $action, Institution $institution, string $message): RedirectResponse

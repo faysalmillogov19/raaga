@@ -7,10 +7,11 @@ use App\Enums\StatutDocumentKyc;
 use App\Enums\TypeDocumentKyc;
 use App\Models\KycDocument;
 use App\Models\User;
+use App\Services\Kyc\VerificationIdentite;
 
 /**
  * Dossier d'identité complet déposé (pièces en attente) : CNIB recto et verso avec numéro et date d'expiration, selfie ;
- * pour une personne morale, aussi le RCCM, l'attestation IFU (avec leurs numéros) et le justificatif de pouvoir.
+ * pour une personne morale, aussi l'attestation IFU (avec son numéro) et le justificatif de pouvoir.
  */
 final class DossierKyc
 {
@@ -22,9 +23,11 @@ final class DossierKyc
             [TypeDocumentKyc::Cnib, FaceDocument::Verso, null, null],
             [TypeDocumentKyc::Selfie, null, null, null],
         ];
+        // Attestation IFU : personne morale, ou personne physique qui a donné son IFU.
+        if (VerificationIdentite::avecIfu($user)) {
+            $pieces[] = [TypeDocumentKyc::Ifu, null, $user->ifu, null];
+        }
         if ($user->estPersonneMorale()) {
-            $pieces[] = [TypeDocumentKyc::Rccm, null, 'BF-OUA-2020-B-12345', null];
-            $pieces[] = [TypeDocumentKyc::Ifu, null, '00012345X', null];
             $pieces[] = [TypeDocumentKyc::JustifPouvoir, null, null, null];
         }
         foreach ($pieces as [$type, $face, $numero, $expire]) {
@@ -32,7 +35,6 @@ final class DossierKyc
                 'mime' => 'image/jpeg', 'taille' => 1000, 'empreinte_sha256' => str_repeat('a', 64), 'statut' => StatutDocumentKyc::EnAttente,
                 'televerse_par' => $user->id, 'numero' => $numero, 'expire_le' => $expire]);
         }
-        $user->forceFill(['numero_piece' => $numeroPiece, 'piece_expire_le' => $expireLe,
-            'ifu' => $user->estPersonneMorale() ? '00012345X' : null, 'rccm' => $user->estPersonneMorale() ? 'BF-OUA-2020-B-12345' : null])->saveQuietly();
+        $user->forceFill(['numero_piece' => $numeroPiece, 'piece_expire_le' => $expireLe])->saveQuietly();
     }
 }

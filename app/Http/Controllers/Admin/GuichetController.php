@@ -13,6 +13,7 @@ use App\Services\Audit\Journal;
 use App\Services\Cartes\FichiersCarte;
 use App\Services\Cartes\ReglagesCarteManquants;
 use App\Services\Cartes\RenduCarte;
+use App\Support\Ifu;
 use App\Support\Plateforme\ReglagesCarte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,23 +38,16 @@ class GuichetController extends Controller
     }
 
     /**
-     * Numéro de carte (RG-C-000123) ou adresse scannée : ouvre la vérification de la carte. Identifiant fiscal
-     * (RG-F-000123) ou numéro de registre Raaga (RG-R-2026-000123) : ouvre le dossier du commerçant.
+     * Numéro de carte (RG-C-000123, ou IFU pour une carte de commerçant) ou adresse scannée : ouvre la vérification de
+     * la carte courante portant ce numéro (à défaut, la dernière émise).
      */
     public function rechercher(Request $request): RedirectResponse
     {
         Gate::authorize(Droit::CartesVerifier->value);
         $saisie = trim((string) $request->validate(['carte' => ['required', 'string', 'max:300']])['carte']);
         $jeton = preg_match('#/c/([A-Za-z0-9]+)#', $saisie, $m) ? $m[1] : null;
-        if (! $jeton && preg_match('#^RG-[FR]-#i', $saisie)) {
-            $commercant = User::query()->where('identifiant_fiscal_raaga', mb_strtoupper($saisie))->orWhere('numero_registre_raaga', mb_strtoupper($saisie))->first();
-            if (! $commercant?->cartes()->exists()) {
-                return back()->withErrors(['carte' => __('admin.guichet.erreurs.commercant_introuvable')])->withInput();
-            }
-
-            return redirect()->route('admin.guichet.titulaire', $commercant);
-        }
-        $carte = Carte::query()->when($jeton, fn ($q) => $q->where('jeton', $jeton), fn ($q) => $q->where('numero', mb_strtoupper($saisie)))->first();
+        $carte = Carte::query()->when($jeton, fn ($q) => $q->where('jeton', $jeton), fn ($q) => $q->where('numero', str_starts_with(mb_strtoupper($saisie), 'RG-') ? mb_strtoupper($saisie) : Ifu::normaliser($saisie)))
+            ->orderByRaw('courante is null')->latest('id')->first();
         if (! $carte) {
             return back()->withErrors(['carte' => __('admin.guichet.erreurs.introuvable')])->withInput();
         }

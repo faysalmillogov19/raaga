@@ -1,8 +1,8 @@
 {{--
     Vérification d'identité : statut en tête (toujours écrit), type de titulaire, pièces déposées, formulaire de dépôt.
     Personne physique : CNIB, CIB-AES (recto + verso) ou passeport (une page), avec numéro et date d'expiration, + selfie.
-    Personne morale : en plus, RCCM (numéro et document), IFU (numéro et attestation), justificatif de pouvoir ; la pièce
-    et le selfie sont ceux du représentant légal. Après un rejet : seules les pièces rejetées ; dossier incomplet : les
+    Personne morale : en plus, IFU (numéro et attestation), justificatif de pouvoir ; la pièce et le selfie sont ceux du
+    représentant légal. Après un rejet : seules les pièces rejetées ; dossier incomplet : les
     pièces manquantes.
 --}}
 @php
@@ -104,7 +104,7 @@
                 @endif
 
                 <div class="mt-5 space-y-5">
-                    @foreach (['recto', 'verso', 'selfie', 'rccm', 'ifu', 'pouvoir'] as $cle)
+                    @foreach (['recto', 'verso', 'selfie', 'ifu', 'pouvoir'] as $cle)
                         @if (in_array($cle, $aFournir, true))
                             @php($document = in_array($cle, $documents, true))
                             <div x-data="pieceKyc(@js($options))" @if ($cle === 'verso' && $choixPiece) x-show="piece !== 'PASSEPORT'" @endif data-emplacement="{{ $cle }}">
@@ -138,10 +138,23 @@
                                            aria-describedby="piece_expire_le-aide piece_expire_le-erreur" @error('piece_expire_le') aria-invalid="true" @enderror class="champ mt-2">
                                     <x-public.erreur :messages="$errors->get('piece_expire_le')" id="piece_expire_le-erreur" />
                                 </div>
-                            @elseif ($cle === 'rccm')
-                                <x-public.champ nom="numero_rccm" :libelle="$v['numero_rccm']" :aide="$v['aides']['numero_rccm']" maxlength="60" autocomplete="off" obligatoire />
-                            @elseif ($cle === 'ifu')
-                                <x-public.champ nom="numero_ifu" :libelle="$v['numero_ifu']" :aide="$v['aides']['numero_ifu']" maxlength="40" autocomplete="off" obligatoire />
+                                {{-- Sexe et lieu de naissance, tels qu'inscrits sur la pièce (carte de commerçant). --}}
+                                <fieldset data-sexe>
+                                    <legend class="font-semibold text-encre"><x-requis /> {{ $v['sexe'] }}</legend>
+                                    <div class="mt-2 flex flex-wrap gap-3">
+                                        @foreach (\App\Models\User::SEXES as $sexe)
+                                            <label class="flex min-h-[48px] cursor-pointer items-center gap-3 rounded-charte border-2 border-ligne px-4">
+                                                <input type="radio" name="sexe" value="{{ $sexe }}" @checked(old('sexe', $user->sexe) === $sexe) class="h-5 w-5 text-vert focus:ring-0">
+                                                <span class="font-semibold text-encre">{{ $v['sexes'][$sexe] }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    <x-public.erreur :messages="$errors->get('sexe')" />
+                                </fieldset>
+                                <x-public.champ nom="lieu_naissance" :libelle="$v['lieu_naissance']" :aide="$v['aides']['lieu_naissance']" :valeur="$user->lieu_naissance" maxlength="100" autocomplete="off" obligatoire />
+                            @endif
+                            @if ($cle === 'ifu')
+                                <x-public.champ nom="numero_ifu" :libelle="$v['numero_ifu']" :aide="$v['aides']['numero_ifu']" :valeur="$user->ifu" maxlength="30" autocomplete="off" autocapitalize="characters" />
                             @endif
                         @endif
                     @endforeach

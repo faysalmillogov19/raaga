@@ -33,8 +33,8 @@ class CapacitesListeTest extends TestCase
         $this->seed(ReferentielsSitesSeeder::class);
         $this->gestionnaire = User::factory()->role(Role::GestionnaireSites)->create();
         $this->type = TypeBoutique::query()->where('code', 'BOUT')->first() ?? TypeBoutique::create(['code' => 'BOUT', 'libelle' => 'Boutique']);
-        $site = fn (string $code, string $nom, StatutSite $statut) => Site::create(['statut' => $statut, 'code' => $code, 'nom' => $nom, 'region' => 'Centre',
-            'commune' => 'Ouagadougou', 'adresse' => 'Avenue', 'version' => 1, 'cree_par' => $this->gestionnaire->id]);
+        $site = fn (string $code, string $nom, StatutSite $statut) => Site::create(['statut' => $statut, 'code' => $code, 'nom' => $nom,
+            'ville' => 'Ouagadougou', 'adresse' => 'Avenue', 'version' => 1, 'cree_par' => $this->gestionnaire->id]);
         $this->brouillon = $site('RAA', 'Marché Raaga', StatutSite::Brouillon);
         $this->valide = $site('SAR', 'Marché de Sarfalao', StatutSite::Confirme);
         $this->valide->capacites()->create(['niveau' => 'R1', 'zone' => 'A', 'type_boutique_id' => $this->type->id, 'nombre_prevu' => 40, 'surface_unitaire' => 9]);

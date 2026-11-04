@@ -6,7 +6,9 @@ use App\Contracts\SmsProvider;
 use App\Enums\Role;
 use App\Enums\StatutKyc;
 use App\Models\AuditLog;
+use App\Models\Commune;
 use App\Models\User;
+use Database\Seeders\CommunesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -78,17 +80,24 @@ class ProfilPersonnelTest extends TestCase
 
     // ---------------------------------------------------------------- Citoyens
 
+    private function ouagadougou(): Commune
+    {
+        $this->seed(CommunesSeeder::class);
+
+        return Commune::query()->where('code', 'BF130004')->sole();
+    }
+
     private function citoyen(array $attributs = []): User
     {
         return User::factory()->role(Role::Citoyen)->create([
             'name' => 'Awa OUÉDRAOGO', 'nom' => 'OUÉDRAOGO', 'prenoms' => 'Awa', 'telephone' => '+22670123456',
-            'date_naissance' => '1990-05-12', 'pays_residence' => 'BF', 'region' => 'Centre', ...$attributs,
+            'date_naissance' => '1990-05-12', 'pays_residence' => 'BF', ...$attributs,
         ]);
     }
 
     private function identite(array $modifs = []): array
     {
-        return ['nom' => 'Ouédraogo', 'prenoms' => 'Awa', 'date_naissance' => '1990-05-12', 'pays_residence' => 'BF', 'region' => 'Centre', 'email' => '', ...$modifs];
+        return ['nom' => 'Ouédraogo', 'prenoms' => 'Awa', 'date_naissance' => '1990-05-12', 'ifu' => '00011122C', 'pays_residence' => 'BF', 'commune_id' => (string) $this->ouagadougou()->id, 'email' => '', ...$modifs];
     }
 
     public function test_un_citoyen_met_a_jour_sa_residence_sans_toucher_a_son_kyc(): void
@@ -97,14 +106,28 @@ class ProfilPersonnelTest extends TestCase
 
         $this->actingAs($citoyen)->get('/espace/profil')->assertOk()->assertSee('Mes informations personnelles')->assertSee('+226 70 12 34 56');
 
-        $this->actingAs($citoyen)->post('/espace/profil', $this->identite(['pays_residence' => 'FR', 'region' => '', 'email' => 'awa@exemple.bf']))
+        $this->actingAs($citoyen)->post('/espace/profil', $this->identite(['pays_residence' => 'FR', 'commune_id' => '', 'email' => 'awa@exemple.bf']))
             ->assertSessionHas('succes', 'Vos informations ont été enregistrées.');
 
         $citoyen->refresh();
         $this->assertSame('FR', $citoyen->pays_residence);
-        $this->assertNull($citoyen->region);
+        $this->assertNull($citoyen->commune_id);
         $this->assertSame('awa@exemple.bf', $citoyen->email);
         $this->assertSame(StatutKyc::Valide, $citoyen->statut_kyc);
+    }
+
+    public function test_un_citoyen_choisit_sa_commune_sans_toucher_a_son_kyc(): void
+    {
+        $citoyen = $this->citoyen(['statut_kyc' => StatutKyc::Valide]);
+        $commune = $this->ouagadougou();
+
+        $this->actingAs($citoyen)->get('/espace/profil')->assertOk()->assertSee('Commune de résidence')->assertSee('<optgroup label="Kadiogo (Kadiogo)">', false);
+        $this->actingAs($citoyen)->post('/espace/profil', $this->identite())->assertSessionHasNoErrors();
+
+        $citoyen->refresh();
+        $this->assertSame([$commune->id, 'Kadiogo', StatutKyc::Valide], [$citoyen->commune_id, $citoyen->commune->province->region->nom, $citoyen->statut_kyc]);
+        $this->actingAs($citoyen)->get('/espace/profil')->assertSee('<option value="'.$commune->id.'" selected>Ouagadougou</option>', false);
+        $this->actingAs($citoyen)->get('/espace?onglet=profil')->assertSeeInOrder(['Commune', 'Ouagadougou', 'Région', 'Kadiogo']);
     }
 
     public function test_modifier_son_identite_remet_la_verification_kyc_a_faire(): void
@@ -127,7 +150,7 @@ class ProfilPersonnelTest extends TestCase
 
         $this->actingAs($citoyen)->post('/espace/profil', $this->identite(['date_naissance' => now()->subYears(16)->toDateString()]))
             ->assertSessionHasErrors('date_naissance');
-        $this->actingAs($citoyen)->post('/espace/profil', $this->identite(['region' => '']))->assertSessionHasErrors('region');
+        $this->actingAs($citoyen)->post('/espace/profil', $this->identite(['commune_id' => '']))->assertSessionHasErrors('commune_id');
         $this->assertSame('1990-05-12', $citoyen->fresh()->date_naissance->toDateString());
     }
 

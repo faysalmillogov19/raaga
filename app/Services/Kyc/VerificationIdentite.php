@@ -13,6 +13,7 @@ use App\Models\ReservationBoutique;
 use App\Models\User;
 use App\Services\Audit\Journal;
 use App\Services\Sms\EnvoiSms;
+use App\Support\Ifu;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -20,15 +21,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
  * Vérification d'identité, selon le type de titulaire :
  *  - personne physique : CNIB, CIB-AES ou passeport (rien d'autre), avec numéro et date d'expiration obligatoires,
- *    recto et verso (une page pour le passeport), selfie ;
- *  - personne morale : RCCM (numéro et document), IFU (numéro et attestation), pièce d'identité du représentant légal
- *    (mêmes règles) avec selfie, justificatif de pouvoir du représentant.
+ *    recto et verso (une page pour le passeport), selfie, sexe et lieu de naissance ; attestation IFU dès que l'IFU est
+ *    donné (première réservation d'une boutique) ;
+ *  - personne morale : attestation IFU (le numéro est celui du compte), pièce d'identité du représentant légal (mêmes règles) avec selfie,
+ *    justificatif de pouvoir du représentant. Le RCCM n'est plus demandé (03/11/2026).
  * Pièces sur le disque privé ; renvoi des seules pièces rejetées ; dossier incomplet complété ; SMS à chaque étape.
  * Le dossier n'est conforme que si toutes les pièces sont présentes et validées.
  */
@@ -38,24 +41,39 @@ class VerificationIdentite
     public const DISQUE = 'local';
 
     /** Emplacements dont le document peut être un PDF (attestations, registres, actes). */
-    public const DOCUMENTS = ['rccm', 'ifu', 'pouvoir'];
+    public const DOCUMENTS = ['ifu', 'pouvoir'];
 
     public function __construct(private readonly Journal $journal, private readonly EnvoiSms $sms) {}
 
     /**
+     * Règles des informations déposées avec les pièces, en ligne et au guichet : sexe et lieu de naissance (lus sur la
+     * pièce), numéro IFU (corrigé avec son attestation).
+     *
+     * @return array<string, list<mixed>>
+     */
+    public static function reglesInfos(User $user): array
+    {
+        return [
+            'sexe' => ['nullable', Rule::in(User::SEXES)],
+            'lieu_naissance' => ['nullable', 'string', 'min:2', 'max:100'],
+            'numero_ifu' => Ifu::regles($user, 'nullable'),
+        ];
+    }
+
+    /**
      * Emplacements attendus : clé de formulaire => [type, face]. Pièce d'identité (personne physique ou représentant
-     * légal), selfie, et pour une personne morale le RCCM, l'IFU et le justificatif de pouvoir.
+     * légal), selfie, attestation IFU (personne morale, ou personne physique qui a donné son IFU), et pour une personne
+     * morale le justificatif de pouvoir.
      *
      * @return array<string, array{0: TypeDocumentKyc, 1: ?FaceDocument}>
      */
-    public static function emplacements(TypeTitulaire $titulaire, TypeDocumentKyc $piece): array
+    public static function emplacements(TypeTitulaire $titulaire, TypeDocumentKyc $piece, bool $ifu = false): array
     {
         return array_filter([
             'recto' => [$piece, FaceDocument::Recto],
             'verso' => $piece->rectoVerso() ? [$piece, FaceDocument::Verso] : null,
             'selfie' => [TypeDocumentKyc::Selfie, null],
-            'rccm' => $titulaire === TypeTitulaire::Morale ? [TypeDocumentKyc::Rccm, null] : null,
-            'ifu' => $titulaire === TypeTitulaire::Morale ? [TypeDocumentKyc::Ifu, null] : null,
+            'ifu' => $titulaire === TypeTitulaire::Morale || $ifu ? [TypeDocumentKyc::Ifu, null] : null,
             'pouvoir' => $titulaire === TypeTitulaire::Morale ? [TypeDocumentKyc::JustifPouvoir, null] : null,
         ]);
     }
@@ -65,6 +83,12 @@ class VerificationIdentite
         return $user->type_titulaire ?? TypeTitulaire::Physique;
     }
 
+    /** L'attestation IFU fait-elle partie du dossier ? Personne morale, ou personne physique qui a donné son IFU. */
+    public static function avecIfu(User $user): bool
+    {
+        return self::titulaire($user) === TypeTitulaire::Morale || filled($user->ifu);
+    }
+
     /**
      * Pièces du dossier en cours : la plus récente par emplacement.
      *
@@ -72,10 +96,10 @@ class VerificationIdentite
      */
     public function dossier(User $user): Collection
     {
-        $documents = $user->kycDocuments()->whereIn('type', [...TypeDocumentKyc::piecesIdentite(), TypeDocumentKyc::Rccm, TypeDocumentKyc::Ifu,
+        $documents = $user->kycDocuments()->whereIn('type', [...TypeDocumentKyc::piecesIdentite(), TypeDocumentKyc::Ifu,
             TypeDocumentKyc::JustifPouvoir, TypeDocumentKyc::Selfie])->orderByDesc('id')->get();
 
-        return collect(self::emplacements(self::titulaire($user), $this->typePiece($user) ?? TypeDocumentKyc::Cnib))
+        return collect(self::emplacements(self::titulaire($user), $this->typePiece($user) ?? TypeDocumentKyc::Cnib, self::avecIfu($user)))
             ->map(fn (array $e) => $documents->first(fn (KycDocument $d) => $d->type === $e[0] && $d->face === $e[1]))
             ->filter();
     }
@@ -91,15 +115,15 @@ class VerificationIdentite
     {
         $piece = $this->typePiece($user);
         if ($piece === null) {
-            return array_keys(self::emplacements(self::titulaire($user), TypeDocumentKyc::Cnib));
+            return array_keys(self::emplacements(self::titulaire($user), TypeDocumentKyc::Cnib, self::avecIfu($user)));
         }
 
-        return array_values(array_diff(array_keys(self::emplacements(self::titulaire($user), $piece)), $this->dossier($user)->keys()->all()));
+        return array_values(array_diff(array_keys(self::emplacements(self::titulaire($user), $piece, self::avecIfu($user))), $this->dossier($user)->keys()->all()));
     }
 
     /**
      * Le dossier suit-il les règles des pièces ? Pièce d'identité acceptée avec son numéro et sa date d'expiration, toutes
-     * les pièces attendues présentes, et pour une personne morale les numéros RCCM et IFU.
+     * les pièces attendues présentes, et pour une personne morale l'IFU du compte.
      */
     public function suitLesRegles(User $user): bool
     {
@@ -109,7 +133,7 @@ class VerificationIdentite
             return false;
         }
 
-        return self::titulaire($user) === TypeTitulaire::Physique || (filled($dossier->get('rccm')?->numero) && filled($dossier->get('ifu')?->numero));
+        return self::titulaire($user) === TypeTitulaire::Physique || filled($user->ifu);
     }
 
     /** Toutes les pièces présentes et conformes aux règles (préalable au dossier « conforme »). */
@@ -133,7 +157,7 @@ class VerificationIdentite
     public function aFournir(User $user, ?TypeDocumentKyc $choix = null): array
     {
         if (self::premierDepot($user)) {
-            return array_keys(self::emplacements(self::titulaire($user), $choix ?? TypeDocumentKyc::Cnib));
+            return array_keys(self::emplacements(self::titulaire($user), $choix ?? TypeDocumentKyc::Cnib, self::avecIfu($user)));
         }
 
         return match ($user->statut_kyc) {
@@ -149,8 +173,8 @@ class VerificationIdentite
     /**
      * Dépôt (premier dépôt, renvoi après rejet, ou complément) des pièces attendues, avec leurs numéros.
      *
-     * @param  array<string, UploadedFile>  $fichiers  recto, verso, selfie, rccm, ifu, pouvoir
-     * @param  array{numero_piece?: ?string, piece_expire_le?: ?string, numero_rccm?: ?string, numero_ifu?: ?string}  $infos
+     * @param  array<string, UploadedFile>  $fichiers  recto, verso, selfie, ifu, pouvoir
+     * @param  array{numero_piece?: ?string, piece_expire_le?: ?string, sexe?: ?string, lieu_naissance?: ?string, numero_ifu?: ?string}  $infos
      *
      * @throws ValidationException
      */
@@ -163,7 +187,7 @@ class VerificationIdentite
             throw ValidationException::withMessages(['type_piece' => __('public.verification.erreurs.type')]);
         }
 
-        $attendus = array_keys(self::emplacements(self::titulaire($user), $piece));
+        $attendus = array_keys(self::emplacements(self::titulaire($user), $piece, self::avecIfu($user)));
         if (! $premierDepot) {
             $attendus = array_values(array_intersect($this->aFournir($user), $attendus));
         }
@@ -172,12 +196,13 @@ class VerificationIdentite
             throw ValidationException::withMessages(array_fill_keys($manquants, __('public.verification.erreurs.manquant')));
         }
 
-        // Numéros et date d'expiration : obligatoires pour chaque pièce déposée qui les porte.
+        // Numéros, date d'expiration, sexe et lieu de naissance : obligatoires avec la pièce d'identité qui les porte.
+        $recto = in_array('recto', $attendus, true);
         $exiges = array_filter([
-            'numero_piece' => in_array('recto', $attendus, true),
-            'piece_expire_le' => in_array('recto', $attendus, true),
-            'numero_rccm' => in_array('rccm', $attendus, true),
-            'numero_ifu' => in_array('ifu', $attendus, true),
+            'numero_piece' => $recto,
+            'piece_expire_le' => $recto,
+            'sexe' => $recto,
+            'lieu_naissance' => $recto,
         ]);
         $absents = array_filter(array_keys($exiges), fn (string $c) => blank($infos[$c] ?? null));
         if ($absents) {
@@ -185,15 +210,18 @@ class VerificationIdentite
         }
         $numeros = [
             'recto' => ReservationBoutique::normaliserPiece((string) ($infos['numero_piece'] ?? '')),
-            'rccm' => mb_strtoupper(trim((string) ($infos['numero_rccm'] ?? ''))),
-            'ifu' => ReservationBoutique::normaliserPiece((string) ($infos['numero_ifu'] ?? '')),
+            // Attestation IFU : numéro corrigé avec elle, sinon celui du compte.
+            'ifu' => filled($infos['numero_ifu'] ?? null) ? Ifu::normaliser($infos['numero_ifu']) : (string) $user->ifu,
         ];
 
-        $emplacements = self::emplacements(self::titulaire($user), $piece);
+        $emplacements = self::emplacements(self::titulaire($user), $piece, self::avecIfu($user));
         $chemins = [];
 
         try {
-            DB::transaction(function () use ($user, $attendus, $emplacements, $fichiers, &$chemins, $infos, $numeros) {
+            DB::transaction(function () use ($user, $attendus, $emplacements, $fichiers, &$chemins, $infos, $numeros, $recto) {
+                if (in_array('ifu', $attendus, true) && $numeros['ifu'] !== '') {
+                    Ifu::enregistrer($user, $numeros['ifu'], $user, 'verification_identite');
+                }
                 foreach ($attendus as $cle) {
                     [$type, $face] = $emplacements[$cle];
                     $fichier = $fichiers[$cle];
@@ -211,10 +239,11 @@ class VerificationIdentite
 
                 // Identifiants contrôlés (limite de réservation) et date d'expiration de la pièce (validité de la carte).
                 $user->forceFill(array_filter([
-                    'numero_piece' => in_array('recto', $attendus, true) ? $numeros['recto'] : null,
-                    'piece_expire_le' => in_array('recto', $attendus, true) ? $infos['piece_expire_le'] : null,
-                    'rccm' => in_array('rccm', $attendus, true) ? $numeros['rccm'] : null,
-                    'ifu' => in_array('ifu', $attendus, true) ? $numeros['ifu'] : null,
+                    'numero_piece' => $recto ? $numeros['recto'] : null,
+                    'piece_expire_le' => $recto ? $infos['piece_expire_le'] : null,
+                    // Sexe et lieu de naissance, lus sur la pièce : imprimés sur la carte de commerçant.
+                    'sexe' => $recto ? $infos['sexe'] : null,
+                    'lieu_naissance' => $recto ? trim((string) $infos['lieu_naissance']) : null,
                 ]))->forceFill(['statut_kyc' => StatutKyc::EnAttente, 'kyc_maj_demandee_le' => null,
                     'piece_avertie_le' => in_array('recto', $attendus, true) ? null : $user->piece_avertie_le])->save();
                 $this->journal->ecrire($user, 'kyc.depose', 'User', $user->id, null, ['pieces' => $attendus]);
@@ -244,8 +273,6 @@ class VerificationIdentite
             'type_titulaire' => $type,
             'raison_sociale' => $type === TypeTitulaire::Morale ? trim((string) $raisonSociale) : null,
             'forme_morale' => $type === TypeTitulaire::Morale ? $forme : null,
-            'ifu' => $type === TypeTitulaire::Morale ? $user->ifu : null,
-            'rccm' => $type === TypeTitulaire::Morale ? $user->rccm : null,
             // Dossier déjà déposé : à refaire selon le nouveau type.
             'statut_kyc' => in_array($user->statut_kyc, [StatutKyc::NonSoumis, null], true) ? StatutKyc::NonSoumis : StatutKyc::AMettreAJour,
         ])->save();

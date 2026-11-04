@@ -10,7 +10,7 @@
             'prenoms' => old('prenoms', $user->prenoms),
             'date_naissance' => old('date_naissance', $user->date_naissance?->toDateString()),
             'pays_residence' => old('pays_residence', $user->pays_residence ?? 'BF'),
-            'region' => old('region', $user->region),
+            'commune_id' => old('commune_id', $user->commune_id),
         ];
         $kycEngage = in_array($user->statut_kyc, [\App\Enums\StatutKyc::Valide, \App\Enums\StatutKyc::EnAttente], true);
     @endphp
@@ -43,6 +43,16 @@
                         </div>
                     @endforeach
 
+                    {{-- IFU : donné à la création du compte (personne morale) ou à la première réservation d'une boutique, vérifié avec
+                         son attestation ; il ne se modifie pas ici. --}}
+                    @if ($user->ifu)
+                        <div class="formulaire-champ" data-champ-ifu>
+                            <p class="font-semibold text-encre">{{ __('public.compte.inscription.ifu') }}</p>
+                            <p class="font-mono text-lg font-bold text-encre">{{ $user->ifu }}</p>
+                            <p class="texte-carte">{{ __('public.compte.profil.ifu_lecture') }}</p>
+                        </div>
+                    @endif
+
                     <div class="formulaire-champ">
                         <label for="pays_residence"><x-requis /> {{ __('public.compte.inscription.pays_residence') }}</label>
                         <select id="pays_residence" name="pays_residence" class="champ" x-model="pays">
@@ -54,15 +64,19 @@
                     </div>
 
                     <div class="formulaire-champ" x-show="! diaspora" @if ($valeurs['pays_residence'] !== 'BF') x-cloak @endif>
-                        <label for="region">{{ __('public.compte.inscription.region') }}</label>
-                        <select id="region" name="region" class="champ @error('region') est-invalide @enderror" :disabled="diaspora">
+                        <label for="commune_id">{{ __('public.compte.inscription.commune') }}</label>
+                        <select id="commune_id" name="commune_id" class="champ @error('commune_id') est-invalide @enderror" :disabled="diaspora">
                             <option value="">{{ __('public.compte.inscription.choisir') }}</option>
-                            @foreach ($regions as $region)
-                                <option value="{{ $region }}" @selected($valeurs['region'] === $region)>{{ $region }}</option>
+                            @foreach ($communes as $province => $liste)
+                                <optgroup label="{{ $province }}">
+                                    @foreach ($liste as $id => $nom)
+                                        <option value="{{ $id }}" @selected((string) ($valeurs['commune_id'] ?? '') === (string) $id)>{{ $nom }}</option>
+                                    @endforeach
+                                </optgroup>
                             @endforeach
                         </select>
-                        <p class="message-erreur" role="alert" x-show="erreurs.region || @js($errors->has('region'))"
-                           x-text="erreurs.region || @js($errors->first('region'))">{{ $errors->first('region') }}</p>
+                        <p class="message-erreur" role="alert" x-show="erreurs.commune_id || @js($errors->has('commune_id'))"
+                           x-text="erreurs.commune_id || @js($errors->first('commune_id'))">{{ $errors->first('commune_id') }}</p>
                     </div>
 
                     <div class="formulaire-champ">

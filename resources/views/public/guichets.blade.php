@@ -44,7 +44,7 @@
                     @foreach ($guichets as $guichet)
                         <li class="carte p-5">
                             <h2 class="!text-lg">{{ $guichet->nom }}</h2>
-                            <p class="texte-carte">{{ $guichet->commune }} · {{ $guichet->region }}</p>
+                            <p class="texte-carte">{{ $guichet->commune?->nom }} · {{ $guichet->commune?->province->region->nom }}</p>
                             <dl class="mt-3 space-y-2 text-[0.95rem]">
                                 <div class="flex items-start gap-2">
                                     <dt><x-public.icone nom="lieu" class="mt-0.5 h-5 w-5 text-gris" /><span class="sr-only">{{ __('public.guichets.adresse') }}</span></dt>

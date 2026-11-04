@@ -36,7 +36,7 @@ class CampagnesBoutiquesTest extends TestCase
         $this->creerActeurs();
 
         // Référentiel confirmé : 12 petites boutiques (R+1, 9 m²) et 3 grandes (rez-de-chaussée, 24 m²) au marché central.
-        $this->site = Site::create(['statut' => StatutSite::Confirme, 'nom' => 'Marché central', 'region' => 'Centre', 'commune' => 'Ouagadougou',
+        $this->site = Site::create(['statut' => StatutSite::Confirme, 'nom' => 'Marché central', 'ville' => 'Ouagadougou',
             'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $this->regulateur->id]);
         $this->petite = TypeBoutique::create(['libelle' => 'Petite boutique', 'description' => '9 m²']);
         $this->grande = TypeBoutique::create(['libelle' => 'Grande boutique', 'description' => '24 m²']);

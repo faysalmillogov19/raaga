@@ -95,6 +95,9 @@ class RecuTest extends TestCase
         }
         // Mentions légales : dénomination des paramètres de la plateforme, jamais en dur.
         $this->assertStringContainsString(e(plateforme('mentions.denominationSociale') ?: plateforme('identite.nomPlateforme')), $html);
+        // Plus de bandeau rouge et vert en tête des documents (04/11/2026).
+        $this->assertStringNotContainsString('tricolore', $html);
+        $this->assertStringNotContainsString('#CE1126', $html);
 
         $reponse = $this->actingAs($this->citoyen)->get('/paiement/RAA-B-K7M2Q9XP/recu')->assertOk()
             ->assertHeader('Content-Type', 'application/pdf')

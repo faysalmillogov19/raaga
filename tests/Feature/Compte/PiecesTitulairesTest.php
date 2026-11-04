@@ -36,7 +36,7 @@ use Tests\TestCase;
 
 /**
  * Pièces des personnes physiques (CNIB, CIB-AES ou passeport, numéro et date d'expiration obligatoires) et morales
- * (RCCM, IFU, pièce et selfie du représentant légal, justificatif de pouvoir) ; dossier conforme seulement s'il est
+ * (IFU, pièce et selfie du représentant légal, justificatif de pouvoir ; plus de RCCM depuis le 03/11/2026) ; dossier conforme seulement s'il est
  * complet ; limite de réservation sur le numéro de pièce ou sur l'IFU ; carte d'une personne morale ; dossiers anciens
  * marqués « pièces à mettre à jour ».
  */
@@ -63,6 +63,8 @@ class PiecesTitulairesTest extends TestCase
         return User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::NonSoumis, 'telephone' => '+2267100'.sprintf('%04d', $n),
             'nom' => 'KABORE', 'prenoms' => 'Issa', 'type_titulaire' => $type,
             'raison_sociale' => $type === TypeTitulaire::Morale ? 'Société Kaboré et Fils' : null, 'forme_morale' => $type === TypeTitulaire::Morale ? 'ENTREPRISE' : null,
+            // Personne morale : IFU donné à la création du compte.
+            'ifu' => $type === TypeTitulaire::Morale ? sprintf('%08d', 50_000_000 + $n).'M' : null,
             ...$attributs]);
     }
 
@@ -88,9 +90,9 @@ class PiecesTitulairesTest extends TestCase
         $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image()])
             ->assertSessionHasErrors(['numero_piece', 'piece_expire_le']);
         $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
-            'numero_piece' => 'AES-0012 3456', 'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'AES-0012 3456', 'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
         $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
-            'numero_piece' => 'AES-0012 3456', 'piece_expire_le' => now()->addYears(3)->toDateString()])->assertSessionHasNoErrors();
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'AES-0012 3456', 'piece_expire_le' => now()->addYears(3)->toDateString()])->assertSessionHasNoErrors();
         $cib->refresh();
         $this->assertSame(StatutKyc::EnAttente, $cib->statut_kyc);
         $this->assertSame('AES00123456', $cib->numero_piece);
@@ -100,39 +102,38 @@ class PiecesTitulairesTest extends TestCase
         // Passeport : une page, sans verso.
         $passeport = $this->citoyen();
         $this->actingAs($passeport)->post(route('espace.verification.store'), ['type_piece' => 'PASSEPORT', 'recto' => $this->image(), 'selfie' => $this->image(),
-            'numero_piece' => 'BF1234567', 'piece_expire_le' => now()->addYears(4)->toDateString()])->assertSessionHasNoErrors();
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'BF1234567', 'piece_expire_le' => now()->addYears(4)->toDateString()])->assertSessionHasNoErrors();
         $this->assertSame(2, $passeport->kycDocuments()->count());
-        // Une personne physique ne dépose ni RCCM ni IFU : ils sont ignorés.
-        $this->assertSame(0, KycDocument::query()->whereIn('type', [TypeDocumentKyc::Rccm, TypeDocumentKyc::Ifu])->count());
+        // Une personne physique ne dépose pas d'IFU : il est ignoré.
+        $this->assertSame(0, KycDocument::query()->where('type', TypeDocumentKyc::Ifu)->count());
     }
 
-    public function test_personne_morale_rccm_ifu_representant_et_pouvoir(): void
+    public function test_personne_morale_ifu_representant_et_pouvoir_sans_rccm(): void
     {
-        $morale = $this->citoyen(TypeTitulaire::Morale);
+        $morale = $this->citoyen(TypeTitulaire::Morale, ['ifu' => '00098765A']);
         $this->actingAs($morale)->get(route('espace.verification'))->assertOk()
             ->assertSee('Société Kaboré et Fils')->assertSee('Pièce d’identité du représentant légal', false)
-            ->assertSee('name="rccm"', false)->assertSee('name="numero_rccm"', false)->assertSee('name="ifu"', false)
-            ->assertSee('name="numero_ifu"', false)->assertSee('name="pouvoir"', false);
+            ->assertSee('name="ifu"', false)->assertSee('name="numero_ifu"', false)->assertSee('value="00098765A"', false)->assertSee('name="pouvoir"', false)
+            ->assertDontSee('name="rccm"', false)->assertDontSee('name="numero_rccm"', false)->assertDontSee('RCCM');
 
         $complet = ['type_piece' => 'CNIB', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
-            'numero_piece' => 'B7654321', 'piece_expire_le' => now()->addYears(2)->toDateString(),
-            'rccm' => $this->pdf('rccm.pdf'), 'numero_rccm' => 'BF-OUA-2021-B-777', 'ifu' => $this->pdf('ifu.pdf'), 'numero_ifu' => '00098765 A',
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B7654321', 'piece_expire_le' => now()->addYears(2)->toDateString(),
+            'ifu' => $this->pdf('ifu.pdf'),
             'pouvoir' => $this->pdf('pv.pdf')];
-        // Pièce manquante (justificatif de pouvoir), numéros manquants : refusé.
+        // Pièce manquante (justificatif de pouvoir) : refusé. Le numéro IFU est celui du compte, corrigeable avec l'attestation.
         $this->actingAs($morale)->post(route('espace.verification.store'), array_diff_key($complet, ['pouvoir' => 1]))->assertSessionHasErrors('pouvoir');
-        $this->actingAs($morale)->post(route('espace.verification.store'), array_diff_key($complet, ['numero_rccm' => 1, 'numero_ifu' => 1]))
-            ->assertSessionHasErrors(['numero_rccm', 'numero_ifu']);
         $this->assertSame(0, $morale->kycDocuments()->count());
 
         $this->actingAs($morale)->post(route('espace.verification.store'), $complet)->assertSessionHasNoErrors();
         $morale->refresh();
-        $this->assertEqualsCanonicalizing([TypeDocumentKyc::Cnib, TypeDocumentKyc::Cnib, TypeDocumentKyc::Selfie, TypeDocumentKyc::Rccm, TypeDocumentKyc::Ifu, TypeDocumentKyc::JustifPouvoir],
+        $this->assertEqualsCanonicalizing([TypeDocumentKyc::Cnib, TypeDocumentKyc::Cnib, TypeDocumentKyc::Selfie, TypeDocumentKyc::Ifu, TypeDocumentKyc::JustifPouvoir],
             $morale->kycDocuments()->pluck('type')->all());
-        $this->assertSame(['00098765A', 'BF-OUA-2021-B-777'], [$morale->ifu, $morale->rccm]);
+        $this->assertSame('00098765A', $morale->ifu);
+        $this->assertSame('00098765A', $morale->kycDocuments()->where('type', TypeDocumentKyc::Ifu)->value('numero'));
 
         // Dossier complet : l'ADMIN le voit (raison sociale, numéros) et le marque conforme.
         $this->en($this->admin)->get(route('admin.kyc.dossier', $morale))->assertOk()->assertSee('Société Kaboré et Fils')
-            ->assertSee('00098765A')->assertSee('BF-OUA-2021-B-777')->assertSee('Justificatif de pouvoir')->assertDontSee('data-dossier-incomplet', false);
+            ->assertSee('00098765A')->assertDontSee('N° RCCM')->assertSee('Justificatif de pouvoir')->assertDontSee('data-dossier-incomplet', false);
         $this->en($this->admin)->post(route('admin.kyc.conforme', $morale), ['piece_expire_le' => now()->addYears(2)->toDateString()])->assertSessionHas('succes');
         $this->assertSame(StatutKyc::Valide, $morale->fresh()->statut_kyc);
         $this->assertSame('Société Kaboré et Fils', $morale->fresh()->identite_validee['raison_sociale']);
@@ -170,17 +171,17 @@ class PiecesTitulairesTest extends TestCase
         Boutiques::reserver($this, $this->citoyen(), Boutiques::boutique('A', 2), '00012345X', 'IFU')->assertSessionHasErrors('type_piece');
 
         // Personne morale : IFU seulement ; même IFU sur un autre compte refusé, autre IFU accepté.
-        $morale = $this->citoyen(TypeTitulaire::Morale);
+        $morale = $this->citoyen(TypeTitulaire::Morale, ['ifu' => '00012345X']);
         $this->actingAs($morale)->get(route('boutiques.boutique', Boutiques::boutique('A', 2)->code))->assertOk()
             ->assertSee('IFU (personne morale)', false)->assertDontSee('value="CNIB"', false);
         Boutiques::reserver($this, $morale, Boutiques::boutique('A', 2), 'B1234567', 'CNIB')->assertSessionHasErrors('type_piece');
         Boutiques::reserver($this, $morale, Boutiques::boutique('A', 2), '0001-2345 X', 'IFU')->assertSessionHasNoErrors();
         $this->assertSame('00012345X', $morale->fresh()->ifu);
         $this->assertSame(['type_piece' => 'IFU', 'numero_piece' => '00012345X'], ReservationBoutique::query()->where('user_id', $morale->id)->sole()->only(['type_piece', 'numero_piece']));
-        $memeIfu = $this->citoyen(TypeTitulaire::Morale);
+        $memeIfu = $this->citoyen(TypeTitulaire::Morale, ['ifu' => '00077777M']);
         Boutiques::reserver($this, $memeIfu, Boutiques::boutique('A', 3), '00012345x', 'IFU')->assertSessionHasNoErrors();
         $this->assertSame(0, ReservationBoutique::query()->where('user_id', $memeIfu->id)->count());
-        Boutiques::reserver($this, $this->citoyen(TypeTitulaire::Morale), Boutiques::boutique('A', 3), '00099999Z', 'IFU')->assertSessionHasNoErrors();
+        Boutiques::reserver($this, $this->citoyen(TypeTitulaire::Morale, ['ifu' => '00099999Z']), Boutiques::boutique('A', 3), '00099999Z', 'IFU')->assertSessionHasNoErrors();
         $this->assertSame(3, ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)->count());
     }
 
@@ -200,12 +201,12 @@ class PiecesTitulairesTest extends TestCase
         $carte = Cartes::courante($morale, TypeCarte::Commercant);
         $this->assertSame(StatutCarte::Active, $carte->statut);
         $this->assertSame('Société Kaboré et Fils', $carte->contenu['raison_sociale']);
-        $this->assertSame('Issa KABORE', $carte->contenu['nom']);
+        $this->assertSame('KABORE Issa', $carte->contenu['nom']);
         $this->actingAs($morale)->get(route('espace.carte'))->assertOk()->assertSee('data-carte-identification', false)
-            ->assertSee('Société Kaboré et Fils')->assertSee('Représentant : Issa KABORE');
+            ->assertSee('Société Kaboré et Fils')->assertSee('Représentant : KABORE Issa');
         // Recto : raison sociale, puis le représentant légal et sa date de naissance.
         $donnees = app(RenduCarte::class)->donnees($carte);
-        $this->assertSame(['Société Kaboré et Fils', 'Issa KABORE'], [$donnees['titulaire'], $donnees['representant']]);
+        $this->assertSame(['Société Kaboré et Fils', 'KABORE Issa'], [$donnees['titulaire'], $donnees['representant']]);
         $this->assertSame($morale->date_naissance?->format('d/m/Y'), $donnees['ne_le']);
         $this->exigerChrome();
         $this->assertNotFalse(imagecreatefromstring(app(RenduCarte::class)->png($carte)));
@@ -247,7 +248,7 @@ class PiecesTitulairesTest extends TestCase
                 'chemin_fichier' => 'kyc/x/'.$type, 'mime' => 'image/jpeg', 'taille' => 10, 'empreinte_sha256' => str_repeat('a', 64)]);
         }
         $carte = Carte::create(['type' => TypeCarte::Actionnaire, 'user_id' => $ancien->id, 'statut' => StatutCarte::Active, 'courante' => true,
-            'jeton' => Str::random(64), 'emise_le' => now(), 'valide_jusqu_au' => now()->addYear(), 'contenu' => ['nom' => 'Issa KABORE']]);
+            'jeton' => Str::random(64), 'emise_le' => now(), 'valide_jusqu_au' => now()->addYear(), 'contenu' => ['nom' => 'KABORE Issa']]);
         // Dossier qui suit déjà les règles : non touché.
         $conforme = $this->citoyen(TypeTitulaire::Physique, ['statut_kyc' => StatutKyc::EnAttente]);
         DossierKyc::complet($conforme);

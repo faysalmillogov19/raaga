@@ -15,7 +15,6 @@ use App\Models\ReservationBoutique;
 use App\Models\User;
 use App\Notifications\ListeAttenteBoutiqueCitoyen;
 use App\Services\Boutiques\AvancesBoutiques;
-use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Kyc\DossiersIdentite;
 use App\Services\Paiement\ServicePaiement;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -99,9 +98,7 @@ class ListesAttenteBoutiquesTest extends TestCase
 
         // Plusieurs boutiques : Issa s'inscrit aussi sur A2, libre, et en devient l'attributaire ; sa pièce est reprise.
         $this->actingAs($issa)->get(route('boutiques.boutique', Boutiques::boutique('A', 2)->code))->assertSee('data-piece-fournie', false)->assertDontSee('name="piece"', false);
-        $this->actingAs($issa)->post(route('boutiques.reserver', Boutiques::boutique('A', 2)->code), [
-            'engagements' => array_map(fn ($d) => $d->value, ReservationsBoutiques::ENGAGEMENTS),
-        ])->assertSessionHasNoErrors();
+        $this->actingAs($issa)->post(route('boutiques.reserver', Boutiques::boutique('A', 2)->code), Boutiques::donneesCommercant())->assertSessionHasNoErrors();
         $this->assertSame($issa->id, $this->reservation(Boutiques::boutique('A', 2))->user_id);
 
         // Déjà inscrit : refusé ; « Mon espace » montre les inscriptions en attente et leur rang.

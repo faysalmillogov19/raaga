@@ -81,7 +81,7 @@ class ReservationBoutiquesTest extends TestCase
         $this->assertSame([1_440_000, 360_000], [$r->caution, $r->avance]);
         $this->assertTrue($r->expire_le->equalTo(now()->addHours(72)) || $r->expire_le->diffInSeconds(now()->addHours(72), true) < 5);
         $this->assertSame(StatutBoutique::PreReservee, $boutique->fresh()->statut);
-        $this->assertSame(1, $citoyen->kycDocuments()->count());
+        $this->assertSame(1, $citoyen->kycDocuments()->where('type', 'CNIB')->count());
 
         // Pré-réservée à son nom avec compte à rebours ; le plan la montre pré-réservée, toujours liée (liste d'attente).
         $this->actingAs($citoyen)->get(route('boutiques.reservation.show', $r->reference))->assertOk()->assertSee('data-compte-rebours', false);

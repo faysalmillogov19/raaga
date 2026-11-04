@@ -32,7 +32,7 @@ class SoumissionGroupeeTest extends TestCase
         $this->en($this->validateur)->post(route('admin.sites.types.confirmer', TypeBoutique::query()->sole()))->assertSessionHas('succes');
         // RAA confirmé, SAR prêt (une boutique), A04 sans boutique.
         foreach (['RAA' => true, 'SAR' => true, 'A04' => false] as $code => $boutique) {
-            $this->en($this->gestionnaire)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'region' => 'Centre', 'ville' => 'Ouagadougou']);
+            $this->en($this->gestionnaire)->post(route('admin.sites.store'), ['code' => $code, 'nom' => 'Marché '.$code, 'ville' => 'Ouagadougou']);
             if ($boutique) {
                 $this->en($this->gestionnaire)->post(route('admin.referencement.boutiques.store', $this->site($code)), [
                     'niveau' => 'R1', 'bloc' => 'A', 'numero' => 1, 'surface' => 9, 'type_boutique_id' => TypeBoutique::query()->value('id'), 'etat_physique' => 'LIVREE',

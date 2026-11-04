@@ -124,19 +124,28 @@ class RenduCarte
         // Date de naissance figée dans le contenu ; carte émise avant (30/10/2026) : celle du titulaire.
         $naissance = array_key_exists('date_naissance', $c) ? $c['date_naissance'] : (data_get($user?->identite_validee, 'date_naissance') ?? $user?->date_naissance);
         $expire = $carte->valide_jusqu_au ? CarbonImmutable::parse($carte->valide_jusqu_au) : null;
+        $commercant = $carte->type === TypeCarte::Commercant;
+        $prevenir = $c['personne_prevenir'] ?? null;
 
         return [
+            'commercant' => $commercant,
             'type' => mb_strtoupper($carte->type->label()),
             // Personne morale : raison sociale, puis le représentant légal (nom, date de naissance et photo).
             'titulaire' => (string) ($c['raison_sociale'] ?? $c['nom'] ?? ''),
             'representant' => ! empty($c['raison_sociale']) ? ($c['nom'] ?? null) : null,
             'ne_le' => $naissance ? CarbonImmutable::parse($naissance)->format('d/m/Y') : null,
             'numero' => $carte->numero,
+            'etablie' => $carte->emise_le?->format('d/m/Y'),
             'expire' => $expire?->format('d/m/Y'),
             'code' => $carte->numero.($expire ? '-'.$expire->format('my') : ''),
-            // Carte de commerçant (02/11/2026) : identifiants Raaga au verso ; absents d'une carte émise avant.
-            'identifiant_fiscal' => $c['identifiant_fiscal'] ?? null,
-            'numero_registre' => $c['numero_registre'] ?? null,
+            'sexe' => $c['sexe'] ?? null,
+            'lieu_naissance' => $c['lieu_naissance'] ?? null,
+            'secteur' => $c['secteur'] ?? null,
+            // Un commerçant attributaire sur deux sites : les deux sont mentionnés.
+            'sites' => collect($c['emplacements'] ?? [])->pluck('site')->filter()->unique()->implode(' · ') ?: null,
+            'groupe_sanguin' => $c['groupe_sanguin'] ?? null,
+            'residence' => $c['residence'] ?? null,
+            'personne_prevenir' => $prevenir ? trim($prevenir['nom'].' · '.Telephone::formater($prevenir['telephone'] ?? ''), ' ·') : null,
             'photo' => $this->photo($c),
             'qr' => $this->matrice($carte),
             ...$this->images($reglages),
@@ -157,7 +166,7 @@ class RenduCarte
      */
     public function specimen(array $valeurs, array $images, TypeCarte $type = TypeCarte::Commercant): array
     {
-        $expire = CarbonImmutable::today()->addYears(5);
+        $expire = CarbonImmutable::today()->addYears(Cartes::dureeValidite())->subDay();
         $chemin = fn (?string $relatif) => ReglagesCarte::chemin($relatif);
         // Armoiries et logo : l'image affichée par le champ (déposée, sinon fournie avec le code).
         $armoiries = ImagesPlateforme::chemin('armoiries');
@@ -169,23 +178,33 @@ class RenduCarte
             $filigranes[$champ] = $source ? 'data:image/png;base64,'.base64_encode($this->filigrane->png($source, $opacite)) : null;
         }
 
+        $commercant = $type === TypeCarte::Commercant;
+        $numero = $commercant ? '00000000A' : 'RG-C-000000';
+
         return [
+            'commercant' => $commercant,
             'type' => mb_strtoupper($type->label()),
             'titulaire' => __('carte.specimen'),
             'representant' => null,
             'ne_le' => '01/01/1990',
-            'numero' => 'RG-C-000000',
+            'numero' => $numero,
+            'etablie' => CarbonImmutable::today()->format('d/m/Y'),
             'expire' => $expire->format('d/m/Y'),
-            'code' => 'RG-C-000000-'.$expire->format('my'),
-            'identifiant_fiscal' => $type === TypeCarte::Commercant ? 'RG-F-000000' : null,
-            'numero_registre' => $type === TypeCarte::Commercant ? 'RG-R-'.$expire->subYears(5)->year.'-000000' : null,
+            'code' => $numero.'-'.$expire->format('my'),
+            'sexe' => $commercant ? 'F' : null,
+            'lieu_naissance' => $commercant ? __('carte.specimen') : null,
+            'secteur' => $commercant ? __('carte.specimen') : null,
+            'sites' => $commercant ? __('carte.specimen') : null,
+            'groupe_sanguin' => null,
+            'residence' => $commercant ? __('carte.specimen') : null,
+            'personne_prevenir' => $commercant ? __('carte.specimen') : null,
             'photo' => null,
             'qr' => Encoder::encode(route('cartes.verifier', str_repeat('0', 64)), ErrorCorrectionLevel::H())->getMatrix(),
             'armoiries' => $this->dataUri($armoiries),
             'logo' => $this->dataUri(ImagesPlateforme::chemin('logoHorizontal')),
             'filigranes' => $filigranes,
-            'signature' => $this->dataUri($images['signatureAutorite'] ?? null),
-            'cachet' => $this->dataUri($images['cachetAutorite'] ?? null),
+            'signature' => $this->dataUri($images['signatureAutorite'] ?? ReglagesCarte::chemin(ReglagesCarte::DEFAUTS['signatureAutorite'])),
+            'cachet' => $this->dataUri($images['cachetAutorite'] ?? ReglagesCarte::chemin(ReglagesCarte::DEFAUTS['cachetAutorite'])),
             'qualite' => $valeurs['qualiteAutorite'] ?? null,
             'nom_autorite' => $valeurs['nomAutorite'] ?? null,
             'numero_vert' => $numeroVert ? Telephone::formater($numeroVert) : null,

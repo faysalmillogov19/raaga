@@ -8,7 +8,9 @@ use App\Enums\Role;
 use App\Enums\StatutKyc;
 use App\Models\Acceptation;
 use App\Models\AuditLog;
+use App\Models\Commune;
 use App\Models\User;
+use Database\Seeders\CommunesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\FakeSmsProvider;
 use Tests\TestCase;
@@ -25,6 +27,12 @@ class InscriptionTest extends TestCase
 
         $this->sms = new FakeSmsProvider;
         $this->app->instance(SmsProvider::class, $this->sms);
+        $this->seed(CommunesSeeder::class);
+    }
+
+    private function ouagadougou(): Commune
+    {
+        return Commune::query()->where('code', 'BF130004')->sole();
     }
 
     private function identite(array $modifs = []): array
@@ -34,8 +42,9 @@ class InscriptionTest extends TestCase
             'nom' => 'Ouédraogo',
             'prenoms' => 'Awa Marie',
             'date_naissance' => now()->subYears(30)->toDateString(),
+            'ifu' => '0001 2345 a',
             'pays_residence' => 'BF',
-            'region' => 'Centre',
+            'commune_id' => (string) $this->ouagadougou()->id,
             'conditions' => '1',
         ], $modifs);
     }
@@ -51,7 +60,7 @@ class InscriptionTest extends TestCase
         $this->get('/inscription')
             ->assertOk()
             ->assertSee('Créer mon compte')
-            ->assertSee('Munissez-vous de votre téléphone et de votre CNIB, CIB-AES ou passeport', false)
+            ->assertSee('Munissez-vous de votre téléphone, de votre numéro IFU et de votre CNIB, CIB-AES ou passeport', false)
             ->assertSee('class="stepper"', false)
             ->assertSeeInOrder(['Téléphone', 'Code', 'Identité'])
             ->assertSee('Vous avez déjà un compte ?');
@@ -122,17 +131,63 @@ class InscriptionTest extends TestCase
             ->assertSessionHasErrors(['conditions' => 'Vous devez accepter les conditions d’utilisation pour créer votre compte.']);
     }
 
-    public function test_la_region_est_exigee_au_burkina_et_pas_dans_la_diaspora(): void
+    public function test_l_ifu_est_obligatoire_pour_une_personne_morale_seulement(): void
+    {
+        $this->verifierNumero();
+        $morale = fn (array $donnees = []) => $this->identite(['type_titulaire' => 'MORALE', 'raison_sociale' => 'Tissages du Faso SARL', 'forme_morale' => 'ENTREPRISE', ...$donnees]);
+
+        $this->get('/inscription')->assertSee('name="ifu"', false)->assertSee('Numéro IFU');
+        foreach (['' => 'Saisissez un numéro IFU valide : 8 chiffres suivis d’une lettre.', '1234567A' => 'Saisissez un numéro IFU valide : 8 chiffres suivis d’une lettre.'] as $saisie => $message) {
+            $this->from('/inscription')->post('/inscription/identite', $morale(['ifu' => $saisie]))->assertSessionHasErrors(['ifu' => $message]);
+        }
+        User::factory()->role(Role::Citoyen)->create(['ifu' => '00012345A']);
+        $this->from('/inscription')->post('/inscription/identite', $morale())
+            ->assertSessionHasErrors(['ifu' => 'Ce numéro IFU est déjà utilisé par un autre compte.']);
+
+        // Saisie normalisée : majuscules, sans espace, tiret ni le mot « IFU ».
+        $this->post('/inscription/identite', $morale(['ifu' => 'IFU 0009-8765 z']))->assertSessionHasNoErrors();
+        $this->assertSame('00098765Z', User::query()->where('telephone', '+22676543210')->value('ifu'));
+    }
+
+    public function test_une_personne_physique_s_inscrit_sans_ifu(): void
     {
         $this->verifierNumero();
 
-        $this->from('/inscription')->post('/inscription/identite', $this->identite(['region' => '']))
-            ->assertSessionHasErrors('region');
+        $this->post('/inscription/identite', $this->identite(['ifu' => '']))->assertSessionHasNoErrors();
+        $this->assertNull(User::query()->where('telephone', '+22676543210')->value('ifu'));
+    }
 
-        $this->post('/inscription/identite', $this->identite(['pays_residence' => 'FR', 'region' => '']))
+    public function test_la_commune_est_exigee_au_burkina_et_pas_dans_la_diaspora(): void
+    {
+        $this->verifierNumero();
+
+        $this->from('/inscription')->post('/inscription/identite', $this->identite(['commune_id' => '']))
+            ->assertSessionHasErrors(['commune_id' => 'Choisissez votre commune de résidence.']);
+        $this->from('/inscription')->post('/inscription/identite', $this->identite(['commune_id' => '999999']))
+            ->assertSessionHasErrors('commune_id');
+
+        $this->post('/inscription/identite', $this->identite(['pays_residence' => 'FR', 'commune_id' => '']))
             ->assertSessionHasNoErrors();
 
-        $this->assertSame('FR', User::query()->where('telephone', '+22676543210')->value('pays_residence'));
+        $user = User::query()->where('telephone', '+22676543210')->sole();
+        $this->assertSame(['FR', null], [$user->pays_residence, $user->commune_id]);
+    }
+
+    public function test_la_commune_est_proposee_par_province_et_reprend_sa_region(): void
+    {
+        $this->verifierNumero();
+
+        $this->get('/inscription')->assertOk()
+            ->assertSee('Commune de résidence')
+            ->assertSee('<optgroup label="Kadiogo (Kadiogo)">', false)
+            ->assertSee('<option value="'.$this->ouagadougou()->id.'" >Ouagadougou</option>', false)
+            ->assertDontSee('Boucle du Mouhoun');
+
+        $this->post('/inscription/identite', $this->identite())->assertSessionHasNoErrors();
+
+        $user = User::query()->where('telephone', '+22676543210')->sole();
+        $this->assertSame([$this->ouagadougou()->id, 'Kadiogo'], [$user->commune_id, $user->commune->province->region->nom]);
+        $this->assertSame('Ouagadougou', $user->commune->nom);
     }
 
     public function test_l_identite_exige_un_numero_verifie(): void

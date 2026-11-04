@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compte;
 
 use App\Http\Controllers\Controller;
+use App\Models\Commune;
 use App\Models\User;
 use App\Services\Auth\OtpException;
 use App\Services\Auth\OtpService;
@@ -44,7 +45,7 @@ class InscriptionController extends Controller
             'saisie' => $session['saisie'] ?? [],
             'secondesRenvoi' => $etape === 'code' && $telephone ? $this->otp->secondesAvantRenvoi($telephone, self::OBJET) : 0,
             'pays' => config('raaga.inscription.pays'),
-            'regions' => config('raaga.inscription.regions'),
+            'communes' => Commune::parProvince(),
         ]);
     }
 

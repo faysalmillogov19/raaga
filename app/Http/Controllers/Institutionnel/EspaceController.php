@@ -41,7 +41,7 @@ class EspaceController extends Controleur
             // Dividendes perçus : distributions A au statut PAYÉ (la mise en paiement suit la confirmation).
             'dividendes' => (int) app(DividendesController::class)->distributions()
                 ->filter(fn (array $e) => $e['distribution']->statut === StatutDistribution::Paye)->sum(fn (array $e) => $e['ligne']->net),
-            'piecesTotal' => count(TypeDocumentKyb::cases()),
+            'piecesTotal' => count(TypeDocumentKyb::exiges()),
         ]);
     }
 

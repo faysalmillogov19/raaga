@@ -43,7 +43,7 @@ class LimitesParTypeTest extends TestCase
         $this->creerActeurs();
         $this->seed(ReferentielsSitesSeeder::class);
         $this->types = TypeBoutique::query()->whereIn('code', ['PV', 'PP', 'PF', 'BOUT'])->get()->keyBy('code')->all();
-        $site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'commune' => 'Ouagadougou',
+        $site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'ville' => 'Ouagadougou',
             'adresse' => 'Avenue', 'version' => 1, 'cree_par' => $this->regulateur->id]);
         foreach ([[1, 'PV'], [2, 'PV'], [3, 'PV'], [4, 'PP'], [5, 'PF']] as [$n, $type]) {
             $site->boutiques()->create(['niveau' => 'RC', 'bloc' => 'BP', 'numero' => $n, 'surface' => 10, 'type_boutique_id' => $this->types[$type]->id, 'statut' => StatutBoutique::Disponible]);
@@ -97,8 +97,10 @@ class LimitesParTypeTest extends TestCase
         Boutiques::reserver($this, $citoyen, $this->boutique(2))->assertSessionHasNoErrors()->assertRedirect(route('espace', ['onglet' => 'boutiques']));
         $this->assertSame(StatutBoutique::Disponible, $this->boutique(2)->statut);
         Boutiques::reserver($this, $citoyen, $this->boutique(4))->assertSessionHasNoErrors();
-        Boutiques::reserver($this, $citoyen, $this->boutique(5))->assertSessionHasNoErrors();
-        $this->assertSame(3, ReservationBoutique::query()->where('user_id', $citoyen->id)->count());
+        // Troisième type : deux boutiques au plus par commerçant (comité restreint du 03/11/2026), sélection refusée.
+        Boutiques::reserver($this, $citoyen, $this->boutique(5))->assertSessionHasErrors(['boutique' => 'Vous ne pouvez pas être attributaire de plus de deux boutiques.']);
+        $this->assertSame(2, ReservationBoutique::query()->where('user_id', $citoyen->id)->count());
+        $this->assertSame(StatutBoutique::Disponible, $this->boutique(5)->statut);
         $this->plan($citoyen)->assertSee('Vous avez atteint vos limites de réservation dans cette campagne.');
 
         // Visiteur : les limites seules.

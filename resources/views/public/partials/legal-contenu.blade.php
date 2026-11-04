@@ -12,7 +12,6 @@
             $l('denomination') => $m['denominationSociale'],
             $l('forme') => $m['formeJuridique'],
             $l('capital') => $m['capitalSocial'] !== null ? format_fcfa($m['capitalSocial']) : null,
-            $l('rccm') => $m['rccm'],
             $l('ifu') => $m['ifu'],
             $l('siege') => $joindre([$siege['adresseSiege'], $siege['boitePostale']], ', '),
             $l('contact') => $joindre([

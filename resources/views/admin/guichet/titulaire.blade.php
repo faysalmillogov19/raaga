@@ -19,9 +19,11 @@
                 @unless ($titulaire->estBackoffice())
                     <dt>{{ $t['kyc'] }}</dt><dd>{{ $titulaire->statut_kyc?->label() }}</dd>
                 @endunless
-                @if ($titulaire->identifiant_fiscal_raaga)
-                    <dt>{{ $t['identifiant_fiscal'] }}</dt><dd class="font-mono" data-identifiant-fiscal>{{ $titulaire->identifiant_fiscal_raaga }}</dd>
-                    <dt>{{ $t['numero_registre'] }}</dt><dd class="font-mono" data-numero-registre>{{ $titulaire->numero_registre_raaga }}</dd>
+                @if ($titulaire->ifu)
+                    <dt>{{ $t['ifu'] }}</dt><dd class="font-mono" data-ifu>{{ $titulaire->ifu }}</dd>
+                @endif
+                @if ($titulaire->secteur_activite_id)
+                    <dt>{{ $t['secteur'] }}</dt><dd data-secteur-activite>{{ \App\Models\SecteurActivite::libellePour($titulaire) }}</dd>
                 @endif
                 @if ($titulaire->piece_expire_le)
                     <dt>{{ $t['piece'] }}</dt><dd>{{ $titulaire->piece_expire_le->format('d/m/Y') }}</dd>

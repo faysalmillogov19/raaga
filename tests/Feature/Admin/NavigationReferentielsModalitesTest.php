@@ -150,8 +150,8 @@ class NavigationReferentielsModalitesTest extends TestCase
     public function test_filtre_par_site_des_capacites_retenu_pendant_la_session(): void
     {
         $type = TypeBoutique::query()->where('code', 'BOUT')->firstOrFail();
-        $site = fn (string $code, string $nom) => Site::create(['statut' => StatutSite::Brouillon, 'code' => $code, 'nom' => $nom, 'region' => 'Centre',
-            'commune' => 'Ouagadougou', 'adresse' => 'Avenue', 'version' => 1, 'cree_par' => $this->gestionnaire->id]);
+        $site = fn (string $code, string $nom) => Site::create(['statut' => StatutSite::Brouillon, 'code' => $code, 'nom' => $nom,
+            'ville' => 'Ouagadougou', 'adresse' => 'Avenue', 'version' => 1, 'cree_par' => $this->gestionnaire->id]);
         $raa = $site('RAA', 'Marché Raaga');
         $sar = $site('SAR', 'Marché de Sarfalao');
         $raa->capacites()->create(['niveau' => 'RC', 'zone' => 'A', 'type_boutique_id' => $type->id, 'nombre_prevu' => 12, 'source' => 'Plan RAA']);

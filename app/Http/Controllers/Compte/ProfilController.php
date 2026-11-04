@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Compte;
 
 use App\Enums\StatutKyc;
+use App\Enums\TypeCarte;
 use App\Http\Controllers\Controller;
+use App\Models\Commune;
 use App\Models\User;
 use App\Services\Audit\Journal;
 use App\Services\Auth\OtpException;
 use App\Services\Auth\OtpService;
+use App\Services\Cartes\Cartes;
+use App\Services\Compte\CreationCompte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -41,7 +45,7 @@ class ProfilController extends Controller
         return view('public.compte.profil', [
             'user' => $request->user(),
             'pays' => config('raaga.inscription.pays'),
-            'regions' => config('raaga.inscription.regions'),
+            'communes' => Commune::parProvince(),
             'nouveauTelephone' => $nouveau,
             'secondesRenvoi' => $nouveau ? $this->otp->secondesAvantRenvoi($nouveau, self::OBJET_TELEPHONE) : 0,
         ]);
@@ -58,7 +62,7 @@ class ProfilController extends Controller
             'prenoms' => ['required', 'string', 'max:150'],
             'date_naissance' => ['required', 'date_format:Y-m-d', 'after:1900-01-01', 'before_or_equal:'.now()->subYears($age)->toDateString()],
             'pays_residence' => ['required', Rule::in(array_keys(config('raaga.inscription.pays')))],
-            'region' => ['nullable', 'required_if:pays_residence,BF', Rule::in(config('raaga.inscription.regions'))],
+            'commune_id' => ['nullable', 'required_if:pays_residence,BF', 'integer', Rule::exists('communes', 'id')],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
         ], [
             'nom.*' => $messages['nom'],
@@ -66,7 +70,7 @@ class ProfilController extends Controller
             'date_naissance.before_or_equal' => __('public.compte.inscription.erreurs.majeur', ['age' => $age]),
             'date_naissance.*' => $messages['date_naissance'],
             'pays_residence.*' => $messages['pays'],
-            'region.*' => $messages['region'],
+            'commune_id.*' => $messages['commune'],
             'email.unique' => __('public.compte.profil.erreurs.email_existe'),
             'email.*' => __('public.compte.profil.erreurs.email'),
         ]);
@@ -80,7 +84,7 @@ class ProfilController extends Controller
             'name' => $prenoms.' '.$nom,
             'date_naissance' => $donnees['date_naissance'],
             'pays_residence' => $donnees['pays_residence'],
-            'region' => $donnees['pays_residence'] === 'BF' ? $donnees['region'] : null,
+            ...CreationCompte::residence($donnees),
             'email' => $donnees['email'] ? mb_strtolower(trim($donnees['email'])) : null,
         ]);
 
@@ -100,6 +104,10 @@ class ProfilController extends Controller
         }
 
         $user->save();
+        // Lieu de résidence ou identité imprimés sur la carte de commerçant : nouvelle version.
+        if (Cartes::courante($user, TypeCarte::Commercant)) {
+            app(Cartes::class)->synchroniser($user, TypeCarte::Commercant, $user);
+        }
 
         $this->journal->ecrire($user, 'profil.modifie', 'User', $user->id, null, [
             'champs' => $modifies,

@@ -8,8 +8,10 @@ use App\Enums\StatutKyc;
 use App\Enums\TypeTitulaire;
 use App\Models\Acceptation;
 use App\Models\AuditLog;
+use App\Models\Commune;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Ifu;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +21,7 @@ use Illuminate\Validation\Rule;
  */
 class CreationCompte
 {
-    public const CHAMPS_IDENTITE = ['type_titulaire', 'raison_sociale', 'forme_morale', 'nom', 'prenoms', 'date_naissance', 'pays_residence', 'region'];
+    public const CHAMPS_IDENTITE = ['type_titulaire', 'raison_sociale', 'forme_morale', 'nom', 'prenoms', 'date_naissance', 'ifu', 'pays_residence', 'commune_id'];
 
     /** Règles de l'identité saisie à la création du compte (conditions d'utilisation comprises). */
     public static function regles(): array
@@ -34,8 +36,10 @@ class CreationCompte
             'nom' => ['required', 'string', 'max:100'],
             'prenoms' => ['required', 'string', 'max:150'],
             'date_naissance' => ['required', 'date_format:Y-m-d', 'after:1900-01-01', 'before_or_equal:'.now()->subYears($age)->toDateString()],
+            // IFU : obligatoire pour une personne morale ; une personne physique le donne à sa première réservation de boutique.
+            'ifu' => Ifu::regles(null, 'nullable|required_if:type_titulaire,MORALE'),
             'pays_residence' => ['required', Rule::in(array_keys(config('raaga.inscription.pays')))],
-            'region' => ['nullable', 'required_if:pays_residence,BF', Rule::in(config('raaga.inscription.regions'))],
+            'commune_id' => ['nullable', 'required_if:pays_residence,BF', 'integer', Rule::exists('communes', 'id')],
             'conditions' => ['accepted'],
         ];
     }
@@ -54,10 +58,22 @@ class CreationCompte
             'prenoms.*' => $messages['prenoms'],
             'date_naissance.before_or_equal' => __('public.compte.inscription.erreurs.majeur', ['age' => (int) config('raaga.inscription.age_minimum')]),
             'date_naissance.*' => $messages['date_naissance'],
+            'ifu.required_if' => $messages['ifu'],
             'pays_residence.*' => $messages['pays'],
-            'region.*' => $messages['region'],
+            'commune_id.*' => $messages['commune'],
             'conditions.*' => $messages['conditions'],
         ];
+    }
+
+    /**
+     * Commune de résidence au Burkina Faso ; rien dans la diaspora.
+     *
+     * @param  array<string, mixed>  $donnees  pays_residence et commune_id validés
+     * @return array{commune_id: ?int}
+     */
+    public static function residence(array $donnees): array
+    {
+        return ['commune_id' => $donnees['pays_residence'] === 'BF' ? Commune::query()->findOrFail($donnees['commune_id'])->id : null];
     }
 
     /**
@@ -77,9 +93,10 @@ class CreationCompte
                 'prenoms' => $prenoms,
                 'telephone' => $telephone,
                 'date_naissance' => $donnees['date_naissance'],
+                'ifu' => $morale ? Ifu::normaliser($donnees['ifu']) : null,
                 'nationalite' => 'BF',
                 'pays_residence' => $donnees['pays_residence'],
-                'region' => $donnees['pays_residence'] === 'BF' ? $donnees['region'] : null,
+                ...self::residence($donnees),
                 'role_id' => Role::pour(RoleEnum::Citoyen)->id,
                 'statut_kyc' => StatutKyc::NonSoumis,
                 'type_titulaire' => $donnees['type_titulaire'],

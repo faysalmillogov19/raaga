@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * saisit et soumet ; le VALIDATEUR confirme (workflow commun). Seuls les sites confirmés entrent dans une campagne.
  */
 #[Fillable([
-    'statut', 'code', 'nom', 'ville', 'arrondissement', 'region', 'commune', 'adresse', 'latitude', 'longitude',
+    'statut', 'code', 'nom', 'ville', 'arrondissement', 'commune_id', 'adresse', 'latitude', 'longitude',
     'maitre_ouvrage', 'maitre_oeuvre', 'phase', 'livraison_prevue',
     'reference_plans', 'version_plans', 'source_donnees', 'description', 'version',
     'cree_par', 'soumis_par', 'soumis_le', 'valide_par', 'valide_le', 'motif_rejet',
@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Site extends Model implements Parametrable
 {
     public const PARAMETRES = [
-        'code', 'nom', 'ville', 'arrondissement', 'region', 'adresse', 'latitude', 'longitude', 'maitre_ouvrage', 'maitre_oeuvre',
+        'code', 'nom', 'ville', 'arrondissement', 'commune_id', 'adresse', 'latitude', 'longitude', 'maitre_ouvrage', 'maitre_oeuvre',
         'phase', 'livraison_prevue', 'reference_plans', 'version_plans',
         'source_donnees', 'description',
     ];
@@ -51,10 +51,16 @@ class Site extends Model implements Parametrable
         ];
     }
 
-    /** Ville (ou commune d'un site saisi avant la fiche complète). */
+    /** Ville du site (sinon sa commune). */
     public function localite(): ?string
     {
-        return $this->ville ?? $this->commune;
+        return $this->ville ?? $this->commune?->nom;
+    }
+
+    /** @return BelongsTo<Commune, $this> */
+    public function commune(): BelongsTo
+    {
+        return $this->belongsTo(Commune::class);
     }
 
     /**

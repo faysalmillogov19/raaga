@@ -40,7 +40,7 @@ class GrilleTarifaireExcelTest extends TestCase
         $this->creerActeurs();
         $this->boutique = TypeBoutique::create(['code' => 'BOUT', 'libelle' => 'Boutique']);
         $this->magasin = TypeBoutique::create(['code' => 'MAG', 'libelle' => 'Magasin']);
-        $this->site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'commune' => 'Ouagadougou',
+        $this->site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'ville' => 'Ouagadougou',
             'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $this->regulateur->id]);
         foreach ([['RC', 'A', 1, 9, $this->boutique], ['RC', 'A', 2, 9, $this->boutique], ['R1', 'B', 1, 12.5, $this->boutique], ['RC', 'M', 1, 40, $this->magasin]] as [$niveau, $bloc, $n, $surface, $type]) {
             $this->site->boutiques()->create(['niveau' => $niveau, 'bloc' => $bloc, 'numero' => sprintf('%03d', $n), 'surface' => $surface,

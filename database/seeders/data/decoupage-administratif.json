@@ -1,0 +1,2068 @@
+{
+ "source": "Limites administratives du Burkina Faso (COD-AB), version v03, en vigueur depuis le 2025-08-01",
+ "valide_le": "2025-08-01",
+ "regions": [
+  {
+   "code": "BF13",
+   "nom": "Kadiogo"
+  },
+  {
+   "code": "BF47",
+   "nom": "Tannounyan"
+  },
+  {
+   "code": "BF48",
+   "nom": "Nakambé"
+  },
+  {
+   "code": "BF49",
+   "nom": "Kuilsé"
+  },
+  {
+   "code": "BF50",
+   "nom": "Nando"
+  },
+  {
+   "code": "BF51",
+   "nom": "Nazinon"
+  },
+  {
+   "code": "BF53",
+   "nom": "Guiriko"
+  },
+  {
+   "code": "BF54",
+   "nom": "Yaadga"
+  },
+  {
+   "code": "BF55",
+   "nom": "Oubri"
+  },
+  {
+   "code": "BF57",
+   "nom": "Djôrô"
+  },
+  {
+   "code": "BF58",
+   "nom": "Sirba"
+  },
+  {
+   "code": "BF59",
+   "nom": "Soum"
+  },
+  {
+   "code": "BF60",
+   "nom": "Tapoa"
+  },
+  {
+   "code": "BF61",
+   "nom": "Sourou"
+  },
+  {
+   "code": "BF62",
+   "nom": "Bankui"
+  },
+  {
+   "code": "BF63",
+   "nom": "Goulmou"
+  },
+  {
+   "code": "BF64",
+   "nom": "Liptako"
+  }
+ ],
+ "provinces": [
+  {
+   "code": "BF1300",
+   "region": "BF13",
+   "nom": "Kadiogo"
+  },
+  {
+   "code": "BF4701",
+   "region": "BF47",
+   "nom": "Comoé"
+  },
+  {
+   "code": "BF4702",
+   "region": "BF47",
+   "nom": "Léraba"
+  },
+  {
+   "code": "BF4801",
+   "region": "BF48",
+   "nom": "Boulgou"
+  },
+  {
+   "code": "BF4802",
+   "region": "BF48",
+   "nom": "Koulpélogo"
+  },
+  {
+   "code": "BF4803",
+   "region": "BF48",
+   "nom": "Kourittenga"
+  },
+  {
+   "code": "BF4901",
+   "region": "BF49",
+   "nom": "Bam"
+  },
+  {
+   "code": "BF4902",
+   "region": "BF49",
+   "nom": "Namentenga"
+  },
+  {
+   "code": "BF4903",
+   "region": "BF49",
+   "nom": "Sandbondtenga"
+  },
+  {
+   "code": "BF5001",
+   "region": "BF50",
+   "nom": "Boulkiemdé"
+  },
+  {
+   "code": "BF5002",
+   "region": "BF50",
+   "nom": "Sanguié"
+  },
+  {
+   "code": "BF5003",
+   "region": "BF50",
+   "nom": "Sissili"
+  },
+  {
+   "code": "BF5004",
+   "region": "BF50",
+   "nom": "Ziro"
+  },
+  {
+   "code": "BF5101",
+   "region": "BF51",
+   "nom": "Bazèga"
+  },
+  {
+   "code": "BF5102",
+   "region": "BF51",
+   "nom": "Nahouri"
+  },
+  {
+   "code": "BF5103",
+   "region": "BF51",
+   "nom": "Zoundwéogo"
+  },
+  {
+   "code": "BF5301",
+   "region": "BF53",
+   "nom": "Houet"
+  },
+  {
+   "code": "BF5302",
+   "region": "BF53",
+   "nom": "Kénédougou"
+  },
+  {
+   "code": "BF5303",
+   "region": "BF53",
+   "nom": "Tuy"
+  },
+  {
+   "code": "BF5401",
+   "region": "BF54",
+   "nom": "Loroum"
+  },
+  {
+   "code": "BF5402",
+   "region": "BF54",
+   "nom": "Passoré"
+  },
+  {
+   "code": "BF5403",
+   "region": "BF54",
+   "nom": "Yatenga"
+  },
+  {
+   "code": "BF5404",
+   "region": "BF54",
+   "nom": "Zondoma"
+  },
+  {
+   "code": "BF5501",
+   "region": "BF55",
+   "nom": "Ganzourgou"
+  },
+  {
+   "code": "BF5502",
+   "region": "BF55",
+   "nom": "Kourwéogo"
+  },
+  {
+   "code": "BF5503",
+   "region": "BF55",
+   "nom": "Bassitenga"
+  },
+  {
+   "code": "BF5701",
+   "region": "BF57",
+   "nom": "Bougouriba"
+  },
+  {
+   "code": "BF5702",
+   "region": "BF57",
+   "nom": "Ioba"
+  },
+  {
+   "code": "BF5703",
+   "region": "BF57",
+   "nom": "Noumbiel"
+  },
+  {
+   "code": "BF5704",
+   "region": "BF57",
+   "nom": "Poni"
+  },
+  {
+   "code": "BF5801",
+   "region": "BF58",
+   "nom": "Gnagna"
+  },
+  {
+   "code": "BF5802",
+   "region": "BF58",
+   "nom": "Komandjari"
+  },
+  {
+   "code": "BF5901",
+   "region": "BF59",
+   "nom": "Djelgodji"
+  },
+  {
+   "code": "BF5902",
+   "region": "BF59",
+   "nom": "Karo-Peli"
+  },
+  {
+   "code": "BF6001",
+   "region": "BF60",
+   "nom": "Dyamongou"
+  },
+  {
+   "code": "BF6002",
+   "region": "BF60",
+   "nom": "Gobnangou"
+  },
+  {
+   "code": "BF6101",
+   "region": "BF61",
+   "nom": "Kossin"
+  },
+  {
+   "code": "BF6102",
+   "region": "BF61",
+   "nom": "Nayala"
+  },
+  {
+   "code": "BF6103",
+   "region": "BF61",
+   "nom": "Sourou"
+  },
+  {
+   "code": "BF6201",
+   "region": "BF62",
+   "nom": "Balé"
+  },
+  {
+   "code": "BF6202",
+   "region": "BF62",
+   "nom": "Banwa"
+  },
+  {
+   "code": "BF6203",
+   "region": "BF62",
+   "nom": "Mouhoun"
+  },
+  {
+   "code": "BF6301",
+   "region": "BF63",
+   "nom": "Gourma"
+  },
+  {
+   "code": "BF6302",
+   "region": "BF63",
+   "nom": "Kompienga"
+  },
+  {
+   "code": "BF6401",
+   "region": "BF64",
+   "nom": "Oudalan"
+  },
+  {
+   "code": "BF6402",
+   "region": "BF64",
+   "nom": "Séno"
+  },
+  {
+   "code": "BF6403",
+   "region": "BF64",
+   "nom": "Yagha"
+  }
+ ],
+ "communes": [
+  {
+   "code": "BF130001",
+   "province": "BF1300",
+   "nom": "Komki-Ipala"
+  },
+  {
+   "code": "BF130002",
+   "province": "BF1300",
+   "nom": "Komsilga"
+  },
+  {
+   "code": "BF130003",
+   "province": "BF1300",
+   "nom": "Koubri"
+  },
+  {
+   "code": "BF130004",
+   "province": "BF1300",
+   "nom": "Ouagadougou"
+  },
+  {
+   "code": "BF130005",
+   "province": "BF1300",
+   "nom": "Pabré"
+  },
+  {
+   "code": "BF130006",
+   "province": "BF1300",
+   "nom": "Saaba"
+  },
+  {
+   "code": "BF130007",
+   "province": "BF1300",
+   "nom": "Tanguen-Dassouri"
+  },
+  {
+   "code": "BF470101",
+   "province": "BF4701",
+   "nom": "Banfora"
+  },
+  {
+   "code": "BF470102",
+   "province": "BF4701",
+   "nom": "Bérégadougou"
+  },
+  {
+   "code": "BF470103",
+   "province": "BF4701",
+   "nom": "Mangodara"
+  },
+  {
+   "code": "BF470104",
+   "province": "BF4701",
+   "nom": "Moussodougou"
+  },
+  {
+   "code": "BF470105",
+   "province": "BF4701",
+   "nom": "Niangoloko"
+  },
+  {
+   "code": "BF470106",
+   "province": "BF4701",
+   "nom": "Ouô"
+  },
+  {
+   "code": "BF470107",
+   "province": "BF4701",
+   "nom": "Sidéradougou"
+  },
+  {
+   "code": "BF470108",
+   "province": "BF4701",
+   "nom": "Soubakaniédougou"
+  },
+  {
+   "code": "BF470109",
+   "province": "BF4701",
+   "nom": "Tiéfora"
+  },
+  {
+   "code": "BF470201",
+   "province": "BF4702",
+   "nom": "Dakôrô"
+  },
+  {
+   "code": "BF470202",
+   "province": "BF4702",
+   "nom": "Douna"
+  },
+  {
+   "code": "BF470203",
+   "province": "BF4702",
+   "nom": "Kankalaba"
+  },
+  {
+   "code": "BF470204",
+   "province": "BF4702",
+   "nom": "Loumana"
+  },
+  {
+   "code": "BF470205",
+   "province": "BF4702",
+   "nom": "Niankôrôdougou"
+  },
+  {
+   "code": "BF470206",
+   "province": "BF4702",
+   "nom": "Ouéléni"
+  },
+  {
+   "code": "BF470207",
+   "province": "BF4702",
+   "nom": "Sindou"
+  },
+  {
+   "code": "BF470208",
+   "province": "BF4702",
+   "nom": "Wolonkoto"
+  },
+  {
+   "code": "BF480101",
+   "province": "BF4801",
+   "nom": "Bagré"
+  },
+  {
+   "code": "BF480102",
+   "province": "BF4801",
+   "nom": "Bané"
+  },
+  {
+   "code": "BF480103",
+   "province": "BF4801",
+   "nom": "Béguédo"
+  },
+  {
+   "code": "BF480104",
+   "province": "BF4801",
+   "nom": "Bissiga"
+  },
+  {
+   "code": "BF480105",
+   "province": "BF4801",
+   "nom": "Bitou"
+  },
+  {
+   "code": "BF480106",
+   "province": "BF4801",
+   "nom": "Boussouma"
+  },
+  {
+   "code": "BF480107",
+   "province": "BF4801",
+   "nom": "Garango"
+  },
+  {
+   "code": "BF480108",
+   "province": "BF4801",
+   "nom": "Komtoèga"
+  },
+  {
+   "code": "BF480109",
+   "province": "BF4801",
+   "nom": "Niaogho"
+  },
+  {
+   "code": "BF480110",
+   "province": "BF4801",
+   "nom": "Tenkodogo"
+  },
+  {
+   "code": "BF480111",
+   "province": "BF4801",
+   "nom": "Zabré"
+  },
+  {
+   "code": "BF480112",
+   "province": "BF4801",
+   "nom": "Zoaga"
+  },
+  {
+   "code": "BF480113",
+   "province": "BF4801",
+   "nom": "Zonsé"
+  },
+  {
+   "code": "BF480201",
+   "province": "BF4802",
+   "nom": "Komin-Yanga"
+  },
+  {
+   "code": "BF480202",
+   "province": "BF4802",
+   "nom": "Dourtenga"
+  },
+  {
+   "code": "BF480203",
+   "province": "BF4802",
+   "nom": "Lalgaye"
+  },
+  {
+   "code": "BF480204",
+   "province": "BF4802",
+   "nom": "Ouargaye"
+  },
+  {
+   "code": "BF480205",
+   "province": "BF4802",
+   "nom": "Sangha"
+  },
+  {
+   "code": "BF480206",
+   "province": "BF4802",
+   "nom": "Soudougui"
+  },
+  {
+   "code": "BF480207",
+   "province": "BF4802",
+   "nom": "Yargatenga"
+  },
+  {
+   "code": "BF480208",
+   "province": "BF4802",
+   "nom": "Yondé"
+  },
+  {
+   "code": "BF480301",
+   "province": "BF4803",
+   "nom": "Andemtenga"
+  },
+  {
+   "code": "BF480302",
+   "province": "BF4803",
+   "nom": "Baskouré"
+  },
+  {
+   "code": "BF480303",
+   "province": "BF4803",
+   "nom": "Dialgaye"
+  },
+  {
+   "code": "BF480304",
+   "province": "BF4803",
+   "nom": "Gounguen"
+  },
+  {
+   "code": "BF480305",
+   "province": "BF4803",
+   "nom": "Kando"
+  },
+  {
+   "code": "BF480306",
+   "province": "BF4803",
+   "nom": "Koupèla"
+  },
+  {
+   "code": "BF480307",
+   "province": "BF4803",
+   "nom": "Pouytenga"
+  },
+  {
+   "code": "BF480308",
+   "province": "BF4803",
+   "nom": "Tensobentenga"
+  },
+  {
+   "code": "BF480309",
+   "province": "BF4803",
+   "nom": "Yargo"
+  },
+  {
+   "code": "BF490101",
+   "province": "BF4901",
+   "nom": "Bourzanga"
+  },
+  {
+   "code": "BF490102",
+   "province": "BF4901",
+   "nom": "Guibaré"
+  },
+  {
+   "code": "BF490103",
+   "province": "BF4901",
+   "nom": "Kongoussi"
+  },
+  {
+   "code": "BF490104",
+   "province": "BF4901",
+   "nom": "Nasséré"
+  },
+  {
+   "code": "BF490105",
+   "province": "BF4901",
+   "nom": "Rollo"
+  },
+  {
+   "code": "BF490106",
+   "province": "BF4901",
+   "nom": "Roukô"
+  },
+  {
+   "code": "BF490107",
+   "province": "BF4901",
+   "nom": "Sabsé"
+  },
+  {
+   "code": "BF490108",
+   "province": "BF4901",
+   "nom": "Tikaré"
+  },
+  {
+   "code": "BF490109",
+   "province": "BF4901",
+   "nom": "Zimtanga"
+  },
+  {
+   "code": "BF490201",
+   "province": "BF4902",
+   "nom": "Boala"
+  },
+  {
+   "code": "BF490202",
+   "province": "BF4902",
+   "nom": "Boulsa"
+  },
+  {
+   "code": "BF490203",
+   "province": "BF4902",
+   "nom": "Bouroum"
+  },
+  {
+   "code": "BF490204",
+   "province": "BF4902",
+   "nom": "Dargo"
+  },
+  {
+   "code": "BF490205",
+   "province": "BF4902",
+   "nom": "Nagbingou"
+  },
+  {
+   "code": "BF490206",
+   "province": "BF4902",
+   "nom": "Tougouri"
+  },
+  {
+   "code": "BF490207",
+   "province": "BF4902",
+   "nom": "Yalgo"
+  },
+  {
+   "code": "BF490208",
+   "province": "BF4902",
+   "nom": "Zéguédéguen"
+  },
+  {
+   "code": "BF490301",
+   "province": "BF4903",
+   "nom": "Barsalogho"
+  },
+  {
+   "code": "BF490302",
+   "province": "BF4903",
+   "nom": "Boussouma"
+  },
+  {
+   "code": "BF490303",
+   "province": "BF4903",
+   "nom": "Dablo"
+  },
+  {
+   "code": "BF490304",
+   "province": "BF4903",
+   "nom": "Kaya"
+  },
+  {
+   "code": "BF490305",
+   "province": "BF4903",
+   "nom": "Korsimoro"
+  },
+  {
+   "code": "BF490306",
+   "province": "BF4903",
+   "nom": "Mané"
+  },
+  {
+   "code": "BF490307",
+   "province": "BF4903",
+   "nom": "Namissiguima"
+  },
+  {
+   "code": "BF490308",
+   "province": "BF4903",
+   "nom": "Pensa"
+  },
+  {
+   "code": "BF490309",
+   "province": "BF4903",
+   "nom": "Pibaoré"
+  },
+  {
+   "code": "BF490310",
+   "province": "BF4903",
+   "nom": "Pissila"
+  },
+  {
+   "code": "BF490311",
+   "province": "BF4903",
+   "nom": "Ziga"
+  },
+  {
+   "code": "BF500101",
+   "province": "BF5001",
+   "nom": "Bingo"
+  },
+  {
+   "code": "BF500102",
+   "province": "BF5001",
+   "nom": "Imasgho"
+  },
+  {
+   "code": "BF500103",
+   "province": "BF5001",
+   "nom": "Kindi"
+  },
+  {
+   "code": "BF500104",
+   "province": "BF5001",
+   "nom": "Kokologo"
+  },
+  {
+   "code": "BF500105",
+   "province": "BF5001",
+   "nom": "Koudougou"
+  },
+  {
+   "code": "BF500106",
+   "province": "BF5001",
+   "nom": "Nanoro"
+  },
+  {
+   "code": "BF500107",
+   "province": "BF5001",
+   "nom": "Nandiala"
+  },
+  {
+   "code": "BF500108",
+   "province": "BF5001",
+   "nom": "Pella"
+  },
+  {
+   "code": "BF500109",
+   "province": "BF5001",
+   "nom": "Poa"
+  },
+  {
+   "code": "BF500110",
+   "province": "BF5001",
+   "nom": "Ramongo"
+  },
+  {
+   "code": "BF500111",
+   "province": "BF5001",
+   "nom": "Sabou"
+  },
+  {
+   "code": "BF500112",
+   "province": "BF5001",
+   "nom": "Siglé"
+  },
+  {
+   "code": "BF500113",
+   "province": "BF5001",
+   "nom": "Soa"
+  },
+  {
+   "code": "BF500114",
+   "province": "BF5001",
+   "nom": "Sourgou"
+  },
+  {
+   "code": "BF500115",
+   "province": "BF5001",
+   "nom": "Thiou"
+  },
+  {
+   "code": "BF500201",
+   "province": "BF5002",
+   "nom": "Dassa"
+  },
+  {
+   "code": "BF500202",
+   "province": "BF5002",
+   "nom": "Didyr"
+  },
+  {
+   "code": "BF500203",
+   "province": "BF5002",
+   "nom": "Godyr"
+  },
+  {
+   "code": "BF500204",
+   "province": "BF5002",
+   "nom": "Kordié"
+  },
+  {
+   "code": "BF500205",
+   "province": "BF5002",
+   "nom": "Kyon"
+  },
+  {
+   "code": "BF500206",
+   "province": "BF5002",
+   "nom": "Pouni"
+  },
+  {
+   "code": "BF500207",
+   "province": "BF5002",
+   "nom": "Réo"
+  },
+  {
+   "code": "BF500208",
+   "province": "BF5002",
+   "nom": "Ténado"
+  },
+  {
+   "code": "BF500209",
+   "province": "BF5002",
+   "nom": "Zamo"
+  },
+  {
+   "code": "BF500210",
+   "province": "BF5002",
+   "nom": "Zawara"
+  },
+  {
+   "code": "BF500301",
+   "province": "BF5003",
+   "nom": "Bieha"
+  },
+  {
+   "code": "BF500302",
+   "province": "BF5003",
+   "nom": "Boura"
+  },
+  {
+   "code": "BF500303",
+   "province": "BF5003",
+   "nom": "Léo"
+  },
+  {
+   "code": "BF500304",
+   "province": "BF5003",
+   "nom": "Nébiélianayou"
+  },
+  {
+   "code": "BF500305",
+   "province": "BF5003",
+   "nom": "Niabouri"
+  },
+  {
+   "code": "BF500306",
+   "province": "BF5003",
+   "nom": "Silly"
+  },
+  {
+   "code": "BF500307",
+   "province": "BF5003",
+   "nom": "To"
+  },
+  {
+   "code": "BF500401",
+   "province": "BF5004",
+   "nom": "Bakata"
+  },
+  {
+   "code": "BF500402",
+   "province": "BF5004",
+   "nom": "Bougnounou"
+  },
+  {
+   "code": "BF500403",
+   "province": "BF5004",
+   "nom": "Kassou"
+  },
+  {
+   "code": "BF500404",
+   "province": "BF5004",
+   "nom": "Dalô"
+  },
+  {
+   "code": "BF500405",
+   "province": "BF5004",
+   "nom": "Gaô"
+  },
+  {
+   "code": "BF500406",
+   "province": "BF5004",
+   "nom": "Sapouy"
+  },
+  {
+   "code": "BF510101",
+   "province": "BF5101",
+   "nom": "Doulougou"
+  },
+  {
+   "code": "BF510102",
+   "province": "BF5101",
+   "nom": "Gaongo"
+  },
+  {
+   "code": "BF510103",
+   "province": "BF5101",
+   "nom": "Ipelsé"
+  },
+  {
+   "code": "BF510104",
+   "province": "BF5101",
+   "nom": "Kayao"
+  },
+  {
+   "code": "BF510105",
+   "province": "BF5101",
+   "nom": "Kombissiri"
+  },
+  {
+   "code": "BF510106",
+   "province": "BF5101",
+   "nom": "Saponé"
+  },
+  {
+   "code": "BF510107",
+   "province": "BF5101",
+   "nom": "Toécé"
+  },
+  {
+   "code": "BF510201",
+   "province": "BF5102",
+   "nom": "Guiaro"
+  },
+  {
+   "code": "BF510202",
+   "province": "BF5102",
+   "nom": "Po"
+  },
+  {
+   "code": "BF510203",
+   "province": "BF5102",
+   "nom": "Tiébélé"
+  },
+  {
+   "code": "BF510204",
+   "province": "BF5102",
+   "nom": "Zecco"
+  },
+  {
+   "code": "BF510205",
+   "province": "BF5102",
+   "nom": "Ziou"
+  },
+  {
+   "code": "BF510301",
+   "province": "BF5103",
+   "nom": "Béré"
+  },
+  {
+   "code": "BF510302",
+   "province": "BF5103",
+   "nom": "Bindé"
+  },
+  {
+   "code": "BF510303",
+   "province": "BF5103",
+   "nom": "Gogo"
+  },
+  {
+   "code": "BF510304",
+   "province": "BF5103",
+   "nom": "Gomboussougou"
+  },
+  {
+   "code": "BF510305",
+   "province": "BF5103",
+   "nom": "Guiba"
+  },
+  {
+   "code": "BF510306",
+   "province": "BF5103",
+   "nom": "Manga"
+  },
+  {
+   "code": "BF510307",
+   "province": "BF5103",
+   "nom": "Nobéré"
+  },
+  {
+   "code": "BF530101",
+   "province": "BF5301",
+   "nom": "Bama"
+  },
+  {
+   "code": "BF530102",
+   "province": "BF5301",
+   "nom": "Bobo-Dioulasso"
+  },
+  {
+   "code": "BF530103",
+   "province": "BF5301",
+   "nom": "Dandé"
+  },
+  {
+   "code": "BF530104",
+   "province": "BF5301",
+   "nom": "Faramana"
+  },
+  {
+   "code": "BF530105",
+   "province": "BF5301",
+   "nom": "Fo"
+  },
+  {
+   "code": "BF530106",
+   "province": "BF5301",
+   "nom": "Karangasso-Sambla"
+  },
+  {
+   "code": "BF530107",
+   "province": "BF5301",
+   "nom": "Karangasso-Vigué"
+  },
+  {
+   "code": "BF530108",
+   "province": "BF5301",
+   "nom": "Koundougou"
+  },
+  {
+   "code": "BF530109",
+   "province": "BF5301",
+   "nom": "Lèna"
+  },
+  {
+   "code": "BF530110",
+   "province": "BF5301",
+   "nom": "Padéma"
+  },
+  {
+   "code": "BF530111",
+   "province": "BF5301",
+   "nom": "Péni"
+  },
+  {
+   "code": "BF530112",
+   "province": "BF5301",
+   "nom": "Satiri"
+  },
+  {
+   "code": "BF530113",
+   "province": "BF5301",
+   "nom": "Toussiana"
+  },
+  {
+   "code": "BF530201",
+   "province": "BF5302",
+   "nom": "Banzon"
+  },
+  {
+   "code": "BF530202",
+   "province": "BF5302",
+   "nom": "Djigouèra"
+  },
+  {
+   "code": "BF530203",
+   "province": "BF5302",
+   "nom": "Kangala"
+  },
+  {
+   "code": "BF530204",
+   "province": "BF5302",
+   "nom": "Kayan"
+  },
+  {
+   "code": "BF530205",
+   "province": "BF5302",
+   "nom": "Kôlôkô"
+  },
+  {
+   "code": "BF530206",
+   "province": "BF5302",
+   "nom": "Kourinion"
+  },
+  {
+   "code": "BF530207",
+   "province": "BF5302",
+   "nom": "Kourouma"
+  },
+  {
+   "code": "BF530208",
+   "province": "BF5302",
+   "nom": "Morlaba"
+  },
+  {
+   "code": "BF530209",
+   "province": "BF5302",
+   "nom": "Ndôrôla"
+  },
+  {
+   "code": "BF530210",
+   "province": "BF5302",
+   "nom": "Orodara"
+  },
+  {
+   "code": "BF530211",
+   "province": "BF5302",
+   "nom": "Samôgôyiri"
+  },
+  {
+   "code": "BF530212",
+   "province": "BF5302",
+   "nom": "Samôgôgouan"
+  },
+  {
+   "code": "BF530213",
+   "province": "BF5302",
+   "nom": "Sindo"
+  },
+  {
+   "code": "BF530301",
+   "province": "BF5303",
+   "nom": "Békui"
+  },
+  {
+   "code": "BF530302",
+   "province": "BF5303",
+   "nom": "Béréba"
+  },
+  {
+   "code": "BF530303",
+   "province": "BF5303",
+   "nom": "Boni"
+  },
+  {
+   "code": "BF530304",
+   "province": "BF5303",
+   "nom": "Founzan"
+  },
+  {
+   "code": "BF530305",
+   "province": "BF5303",
+   "nom": "Houndé"
+  },
+  {
+   "code": "BF530306",
+   "province": "BF5303",
+   "nom": "Koti"
+  },
+  {
+   "code": "BF530307",
+   "province": "BF5303",
+   "nom": "Koumbia"
+  },
+  {
+   "code": "BF540101",
+   "province": "BF5401",
+   "nom": "Bahn"
+  },
+  {
+   "code": "BF540102",
+   "province": "BF5401",
+   "nom": "Ouindigui"
+  },
+  {
+   "code": "BF540103",
+   "province": "BF5401",
+   "nom": "Sollé"
+  },
+  {
+   "code": "BF540104",
+   "province": "BF5401",
+   "nom": "Titao"
+  },
+  {
+   "code": "BF540201",
+   "province": "BF5402",
+   "nom": "Arbollé"
+  },
+  {
+   "code": "BF540202",
+   "province": "BF5402",
+   "nom": "Bagaré"
+  },
+  {
+   "code": "BF540204",
+   "province": "BF5402",
+   "nom": "Boken"
+  },
+  {
+   "code": "BF540205",
+   "province": "BF5402",
+   "nom": "Gomponsom"
+  },
+  {
+   "code": "BF540206",
+   "province": "BF5402",
+   "nom": "Kirsi"
+  },
+  {
+   "code": "BF540207",
+   "province": "BF5402",
+   "nom": "La-Toden"
+  },
+  {
+   "code": "BF540208",
+   "province": "BF5402",
+   "nom": "Pilimpikou"
+  },
+  {
+   "code": "BF540209",
+   "province": "BF5402",
+   "nom": "Samba"
+  },
+  {
+   "code": "BF540210",
+   "province": "BF5402",
+   "nom": "Yako"
+  },
+  {
+   "code": "BF540301",
+   "province": "BF5403",
+   "nom": "Barga"
+  },
+  {
+   "code": "BF540302",
+   "province": "BF5403",
+   "nom": "Kaïn"
+  },
+  {
+   "code": "BF540303",
+   "province": "BF5403",
+   "nom": "Kalsaka"
+  },
+  {
+   "code": "BF540304",
+   "province": "BF5403",
+   "nom": "Kossouka"
+  },
+  {
+   "code": "BF540305",
+   "province": "BF5403",
+   "nom": "Koumbri"
+  },
+  {
+   "code": "BF540306",
+   "province": "BF5403",
+   "nom": "Namissiguima"
+  },
+  {
+   "code": "BF540307",
+   "province": "BF5403",
+   "nom": "Ouahigouya"
+  },
+  {
+   "code": "BF540308",
+   "province": "BF5403",
+   "nom": "Oula"
+  },
+  {
+   "code": "BF540309",
+   "province": "BF5403",
+   "nom": "Rambo"
+  },
+  {
+   "code": "BF540310",
+   "province": "BF5403",
+   "nom": "Senguènèga"
+  },
+  {
+   "code": "BF540311",
+   "province": "BF5403",
+   "nom": "Tangaye"
+  },
+  {
+   "code": "BF540312",
+   "province": "BF5403",
+   "nom": "Thiou"
+  },
+  {
+   "code": "BF540313",
+   "province": "BF5403",
+   "nom": "Zogoré"
+  },
+  {
+   "code": "BF540401",
+   "province": "BF5404",
+   "nom": "Bassi"
+  },
+  {
+   "code": "BF540402",
+   "province": "BF5404",
+   "nom": "Boussou"
+  },
+  {
+   "code": "BF540403",
+   "province": "BF5404",
+   "nom": "Goursi"
+  },
+  {
+   "code": "BF540404",
+   "province": "BF5404",
+   "nom": "Lèba"
+  },
+  {
+   "code": "BF540405",
+   "province": "BF5404",
+   "nom": "Tougo"
+  },
+  {
+   "code": "BF550101",
+   "province": "BF5501",
+   "nom": "Boudri"
+  },
+  {
+   "code": "BF550102",
+   "province": "BF5501",
+   "nom": "Kogho"
+  },
+  {
+   "code": "BF550103",
+   "province": "BF5501",
+   "nom": "Mégué"
+  },
+  {
+   "code": "BF550104",
+   "province": "BF5501",
+   "nom": "Môgtédo"
+  },
+  {
+   "code": "BF550105",
+   "province": "BF5501",
+   "nom": "Saolgo"
+  },
+  {
+   "code": "BF550106",
+   "province": "BF5501",
+   "nom": "Zam"
+  },
+  {
+   "code": "BF550107",
+   "province": "BF5501",
+   "nom": "Zôrgho"
+  },
+  {
+   "code": "BF550108",
+   "province": "BF5501",
+   "nom": "Zoungou"
+  },
+  {
+   "code": "BF550201",
+   "province": "BF5502",
+   "nom": "Boussé"
+  },
+  {
+   "code": "BF550202",
+   "province": "BF5502",
+   "nom": "Laye"
+  },
+  {
+   "code": "BF550203",
+   "province": "BF5502",
+   "nom": "Niou"
+  },
+  {
+   "code": "BF550204",
+   "province": "BF5502",
+   "nom": "Sourgoubila"
+  },
+  {
+   "code": "BF550205",
+   "province": "BF5502",
+   "nom": "Toèguen"
+  },
+  {
+   "code": "BF550301",
+   "province": "BF5503",
+   "nom": "Ambsouya"
+  },
+  {
+   "code": "BF550302",
+   "province": "BF5503",
+   "nom": "Dapeolgo"
+  },
+  {
+   "code": "BF550303",
+   "province": "BF5503",
+   "nom": "Loumbila"
+  },
+  {
+   "code": "BF550304",
+   "province": "BF5503",
+   "nom": "Nagréongo"
+  },
+  {
+   "code": "BF550305",
+   "province": "BF5503",
+   "nom": "Ourgou-Manéga"
+  },
+  {
+   "code": "BF550306",
+   "province": "BF5503",
+   "nom": "Ziniaré"
+  },
+  {
+   "code": "BF550307",
+   "province": "BF5503",
+   "nom": "Zitenga"
+  },
+  {
+   "code": "BF570101",
+   "province": "BF5701",
+   "nom": "Gbondjigui"
+  },
+  {
+   "code": "BF570102",
+   "province": "BF5701",
+   "nom": "Diébougou"
+  },
+  {
+   "code": "BF570103",
+   "province": "BF5701",
+   "nom": "Dolo"
+  },
+  {
+   "code": "BF570104",
+   "province": "BF5701",
+   "nom": "Iôlôniôrô"
+  },
+  {
+   "code": "BF570105",
+   "province": "BF5701",
+   "nom": "Tiankoura"
+  },
+  {
+   "code": "BF570201",
+   "province": "BF5702",
+   "nom": "Dano"
+  },
+  {
+   "code": "BF570202",
+   "province": "BF5702",
+   "nom": "Dissihn"
+  },
+  {
+   "code": "BF570203",
+   "province": "BF5702",
+   "nom": "Guéguéré"
+  },
+  {
+   "code": "BF570204",
+   "province": "BF5702",
+   "nom": "Koper"
+  },
+  {
+   "code": "BF570205",
+   "province": "BF5702",
+   "nom": "Niégo"
+  },
+  {
+   "code": "BF570206",
+   "province": "BF5702",
+   "nom": "Oronkua"
+  },
+  {
+   "code": "BF570207",
+   "province": "BF5702",
+   "nom": "Ouéssa"
+  },
+  {
+   "code": "BF570208",
+   "province": "BF5702",
+   "nom": "Zambo"
+  },
+  {
+   "code": "BF570301",
+   "province": "BF5703",
+   "nom": "Batié"
+  },
+  {
+   "code": "BF570302",
+   "province": "BF5703",
+   "nom": "Boussou-Koula"
+  },
+  {
+   "code": "BF570303",
+   "province": "BF5703",
+   "nom": "Kpuéré"
+  },
+  {
+   "code": "BF570304",
+   "province": "BF5703",
+   "nom": "Legmoin"
+  },
+  {
+   "code": "BF570305",
+   "province": "BF5703",
+   "nom": "Midebdo"
+  },
+  {
+   "code": "BF570401",
+   "province": "BF5704",
+   "nom": "Bouroum-Bouroum"
+  },
+  {
+   "code": "BF570402",
+   "province": "BF5704",
+   "nom": "Bousséra"
+  },
+  {
+   "code": "BF570403",
+   "province": "BF5704",
+   "nom": "Djigouè"
+  },
+  {
+   "code": "BF570404",
+   "province": "BF5704",
+   "nom": "Gaoua"
+  },
+  {
+   "code": "BF570405",
+   "province": "BF5704",
+   "nom": "Gbomblora"
+  },
+  {
+   "code": "BF570406",
+   "province": "BF5704",
+   "nom": "Kampti"
+  },
+  {
+   "code": "BF570407",
+   "province": "BF5704",
+   "nom": "Loropéni"
+  },
+  {
+   "code": "BF570408",
+   "province": "BF5704",
+   "nom": "Malba"
+  },
+  {
+   "code": "BF570409",
+   "province": "BF5704",
+   "nom": "Nako"
+  },
+  {
+   "code": "BF570410",
+   "province": "BF5704",
+   "nom": "Périgban"
+  },
+  {
+   "code": "BF580101",
+   "province": "BF5801",
+   "nom": "Bilanga"
+  },
+  {
+   "code": "BF580102",
+   "province": "BF5801",
+   "nom": "Bogandé"
+  },
+  {
+   "code": "BF580103",
+   "province": "BF5801",
+   "nom": "Koala"
+  },
+  {
+   "code": "BF580104",
+   "province": "BF5801",
+   "nom": "Liptougou"
+  },
+  {
+   "code": "BF580105",
+   "province": "BF5801",
+   "nom": "Mani"
+  },
+  {
+   "code": "BF580106",
+   "province": "BF5801",
+   "nom": "Piéla"
+  },
+  {
+   "code": "BF580107",
+   "province": "BF5801",
+   "nom": "Thion"
+  },
+  {
+   "code": "BF580201",
+   "province": "BF5802",
+   "nom": "Bartiébougou"
+  },
+  {
+   "code": "BF580202",
+   "province": "BF5802",
+   "nom": "Foutouri"
+  },
+  {
+   "code": "BF580203",
+   "province": "BF5802",
+   "nom": "Gayéri"
+  },
+  {
+   "code": "BF590101",
+   "province": "BF5901",
+   "nom": "Baraboulé"
+  },
+  {
+   "code": "BF590102",
+   "province": "BF5901",
+   "nom": "Diguel"
+  },
+  {
+   "code": "BF590103",
+   "province": "BF5901",
+   "nom": "Djibo"
+  },
+  {
+   "code": "BF590104",
+   "province": "BF5901",
+   "nom": "Kelbo"
+  },
+  {
+   "code": "BF590105",
+   "province": "BF5901",
+   "nom": "Nassoumbou"
+  },
+  {
+   "code": "BF590106",
+   "province": "BF5901",
+   "nom": "Pobé-Mengao"
+  },
+  {
+   "code": "BF590107",
+   "province": "BF5901",
+   "nom": "Tongomayel"
+  },
+  {
+   "code": "BF590201",
+   "province": "BF5902",
+   "nom": "Arbinda"
+  },
+  {
+   "code": "BF590206",
+   "province": "BF5902",
+   "nom": "Koutougou"
+  },
+  {
+   "code": "BF600101",
+   "province": "BF6001",
+   "nom": "Botou"
+  },
+  {
+   "code": "BF600102",
+   "province": "BF6001",
+   "nom": "Kantchari"
+  },
+  {
+   "code": "BF600201",
+   "province": "BF6002",
+   "nom": "Diapaga"
+  },
+  {
+   "code": "BF600202",
+   "province": "BF6002",
+   "nom": "Lôgbou"
+  },
+  {
+   "code": "BF600203",
+   "province": "BF6002",
+   "nom": "Namouno"
+  },
+  {
+   "code": "BF600204",
+   "province": "BF6002",
+   "nom": "Partiaga"
+  },
+  {
+   "code": "BF600205",
+   "province": "BF6002",
+   "nom": "Tambaga"
+  },
+  {
+   "code": "BF600206",
+   "province": "BF6002",
+   "nom": "Tansarga"
+  },
+  {
+   "code": "BF610101",
+   "province": "BF6101",
+   "nom": "Barani"
+  },
+  {
+   "code": "BF610102",
+   "province": "BF6101",
+   "nom": "Bomborokui"
+  },
+  {
+   "code": "BF610103",
+   "province": "BF6101",
+   "nom": "Bourasso"
+  },
+  {
+   "code": "BF610104",
+   "province": "BF6101",
+   "nom": "Djibasso"
+  },
+  {
+   "code": "BF610105",
+   "province": "BF6101",
+   "nom": "Dokui"
+  },
+  {
+   "code": "BF610106",
+   "province": "BF6101",
+   "nom": "Doumbala"
+  },
+  {
+   "code": "BF610107",
+   "province": "BF6101",
+   "nom": "Kombori"
+  },
+  {
+   "code": "BF610108",
+   "province": "BF6101",
+   "nom": "Madouba"
+  },
+  {
+   "code": "BF610109",
+   "province": "BF6101",
+   "nom": "Nouna"
+  },
+  {
+   "code": "BF610110",
+   "province": "BF6101",
+   "nom": "Sônô"
+  },
+  {
+   "code": "BF610201",
+   "province": "BF6102",
+   "nom": "Gassan"
+  },
+  {
+   "code": "BF610202",
+   "province": "BF6102",
+   "nom": "Gossina"
+  },
+  {
+   "code": "BF610203",
+   "province": "BF6102",
+   "nom": "Kougny"
+  },
+  {
+   "code": "BF610204",
+   "province": "BF6102",
+   "nom": "Toma"
+  },
+  {
+   "code": "BF610205",
+   "province": "BF6102",
+   "nom": "Yaba"
+  },
+  {
+   "code": "BF610206",
+   "province": "BF6102",
+   "nom": "Yé"
+  },
+  {
+   "code": "BF610301",
+   "province": "BF6103",
+   "nom": "Di"
+  },
+  {
+   "code": "BF610302",
+   "province": "BF6103",
+   "nom": "Gomboro"
+  },
+  {
+   "code": "BF610303",
+   "province": "BF6103",
+   "nom": "Kassoum"
+  },
+  {
+   "code": "BF610304",
+   "province": "BF6103",
+   "nom": "Kiembara"
+  },
+  {
+   "code": "BF610305",
+   "province": "BF6103",
+   "nom": "Lanfièra"
+  },
+  {
+   "code": "BF610306",
+   "province": "BF6103",
+   "nom": "Lankoué"
+  },
+  {
+   "code": "BF610307",
+   "province": "BF6103",
+   "nom": "Toéni"
+  },
+  {
+   "code": "BF610308",
+   "province": "BF6103",
+   "nom": "Tougan"
+  },
+  {
+   "code": "BF620101",
+   "province": "BF6201",
+   "nom": "Bagassi"
+  },
+  {
+   "code": "BF620102",
+   "province": "BF6201",
+   "nom": "Bana"
+  },
+  {
+   "code": "BF620103",
+   "province": "BF6201",
+   "nom": "Boromo"
+  },
+  {
+   "code": "BF620104",
+   "province": "BF6201",
+   "nom": "Fara"
+  },
+  {
+   "code": "BF620105",
+   "province": "BF6201",
+   "nom": "Ouri"
+  },
+  {
+   "code": "BF620106",
+   "province": "BF6201",
+   "nom": "Pâ"
+  },
+  {
+   "code": "BF620107",
+   "province": "BF6201",
+   "nom": "Pompoï"
+  },
+  {
+   "code": "BF620108",
+   "province": "BF6201",
+   "nom": "Poura"
+  },
+  {
+   "code": "BF620109",
+   "province": "BF6201",
+   "nom": "Siby"
+  },
+  {
+   "code": "BF620110",
+   "province": "BF6201",
+   "nom": "Yaho"
+  },
+  {
+   "code": "BF620201",
+   "province": "BF6202",
+   "nom": "Balavé"
+  },
+  {
+   "code": "BF620202",
+   "province": "BF6202",
+   "nom": "Kouka"
+  },
+  {
+   "code": "BF620203",
+   "province": "BF6202",
+   "nom": "Sami"
+  },
+  {
+   "code": "BF620204",
+   "province": "BF6202",
+   "nom": "Sanaba"
+  },
+  {
+   "code": "BF620205",
+   "province": "BF6202",
+   "nom": "Solenzo"
+  },
+  {
+   "code": "BF620206",
+   "province": "BF6202",
+   "nom": "Tansila"
+  },
+  {
+   "code": "BF620301",
+   "province": "BF6203",
+   "nom": "Bondokui"
+  },
+  {
+   "code": "BF620302",
+   "province": "BF6203",
+   "nom": "Dédougou"
+  },
+  {
+   "code": "BF620303",
+   "province": "BF6203",
+   "nom": "Douroula"
+  },
+  {
+   "code": "BF620304",
+   "province": "BF6203",
+   "nom": "Kona"
+  },
+  {
+   "code": "BF620305",
+   "province": "BF6203",
+   "nom": "Ouarkoye"
+  },
+  {
+   "code": "BF620306",
+   "province": "BF6203",
+   "nom": "Safané"
+  },
+  {
+   "code": "BF620307",
+   "province": "BF6203",
+   "nom": "Tchériba"
+  },
+  {
+   "code": "BF630101",
+   "province": "BF6301",
+   "nom": "Diabo"
+  },
+  {
+   "code": "BF630102",
+   "province": "BF6301",
+   "nom": "Diapangou"
+  },
+  {
+   "code": "BF630103",
+   "province": "BF6301",
+   "nom": "Fada-Ngourma"
+  },
+  {
+   "code": "BF630104",
+   "province": "BF6301",
+   "nom": "Matiakoali"
+  },
+  {
+   "code": "BF630105",
+   "province": "BF6301",
+   "nom": "Tibga"
+  },
+  {
+   "code": "BF630106",
+   "province": "BF6301",
+   "nom": "Yamba"
+  },
+  {
+   "code": "BF630201",
+   "province": "BF6302",
+   "nom": "Kompienga"
+  },
+  {
+   "code": "BF630202",
+   "province": "BF6302",
+   "nom": "Madjoari"
+  },
+  {
+   "code": "BF630203",
+   "province": "BF6302",
+   "nom": "Pama"
+  },
+  {
+   "code": "BF640101",
+   "province": "BF6401",
+   "nom": "Déou"
+  },
+  {
+   "code": "BF640102",
+   "province": "BF6401",
+   "nom": "Gorom-Gorom"
+  },
+  {
+   "code": "BF640103",
+   "province": "BF6401",
+   "nom": "Markoye"
+  },
+  {
+   "code": "BF640104",
+   "province": "BF6401",
+   "nom": "Oursi"
+  },
+  {
+   "code": "BF640105",
+   "province": "BF6401",
+   "nom": "Tin-Akoff"
+  },
+  {
+   "code": "BF640201",
+   "province": "BF6402",
+   "nom": "Bani"
+  },
+  {
+   "code": "BF640202",
+   "province": "BF6402",
+   "nom": "Dori"
+  },
+  {
+   "code": "BF640203",
+   "province": "BF6402",
+   "nom": "Falagountou"
+  },
+  {
+   "code": "BF640204",
+   "province": "BF6402",
+   "nom": "Gorgadji"
+  },
+  {
+   "code": "BF640205",
+   "province": "BF6402",
+   "nom": "Sampelga"
+  },
+  {
+   "code": "BF640206",
+   "province": "BF6402",
+   "nom": "Seytenga"
+  },
+  {
+   "code": "BF640301",
+   "province": "BF6403",
+   "nom": "Boundoré"
+  },
+  {
+   "code": "BF640302",
+   "province": "BF6403",
+   "nom": "Mansila"
+  },
+  {
+   "code": "BF640303",
+   "province": "BF6403",
+   "nom": "Sebba"
+  },
+  {
+   "code": "BF640304",
+   "province": "BF6403",
+   "nom": "Solhan"
+  },
+  {
+   "code": "BF640305",
+   "province": "BF6403",
+   "nom": "Tankougounadié"
+  },
+  {
+   "code": "BF640306",
+   "province": "BF6403",
+   "nom": "Titabè"
+  }
+ ]
+}

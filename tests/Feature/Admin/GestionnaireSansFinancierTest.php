@@ -34,7 +34,7 @@ class GestionnaireSansFinancierTest extends TestCase
         $this->creerActeurs();
         $this->gestionnaire = User::factory()->role(Role::GestionnaireSites)->create();
         $this->boutique = TypeBoutique::create(['code' => 'BOUT', 'libelle' => 'Boutique']);
-        $this->site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'commune' => 'Ouagadougou',
+        $this->site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'ville' => 'Ouagadougou',
             'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $this->regulateur->id]);
         foreach ([['RC', 9], ['R1', 12.5]] as $i => [$niveau, $surface]) {
             $this->site->boutiques()->create(['niveau' => $niveau, 'bloc' => 'A', 'numero' => sprintf('%03d', $i + 1), 'surface' => $surface,

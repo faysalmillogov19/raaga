@@ -57,7 +57,7 @@ class CartesEmissionTest extends TestCase
 
     private function citoyen(StatutKyc $kyc = StatutKyc::Valide, ?string $piece = null): User
     {
-        return User::factory()->role(Role::Citoyen)->create(['statut_kyc' => $kyc, 'nom' => 'OUEDRAOGO', 'prenoms' => 'Awa',
+        return User::factory()->role(Role::Citoyen)->avecIfu()->create(['statut_kyc' => $kyc, 'nom' => 'OUEDRAOGO', 'prenoms' => 'Awa',
             'piece_expire_le' => $piece ?? now()->addYears(10)->toDateString(),
             'identite_validee' => $kyc === StatutKyc::Valide ? ['nom' => 'OUEDRAOGO', 'prenoms' => 'Awa'] : null]);
     }
@@ -99,20 +99,21 @@ class CartesEmissionTest extends TestCase
 
         $carte = Cartes::courante($citoyen, TypeCarte::Commercant);
         $this->assertSame(StatutCarte::Active, $carte->statut);
-        $this->assertMatchesRegularExpression('/^RG-C-\d{6}$/', $carte->numero);
+        // Numéro de la carte de commerçant : l'IFU du titulaire (03/11/2026).
+        $this->assertSame($citoyen->ifu, $carte->numero);
         $this->assertGreaterThanOrEqual(60, strlen($carte->jeton));
-        $this->assertSame('Awa OUEDRAOGO', $carte->contenu['nom']);
+        $this->assertSame('OUEDRAOGO Awa', $carte->contenu['nom']);
         $this->assertSame([['code' => Boutiques::boutique('A', 1)->code, 'site' => 'Marché central']], $carte->contenu['emplacements']);
-        // Validité : fin du contrat le plus lointain (signature + durée paramétrée).
-        $this->assertSame(now()->subMonths(2)->addYears(5)->toDateString(), $carte->valide_jusqu_au->toDateString());
+        // Validité : 3 ans à compter de l'émission (réglage de la carte, comité restreint du 03/11/2026).
+        $this->assertSame(now()->addYears(3)->subDay()->toDateString(), $carte->valide_jusqu_au->toDateString());
         Notification::assertSentTo($citoyen, CarteEmise::class);
 
-        // Deuxième boutique, contrat plus récent : même carte, emplacements et validité mis à jour, nouvelle version.
+        // Deuxième boutique : même carte, emplacements mis à jour, validité inchangée (comptée depuis l'émission), nouvelle version.
         $this->attribuer($citoyen, Boutiques::boutique('A', 2), now()->toDateString());
         $carte2 = Cartes::courante($citoyen, TypeCarte::Commercant);
         $this->assertSame($carte->id, $carte2->id);
         $this->assertCount(2, $carte2->contenu['emplacements']);
-        $this->assertSame(now()->addYears(5)->toDateString(), $carte2->valide_jusqu_au->toDateString());
+        $this->assertSame(now()->addYears(3)->subDay()->toDateString(), $carte2->valide_jusqu_au->toDateString());
         $this->assertSame(2, $carte2->version);
         // Une carte par personne et par type.
         $this->assertSame(1, Carte::query()->where('user_id', $citoyen->id)->where('type', TypeCarte::Commercant)->count());

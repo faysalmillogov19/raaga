@@ -15,7 +15,8 @@
                 <dt>{{ __('admin.utilisateurs.fiche.naissance') }}</dt><dd>{{ $utilisateur->date_naissance?->format('d/m/Y') ?? '—' }}</dd>
                 <dt>{{ __('admin.utilisateurs.fiche.nationalite') }}</dt><dd>{{ $utilisateur->nationalite ?? '—' }}</dd>
                 <dt>{{ __('admin.utilisateurs.fiche.pays') }}</dt><dd>{{ config('raaga.inscription.pays')[$utilisateur->pays_residence] ?? ($utilisateur->pays_residence ?? '—') }}</dd>
-                <dt>{{ __('admin.utilisateurs.fiche.region') }}</dt><dd>{{ $utilisateur->region ?? '—' }}</dd>
+                <dt>{{ __('admin.utilisateurs.fiche.commune') }}</dt><dd>{{ $utilisateur->commune?->libelleComplet() ?? '—' }}</dd>
+                <dt>{{ __('admin.utilisateurs.fiche.secteur') }}</dt><dd>{{ \App\Models\SecteurActivite::libellePour($utilisateur) ?? '—' }}</dd>
                 <dt>{{ __('admin.utilisateurs.fiche.telephone') }}</dt><dd>{{ $utilisateur->telephone ? \App\Support\Telephone::formater($utilisateur->telephone) : '—' }}</dd>
                 <dt>{{ __('admin.utilisateurs.fiche.email') }}</dt><dd>{{ $utilisateur->email ?? '—' }}</dd>
                 <dt>{{ __('admin.assistance.type') }}</dt><dd>{{ $utilisateur->codeRole()->label() }}</dd>

@@ -44,8 +44,8 @@ class TypesCampagneTest extends TestCase
         $this->creerActeurs();
         $this->seed(ReferentielsSitesSeeder::class);
         $this->types = TypeBoutique::query()->whereIn('code', ['BOUT', 'MAG', 'PP', 'CF'])->get()->keyBy('code')->all();
-        $site = fn (string $code, string $nom) => Site::create(['statut' => StatutSite::Confirme, 'code' => $code, 'nom' => $nom, 'region' => 'Centre',
-            'commune' => 'Ouagadougou', 'adresse' => 'Avenue', 'version' => 1, 'cree_par' => $this->regulateur->id]);
+        $site = fn (string $code, string $nom) => Site::create(['statut' => StatutSite::Confirme, 'code' => $code, 'nom' => $nom,
+            'ville' => 'Ouagadougou', 'adresse' => 'Avenue', 'version' => 1, 'cree_par' => $this->regulateur->id]);
         $this->site = $site('RAA', 'Marché Raaga');
         $this->autre = $site('SAR', 'Marché de Sarfalao');
         foreach ([['RC', 'A', 1, 'BOUT', 9, null], ['RC', 'BP', 19, 'PP', 12, 'Évier double et carrelage'], ['RC', 'BP', 20, 'CF', 30, null], ['RC', 'M', 1, 'MAG', 40, null]] as [$n, $bloc, $num, $type, $surface, $obs]) {

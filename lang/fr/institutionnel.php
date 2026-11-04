@@ -200,7 +200,7 @@ return [
             'aucune' => 'Aucune institution.',
             'colonnes' => ['denomination' => 'Institution', 'statut' => 'Statut', 'kyb' => 'Dossier KYB', 'utilisateurs' => 'Utilisateurs', 'convention' => 'Convention'],
             'champs' => [
-                'denomination' => 'Dénomination', 'sigle' => 'Sigle', 'forme_juridique' => 'Forme juridique', 'rccm' => 'RCCM',
+                'denomination' => 'Dénomination', 'sigle' => 'Sigle', 'forme_juridique' => 'Forme juridique',
                 'ifu' => 'IFU', 'adresse' => 'Adresse', 'secteur' => 'Secteur',
                 'signataire_nom' => 'Nom du premier signataire', 'signataire_email' => 'Adresse électronique du premier signataire',
                 'interlocuteur_nom' => 'Nom', 'interlocuteur_email' => 'Adresse électronique', 'interlocuteur_telephone' => 'Téléphone',

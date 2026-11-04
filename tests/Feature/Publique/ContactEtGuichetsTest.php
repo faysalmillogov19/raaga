@@ -4,9 +4,11 @@ namespace Tests\Feature\Publique;
 
 use App\Contracts\SmsProvider;
 use App\Models\AuditLog;
+use App\Models\Commune;
 use App\Models\DemandeContact;
 use App\Models\Guichet;
 use App\Support\Telephone;
+use Database\Seeders\CommunesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\FakeSmsProvider;
 use Tests\TestCase;
@@ -75,7 +77,8 @@ class ContactEtGuichetsTest extends TestCase
 
     public function test_sans_guichet_un_etat_vide_clair_est_affiche(): void
     {
-        Guichet::create(['nom' => 'Fermé', 'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Rue 1', 'actif' => false]);
+        $this->seed(CommunesSeeder::class);
+        Guichet::create(['nom' => 'Fermé', 'commune_id' => $this->commune('Ouagadougou'), 'adresse' => 'Rue 1', 'actif' => false]);
 
         $this->get('/guichets')->assertOk()
             ->assertSee('Aucun guichet ouvert pour le moment')
@@ -83,25 +86,35 @@ class ContactEtGuichetsTest extends TestCase
             ->assertDontSee('id="region"', false);
     }
 
+    /** Identifiant d'une commune du référentiel, par son nom. */
+    private function commune(string $nom): int
+    {
+        return (int) Commune::query()->where('nom', $nom)->value('id');
+    }
+
     public function test_les_guichets_actifs_se_filtrent_par_region_puis_commune(): void
     {
-        Guichet::create(['nom' => 'Guichet Gounghin', 'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Avenue Kwame Nkrumah', 'horaires' => 'Lun.–ven. 8 h–17 h', 'telephone' => '+22625300000']);
-        Guichet::create(['nom' => 'Guichet Komsilga', 'region' => 'Centre', 'commune' => 'Komsilga', 'adresse' => 'Marché central']);
-        Guichet::create(['nom' => 'Guichet Sya', 'region' => 'Hauts-Bassins', 'commune' => 'Bobo-Dioulasso', 'adresse' => 'Place Tiéfo Amoro']);
-        Guichet::create(['nom' => 'Guichet inactif', 'region' => 'Est', 'commune' => 'Fada N’Gourma', 'adresse' => 'Rue 2', 'actif' => false]);
+        // Régions du découpage en vigueur, déduites de la commune de chaque guichet.
+        $this->seed(CommunesSeeder::class);
+        Guichet::create(['nom' => 'Guichet Gounghin', 'commune_id' => $this->commune('Ouagadougou'), 'adresse' => 'Avenue Kwame Nkrumah', 'horaires' => 'Lun.–ven. 8 h–17 h', 'telephone' => '+22625300000']);
+        Guichet::create(['nom' => 'Guichet Komsilga', 'commune_id' => $this->commune('Komsilga'), 'adresse' => 'Marché central']);
+        Guichet::create(['nom' => 'Guichet Sya', 'commune_id' => $this->commune('Bobo-Dioulasso'), 'adresse' => 'Place Tiéfo Amoro']);
+        Guichet::create(['nom' => 'Guichet inactif', 'commune_id' => $this->commune('Kaya'), 'adresse' => 'Rue 2', 'actif' => false]);
 
         $this->get('/guichets')->assertOk()
             ->assertSee('3 guichets')
             ->assertSee('Lun.–ven. 8 h–17 h')
             ->assertSee('25 30 00 00')
+            ->assertSee('Ouagadougou · Kadiogo')
             ->assertDontSee('Guichet inactif')
-            ->assertDontSee('<option value="Est"', false);
+            ->assertSee('<option value="Guiriko"', false)
+            ->assertDontSee('<option value="Kuilsé"', false);
 
-        $this->get('/guichets?region=Centre')->assertOk()
+        $this->get('/guichets?region=Kadiogo')->assertOk()
             ->assertSee('2 guichets')->assertSee('Guichet Komsilga')->assertDontSee('Guichet Sya')
             ->assertSee('<option value="Komsilga"', false);
 
-        $this->get('/guichets?region=Centre&commune=Komsilga')->assertOk()
+        $this->get('/guichets?region=Kadiogo&commune=Komsilga')->assertOk()
             ->assertSee('1 guichet')->assertSee('Guichet Komsilga')->assertDontSee('Guichet Gounghin');
 
         // Valeurs inconnues ignorées : aucun filtre appliqué.

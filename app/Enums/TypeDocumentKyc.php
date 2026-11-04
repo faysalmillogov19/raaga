@@ -8,8 +8,9 @@ enum TypeDocumentKyc: string
     case Cnib = 'CNIB';
     case CibAes = 'CIB_AES';
     case Passeport = 'PASSEPORT';
-    // Personne morale : RCCM, attestation IFU (identifiant financier unique, anciennement « NIF »), justificatif de
-    // pouvoir du représentant légal (statuts, PV de nomination ou procuration).
+    // Personne morale : attestation IFU (identifiant financier unique, anciennement « NIF »), justificatif de pouvoir du
+    // représentant légal (statuts, PV de nomination ou procuration). RCCM : plus demandé depuis le 03/11/2026, gardé
+    // seulement pour lire les pièces déjà déposées.
     case Rccm = 'RCCM';
     case Ifu = 'IFU';
     case JustifPouvoir = 'JUSTIF_POUVOIR';

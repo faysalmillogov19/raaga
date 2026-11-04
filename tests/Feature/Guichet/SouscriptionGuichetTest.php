@@ -19,12 +19,14 @@ use App\Enums\StatutSouscription;
 use App\Enums\StatutTranche;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeFraisSouscription;
+use App\Models\Commune;
 use App\Models\Duree;
 use App\Models\Tranche;
 use App\Models\User;
 use App\Services\Guichet\CaisseGuichet;
 use App\Services\Guichet\SouscriptionGuichet;
 use App\Services\Souscriptions\PreparationSouscription;
+use Database\Seeders\CommunesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -53,6 +55,7 @@ class SouscriptionGuichetTest extends TestCase
         Storage::fake('local');
         $this->agent = User::factory()->role(Role::AgentGuichet)->create();
         $this->guichet = app(SouscriptionGuichet::class);
+        $this->seed(CommunesSeeder::class);
     }
 
     private function trancheOuverte(array $canaux = ['ESPECES', 'ORANGE_MONEY', 'CARTE_BANCAIRE', 'VIREMENT']): Tranche
@@ -75,7 +78,7 @@ class SouscriptionGuichetTest extends TestCase
     private function identite(): array
     {
         return ['type_titulaire' => 'PHYSIQUE', 'nom' => 'Sawadogo', 'prenoms' => 'Issa', 'date_naissance' => '1990-05-12',
-            'pays_residence' => 'BF', 'region' => config('raaga.inscription.regions')[0], 'conditions' => '1'];
+            'pays_residence' => 'BF', 'commune_id' => (string) Commune::query()->where('code', 'BF130004')->value('id'), 'conditions' => '1'];
     }
 
     private function pieces(): array
@@ -105,7 +108,7 @@ class SouscriptionGuichetTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['action' => 'compte.cree', 'acteur_id' => $this->agent->id, 'entite_id' => (string) $issa->id]);
 
         $this->guichet->validerIdentite($this->agent, $issa, TypeDocumentKyc::Cnib, $this->pieces(),
-            ['numero_piece' => 'B12345678', 'piece_expire_le' => now()->addYears(3)->toDateString()]);
+            ['sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B12345678', 'piece_expire_le' => now()->addYears(3)->toDateString()]);
         $this->assertSame(StatutKyc::Valide, $issa->fresh()->statut_kyc);
         $this->assertDatabaseHas('audit_logs', ['action' => 'kyc.conforme', 'acteur_id' => $this->agent->id]);
 
@@ -198,13 +201,15 @@ class SouscriptionGuichetTest extends TestCase
         $this->post(route('admin.guichet-souscription.code'), ['code' => $sms->dernierCode()])->assertRedirect($page);
 
         // Compte, identité, souscription.
-        $this->get($page)->assertSee('data-etape="compte"', false);
+        $this->get($page)->assertSee('data-etape="compte"', false)->assertSee('Commune de résidence')->assertSee('<optgroup label="Kadiogo (Kadiogo)">', false);
         $this->post(route('admin.guichet-souscription.compte'), $this->identite())->assertSessionHasNoErrors()->assertRedirect($page);
         $issa = User::query()->where('telephone', '+22670111222')->sole();
+        // Personne physique : l'IFU sera demandé à sa première réservation de boutique.
+        $this->assertNull($issa->ifu);
         $this->get($page)->assertSee('data-etape="identite"', false)->assertSee('Issa SAWADOGO');
-        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'numero_piece' => 'B12345678',
+        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B12345678',
             'piece_expire_le' => now()->addYears(2)->toDateString(), ...$this->pieces()])->assertSessionHasErrors('piece_conforme');
-        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'numero_piece' => 'B12345678',
+        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B12345678',
             'piece_expire_le' => now()->addYears(2)->toDateString(), 'piece_conforme' => '1', ...$this->pieces()])->assertSessionHasNoErrors();
         $this->assertSame(StatutKyc::Valide, $issa->fresh()->statut_kyc);
         $this->get($page)->assertSee('data-etape="souscription"', false)->assertSee('Lisez à la personne');

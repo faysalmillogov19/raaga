@@ -6,22 +6,29 @@ use App\Enums\DocumentAccepte;
 use App\Enums\Role;
 use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutReservationBoutique;
+use App\Enums\TypeCarte;
 use App\Enums\TypeDocumentKyc;
 use App\Http\Controllers\Controller;
 use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
 use App\Models\InscriptionBoutique;
 use App\Models\ReservationBoutique;
+use App\Models\SecteurActivite;
 use App\Models\Site;
 use App\Models\User;
+use App\Services\Audit\Journal;
 use App\Services\Boutiques\AvancesBoutiques;
 use App\Services\Boutiques\ListesAttente;
 use App\Services\Boutiques\RelancesInteret;
 use App\Services\Boutiques\ReservationsBoutiques;
+use App\Services\Cartes\Cartes;
+use App\Support\Ifu;
+use App\Support\Telephone;
 use App\Support\ThemePublic;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -75,7 +82,9 @@ class BoutiquesController extends Controller
     /**
      * Limites par type de la campagne, et ce qui reste au citoyen connecté : « Vous pouvez encore réserver : Boutique (1), Magasin (1) ».
      *
-     * @return array{resume: string, restants: array<int, int>|null}
+     * Toujours suivi de la limite par commerçant (deux boutiques, toutes campagnes confondues).
+     *
+     * @return array{resume: string, restants: array<int, int>|null, commercant_atteint: bool}
      */
     private static function limites(CampagneBoutiques $campagne, ?User $user): array
     {
@@ -86,11 +95,13 @@ class BoutiquesController extends Controller
 
         return [
             'restants' => $restants,
-            'resume' => $restants === null
+            'commercant_atteint' => $restants !== null && ReservationsBoutiques::restantCommercant($user) === 0,
+            'resume' => ($restants === null
                 ? __('public.boutiques.limites.par_personne', ['liste' => $liste(fn ($t) => $campagne->limitePour($t->id))])
                 : (array_sum($restants) === 0 ? __('public.boutiques.limites.aucun_restant')
                     : __('public.boutiques.limites.restants', ['liste' => $types->filter(fn ($t) => ($restants[$t->id] ?? 0) > 0)
-                        ->map(fn ($t) => ($t->libelle ?: $t->code).' ('.$restants[$t->id].')')->implode(', ')])),
+                        ->map(fn ($t) => ($t->libelle ?: $t->code).' ('.$restants[$t->id].')')->implode(', ')])))
+                .' '.__('public.boutiques.limites.par_commercant', ['n' => ReservationsBoutiques::LIMITE_PAR_COMMERCANT]),
         ];
     }
 
@@ -134,6 +145,11 @@ class BoutiquesController extends Controller
             'ouverte' => $campagne->accepteReservations() || RelancesInteret::ouvertePour($boutique, $user) !== null,
             'engagements' => ReservationsBoutiques::ENGAGEMENTS,
             'pieces' => ReservationsBoutiques::piecesPour($request->user()),
+            'secteurs' => SecteurActivite::parFamille(),
+            'secteurAutre' => SecteurActivite::query()->where('code', SecteurActivite::AUTRE)->value('id'),
+            // Première réservation d'une personne physique : numéro IFU et attestation.
+            'attestationIfu' => $user && ReservationsBoutiques::attestationIfuAFournir($user),
+            'groupes' => User::GROUPES_SANGUINS,
         ]);
     }
 
@@ -147,21 +163,70 @@ class BoutiquesController extends Controller
         $campagne = self::campagnePour($boutique, $request->user());
         abort_unless($campagne, 404);
         $premiere = ListesAttente::pieceFournie($campagne, $request->user()) === null;
+        $user = $request->user();
+        $attestation = ReservationsBoutiques::attestationIfuAFournir($user);
 
         $document = ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
         $donnees = $request->validate([
             'type_piece' => [Rule::requiredIf($premiere), 'nullable', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, ReservationsBoutiques::piecesPour($request->user())))],
             'numero_piece' => [Rule::requiredIf($premiere), 'nullable', 'string', 'min:5', 'max:40'],
             'piece' => [Rule::requiredIf($premiere), 'nullable', ...$document],
-            'rccm' => ['nullable', ...$document],
+            // Sexe et lieu de naissance, lus sur la pièce d'identité d'une personne physique (carte de commerçant).
+            'sexe' => [Rule::requiredIf($premiere && ! $user->estPersonneMorale()), 'nullable', Rule::in(User::SEXES)],
+            'lieu_naissance' => [Rule::requiredIf($premiere && ! $user->estPersonneMorale()), 'nullable', 'string', 'min:2', 'max:100'],
             'engagements' => ['array'],
             'engagements.*' => [Rule::enum(DocumentAccepte::class)],
-        ], [], __('public.boutiques.reservation.attributs'));
+            // Activité principale du commerçant (03/11/2026) ; « Autre activité » : précision libre.
+            'secteur_activite_id' => ['required', 'integer', Rule::exists('secteurs_activite', 'id')->where('actif', true)],
+            'secteur_activite_autre' => ['nullable', 'string', 'max:120'],
+            // IFU et attestation : à la première réservation d'une personne physique (comité restreint du 03/11/2026).
+            'ifu' => $attestation ? Ifu::regles($user) : ['nullable'],
+            'attestation_ifu' => [Rule::requiredIf($attestation), 'nullable', ...$document],
+            // Carte de commerçant : personne à prévenir ; groupe sanguin facultatif, imprimé seulement avec consentement.
+            'personne_prevenir_nom' => ['required', 'string', 'min:2', 'max:150'],
+            'personne_prevenir_telephone' => ['required', 'string', 'max:20', fn (string $a, mixed $v, \Closure $echec) => Telephone::estValide((string) $v) ? null : $echec(__('public.boutiques.erreurs.prevenir_telephone'))],
+            'groupe_sanguin' => ['nullable', Rule::in(User::GROUPES_SANGUINS)],
+            'consentement_groupe_sanguin' => [filled($request->input('groupe_sanguin')) ? 'accepted' : 'nullable'],
+        ], [
+            'secteur_activite_id.*' => __('public.boutiques.erreurs.secteur'),
+            'sexe.*' => __('public.verification.erreurs.sexe'),
+            'lieu_naissance.*' => __('public.verification.erreurs.lieu_naissance'),
+            'ifu.required' => __('public.boutiques.erreurs.sans_ifu'),
+            'attestation_ifu.*' => __('public.boutiques.erreurs.attestation_ifu'),
+            'personne_prevenir_nom.*' => __('public.boutiques.erreurs.prevenir_nom'),
+            'personne_prevenir_telephone.*' => __('public.boutiques.erreurs.prevenir_telephone'),
+            'groupe_sanguin.*' => __('public.boutiques.erreurs.groupe_sanguin'),
+            'consentement_groupe_sanguin.*' => __('public.boutiques.erreurs.consentement_groupe_sanguin'),
+        ], __('public.boutiques.reservation.attributs'));
+        $secteur = SecteurActivite::query()->findOrFail($donnees['secteur_activite_id']);
+        $autre = $secteur->code === SecteurActivite::AUTRE ? trim((string) ($donnees['secteur_activite_autre'] ?? '')) : null;
+        if ($autre === '') {
+            throw ValidationException::withMessages(['secteur_activite_autre' => __('public.boutiques.erreurs.secteur_autre')]);
+        }
 
         $inscription = $this->listes->inscrire(
             $campagne, $request->user(), $boutique, isset($donnees['type_piece']) ? TypeDocumentKyc::from($donnees['type_piece']) : null, $donnees['numero_piece'] ?? null,
-            $request->file('piece'), $request->file('rccm'), $donnees['engagements'] ?? [], (string) $request->ip(), (string) $request->userAgent(),
+            $request->file('piece'), $donnees['engagements'] ?? [], (string) $request->ip(), (string) $request->userAgent(),
+            $donnees['ifu'] ?? null, $request->file('attestation_ifu'),
         );
+        $groupe = $donnees['groupe_sanguin'] ?? null;
+        $consentiAvant = $user->groupe_sanguin_consenti_le !== null;
+        $user->forceFill(array_filter(['sexe' => $donnees['sexe'] ?? null, 'lieu_naissance' => isset($donnees['lieu_naissance']) ? trim($donnees['lieu_naissance']) : null]))->forceFill([
+            'secteur_activite_id' => $secteur->id, 'secteur_activite_autre' => $autre,
+            'personne_prevenir_nom' => trim($donnees['personne_prevenir_nom']),
+            'personne_prevenir_telephone' => Telephone::normaliser($donnees['personne_prevenir_telephone']),
+            // Donnée de santé : gardée seulement avec le consentement, daté.
+            'groupe_sanguin' => $groupe,
+            'groupe_sanguin_consenti_le' => $groupe ? ($user->groupe_sanguin_consenti_le ?? now()) : null,
+        ])->save();
+        if ($consentiAvant !== ($groupe !== null)) {
+            // Jamais la valeur au journal : seulement le consentement donné ou retiré.
+            app(Journal::class)->ecrire($user, $groupe ? 'groupe_sanguin.consenti' : 'groupe_sanguin.retire', 'User', $user->id);
+        }
+        // Données imprimées sur la carte de commerçant en cours : nouvelle version.
+        if (Cartes::courante($user, TypeCarte::Commercant)) {
+            app(Cartes::class)->synchroniser($user, TypeCarte::Commercant, $user);
+        }
 
         // Retenue : caution à payer ; sinon, rang sur la liste d'attente.
         return $inscription->reservation

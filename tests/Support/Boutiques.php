@@ -5,18 +5,23 @@ namespace Tests\Support;
 use App\Enums\DecisionParametrage;
 use App\Enums\StatutBoutique;
 use App\Enums\StatutCampagneBoutiques;
+use App\Enums\StatutDocumentKyc;
 use App\Enums\StatutGrilleTarifaire;
 use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
+use App\Enums\TypeDocumentKyc;
 use App\Models\Boutique;
 use App\Models\CampagneBoutiques;
 use App\Models\GrilleTarifaire;
 use App\Models\GrilleTarifaireVersion;
+use App\Models\KycDocument;
 use App\Models\ParametrageDecision;
+use App\Models\SecteurActivite;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\User;
 use App\Services\Boutiques\ReservationsBoutiques;
+use Database\Seeders\SecteursActiviteSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
@@ -35,7 +40,7 @@ final class Boutiques
     {
         $auteur = User::factory()->create();
         $site = Site::query()->where('code', 'MCE')->first() ?? Site::create(['statut' => StatutSite::Confirme, 'code' => 'MCE', 'nom' => 'Marché central',
-            'region' => 'Centre', 'commune' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $auteur->id]);
+            'ville' => 'Ouagadougou', 'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $auteur->id]);
         $petite = TypeBoutique::query()->firstOrCreate(['libelle' => 'Petite boutique'], ['description' => '9 m²', 'statut' => StatutTypeBoutique::Valide, 'actif' => true, 'attribuable' => true]);
         $grande = TypeBoutique::query()->firstOrCreate(['libelle' => 'Grande boutique'], ['description' => '24 m²', 'statut' => StatutTypeBoutique::Valide, 'actif' => true, 'attribuable' => true]);
 
@@ -85,10 +90,54 @@ final class Boutiques
     public static function reserver(TestCase $test, User $user, Boutique $boutique, string $numeroPiece = 'B1234567', string $type = 'CNIB'): TestResponse
     {
         Storage::fake('local');
+        self::ifuVerifie($user);
 
         return $test->actingAs($user)->post(route('boutiques.reserver', $boutique->code), [
             'type_piece' => $type, 'numero_piece' => $numeroPiece, 'piece' => UploadedFile::fake()->image('piece.jpg'),
-            'engagements' => array_map(fn ($d) => $d->value, ReservationsBoutiques::ENGAGEMENTS),
+            ...self::donneesCommercant(),
         ]);
+    }
+
+    /**
+     * Champs de la candidature autres que la pièce : engagements, activité, sexe et lieu de naissance, personne à
+     * prévenir (sans groupe sanguin).
+     *
+     * @return array<string, mixed>
+     */
+    public static function donneesCommercant(): array
+    {
+        return [
+            'engagements' => array_map(fn ($d) => $d->value, ReservationsBoutiques::ENGAGEMENTS), 'secteur_activite_id' => self::secteur(),
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'personne_prevenir_nom' => 'OUEDRAOGO Awa', 'personne_prevenir_telephone' => '70 00 00 01',
+        ];
+    }
+
+    /**
+     * IFU déjà donné et attestation déjà validée : la candidature ne les redemande pas (parcours de l'IFU testé à part,
+     * dans IfuCommercantTest).
+     */
+    public static function ifuVerifie(User $user): void
+    {
+        if ($user->estPersonneMorale()) {
+            return;
+        }
+        if (blank($user->ifu)) {
+            $user->forceFill(['ifu' => sprintf('%08d', $user->id).'K'])->save();
+        }
+        if (! KycDocument::query()->where('user_id', $user->id)->where('type', TypeDocumentKyc::Ifu)->exists()) {
+            KycDocument::create(['user_id' => $user->id, 'type' => TypeDocumentKyc::Ifu, 'chemin_fichier' => 'kyc/'.$user->id.'/ifu.pdf', 'nom_original' => 'ifu.pdf',
+                'mime' => 'application/pdf', 'taille' => 1000, 'empreinte_sha256' => str_repeat('0', 64), 'statut' => StatutDocumentKyc::Valide,
+                'televerse_par' => $user->id, 'numero' => $user->ifu]);
+        }
+    }
+
+    /** Activité principale envoyée avec une candidature (référentiel des secteurs créé au besoin). */
+    public static function secteur(string $code = 'EPICERIE'): int
+    {
+        if (! SecteurActivite::query()->exists()) {
+            app(SecteursActiviteSeeder::class)->setContainer(app())->__invoke();
+        }
+
+        return (int) SecteurActivite::query()->where('code', $code)->value('id');
     }
 }

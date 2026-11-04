@@ -46,7 +46,7 @@ class GrilleTarifaireTest extends TestCase
         $this->creerActeurs();
         $this->boutique = TypeBoutique::create(['code' => 'BOUT', 'libelle' => 'Boutique']);
         $this->magasin = TypeBoutique::create(['code' => 'MAG', 'libelle' => 'Magasin']);
-        $this->site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'region' => 'Centre', 'commune' => 'Ouagadougou',
+        $this->site = Site::create(['statut' => StatutSite::Confirme, 'code' => 'RAA', 'nom' => 'Marché Raaga', 'ville' => 'Ouagadougou',
             'adresse' => 'Avenue de la Nation', 'version' => 1, 'cree_par' => $this->regulateur->id]);
         // Deux boutiques de 9 m² au rez-de-chaussée, une de 12,5 m² au R+1, un magasin de 40 m² au rez-de-chaussée.
         foreach ([['RC', 'A', 1, 9, $this->boutique], ['RC', 'A', 2, 9, $this->boutique], ['R1', 'B', 1, 12.5, $this->boutique], ['RC', 'M', 1, 40, $this->magasin]] as [$niveau, $bloc, $n, $surface, $type]) {

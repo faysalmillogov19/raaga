@@ -63,20 +63,17 @@
             <div><dt class="texte-carte">{{ $d['champs']['telephone'] }}</dt><dd>{{ $citoyen->telephone }}</dd></div>
             <div><dt class="texte-carte">{{ $d['champs']['email'] }}</dt><dd>{{ $citoyen->email }}</dd></div>
             <div><dt class="texte-carte">{{ $d['champs']['naissance'] }}</dt><dd>{{ $citoyen->date_naissance?->format('d/m/Y') }}</dd></div>
+            <div><dt class="texte-carte">{{ $k['lieu_naissance'] }}</dt><dd data-lieu-naissance>{{ $citoyen->lieu_naissance }}</dd></div>
+            <div><dt class="texte-carte">{{ $k['sexe'] }}</dt><dd data-sexe>{{ $citoyen->sexe ? __('public.verification.sexes.'.$citoyen->sexe) : '' }}</dd></div>
             <div><dt class="texte-carte">{{ $d['champs']['pays'] }}</dt><dd>{{ $citoyen->pays_residence }}</dd></div>
             <div><dt class="texte-carte">{{ $k['titulaire'] }}</dt><dd>{{ __('public.titulaires.types.'.($citoyen->type_titulaire?->value ?? 'PHYSIQUE')) }}</dd></div>
             @if ($morale)
                 <div><dt class="texte-carte">{{ $k['raison_sociale'] }}</dt><dd class="font-bold" data-raison-sociale>{{ $citoyen->raison_sociale }}</dd></div>
                 <div><dt class="texte-carte">{{ $k['forme'] }}</dt><dd>{{ $citoyen->forme_morale ? __('public.titulaires.formes.'.$citoyen->forme_morale) : '' }}</dd></div>
-                <div><dt class="texte-carte">{{ $k['numero_rccm'] }}</dt><dd class="font-mono">{{ $pieces->get('rccm')?->numero ?? $citoyen->rccm }}</dd></div>
-                <div><dt class="texte-carte">{{ $k['numero_ifu'] }}</dt><dd class="font-mono">{{ $pieces->get('ifu')?->numero ?? $citoyen->ifu }}</dd></div>
             @endif
+            <div><dt class="texte-carte">{{ $k['numero_ifu'] }}</dt><dd class="font-mono" data-ifu>{{ $citoyen->ifu }}</dd></div>
             <div><dt class="texte-carte">{{ $k['numero_piece'] }}</dt><dd class="font-mono" data-numero-piece>{{ $recto?->numero ?? $citoyen->numero_piece }}</dd></div>
             <div><dt class="texte-carte">{{ $k['expire_le'] }}</dt><dd>{{ ($recto?->expire_le ?? $citoyen->piece_expire_le)?->format('d/m/Y') }}</dd></div>
-            @if ($citoyen->identifiant_fiscal_raaga)
-                <div><dt class="texte-carte">{{ __('admin.guichet.identifiant_fiscal') }}</dt><dd class="font-mono" data-identifiant-fiscal>{{ $citoyen->identifiant_fiscal_raaga }}</dd></div>
-                <div><dt class="texte-carte">{{ __('admin.guichet.numero_registre') }}</dt><dd class="font-mono" data-numero-registre>{{ $citoyen->numero_registre_raaga }}</dd></div>
-            @endif
             <div><dt class="texte-carte">{{ $d['champs']['statut'] }}</dt><dd class="font-bold">{{ $k['statuts'][$citoyen->statut_kyc?->value ?? 'NON_SOUMIS'] }}</dd></div>
         </dl>
     </section>

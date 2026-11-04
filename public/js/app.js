@@ -177,8 +177,9 @@ composant('formulaireIdentite', ({ valeurs = {}, messages = {}, ageMinimum = 18 
         if (!f.prenoms.value.trim()) erreurs.prenoms = messages.prenoms;
         if (!f.date_naissance.value) erreurs.date_naissance = messages.date_naissance;
         else if (this.age(f.date_naissance.value) < ageMinimum) erreurs.date_naissance = messages.majeur;
+        if (f.ifu && !f.ifu.disabled && !/^\d{8}[A-Z]$/.test(f.ifu.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))) erreurs.ifu = messages.ifu;
         if (!f.pays_residence.value) erreurs.pays_residence = messages.pays;
-        if (f.pays_residence.value === 'BF' && !f.region.value) erreurs.region = messages.region;
+        if (f.pays_residence.value === 'BF' && !f.commune_id.value) erreurs.commune_id = messages.commune;
         if (!f.conditions.checked) erreurs.conditions = messages.conditions;
 
         this.erreurs = erreurs;
@@ -320,7 +321,7 @@ composant('pieceKyc', ({ maxOctets, messages }) => ({
         this.apercu = null;
         this.erreur = '';
         if (!fichier) return;
-        // Types acceptés : ceux du champ (le PDF est permis pour le RCCM, l'attestation IFU et le justificatif de pouvoir).
+        // Types acceptés : ceux du champ (le PDF est permis pour l'attestation IFU et le justificatif de pouvoir).
         const acceptes = (evenement.target.getAttribute('accept') || 'image/jpeg,image/png').split(',');
         if (!acceptes.includes(fichier.type)) {
             this.erreur = messages.format;

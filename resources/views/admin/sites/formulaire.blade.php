@@ -26,16 +26,7 @@
                 <x-admin.champ nom="nom" :libelle="ucfirst($c['nom'])" :valeur="$site->nom" required maxlength="150" />
                 <x-admin.champ nom="ville" :libelle="ucfirst($c['ville'])" :valeur="$site->localite()" required maxlength="80" />
                 <x-admin.champ nom="arrondissement" :libelle="ucfirst($c['arrondissement'])" :valeur="$site->arrondissement" maxlength="40" />
-                <div class="formulaire-champ !mt-0">
-                    <label for="region">{{ ucfirst($c['region']) }}</label>
-                    <select id="region" name="region" class="champ @error('region') est-invalide @enderror">
-                        <option value="">{{ $f['choisir'] }}</option>
-                        @foreach (config('raaga.inscription.regions') as $region)
-                            <option value="{{ $region }}" @selected(old('region', $site->region) === $region)>{{ $region }}</option>
-                        @endforeach
-                    </select>
-                    @error('region') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
-                </div>
+                <x-admin.champ nom="commune_id" type="liste" :libelle="ucfirst($c['commune'])" :valeur="$site->commune_id" :options="\App\Models\Commune::parProvince()" :vide="$f['choisir']" />
                 <x-admin.champ nom="adresse" :libelle="ucfirst($c['adresse'])" :valeur="$site->adresse" maxlength="300" />
                 <x-admin.champ nom="latitude" :libelle="ucfirst($c['latitude'])" :valeur="$site->latitude" type="number" step="0.0000001" min="-90" max="90" />
                 <x-admin.champ nom="longitude" :libelle="ucfirst($c['longitude'])" :valeur="$site->longitude" type="number" step="0.0000001" min="-180" max="180" />

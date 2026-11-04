@@ -9,7 +9,6 @@
     $identification = array_filter([
         $m['formeJuridique'],
         $m['capitalSocial'] !== null ? 'capital de '.format_fcfa($m['capitalSocial']) : null,
-        $m['rccm'] ? 'RCCM '.$m['rccm'] : null,
         $m['ifu'] ? 'IFU '.$m['ifu'] : null,
     ]);
     $coordonnees = array_filter([

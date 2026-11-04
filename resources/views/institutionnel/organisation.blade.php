@@ -18,7 +18,7 @@
         <section class="bo-carte !mt-0" aria-labelledby="identite-titre">
             <h2 id="identite-titre" class="!text-[1.15rem]">{{ $o('identite') }}</h2>
             <dl class="bo-definitions mt-3">
-                @foreach (['denomination', 'sigle', 'forme_juridique', 'rccm', 'ifu', 'adresse', 'secteur'] as $champ)
+                @foreach (['denomination', 'sigle', 'forme_juridique', 'ifu', 'adresse', 'secteur'] as $champ)
                     @if ($institution->{$champ})<dt>{{ $champs[$champ] }}</dt><dd>{{ $institution->{$champ} }}</dd>@endif
                 @endforeach
                 <dt>{{ $o('statut') }}</dt><dd><x-institutionnel.statut :statut="$institution->statut" /></dd>
@@ -52,7 +52,7 @@
         <div class="mt-3 overflow-x-auto">
             <table class="bo-tableau">
                 <tbody>
-                    @foreach (TypeDocumentKyb::cases() as $type)
+                    @foreach (TypeDocumentKyb::exiges() as $type)
                         @php($piece = $pieces->get($type->value))
                         <tr>
                             <td class="font-semibold">{{ $type->label() }}</td>

@@ -28,7 +28,7 @@ final class FicheSite
             'nom' => ['required', 'string', 'max:150'],
             'ville' => ['required', 'string', 'max:80'],
             'arrondissement' => ['nullable', 'string', 'max:40'],
-            'region' => ['nullable', Rule::in(config('raaga.inscription.regions'))],
+            'commune_id' => ['nullable', 'integer', Rule::exists('communes', 'id')],
             'adresse' => ['nullable', 'string', 'max:300'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],

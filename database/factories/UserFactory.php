@@ -49,10 +49,17 @@ class UserFactory extends Factory
     /**
      * Attribue le rôle donné à l'utilisateur.
      */
+    /** Commerçant qui a déjà donné son IFU (8 chiffres et une lettre, unique). */
+    public function avecIfu(): static
+    {
+        return $this->state(fn () => ['ifu' => sprintf('%08d', fake()->unique()->numberBetween(1, 99_999_999)).strtoupper(fake()->randomLetter())]);
+    }
+
     public function role(Role $role): static
     {
         return $this->state(fn (array $attributes) => [
             'role_id' => RoleModel::pour($role)->id,
+            // Citoyen : IFU obligatoire depuis le 03/11/2026 (8 chiffres et une lettre, unique).
         ]);
     }
 

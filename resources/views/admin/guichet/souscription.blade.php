@@ -68,13 +68,14 @@
                     <div x-show="titulaire === 'MORALE'" x-cloak class="grid gap-4 tab:col-span-2 tab:grid-cols-2">
                         <x-admin.champ nom="raison_sociale" :libelle="__('public.titulaires.raison_sociale')" maxlength="200" />
                         <x-admin.champ nom="forme_morale" type="liste" :libelle="__('public.titulaires.forme')" :options="array_combine(\App\Enums\TypeTitulaire::FORMES, \App\Enums\TypeTitulaire::FORMES)" :vide="$g['champs']['choisir']" />
+                        <x-admin.champ nom="ifu" :libelle="__('public.compte.inscription.ifu')" :aide="__('public.compte.inscription.ifu_aide')" maxlength="30" autocomplete="off" obligatoire />
                     </div>
                     <x-admin.champ nom="nom" :libelle="__('public.compte.inscription.nom')" maxlength="100" autocomplete="off" required />
                     <x-admin.champ nom="prenoms" :libelle="__('public.compte.inscription.prenoms')" maxlength="150" autocomplete="off" required />
                     <x-admin.champ nom="date_naissance" type="date" :libelle="__('public.compte.inscription.date_naissance')" required />
                     <x-admin.champ nom="pays_residence" type="liste" :libelle="$g['champs']['pays']" :options="$pays" valeur="BF" required x-model="pays" />
                     <div x-show="pays === 'BF'">
-                        <x-admin.champ nom="region" type="liste" :libelle="__('public.compte.inscription.region')" :options="array_combine($regions, $regions)" :vide="$g['champs']['choisir']" />
+                        <x-admin.champ nom="commune_id" type="liste" :libelle="__('public.compte.inscription.commune')" :options="$communes" :vide="$g['champs']['choisir']" />
                     </div>
                     <x-admin.champ nom="conditions" type="case" :libelle="$g['conditions']" required class="tab:col-span-2" />
                     <div class="tab:col-span-2"><x-admin.bouton type="submit" icone="utilisateur">{{ $g['creer_compte'] }}</x-admin.bouton></div>
@@ -83,7 +84,7 @@
 
             @case('identite')
                 @php
-                    $emplacements = array_keys(VerificationIdentite::emplacements(VerificationIdentite::titulaire($citoyen), \App\Enums\TypeDocumentKyc::Cnib));
+                    $emplacements = array_keys(VerificationIdentite::emplacements(VerificationIdentite::titulaire($citoyen), \App\Enums\TypeDocumentKyc::Cnib, VerificationIdentite::avecIfu($citoyen)));
                     $demandes = array_values(array_intersect($emplacements, $aFournir));
                 @endphp
                 <form method="POST" action="{{ route('admin.guichet-souscription.identite') }}" enctype="multipart/form-data" class="mt-3 grid max-w-3xl gap-4" novalidate
@@ -98,6 +99,8 @@
                             <div class="grid gap-4 tab:grid-cols-2">
                                 <x-admin.champ nom="numero_piece" :libelle="$g['champs']['numero_piece']" :aide="$v['aides']['numero_piece']" maxlength="40" autocomplete="off" required />
                                 <x-admin.champ nom="piece_expire_le" type="date" :libelle="$v['expiration']" required />
+                                <x-admin.champ nom="sexe" type="radio" :libelle="$v['sexe']" :options="$v['sexes']" required />
+                                <x-admin.champ nom="lieu_naissance" :libelle="$v['lieu_naissance']" maxlength="100" autocomplete="off" required />
                             </div>
                         @endif
                         @foreach ($demandes as $cle)
@@ -107,11 +110,6 @@
                                                        :accept="in_array($cle, VerificationIdentite::DOCUMENTS, true) ? 'image/jpeg,image/png,application/pdf' : 'image/jpeg,image/png'"
                                                        capture="{{ $cle === 'selfie' ? 'user' : 'environment' }}" />
                             </div>
-                            @if ($cle === 'rccm')
-                                <x-admin.champ nom="numero_rccm" :libelle="$v['attributs']['numero_rccm']" :aide="$v['aides']['numero_rccm']" maxlength="60" />
-                            @elseif ($cle === 'ifu')
-                                <x-admin.champ nom="numero_ifu" :libelle="$v['attributs']['numero_ifu']" maxlength="40" />
-                            @endif
                         @endforeach
                     @endif
                     <x-admin.champ nom="piece_conforme" type="case" :libelle="$g['piece_conforme']" required />

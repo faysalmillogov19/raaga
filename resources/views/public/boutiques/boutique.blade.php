@@ -1,7 +1,7 @@
 {{--
     Récapitulatif d'une boutique (code, site, niveau, bloc ou zone, type et sa description, surface, observations, loyer
     mensuel, caution, avance, total à payer), nombre de personnes déjà inscrites, puis inscription : pièce d'identité
-    (CNIB, CIB-AES ou passeport) d'une personne physique, ou IFU d'une personne morale (RCCM facultatif), numéro, trois
+    (CNIB, CIB-AES ou passeport) d'une personne physique, ou IFU d'une personne morale, numéro, trois
     engagements ; la pièce n'est demandée qu'à la première inscription de la campagne. Boutique libre : elle est
     pré-réservée au nom du citoyen pour le délai de paiement de la caution ; sinon, il prend son rang sur la liste d'attente.
 --}}
@@ -77,6 +77,9 @@
             </x-public.alerte>
         @elseif (! $inscriptible)
             <x-public.alerte variante="attention" class="mt-6" data-indisponible>{{ $r['indisponible'] }}</x-public.alerte>
+        @elseif ($limites['commercant_atteint'])
+            {{-- Deux boutiques au plus par commerçant : aucune autre sélection possible, avant tout paiement. --}}
+            <x-public.alerte variante="danger" class="mt-6" role="alert" data-limite-commercant>{{ __('public.boutiques.erreurs.limite_commercant') }}</x-public.alerte>
         @elseif (! $tarif)
             <x-public.alerte variante="attention" class="mt-6">{{ $r['sans_tarif'] }}</x-public.alerte>
         @else
@@ -116,13 +119,90 @@
                            class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
                     <x-public.erreur :messages="$errors->get('piece')" id="piece-erreur" />
                 </div>
-                <div class="mt-4" x-show="piece === 'IFU'" x-cloak>
-                    <label for="rccm" class="block font-semibold text-encre">{{ $r['rccm'] }}</label>
-                    <input id="rccm" name="rccm" type="file" accept="image/jpeg,image/png,application/pdf" :disabled="piece !== 'IFU'"
-                           class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
-                    <x-public.erreur :messages="$errors->get('rccm')" />
-                </div>
+                @unless (auth()->user()->estPersonneMorale())
+                    {{-- Sexe et lieu de naissance, tels qu'inscrits sur la pièce (carte de commerçant). --}}
+                    <fieldset class="mt-4" data-sexe>
+                        <legend class="font-semibold text-encre"><x-requis /> {{ __('public.verification.sexe') }}</legend>
+                        <div class="mt-2 flex flex-wrap gap-3">
+                            @foreach (\App\Models\User::SEXES as $sexe)
+                                <label class="nuit-choix flex min-h-[48px] cursor-pointer items-center gap-3 rounded-charte border-2 border-ligne px-4">
+                                    <input type="radio" name="sexe" value="{{ $sexe }}" @checked(old('sexe', auth()->user()->sexe) === $sexe) class="h-5 w-5 text-vert focus:ring-0">
+                                    <span class="font-semibold text-encre">{{ __('public.verification.sexes.'.$sexe) }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <x-public.erreur :messages="$errors->get('sexe')" />
+                    </fieldset>
+                    <x-public.champ nom="lieu_naissance" :libelle="__('public.verification.lieu_naissance')" :valeur="auth()->user()->lieu_naissance" class="mt-4" maxlength="100" autocomplete="off" obligatoire />
+                @endunless
                 @endif
+
+                @if ($attestationIfu)
+                    {{-- Première réservation d'une personne physique : numéro IFU et attestation, vérifiés par le VALIDATEUR. --}}
+                    <fieldset class="mt-6" data-ifu-reservation>
+                        <legend class="text-lg font-bold text-encre"><x-requis /> {{ $r['ifu_titre'] }}</legend>
+                        <p class="texte-carte">{{ $r['ifu_aide'] }}</p>
+                        <x-public.champ nom="ifu" :libelle="$r['ifu']" :valeur="auth()->user()->ifu" class="mt-3" maxlength="30" autocomplete="off" autocapitalize="characters" obligatoire />
+                        <div class="mt-4">
+                            <label for="attestation_ifu" class="block font-semibold text-encre"><x-requis /> {{ $r['attestation_ifu'] }}</label>
+                            <input id="attestation_ifu" name="attestation_ifu" type="file" accept="image/jpeg,image/png,application/pdf" required aria-describedby="attestation_ifu-erreur"
+                                   class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
+                            <x-public.erreur :messages="$errors->get('attestation_ifu')" id="attestation_ifu-erreur" />
+                        </div>
+                    </fieldset>
+                @endif
+
+                {{-- Activité principale du commerçant (03/11/2026) ; « Autre activité » : précision libre. --}}
+                @php($secteurChoisi = (string) old('secteur_activite_id', auth()->user()->secteur_activite_id))
+                <div class="mt-6" x-data="{ secteur: @js($secteurChoisi) }" data-secteur-activite>
+                    <label for="secteur_activite_id" class="block font-bold text-encre"><x-requis /> {{ $r['secteur'] }}</label>
+                    <p id="secteur_activite_id-aide" class="texte-carte">{{ $r['secteur_aide'] }}</p>
+                    <select id="secteur_activite_id" name="secteur_activite_id" x-model="secteur" required aria-describedby="secteur_activite_id-aide"
+                            @error('secteur_activite_id') aria-invalid="true" @enderror class="champ mt-2 @error('secteur_activite_id') est-invalide @enderror">
+                        <option value="">{{ $r['secteur_choisir'] }}</option>
+                        @foreach ($secteurs as $famille => $liste)
+                            <optgroup label="{{ $famille }}">
+                                @foreach ($liste as $id => $libelle)
+                                    <option value="{{ $id }}" @selected($secteurChoisi === (string) $id)>{{ $libelle }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                    <x-public.erreur :messages="$errors->get('secteur_activite_id')" />
+                    <div x-show="secteur === @js((string) $secteurAutre)" @if ($secteurChoisi !== (string) $secteurAutre) x-cloak @endif>
+                        <x-public.champ nom="secteur_activite_autre" :libelle="$r['secteur_autre']" :valeur="auth()->user()->secteur_activite_autre"
+                                        class="mt-3" maxlength="120" autocomplete="off" obligatoire />
+                    </div>
+                </div>
+
+                {{-- Carte de commerçant : personne à prévenir ; groupe sanguin facultatif, imprimé seulement avec consentement. --}}
+                @php($moi = auth()->user())
+                <fieldset class="mt-6" x-data="{ groupe: @js((string) old('groupe_sanguin', $moi->groupe_sanguin_consenti_le ? $moi->groupe_sanguin : '')) }" data-carte-commercant>
+                    <legend class="text-lg font-bold text-encre">{{ $r['carte_titre'] }}</legend>
+                    <p class="texte-carte">{{ $r['carte_aide'] }}</p>
+                    <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                        <x-public.champ nom="personne_prevenir_nom" :libelle="$r['prevenir_nom']" :valeur="$moi->personne_prevenir_nom" maxlength="150" autocomplete="off" obligatoire />
+                        <x-public.champ nom="personne_prevenir_telephone" type="tel" :libelle="$r['prevenir_telephone']" :valeur="$moi->personne_prevenir_telephone ? \App\Support\Telephone::formaterLocal($moi->personne_prevenir_telephone) : null"
+                                        maxlength="20" inputmode="tel" autocomplete="off" obligatoire />
+                    </div>
+                    <div class="mt-4">
+                        <label for="groupe_sanguin" class="block font-semibold text-encre">{{ $r['groupe_sanguin'] }}</label>
+                        <p id="groupe_sanguin-aide" class="texte-carte">{{ $r['groupe_sanguin_aide'] }}</p>
+                        <select id="groupe_sanguin" name="groupe_sanguin" x-model="groupe" aria-describedby="groupe_sanguin-aide" class="champ mt-2">
+                            <option value="">{{ $r['groupe_sanguin_aucun'] }}</option>
+                            @php($groupeChoisi = (string) old('groupe_sanguin', $moi->groupe_sanguin_consenti_le ? $moi->groupe_sanguin : ''))
+                            @foreach ($groupes as $g)
+                                <option value="{{ $g }}" @selected($groupeChoisi === $g)>{{ $g }}</option>
+                            @endforeach
+                        </select>
+                        <x-public.erreur :messages="$errors->get('groupe_sanguin')" />
+                        <div class="mt-3" x-show="groupe !== ''" @if (! old('groupe_sanguin', $moi->groupe_sanguin_consenti_le ? $moi->groupe_sanguin : null)) x-cloak @endif>
+                            <x-public.case nom="consentement_groupe_sanguin" id="consentement_groupe_sanguin" value="1" :libelle="$r['groupe_sanguin_consentement']"
+                                           :checked="(bool) old('consentement_groupe_sanguin', $moi->groupe_sanguin_consenti_le !== null)" />
+                            <x-public.erreur :messages="$errors->get('consentement_groupe_sanguin')" />
+                        </div>
+                    </div>
+                </fieldset>
 
                 <fieldset class="mt-6">
                     <legend class="font-bold text-encre"><x-requis /> {{ $r['engagements'] }}</legend>

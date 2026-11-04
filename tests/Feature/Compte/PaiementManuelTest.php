@@ -206,7 +206,7 @@ class PaiementManuelTest extends TestCase
         $this->actingAs($citoyen)->get(route('espace.verification'))->assertOk()->assertSee('CIB-AES', false)->assertDontSee('NIF');
         foreach (['NIF', 'IFU', 'RCCM'] as $type) {
             $this->actingAs($citoyen)->post(route('espace.verification.store'), [
-                'type_piece' => $type, 'numero_piece' => 'B1234567', 'piece_expire_le' => now()->addYear()->toDateString(),
+                'type_piece' => $type, 'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B1234567', 'piece_expire_le' => now()->addYear()->toDateString(),
                 'recto' => UploadedFile::fake()->image('piece.jpg'), 'selfie' => UploadedFile::fake()->image('selfie.jpg'),
             ])->assertSessionHasErrors('type_piece');
         }

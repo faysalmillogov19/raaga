@@ -259,8 +259,15 @@ class SimulationRecette extends Command
         $u = User::query()->forceCreate([
             'name' => $nom, 'prenoms' => $prenoms, 'nom' => $famille, 'telephone' => $telephone, 'password' => Hash::make(Str::random(40)),
             'role_id' => RoleModel::pour(Role::Citoyen)->id, 'pays_residence' => 'BF', 'date_naissance' => now()->subYears(35)->toDateString(),
-            'statut_kyc' => $kyc, 'actif' => true,
+            // IFU obligatoire pour candidater à une boutique : dérivé du téléphone (8 chiffres et une lettre).
+            'ifu' => substr(preg_replace('/\D/', '', $telephone), -8).'S', 'statut_kyc' => $kyc, 'actif' => true,
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'personne_prevenir_nom' => 'OUEDRAOGO Paul', 'personne_prevenir_telephone' => '+22670000000',
         ]);
+        // Attestation IFU déjà au dossier, avec le statut du dossier : la candidature ne la redemande pas.
+        $attestation = $this->fichier('ifu-'.$u->id.'.jpg', 'ATTESTATION IFU SPÉCIMEN');
+        KycDocument::create(['user_id' => $u->id, 'type' => TypeDocumentKyc::Ifu, 'chemin_fichier' => $attestation->storeAs('kyc/'.$u->id, Str::uuid().'.jpg', VerificationIdentite::DISQUE),
+            'nom_original' => 'ifu.jpg', 'mime' => 'image/jpeg', 'taille' => $attestation->getSize(), 'empreinte_sha256' => hash_file('sha256', $attestation->getRealPath()),
+            'statut' => $kyc === StatutKyc::Valide ? StatutDocumentKyc::Valide : StatutDocumentKyc::EnAttente, 'televerse_par' => $u->id, 'numero' => $u->ifu]);
         if ($kyc === StatutKyc::Valide) {
             $u->forceFill(['niveau_kyc' => 1, 'numero_piece' => 'B'.substr($telephone, -7).'S', 'piece_expire_le' => now()->addYears(5)->toDateString(),
                 'identite_validee' => ['nom' => $famille, 'prenoms' => $prenoms, 'type_titulaire' => 'PHYSIQUE', 'validee_le' => now()->toIso8601String()]])->save();
@@ -278,7 +285,7 @@ class SimulationRecette extends Command
     private function inscrire(User $u, Boutique $b): ?ReservationBoutique
     {
         $inscription = app(ListesAttente::class)->inscrire($this->campagne, $u, $b, TypeDocumentKyc::Cnib, 'B'.substr((string) $u->telephone, -7).'S',
-            $this->fichier('piece-'.$u->id.'.jpg', 'CNIB SPÉCIMEN'), null, array_map(fn ($d) => $d->value, ReservationsBoutiques::ENGAGEMENTS), self::IP, self::NAVIGATEUR);
+            $this->fichier('piece-'.$u->id.'.jpg', 'CNIB SPÉCIMEN'), array_map(fn ($d) => $d->value, ReservationsBoutiques::ENGAGEMENTS), self::IP, self::NAVIGATEUR);
 
         return $inscription->reservation;
     }

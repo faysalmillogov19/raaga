@@ -21,6 +21,7 @@ use App\Models\TypeBoutique;
 use App\Models\User;
 use App\Services\Audit\Journal;
 use App\Services\Kyc\VerificationIdentite;
+use App\Support\Ifu;
 use App\Support\MemoRequete;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
@@ -51,7 +52,7 @@ class ReservationsBoutiques
 
     /**
      * Pièces acceptées à la réservation, selon le titulaire : personne physique, sa pièce d'identité (CNIB, CIB-AES ou
-     * passeport) ; personne morale, son IFU (attestation, RCCM facultatif). La limite par personne est contrôlée sur ce
+     * passeport) ; personne morale, son IFU (attestation). La limite par personne est contrôlée sur ce
      * numéro : numéro de pièce, ou IFU.
      */
     public const PIECES = [TypeDocumentKyc::Cnib, TypeDocumentKyc::CibAes, TypeDocumentKyc::Passeport, TypeDocumentKyc::Ifu];
@@ -62,7 +63,7 @@ class ReservationsBoutiques
         return $user->estPersonneMorale() ? [TypeDocumentKyc::Ifu] : TypeDocumentKyc::piecesIdentite();
     }
 
-    public function __construct(private readonly Journal $journal, private readonly IdentifiantsCommercant $identifiants) {}
+    public function __construct(private readonly Journal $journal) {}
 
     /**
      * Boutiques réservables d'une campagne : sur ses sites et de ses types (attribuables, actifs et validés au
@@ -109,6 +110,46 @@ class ReservationsBoutiques
     }
 
     /**
+     * Un commerçant n'est jamais attributaire de plus de deux boutiques, toutes campagnes et tous types confondus
+     * (04/11/2026). Les réservations en cours comptent : chacune peut devenir une attribution.
+     */
+    public const LIMITE_PAR_COMMERCANT = 2;
+
+    /**
+     * Réservations d'une personne aux statuts donnés (actives par défaut), toutes campagnes et tous types confondus,
+     * identifiée par son compte ou par l'un de ses numéros (pièce, IFU).
+     *
+     * @param  list<string>  $numeros  numéros normalisés (voir numerosDe())
+     * @param  list<StatutReservationBoutique>|null  $statuts
+     */
+    public static function duCommercant(int $userId, array $numeros, ?array $statuts = null): int
+    {
+        return ReservationBoutique::query()->whereIn('statut', $statuts ?? StatutReservationBoutique::actifs())
+            ->where(fn ($q) => $q->where('user_id', $userId)->when(array_values(array_filter($numeros)), fn ($q, $n) => $q->orWhereIn('numero_piece', $n)
+                // Même IFU : les réservations du compte qui le porte.
+                ->orWhereIn('user_id', User::query()->whereIn('ifu', $n)->select('id'))))->count();
+    }
+
+    /**
+     * Numéros qui identifient la personne : ceux de ses réservations, son numéro de pièce, son IFU, et le numéro donné.
+     *
+     * @return list<string>
+     */
+    public static function numerosDe(User $user, ?string $numero = null): array
+    {
+        return array_values(array_unique(array_filter([
+            ...ReservationBoutique::query()->where('user_id', $user->id)->whereNotNull('numero_piece')->distinct()->pluck('numero_piece')->all(),
+            $user->numero_piece, $user->ifu, $numero,
+        ])));
+    }
+
+    /** Boutiques que la personne peut encore obtenir, toutes campagnes confondues (0 : limite par commerçant atteinte). */
+    public static function restantCommercant(User $user, ?string $numero = null): int
+    {
+        return max(0, self::LIMITE_PAR_COMMERCANT - self::duCommercant($user->id, self::numerosDe($user, $numero)));
+    }
+
+    /**
      * Réservations actives (pré-réservées, réservées, attribuées) d'un type dans une campagne, pour une personne
      * identifiée par son compte ou par l'un de ses numéros de pièce. Annulées et expirées ne comptent pas.
      *
@@ -123,7 +164,7 @@ class ReservationsBoutiques
 
     /**
      * Ce qui reste au citoyen dans la campagne, par type : limite moins ses réservations actives (compte et numéros de
-     * pièce déjà utilisés dans la campagne).
+     * pièce déjà utilisés dans la campagne), jamais plus que ce que lui laisse la limite par commerçant.
      *
      * @return array<int, int> type => nombre encore réservable (0 : limite atteinte)
      */
@@ -132,8 +173,10 @@ class ReservationsBoutiques
         $pieces = ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)->where('user_id', $user->id)
             ->whereNotNull('numero_piece')->distinct()->pluck('numero_piece')->all();
 
-        return collect((array) $campagne->types)->mapWithKeys(fn ($id) => [(int) $id => max(0,
-            $campagne->limitePour((int) $id) - self::activesDuType($campagne, (int) $id, $user->id, $pieces))])->all();
+        $commercant = self::restantCommercant($user);
+
+        return collect((array) $campagne->types)->mapWithKeys(fn ($id) => [(int) $id => min($commercant, max(0,
+            $campagne->limitePour((int) $id) - self::activesDuType($campagne, (int) $id, $user->id, $pieces)))])->all();
     }
 
     /**
@@ -222,20 +265,51 @@ class ReservationsBoutiques
      *
      * @param  list<string>  $chemins  fichiers enregistrés (à supprimer si la transaction échoue)
      */
-    public static function deposerPiece(User $user, TypeDocumentKyc $typePiece, string $numero, UploadedFile $piece, ?UploadedFile $rccm, array &$chemins): void
+    public static function deposerPiece(User $user, TypeDocumentKyc $typePiece, string $numero, UploadedFile $piece, array &$chemins): void
     {
-        foreach (array_filter([[$typePiece, FaceDocument::Recto, $piece], $rccm ? [TypeDocumentKyc::Rccm, null, $rccm] : null]) as [$type, $face, $fichier]) {
-            $chemin = $fichier->storeAs('kyc/'.$user->id, Str::uuid().'.'.$fichier->extension(), VerificationIdentite::DISQUE);
-            $chemins[] = $chemin;
-            KycDocument::create([
-                'user_id' => $user->id, 'type' => $type, 'face' => $face, 'chemin_fichier' => $chemin,
-                'nom_original' => Str::limit($fichier->getClientOriginalName(), 200, ''), 'mime' => $fichier->getMimeType(),
-                'taille' => $fichier->getSize(), 'empreinte_sha256' => hash_file('sha256', $fichier->getRealPath()),
-                'statut' => StatutDocumentKyc::EnAttente, 'televerse_par' => $user->id, 'numero' => $type === $typePiece ? $numero : null,
-            ]);
-        }
+        $chemin = $piece->storeAs('kyc/'.$user->id, Str::uuid().'.'.$piece->extension(), VerificationIdentite::DISQUE);
+        $chemins[] = $chemin;
+        KycDocument::create([
+            'user_id' => $user->id, 'type' => $typePiece, 'face' => FaceDocument::Recto, 'chemin_fichier' => $chemin,
+            'nom_original' => Str::limit($piece->getClientOriginalName(), 200, ''), 'mime' => $piece->getMimeType(),
+            'taille' => $piece->getSize(), 'empreinte_sha256' => hash_file('sha256', $piece->getRealPath()),
+            'statut' => StatutDocumentKyc::EnAttente, 'televerse_par' => $user->id, 'numero' => $numero,
+        ]);
         $user->forceFill($typePiece === TypeDocumentKyc::Ifu ? ['ifu' => $user->ifu ?? $numero] : ['numero_piece' => $user->numero_piece ?? $numero])->save();
         if (in_array($user->statut_kyc, [null, StatutKyc::NonSoumis, StatutKyc::Rejete], true)) {
+            $user->forceFill(['statut_kyc' => StatutKyc::EnAttente])->save();
+        }
+    }
+
+    /**
+     * Attestation IFU à joindre à la réservation : personne physique sans attestation déposée (ou seulement refusée).
+     * Une personne morale fournit la sienne comme pièce, et son IFU à la création du compte.
+     */
+    public static function attestationIfuAFournir(User $user): bool
+    {
+        return ! $user->estPersonneMorale() && ! KycDocument::query()->where('user_id', $user->id)->where('type', TypeDocumentKyc::Ifu)
+            ->where('statut', '!=', StatutDocumentKyc::Rejete)->exists();
+    }
+
+    /**
+     * Numéro IFU et attestation d'une personne physique, à sa première réservation : l'IFU est enregistré (journal),
+     * l'attestation versée au dossier d'identité, vérifiée par le VALIDATEUR comme les autres pièces ; le dossier repasse
+     * en attente de vérification.
+     *
+     * @param  list<string>  $chemins  fichiers enregistrés (à supprimer si la transaction échoue)
+     */
+    public static function deposerAttestationIfu(User $user, string $ifu, UploadedFile $attestation, array &$chemins): void
+    {
+        Ifu::enregistrer($user, $ifu, $user, 'reservation_boutique');
+        $chemin = $attestation->storeAs('kyc/'.$user->id, Str::uuid().'.'.$attestation->extension(), VerificationIdentite::DISQUE);
+        $chemins[] = $chemin;
+        KycDocument::create([
+            'user_id' => $user->id, 'type' => TypeDocumentKyc::Ifu, 'face' => null, 'chemin_fichier' => $chemin,
+            'nom_original' => Str::limit($attestation->getClientOriginalName(), 200, ''), 'mime' => $attestation->getMimeType(),
+            'taille' => $attestation->getSize(), 'empreinte_sha256' => hash_file('sha256', $attestation->getRealPath()),
+            'statut' => StatutDocumentKyc::EnAttente, 'televerse_par' => $user->id, 'numero' => $user->ifu,
+        ]);
+        if (in_array($user->statut_kyc, [null, StatutKyc::NonSoumis, StatutKyc::Rejete, StatutKyc::Valide], true)) {
             $user->forceFill(['statut_kyc' => StatutKyc::EnAttente])->save();
         }
     }
@@ -263,8 +337,6 @@ class ReservationsBoutiques
     /**
      * Avance confirmée (par le circuit de paiement) et date du contrat renseignée : la réservation et la boutique passent
      * « attribuées » (VALIDATEUR). La référence de l'avance est celle du paiement confirmé, jamais saisie à la main.
-     * Première boutique attribuée : identifiant fiscal et numéro de registre Raaga du commerçant (avant l'émission de sa
-     * carte, qui les imprime).
      */
     public function attribuer(ReservationBoutique $reservation, string $contratSigneLe, User $validateur): void
     {
@@ -276,11 +348,14 @@ class ReservationsBoutiques
             if (! $reservation->avanceReglee()) {
                 throw ValidationException::withMessages(['contrat_signe_le' => __('admin.boutiques.erreurs.avance_non_confirmee')]);
             }
+            // Jamais plus de deux boutiques attribuées au même commerçant (garde-fou, données anciennes comprises).
+            if (self::duCommercant($reservation->user_id, self::numerosDe($reservation->user), [StatutReservationBoutique::Attribuee]) >= self::LIMITE_PAR_COMMERCANT) {
+                throw ValidationException::withMessages(['contrat_signe_le' => __('admin.boutiques.erreurs.limite_commercant', ['n' => self::LIMITE_PAR_COMMERCANT])]);
+            }
             // Attribution définitive : identité de l'attributaire validée.
             if (! $reservation->user->kycValide()) {
                 throw ValidationException::withMessages(['contrat_signe_le' => __('admin.boutiques.erreurs.identite_non_validee')]);
             }
-            $this->identifiants->attribuer($reservation->user, $validateur, now());
             $reservation->forceFill(['statut' => StatutReservationBoutique::Attribuee, 'attribuee_le' => now(), 'contrat_signe_le' => $contratSigneLe])->save();
             $reservation->boutique->changerStatut(StatutBoutique::Attribuee, 'attribution', $reservation, $validateur);
             $this->journal->ecrire($validateur, 'reservation_boutique.attribuee', 'ReservationBoutique', $reservation->id, null,

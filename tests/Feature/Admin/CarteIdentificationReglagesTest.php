@@ -6,8 +6,8 @@ use App\Enums\Role;
 use App\Models\AuditLog;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Support\ImagesPlateforme;
-use App\Support\Telephone;
 use App\Support\Plateforme\ReglagesCarte;
+use App\Support\Telephone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -107,7 +107,7 @@ class CarteIdentificationReglagesTest extends TestCase
 
         $this->get(route('admin.plateforme', ['section' => 'carte']))->assertOk()
             ->assertSee('data-etat-carte="manquant"', false)->assertSee('Réglages manquants')
-            ->assertSee('data-manquant="signatureAutorite"', false)->assertDontSee('data-manquant="armoiries"', false);
+            ->assertSee('data-manquant="qualiteAutorite"', false)->assertDontSee('data-manquant="signatureAutorite"', false)->assertDontSee('data-manquant="armoiries"', false);
 
         $this->enregistrer($this->complet())->assertSessionHasNoErrors()->assertSessionHas('succes')->assertSessionMissing('avertissement_plateforme');
 
@@ -269,9 +269,10 @@ class CarteIdentificationReglagesTest extends TestCase
             ->assertSee('data-face="recto"', false)->assertSee('data-face="verso"', false)
             ->assertSee('SPÉCIMEN')->assertSee('Nom saisi non enregistré')->assertSee('data:image/png;base64,', false)
             ->assertSee('Carte prête à être générée')
-            // Recto validé : titre et type, titulaire, né(e) le, carte n°, expire le ; aucune information sur la boutique.
-            ->assertSeeInOrder(['Burkina Faso', 'Carte d’identification', 'COMMERÇANT', 'Titulaire', 'Né(e) le', 'Carte n°', 'Expire le'])
-            ->assertDontSee('Emplacement')->assertDontSee('Activité');
+            // Recto de la maquette du 03/11/2026 : n° de carte (IFU), identité, secteur, site, dates ; jamais le code d'une boutique.
+            ->assertSeeInOrder(['Burkina Faso', 'Carte d’identification', 'COMMERÇANT', 'N° de carte (IFU)', 'Nom et prénom(s)', 'Sexe', 'Né(e) le', 'À',
+                'Secteur d’activité', 'Site', 'Établie le', 'Expire le', 'Groupe sanguin', 'Lieu de résidence', 'Personne à prévenir', 'N° IFU · Expiration'])
+            ->assertDontSee('Emplacement');
 
         $this->assertNull(plateforme('carte.nomAutorite'));
         $this->assertSame($versions, DB::table('parametres_plateforme_versions')->count());

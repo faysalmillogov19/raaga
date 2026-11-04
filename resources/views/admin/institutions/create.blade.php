@@ -4,7 +4,7 @@
     <form method="POST" action="{{ route('admin.institutions.store') }}" class="bo-carte !mt-0 grid gap-4 lg:grid-cols-2" novalidate>
         @csrf
         <x-admin.champ nom="denomination" :libelle="$i['champs']['denomination']" required maxlength="200" class="lg:col-span-2" />
-        @foreach (['sigle', 'forme_juridique', 'rccm', 'ifu', 'secteur'] as $champ)
+        @foreach (['sigle', 'forme_juridique', 'ifu', 'secteur'] as $champ)
             <x-admin.champ :nom="$champ" :libelle="$i['champs'][$champ]" />
         @endforeach
         <x-admin.champ nom="adresse" :libelle="$i['champs']['adresse']" class="lg:col-span-2" />
