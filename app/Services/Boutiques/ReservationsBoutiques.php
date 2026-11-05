@@ -63,6 +63,22 @@ class ReservationsBoutiques
         return $user->estPersonneMorale() ? [TypeDocumentKyc::Ifu] : TypeDocumentKyc::piecesIdentite();
     }
 
+    /**
+     * Pièce d'identité déjà transmise sur le compte, reprise à la réservation au lieu d'être redemandée (05/11/2026) :
+     * personne physique, identité validée ou en cours de vérification, pièce validée ou en attente avec son numéro, non
+     * expirée. Sinon null (aucune pièce, pièce ou identité rejetée, à mettre à jour, expirée) : la pièce est demandée.
+     * Une pièce rejetée ensuite suit le délai de correction des attributaires ; l'attribution exige une identité validée.
+     */
+    public static function pieceDuCompte(User $user): ?KycDocument
+    {
+        if ($user->estPersonneMorale() || ! in_array($user->statut_kyc, [StatutKyc::Valide, StatutKyc::EnAttente], true) || $user->piece_expire_le?->lt(today())) {
+            return null;
+        }
+
+        return KycDocument::query()->where('user_id', $user->id)->whereIn('type', TypeDocumentKyc::piecesIdentite())
+            ->whereIn('statut', [StatutDocumentKyc::Valide, StatutDocumentKyc::EnAttente])->whereNotNull('numero')->latest('id')->first();
+    }
+
     public function __construct(private readonly Journal $journal) {}
 
     /**

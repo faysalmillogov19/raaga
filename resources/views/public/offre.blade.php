@@ -73,13 +73,13 @@
                                 <div class="mt-2 grid gap-2 sm:grid-cols-2">
                                     @foreach ($profils as $profil)
                                         <label class="inline-flex min-h-[44px] items-center gap-3">
-                                            <input type="radio" name="profil" value="{{ $profil->value }}" @checked(old('profil') === $profil->value) required> {{ $profil->label() }}
+                                            <input type="radio" name="profil" value="{{ $profil->value }}" @checked(old('profil', $profilConnu) === $profil->value) required> {{ $profil->label() }}
                                         </label>
                                     @endforeach
                                 </div>
                                 @error('profil') <p class="message-erreur" role="alert">{{ $message }}</p> @enderror
                             </fieldset>
-                            <x-public.champ nom="pays_residence" :libelle="ucfirst($v['attributs']['pays_residence'])" :valeur="old('pays_residence', 'Burkina Faso')" maxlength="80" required />
+                            <x-public.champ nom="pays_residence" :libelle="ucfirst($v['attributs']['pays_residence'])" :valeur="old('pays_residence', config('raaga.inscription.pays')[auth()->user()?->pays_residence] ?? 'Burkina Faso')" maxlength="80" required />
                             <x-public.champ nom="nombre_actions" :libelle="ucfirst($v['attributs']['nombre_actions'])" type="number" min="1" max="10000000" :valeur="old('nombre_actions', $nombreMinimum)" required />
                             <div>
                                 <x-public.case nom="simulation_comprise" :libelle="$v['interet']['case']" value="1" required />

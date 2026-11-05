@@ -130,11 +130,12 @@
 
                             {{-- Numéros et date d'expiration, à côté de la pièce qui les porte. --}}
                             @if ($cle === 'recto')
-                                <x-public.champ nom="numero_piece" :libelle="$v['numero_piece']" :aide="$v['aides']['numero_piece']" maxlength="40" autocomplete="off" obligatoire />
+                                {{-- Valeurs déjà connues du compte reprises (05/11/2026) ; date d'expiration seulement si elle est à venir. --}}
+                                <x-public.champ nom="numero_piece" :libelle="$v['numero_piece']" :aide="$v['aides']['numero_piece']" :valeur="$user->numero_piece" maxlength="40" autocomplete="off" obligatoire />
                                 <div data-expiration-piece>
                                     <label for="piece_expire_le" class="block font-semibold text-encre"><x-requis /> {{ $v['expiration'] }}</label>
                                     <p id="piece_expire_le-aide" class="texte-carte">{{ $v['aides']['expiration'] }}</p>
-                                    <input id="piece_expire_le" name="piece_expire_le" type="date" min="{{ now()->addDay()->toDateString() }}" value="{{ old('piece_expire_le') }}"
+                                    <input id="piece_expire_le" name="piece_expire_le" type="date" min="{{ now()->addDay()->toDateString() }}" value="{{ old('piece_expire_le', $user->piece_expire_le?->gt(today()) ? $user->piece_expire_le->toDateString() : null) }}"
                                            aria-describedby="piece_expire_le-aide piece_expire_le-erreur" @error('piece_expire_le') aria-invalid="true" @enderror class="champ mt-2">
                                     <x-public.erreur :messages="$errors->get('piece_expire_le')" id="piece_expire_le-erreur" />
                                 </div>

@@ -85,7 +85,7 @@ class IfuCommercantTest extends TestCase
         $boutique = Boutiques::boutique('A', 1);
 
         $this->actingAs($citoyen)->get(route('boutiques.boutique', $boutique->code))->assertOk()
-            ->assertSee('data-ifu-reservation', false)->assertSee('Votre numéro Raaga')->assertSee('Numéro Raaga (IFU)')->assertSee('name="ifu"', false)->assertSee('name="attestation_ifu"', false);
+            ->assertSee('data-ifu-reservation', false)->assertSee('Votre numéro IFU')->assertSee('Numéro IFU')->assertDontSee('Numéro Raaga (IFU)')->assertSee('name="ifu"', false)->assertSee('name="attestation_ifu"', false);
 
         // Sans IFU, sans attestation, IFU déjà pris : rien n'est enregistré.
         $this->candidater($citoyen, $boutique, ['attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf')])

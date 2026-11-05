@@ -96,6 +96,10 @@
                 @if ($pieceFournie)
                     {{-- Pièce déjà fournie dans la campagne : reprise pour cette inscription. --}}
                     <p class="font-semibold text-encre" data-piece-fournie>{{ __('public.boutiques.attente.piece_fournie', ['type' => $r['types'][$pieceFournie->type_piece] ?? $pieceFournie->type_piece]) }}</p>
+                @elseif ($pieceCompte)
+                    {{-- Pièce déjà transmise sur le compte (validée ou en cours de vérification) : reprise, rien à redéposer. --}}
+                    <p class="font-semibold text-encre" data-piece-compte>{{ __($pieceCompte->statut === \App\Enums\StatutDocumentKyc::Valide ? 'public.boutiques.attente.piece_verifiee' : 'public.boutiques.attente.piece_en_verification',
+                        ['type' => $r['types'][$pieceCompte->type->value] ?? $pieceCompte->type->value, 'numero' => $pieceCompte->numero]) }}</p>
                 @else
                 <fieldset>
                     <legend class="text-lg font-bold text-encre"><x-requis /> {{ $r['piece_titre'] }}</legend>
@@ -119,7 +123,8 @@
                            class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
                     <x-public.erreur :messages="$errors->get('piece')" id="piece-erreur" />
                 </div>
-                @unless (auth()->user()->estPersonneMorale())
+                @endif
+                @if ($sexeLieuDemandes)
                     {{-- Sexe et lieu de naissance, tels qu'inscrits sur la pièce (carte de commerçant). --}}
                     <fieldset class="mt-4" data-sexe>
                         <legend class="font-semibold text-encre"><x-requis /> {{ __('public.verification.sexe') }}</legend>
@@ -134,7 +139,6 @@
                         <x-public.erreur :messages="$errors->get('sexe')" />
                     </fieldset>
                     <x-public.champ nom="lieu_naissance" :libelle="__('public.verification.lieu_naissance')" :valeur="auth()->user()->lieu_naissance" class="mt-4" maxlength="100" autocomplete="off" obligatoire />
-                @endunless
                 @endif
 
                 @if ($attestationIfu)
@@ -142,7 +146,13 @@
                     <fieldset class="mt-6" data-ifu-reservation>
                         <legend class="text-lg font-bold text-encre"><x-requis /> {{ $r['ifu_titre'] }}</legend>
                         <p class="texte-carte">{{ $r['ifu_aide'] }}</p>
-                        <x-public.champ nom="ifu" :libelle="$r['ifu']" :valeur="auth()->user()->ifu" class="mt-3" maxlength="30" autocomplete="off" autocapitalize="characters" obligatoire />
+                        @if (filled(auth()->user()->ifu) && ! $errors->has('ifu'))
+                            {{-- IFU déjà donné : rappelé, seule l'attestation est demandée (correction depuis « Vérifier mon identité »). --}}
+                            <input type="hidden" name="ifu" value="{{ auth()->user()->ifu }}">
+                            <p class="mt-3 text-encre" data-ifu-connu><span class="font-semibold">{{ $r['ifu'] }} :</span> {{ auth()->user()->ifu }}</p>
+                        @else
+                            <x-public.champ nom="ifu" :libelle="$r['ifu']" :valeur="auth()->user()->ifu" class="mt-3" maxlength="30" autocomplete="off" autocapitalize="characters" obligatoire />
+                        @endif
                         <div class="mt-4">
                             <label for="attestation_ifu" class="block font-semibold text-encre"><x-requis /> {{ $r['attestation_ifu'] }}</label>
                             <input id="attestation_ifu" name="attestation_ifu" type="file" accept="image/jpeg,image/png,application/pdf" required aria-describedby="attestation_ifu-erreur"
@@ -152,6 +162,23 @@
                     </fieldset>
                 @endif
 
+                {{-- Activité et personne à prévenir déjà renseignées : rappelées, champs ouverts seulement sur « Modifier » (05/11/2026). --}}
+                @php($moi = auth()->user())
+                @php($modifier = ! $infosCommercantConnues || $errors->hasAny(['secteur_activite_id', 'secteur_activite_autre', 'personne_prevenir_nom', 'personne_prevenir_telephone', 'groupe_sanguin', 'consentement_groupe_sanguin']))
+                <div x-data="{ modifier: @js($modifier) }">
+                @if ($infosCommercantConnues)
+                    <div class="mt-6 rounded-charte border-2 border-ligne p-4" x-show="! modifier" @if ($modifier) x-cloak @endif data-infos-connues>
+                        <p class="font-bold text-encre">{{ $r['infos_connues_titre'] }}</p>
+                        <p class="texte-carte">{{ $r['infos_connues_aide'] }}</p>
+                        <ul class="mt-3 space-y-1 text-encre">
+                            <li><span class="font-semibold">{{ $r['secteur'] }} :</span> {{ $secteurLibelle }}</li>
+                            <li><span class="font-semibold">{{ $r['infos_prevenir'] }} :</span> {{ $moi->personne_prevenir_nom }}, {{ \App\Support\Telephone::formaterLocal($moi->personne_prevenir_telephone) }}</li>
+                            <li><span class="font-semibold">{{ $r['infos_groupe_sanguin'] }} :</span> {{ $moi->groupe_sanguin_consenti_le && $moi->groupe_sanguin ? $moi->groupe_sanguin : $r['infos_non_renseigne'] }}</li>
+                        </ul>
+                        <button type="button" class="btn-secondaire mt-4" @click="modifier = true" data-modifier-infos>{{ $r['infos_modifier'] }}</button>
+                    </div>
+                @endif
+                <div x-show="modifier" @unless ($modifier) x-cloak @endunless>
                 {{-- Activité principale du commerçant (03/11/2026) ; « Autre activité » : précision libre. --}}
                 @php($secteurChoisi = (string) old('secteur_activite_id', auth()->user()->secteur_activite_id))
                 <div class="mt-6" x-data="{ secteur: @js($secteurChoisi) }" data-secteur-activite>
@@ -176,7 +203,6 @@
                 </div>
 
                 {{-- Carte de commerçant : personne à prévenir ; groupe sanguin facultatif, imprimé seulement avec consentement. --}}
-                @php($moi = auth()->user())
                 <fieldset class="mt-6" x-data="{ groupe: @js((string) old('groupe_sanguin', $moi->groupe_sanguin_consenti_le ? $moi->groupe_sanguin : '')) }" data-carte-commercant>
                     <legend class="text-lg font-bold text-encre">{{ $r['carte_titre'] }}</legend>
                     <p class="texte-carte">{{ $r['carte_aide'] }}</p>
@@ -203,6 +229,8 @@
                         </div>
                     </div>
                 </fieldset>
+                </div>
+                </div>
 
                 <fieldset class="mt-6">
                     <legend class="font-bold text-encre"><x-requis /> {{ $r['engagements'] }}</legend>

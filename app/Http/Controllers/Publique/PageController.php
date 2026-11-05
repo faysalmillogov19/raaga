@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Publique;
 use App\Enums\ProfilInvestisseur;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\ManifestationInteret;
 use App\Services\Invest\RaagaInvest;
 use App\Services\Publique\CollectePublique;
 use App\Support\Phase;
@@ -50,6 +51,8 @@ class PageController extends Controller
             // Manifestation d'intérêt (citoyen connecté) : seulement avec des paramètres d'investissement confirmés.
             'interet' => RaagaInvest::parametres() !== null,
             'citoyen' => request()->user()?->hasRole(Role::Citoyen) ?? false,
+            // Profil de sa dernière manifestation d'intérêt : repris, jamais redemandé (05/11/2026).
+            'profilConnu' => request()->user() ? ManifestationInteret::query()->where('user_id', request()->user()->id)->latest('id')->first()?->profil?->value : null,
             'profils' => ProfilInvestisseur::cases(),
             'nombreMinimum' => RaagaInvest::conditions()['minimum'] ?? 1,
             'irvm' => Phase::tauxIrvm(),

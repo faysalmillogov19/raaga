@@ -139,6 +139,12 @@ class BoutiquesController extends Controller
             'interesses' => ListesAttente::interesses($boutique),
             'inscription' => $inscription,
             'pieceFournie' => ListesAttente::pieceFournie($campagne, $user),
+            // Pièce vérifiée du compte (reprise) ; sexe et lieu de naissance demandés seulement s'ils manquent.
+            'pieceCompte' => $user ? ReservationsBoutiques::pieceDuCompte($user) : null,
+            'sexeLieuDemandes' => $user && self::sexeLieuDemandes($campagne, $user),
+            // Activité et personne à prévenir déjà renseignées : rappelées, modifiables sur demande.
+            'infosCommercantConnues' => $user && self::infosCommercantConnues($user),
+            'secteurLibelle' => $user ? SecteurActivite::libellePour($user) : null,
             'tarif' => ReservationsBoutiques::tarifer($boutique),
             'detail' => ReservationsBoutiques::detail($boutique),
             'limites' => self::limites($campagne, $request->user()),
@@ -154,16 +160,43 @@ class BoutiquesController extends Controller
     }
 
     /**
+     * Sexe et lieu de naissance à saisir (carte de commerçant) : personne physique, à la première inscription de la
+     * campagne ; avec une pièce vérifiée, seulement s'ils manquent au profil.
+     */
+    private static function sexeLieuDemandes(CampagneBoutiques $campagne, User $user): bool
+    {
+        if ($user->estPersonneMorale() || ListesAttente::pieceFournie($campagne, $user)) {
+            return false;
+        }
+
+        return ReservationsBoutiques::pieceDuCompte($user) === null || blank($user->sexe) || blank($user->lieu_naissance);
+    }
+
+    /**
+     * Activité (secteur encore proposé, précision donnée pour « Autre activité ») et personne à prévenir déjà
+     * renseignées : le formulaire les rappelle au lieu de les redemander (05/11/2026).
+     */
+    private static function infosCommercantConnues(User $user): bool
+    {
+        $secteur = $user->secteur_activite_id ? SecteurActivite::query()->where('actif', true)->find($user->secteur_activite_id) : null;
+
+        return $secteur !== null && ($secteur->code !== SecteurActivite::AUTRE || filled($user->secteur_activite_autre))
+            && filled($user->personne_prevenir_nom) && filled($user->personne_prevenir_telephone);
+    }
+
+    /**
      * Inscription sur une boutique : libre, elle est pré-réservée au nom du citoyen (caution à payer) ; sinon, il prend
-     * son rang sur la liste d'attente. La pièce d'identité n'est demandée qu'à la première inscription de la campagne.
+     * son rang sur la liste d'attente. La pièce d'identité n'est demandée qu'à la première inscription de la campagne,
+     * et jamais si le compte a une pièce vérifiée.
      */
     public function reserver(Request $request, string $code): RedirectResponse
     {
         $boutique = Boutique::query()->where('code', $code)->firstOrFail();
         $campagne = self::campagnePour($boutique, $request->user());
         abort_unless($campagne, 404);
-        $premiere = ListesAttente::pieceFournie($campagne, $request->user()) === null;
         $user = $request->user();
+        $premiere = ListesAttente::pieceFournie($campagne, $user) === null && ReservationsBoutiques::pieceDuCompte($user) === null;
+        $sexeLieu = self::sexeLieuDemandes($campagne, $user);
         $attestation = ReservationsBoutiques::attestationIfuAFournir($user);
 
         $document = ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
@@ -172,8 +205,8 @@ class BoutiquesController extends Controller
             'numero_piece' => [Rule::requiredIf($premiere), 'nullable', 'string', 'min:5', 'max:40'],
             'piece' => [Rule::requiredIf($premiere), 'nullable', ...$document],
             // Sexe et lieu de naissance, lus sur la pièce d'identité d'une personne physique (carte de commerçant).
-            'sexe' => [Rule::requiredIf($premiere && ! $user->estPersonneMorale()), 'nullable', Rule::in(User::SEXES)],
-            'lieu_naissance' => [Rule::requiredIf($premiere && ! $user->estPersonneMorale()), 'nullable', 'string', 'min:2', 'max:100'],
+            'sexe' => [Rule::requiredIf($sexeLieu), 'nullable', Rule::in(User::SEXES)],
+            'lieu_naissance' => [Rule::requiredIf($sexeLieu), 'nullable', 'string', 'min:2', 'max:100'],
             'engagements' => ['array'],
             'engagements.*' => [Rule::enum(DocumentAccepte::class)],
             // Activité principale du commerçant (03/11/2026) ; « Autre activité » : précision libre.

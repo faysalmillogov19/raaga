@@ -93,8 +93,8 @@ class ListesAttente
     }
 
     /**
-     * Inscription sur une boutique. La pièce d'identité n'est demandée qu'à la première inscription de la campagne ;
-     * les suivantes reprennent son type et son numéro. IFU obligatoire ; une personne physique le donne à sa première
+     * Inscription sur une boutique. La pièce d'identité n'est demandée qu'à la première inscription de la campagne, et
+     * jamais si le compte a une pièce vérifiée (reprise) ; les suivantes reprennent son type et son numéro. IFU obligatoire ; une personne physique le donne à sa première
      * réservation, avec son attestation. Jamais plus de deux boutiques par commerçant : au-delà, rien n'est enregistré.
      *
      * @param  list<string>  $engagements  valeurs DocumentAccepte cochées
@@ -119,9 +119,14 @@ class ListesAttente
             $erreur('telephone');
         }
         $deja = self::pieceFournie($campagne, $user);
+        // Pièce déjà transmise sur le compte : reprise, rien n'est redéposé.
+        $duCompte = $deja ? null : ReservationsBoutiques::pieceDuCompte($user);
         if ($deja) {
             $typePiece = TypeDocumentKyc::from($deja->type_piece);
             $numero = $deja->numero_piece;
+        } elseif ($duCompte) {
+            $typePiece = $duCompte->type;
+            $numero = ReservationBoutique::normaliserPiece((string) $duCompte->numero);
         } else {
             $numero = ReservationBoutique::normaliserPiece((string) $numeroPiece);
             if ($typePiece === null || ! in_array($typePiece, ReservationsBoutiques::piecesPour($user), true) || mb_strlen($numero) < 5) {
@@ -141,7 +146,7 @@ class ListesAttente
 
         $chemins = [];
         try {
-            $inscription = DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $deja, $ip, $userAgent, $erreur, $ifu, $attestationIfu, &$chemins) {
+            $inscription = DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $deja, $duCompte, $ip, $userAgent, $erreur, $ifu, $attestationIfu, &$chemins) {
                 $campagne = CampagneBoutiques::query()->lockForUpdate()->findOrFail($campagne->id);
                 // Réservations ouvertes, ou relance en cours de cette boutique pour ce membre de la liste générale.
                 if (! $campagne->accepteReservations() && RelancesInteret::ouvertePour($boutique, $user)?->campagne_boutiques_id !== $campagne->id) {
@@ -164,7 +169,7 @@ class ListesAttente
                     'campagne_boutiques_id' => $campagne->id, 'boutique_id' => $boutique->id, 'user_id' => $user->id,
                     'statut' => StatutInscriptionBoutique::EnAttente, 'type_piece' => $typePiece->value, 'numero_piece' => $numero, 'inscrite_le' => now(),
                 ]);
-                if (! $deja) {
+                if (! $deja && ! $duCompte) {
                     ReservationsBoutiques::deposerPiece($user, $typePiece, $numero, $piece, $chemins);
                 }
                 if ($attestationIfu) {

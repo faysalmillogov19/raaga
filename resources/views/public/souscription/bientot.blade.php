@@ -12,7 +12,8 @@
                 <p>{{ $t['intro'] }}</p>
                 <form method="POST" action="{{ route('souscription.bientot.store') }}" class="mt-5 space-y-4" novalidate>
                     @csrf
-                    <x-public.champ nom="telephone" :libelle="$t['telephone']" type="tel" :aide="$t['telephone_aide']" obligatoire aria-required="true" />
+                    <x-public.champ nom="telephone" :libelle="$t['telephone']" type="tel" :aide="$t['telephone_aide']"
+                                    :valeur="auth()->user()?->telephone ? \App\Support\Telephone::formaterLocal(auth()->user()->telephone) : null" obligatoire aria-required="true" />
                     <div>
                         <x-public.case nom="consentement" value="1" :libelle="$t['consentement']" obligatoire aria-required="true" />
                         @error('consentement')<p class="message-erreur" role="alert">{{ $message }}</p>@enderror
