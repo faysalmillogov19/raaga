@@ -38,6 +38,7 @@
     <x-assets />
 </head>
 <body @class(['site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased', 'theme-nuit' => $nuit, 'theme-lumiere' => \App\Support\ThemePublic::lumiere()])>
+    <x-bandeau-recette />
     <a href="#contenu" class="sr-only z-50 bg-jaune font-semibold text-encre focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:px-4 focus:py-3">
         {{ __('public.site.aller_au_contenu') }}
     </a>

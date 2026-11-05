@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\Recette;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -28,8 +29,9 @@ class DatabaseSeeder extends Seeder
         // Référentiels (idempotents, aussi lancés seuls par deploy.sh) : paramètres, niveaux, zones, types, unités, moyens de paiement.
         $this->call(ReferentielsSeeder::class);
 
-        // Comptes de démonstration : jamais en production.
-        if (! app()->environment('production')) {
+        // Comptes de démonstration : jamais en production ni en recette (comptes de recette à mots de passe générés :
+        // raaga:recette-comptes, réunion du 05/11/2026).
+        if (! app()->environment('production') && ! Recette::active()) {
             $this->call(ComptesDemoSeeder::class);
             // Tranche de démonstration à 10 000 FCFA, minimum 1 action, en brouillon.
             $this->call(TrancheDemoSeeder::class);

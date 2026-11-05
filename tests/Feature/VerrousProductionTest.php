@@ -17,11 +17,13 @@ use App\Models\Unite;
 use App\Models\User;
 use App\Services\Cartes\NavigateurChrome;
 use App\Services\Plateforme\ParametresPlateforme;
+use App\Support\Planificateur;
 use Database\Seeders\ComptesDemoSeeder;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\ReferentielsSeeder;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -49,6 +51,25 @@ class VerrousProductionTest extends TestCase
         parent::setUp();
         // File d'attente réelle, comme en production (les tests tournent par défaut en « sync »).
         config(['queue.default' => 'database']);
+        // Planificateur en marche (tâche cron installée) ; son absence est testée à part.
+        Planificateur::battre();
+    }
+
+    public function test_planificateur_inactif_avertissement_avec_la_ligne_cron(): void
+    {
+        Cache::forget(Planificateur::CLE);
+        $this->artisan('raaga:verifier-production')
+            ->expectsOutputToContain('AVERTISSEMENT : Planificateur Laravel inactif');
+        // Ligne cron donnée dans l'avertissement, avec le chemin de l'application.
+        $this->assertSame('* * * * * cd '.base_path().' && php artisan schedule:run >> /dev/null 2>&1', Planificateur::ligneCron());
+        // Battement trop ancien : toujours inactif ; récent : plus d'avertissement.
+        Cache::forever(Planificateur::CLE, now()->subMinutes(Planificateur::DELAI_MINUTES + 1)->getTimestamp());
+        $this->assertFalse(Planificateur::actif());
+        Planificateur::battre();
+        $this->artisan('raaga:verifier-production')->doesntExpectOutputToContain('Planificateur Laravel inactif');
+        // Le battement est planifié chaque minute ; deploy.sh documente la tâche cron.
+        $this->assertStringContainsString('schedule:run', (string) file_get_contents(base_path('deploy.sh')));
+        $this->assertStringContainsString('Planificateur::battre()', (string) file_get_contents(base_path('routes/console.php')));
     }
 
     /** Opérateur de paiement réel (doublure). */
@@ -121,12 +142,18 @@ class VerrousProductionTest extends TestCase
     /** Logo de l'onglet « Identité » déposé, de la hauteur donnée (le logo fourni avec le code ne fait que 96 px de haut). */
     private function deposerLogo(int $hauteur): void
     {
-        $image = imagecreatetruecolor($hauteur * 3, $hauteur);
+        $this->deposerImage('logoHorizontal', $hauteur * 3, $hauteur);
+    }
+
+    /** Image de l'onglet « Identité » déposée dans les paramètres de la plateforme. */
+    private function deposerImage(string $champ, int $largeur, int $hauteur): void
+    {
+        $image = imagecreatetruecolor($largeur, $hauteur);
         ob_start();
         imagepng($image);
-        Storage::disk('local')->put('plateforme/logoHorizontal-test.png', (string) ob_get_clean());
+        Storage::disk('local')->put('plateforme/'.$champ.'-test.png', (string) ob_get_clean());
         $parametres = app(ParametresPlateforme::class);
-        $parametres->enregistrer('identite', [...$parametres->section('identite'), 'logoHorizontal' => 'plateforme/logoHorizontal-test.png'], null);
+        $parametres->enregistrer('identite', [...$parametres->section('identite'), $champ => 'plateforme/'.$champ.'-test.png'], null);
     }
 
     public function test_armoiries_et_logo_par_defaut_en_basse_resolution_avertissement(): void
@@ -135,12 +162,14 @@ class VerrousProductionTest extends TestCase
         config(['raaga.demo' => false, ...self::COMPTES]);
         $this->operateurReel();
 
-        // Rien de déposé : armoiries fournies (998 px de haut) et logo fourni en SVG (vectoriel, depuis le 02/11/2026) acceptés.
+        // Rien de déposé : logo fourni en SVG (vectoriel, depuis le 02/11/2026) accepté ; armoiries fournies (avec écusson,
+        // 05/11/2026) toujours signalées : version provisoire, quelle que soit leur taille.
         $this->artisan('raaga:verifier-production')->assertSuccessful()
             ->doesntExpectOutputToContain('Logo par défaut en basse résolution')
-            ->doesntExpectOutputToContain('Armoiries par défaut en basse résolution');
+            ->expectsOutputToContain('Armoiries par défaut : version provisoire en basse résolution, déposer la version officielle');
 
-        // Logo déposé : plus d'avertissement, même trop petit (seuls les fichiers par défaut sont contrôlés ici).
+        // Armoiries et logo déposés : plus d'avertissement, même trop petits (seuls les fichiers par défaut sont contrôlés ici).
+        $this->deposerImage('armoiries', 400, 480);
         $this->deposerLogo(120);
         $this->operateurReel();
         $this->artisan('raaga:verifier-production --strict')->assertSuccessful()->expectsOutputToContain('Prêt pour la production');
@@ -150,6 +179,7 @@ class VerrousProductionTest extends TestCase
     {
         Storage::fake('local');
         $this->deposerLogo(600);
+        $this->deposerImage('armoiries', 600, 720);
         // Aucun opérateur réel, comptes de destination et clé des portiques manquants : avertissements, code 0 (services fermés).
         config(['raaga.demo' => false, 'raaga.paiement.fournisseur' => null, 'raaga.compte_sequestre' => [], 'raaga.compte_location' => ['titulaire' => 'Raaga SA'],
             'raaga.cartes.cle_portiques' => '']);
@@ -299,7 +329,7 @@ class VerrousProductionTest extends TestCase
         $this->artisan('raaga:verifier-production')->assertSuccessful()
             ->expectsOutputToContain('AVERTISSEMENT : 2 génération(s) de fichiers de carte en échec')
             ->expectsOutputToContain('AVERTISSEMENT : 1 tâche(s) en attente depuis plus de 10 minutes')
-            ->expectsOutputToContain('Aucun point bloquant (2 avertissement(s)');
+            ->expectsOutputToContain('Aucun point bloquant (3 avertissement(s)');
     }
 
     public function test_ordre_de_deploy_sh(): void

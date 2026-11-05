@@ -9,6 +9,7 @@ use App\Enums\StatutKyc;
 use App\Models\Acceptation;
 use App\Models\AuditLog;
 use App\Models\Commune;
+use App\Models\Greffe;
 use App\Models\User;
 use Database\Seeders\CommunesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -134,7 +135,9 @@ class InscriptionTest extends TestCase
     public function test_l_ifu_est_obligatoire_pour_une_personne_morale_seulement(): void
     {
         $this->verifierNumero();
-        $morale = fn (array $donnees = []) => $this->identite(['type_titulaire' => 'MORALE', 'raison_sociale' => 'Tissages du Faso SARL', 'forme_morale' => 'ENTREPRISE', ...$donnees]);
+        $morale = fn (array $donnees = []) => $this->identite(['type_titulaire' => 'MORALE', 'raison_sociale' => 'Tissages du Faso SARL', 'forme_morale' => 'ENTREPRISE',
+            'gerant_fonction' => 'Gérante', 'email' => 'gerance@tissages.bf', 'rccm' => 'BF OUA 2020 B 12345', 'rccm_immatricule_le' => '2020-03-02',
+            'rccm_greffe_id' => (string) Greffe::query()->where('code', 'OUAGADOUGOU')->value('id'), ...$donnees]);
 
         $this->get('/inscription')->assertSee('name="ifu"', false)->assertSee('Numéro IFU')->assertDontSee('Numéro Raaga (IFU)');
         foreach (['' => 'Saisissez un numéro IFU valide : 8 chiffres suivis d’une lettre.', '1234567A' => 'Saisissez un numéro IFU valide : 8 chiffres suivis d’une lettre.'] as $saisie => $message) {

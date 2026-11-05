@@ -16,7 +16,6 @@ use App\Models\ReservationBoutique;
 use App\Models\SecteurActivite;
 use App\Models\Site;
 use App\Models\User;
-use App\Services\Audit\Journal;
 use App\Services\Boutiques\AvancesBoutiques;
 use App\Services\Boutiques\ListesAttente;
 use App\Services\Boutiques\RelancesInteret;
@@ -39,6 +38,9 @@ use Illuminate\View\View;
  */
 class BoutiquesController extends Controller
 {
+    /** Résultats de recherche affichés au plus (les moins chers d'abord). */
+    public const RESULTATS_AFFICHES = 50;
+
     public function __construct(private readonly ListesAttente $listes) {}
 
     /** Campagne affichée : ouverte, sinon la prochaine confirmée, sinon la dernière clôturée. */
@@ -63,6 +65,10 @@ class BoutiquesController extends Controller
         $blocs = $niveau !== null ? $niveaux[$niveau] : [];
         $bloc = in_array($request->query('bloc'), $blocs, true) ? (string) $request->query('bloc') : ($blocs[0] ?? null);
         $user = $request->user();
+        // Recherche (05/11/2026) : coût à l'entrée par zone, et boutiques du site filtrées par budget, zone, niveau, surface.
+        $filtres = self::filtresRecherche($request);
+        $plan = $campagne && $site && $niveau !== null && $bloc !== null ? ReservationsBoutiques::plan($campagne, $site->id, $niveau, $bloc, $type?->id) : collect();
+        $resultats = $campagne && $site && $filtres !== [] ? ReservationsBoutiques::rechercher($campagne, $site->id, $filtres, $type?->id) : null;
 
         // Thème « nuit » : même données, présentation des maquettes (public.boutiques.index-nuit).
         return view(ThemePublic::nuit() ? 'public.boutiques.index-nuit' : 'public.boutiques.index', [
@@ -74,10 +80,43 @@ class BoutiquesController extends Controller
             'types' => $types, 'type' => $type,
             // Limites par type : ce qui reste au citoyen connecté (null pour un visiteur : les limites seules).
             'limites' => $campagne ? self::limites($campagne, $user) : null,
-            'plan' => $campagne && $site && $niveau !== null && $bloc !== null ? ReservationsBoutiques::plan($campagne, $site->id, $niveau, $bloc, $type?->id) : collect(),
+            'plan' => $plan,
+            'coutsParZone' => $campagne && $site ? ReservationsBoutiques::coutsParZone($campagne, $site->id, $type?->id) : collect(),
+            'filtres' => $filtres, 'resultats' => $resultats,
+            // Nombre de personnes en liste d'attente par boutique (un nombre seulement, jamais de nom).
+            'enAttente' => ListesAttente::enAttenteParBoutique($plan->pluck('id')->merge($resultats?->pluck('id') ?? [])->unique()->values()->all()),
             'mesReservations' => $campagne && $user ? ReservationBoutique::query()->where('campagne_boutiques_id', $campagne->id)->where('user_id', $user->id)
                 ->whereIn('statut', StatutReservationBoutique::actifs())->with('boutique')->get() : collect(),
         ]);
+    }
+
+    /**
+     * Filtres de la recherche lus dans l'adresse : montants en FCFA et surfaces en m² positifs, zone et niveau en texte
+     * court ; un filtre vide ou invalide est ignoré. @return array<string, int|float|string>
+     */
+    private static function filtresRecherche(Request $request): array
+    {
+        $filtres = [];
+        foreach (['budget_min', 'budget_max'] as $cle) {
+            $v = preg_replace('/\D/', '', (string) $request->query($cle, ''));
+            if ($v !== '' && strlen($v) <= 12) {
+                $filtres[$cle] = (int) $v;
+            }
+        }
+        foreach (['surface_min', 'surface_max'] as $cle) {
+            $v = str_replace(',', '.', trim((string) $request->query($cle, '')));
+            if (is_numeric($v) && (float) $v >= 0 && (float) $v <= 100000) {
+                $filtres[$cle] = (float) $v;
+            }
+        }
+        foreach (['zone', 'niveau'] as $cle) {
+            $v = trim((string) $request->query($cle === 'niveau' ? 'niveau_recherche' : $cle, ''));
+            if ($v !== '' && mb_strlen($v) <= 10) {
+                $filtres[$cle] = $v;
+            }
+        }
+
+        return $filtres;
     }
 
     /**
@@ -213,16 +252,15 @@ class BoutiquesController extends Controller
             // Activité principale du commerçant (03/11/2026) ; « Autre activité » : précision libre.
             'secteur_activite_id' => ['required', 'integer', Rule::exists('secteurs_activite', 'id')->where('actif', true)],
             'secteur_activite_autre' => ['nullable', 'string', 'max:120'],
-            // IFU et attestation : à la première réservation d'une personne physique (comité restreint du 03/11/2026).
-            'ifu' => $attestation ? Ifu::regles($user) : ['nullable'],
-            'attestation_ifu' => [Rule::requiredIf($attestation), 'nullable', ...$document],
+            // IFU et attestation : personne physique, facultatifs depuis le 05/11/2026 (sans IFU : formalisation différée et
+            // récépissé) ; donnés, ils vont ensemble.
+            'ifu' => $attestation ? Ifu::regles($user, 'nullable') : ['nullable'],
+            'attestation_ifu' => [Rule::requiredIf($attestation && filled($request->input('ifu'))), 'nullable', ...$document],
             // Carte de commerçant : personne à prévenir ; groupe sanguin facultatif, imprimé seulement avec consentement.
             'personne_prevenir_nom' => ['required', 'string', 'min:2', 'max:150'],
             'personne_prevenir_telephone' => ['required', 'string', 'max:20', fn (string $a, mixed $v, \Closure $echec) => Telephone::estValide((string) $v) ? null : $echec(__('public.boutiques.erreurs.prevenir_telephone'))],
             'groupe_sanguin' => ['nullable', Rule::in(User::GROUPES_SANGUINS)],
             'consentement_groupe_sanguin' => [filled($request->input('groupe_sanguin')) ? 'accepted' : 'nullable'],
-            // Justificatif du groupe (facultatif, 05/11/2026) : sans justificatif validé, le groupe n'est pas imprimé.
-            'justificatif_groupe_sanguin' => ['nullable', ...$document],
         ], [
             'secteur_activite_id.*' => __('public.boutiques.erreurs.secteur'),
             'sexe.*' => __('public.verification.erreurs.sexe'),
@@ -233,7 +271,6 @@ class BoutiquesController extends Controller
             'personne_prevenir_telephone.*' => __('public.boutiques.erreurs.prevenir_telephone'),
             'groupe_sanguin.*' => __('public.boutiques.erreurs.groupe_sanguin'),
             'consentement_groupe_sanguin.*' => __('public.boutiques.erreurs.consentement_groupe_sanguin'),
-            'justificatif_groupe_sanguin.*' => __('public.boutiques.erreurs.justificatif_groupe_sanguin'),
         ], __('public.boutiques.reservation.attributs'));
         $secteur = SecteurActivite::query()->findOrFail($donnees['secteur_activite_id']);
         $autre = $secteur->code === SecteurActivite::AUTRE ? trim((string) ($donnees['secteur_activite_autre'] ?? '')) : null;
@@ -246,25 +283,13 @@ class BoutiquesController extends Controller
             $request->file('piece'), $donnees['engagements'] ?? [], (string) $request->ip(), (string) $request->userAgent(),
             $donnees['ifu'] ?? null, $request->file('attestation_ifu'),
         );
-        $groupe = $donnees['groupe_sanguin'] ?? null;
-        $consentiAvant = $user->groupe_sanguin_consenti_le !== null;
-        // Groupe changé : l'accord est redaté, un justificatif déposé avant ne vaut plus (Cartes::groupeSanguinJustifie).
-        $groupeChange = $groupe !== null && $consentiAvant && $user->groupe_sanguin !== $groupe;
         $user->forceFill(array_filter(['sexe' => $donnees['sexe'] ?? null, 'lieu_naissance' => isset($donnees['lieu_naissance']) ? trim($donnees['lieu_naissance']) : null]))->forceFill([
             'secteur_activite_id' => $secteur->id, 'secteur_activite_autre' => $autre,
             'personne_prevenir_nom' => trim($donnees['personne_prevenir_nom']),
             'personne_prevenir_telephone' => Telephone::normaliser($donnees['personne_prevenir_telephone']),
-            // Donnée de santé : gardée seulement avec le consentement, daté.
-            'groupe_sanguin' => $groupe,
-            'groupe_sanguin_consenti_le' => $groupe ? ($groupeChange ? now() : ($user->groupe_sanguin_consenti_le ?? now())) : null,
         ])->save();
-        if ($groupe && $request->hasFile('justificatif_groupe_sanguin')) {
-            app(JustificatifsGroupeSanguin::class)->deposer($user, $request->file('justificatif_groupe_sanguin'));
-        }
-        if ($consentiAvant !== ($groupe !== null)) {
-            // Jamais la valeur au journal : seulement le consentement donné ou retiré.
-            app(Journal::class)->ecrire($user, $groupe ? 'groupe_sanguin.consenti' : 'groupe_sanguin.retire', 'User', $user->id);
-        }
+        // Groupe sanguin (donnée de santé, accord daté) ; son justificatif se dépose dans « Vérifier mon identité ».
+        app(JustificatifsGroupeSanguin::class)->enregistrerGroupe($user, $donnees['groupe_sanguin'] ?? null);
         // Données imprimées sur la carte de commerçant en cours : nouvelle version.
         if (Cartes::courante($user, TypeCarte::Commercant)) {
             app(Cartes::class)->synchroniser($user, TypeCarte::Commercant, $user);

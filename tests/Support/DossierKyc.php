@@ -11,7 +11,8 @@ use App\Services\Kyc\VerificationIdentite;
 
 /**
  * Dossier d'identité complet déposé (pièces en attente) : CNIB recto et verso avec numéro et date d'expiration, selfie ;
- * pour une personne morale, aussi l'attestation IFU (avec son numéro) et le justificatif de pouvoir.
+ * pour une personne morale, aussi l'attestation IFU (avec son numéro), le justificatif de pouvoir et le justificatif
+ * RCCM (05/11/2026 ; personne physique qui a déclaré un RCCM aussi).
  */
 final class DossierKyc
 {
@@ -29,6 +30,9 @@ final class DossierKyc
         }
         if ($user->estPersonneMorale()) {
             $pieces[] = [TypeDocumentKyc::JustifPouvoir, null, null, null];
+        }
+        if (VerificationIdentite::avecRccm($user)) {
+            $pieces[] = [TypeDocumentKyc::Rccm, null, $user->rccm, null];
         }
         foreach ($pieces as [$type, $face, $numero, $expire]) {
             KycDocument::create(['user_id' => $user->id, 'type' => $type, 'face' => $face, 'chemin_fichier' => 'kyc/test/'.$type->value.($face?->value ?? ''),

@@ -69,6 +69,17 @@
                         <x-admin.champ nom="raison_sociale" :libelle="__('public.titulaires.raison_sociale')" maxlength="200" />
                         <x-admin.champ nom="forme_morale" type="liste" :libelle="__('public.titulaires.forme')" :options="array_combine(\App\Enums\TypeTitulaire::FORMES, \App\Enums\TypeTitulaire::FORMES)" :vide="$g['champs']['choisir']" />
                         <x-admin.champ nom="ifu" :libelle="__('public.compte.inscription.ifu')" :aide="__('public.compte.inscription.ifu_aide')" maxlength="30" autocomplete="off" obligatoire />
+                        {{-- Gérant (la personne présente, titulaire du compte) et RCCM : obligatoires pour une personne morale (05/11/2026). --}}
+                        <x-admin.champ nom="gerant_fonction" :libelle="__('public.titulaires.gerant_fonction')" :aide="__('public.titulaires.gerant_fonction_aide')" maxlength="120" obligatoire />
+                        <x-admin.champ nom="email" type="email" :libelle="__('public.titulaires.email')" maxlength="190" autocomplete="off" obligatoire />
+                        <x-admin.champ nom="rccm" :libelle="__('public.rccm.numero')" :aide="__('public.rccm.numero_aide')" maxlength="60" autocomplete="off" obligatoire />
+                        <x-admin.champ nom="rccm_immatricule_le" type="date" :libelle="__('public.rccm.date')" obligatoire />
+                        <div x-data="{ greffe: @js((string) old('rccm_greffe_id', '')) }" @change="greffe = $event.target.name === 'rccm_greffe_id' ? $event.target.value : greffe">
+                            <x-admin.champ nom="rccm_greffe_id" type="liste" :libelle="__('public.rccm.greffe')" :options="\App\Models\Greffe::proposes()->all()" :vide="__('public.rccm.greffe_choisir')" obligatoire />
+                            <div x-show="greffe === @js((string) \App\Models\Greffe::idAutre())" x-cloak class="mt-3">
+                                <x-admin.champ nom="rccm_greffe_autre" :libelle="__('public.rccm.greffe_autre')" maxlength="120" autocomplete="off" />
+                            </div>
+                        </div>
                     </div>
                     <x-admin.champ nom="nom" :libelle="__('public.compte.inscription.nom')" maxlength="100" autocomplete="off" required />
                     <x-admin.champ nom="prenoms" :libelle="__('public.compte.inscription.prenoms')" maxlength="150" autocomplete="off" required />

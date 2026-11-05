@@ -7,6 +7,7 @@ use App\Enums\StatutInstitution;
 use App\Models\Institution;
 use App\Models\Role as RoleModel;
 use App\Models\User;
+use App\Support\Recette;
 use App\Support\VerrouEnvironnement;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -48,6 +49,10 @@ class ComptesDemoSeeder extends Seeder
     public function run(): void
     {
         VerrouEnvironnement::exigerHorsProduction('comptes de démonstration (mot de passe = adresse e-mail)');
+        // Recette (05/11/2026) : comptes à mots de passe générés seulement (raaga:recette-comptes).
+        if (Recette::active()) {
+            throw new \RuntimeException('Comptes de démonstration refusés en recette : utilisez « php artisan raaga:recette-comptes ».');
+        }
 
         foreach (self::BACKOFFICE as [$nom, $email, $role]) {
             $this->compte($nom, $email, $role);

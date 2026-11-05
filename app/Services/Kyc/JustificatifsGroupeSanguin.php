@@ -29,6 +29,23 @@ class JustificatifsGroupeSanguin
         return KycDocument::query()->where('user_id', $user->id)->where('type', TypeDocumentKyc::GroupeSanguin)->latest('id')->first();
     }
 
+    /**
+     * Groupe déclaré (ou retiré, null) avec l'accord daté. Groupe changé : l'accord est redaté, un justificatif déposé
+     * avant ne vaut plus (Cartes::groupeSanguinJustifie). Jamais la valeur au journal : seulement l'accord donné ou retiré.
+     */
+    public function enregistrerGroupe(User $user, ?string $groupe): void
+    {
+        $consentiAvant = $user->groupe_sanguin_consenti_le !== null;
+        $change = $groupe !== null && $consentiAvant && $user->groupe_sanguin !== $groupe;
+        $user->forceFill([
+            'groupe_sanguin' => $groupe,
+            'groupe_sanguin_consenti_le' => $groupe ? ($change ? now() : ($user->groupe_sanguin_consenti_le ?? now())) : null,
+        ])->save();
+        if ($consentiAvant !== ($groupe !== null)) {
+            $this->journal->ecrire($user, $groupe ? 'groupe_sanguin.consenti' : 'groupe_sanguin.retire', 'User', $user->id);
+        }
+    }
+
     public function deposer(User $user, UploadedFile $fichier): KycDocument
     {
         $chemin = $fichier->storeAs('kyc/'.$user->id, Str::uuid().'.'.$fichier->extension(), VerificationIdentite::DISQUE);

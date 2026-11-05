@@ -141,6 +141,8 @@ final class Catalogue
             // vert imprimé au verso est celui des contacts d'assistance).
             'carte' => [
                 'dureeValiditeAnnees' => ['entier'],
+                // Délai de formalisation (IFU) d'une personne physique inscrite sans IFU, en mois (05/11/2026).
+                'delaiFormalisationMois' => ['entier'],
                 'filigranePrincipalRecto' => ['filigrane'],
                 'filigraneSecondaireRecto' => ['filigrane'],
                 'filigranePrincipalVerso' => ['filigrane'],

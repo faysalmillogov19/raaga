@@ -88,6 +88,9 @@ return [
         // Page « SMS de recette » (/recette/sms) : jamais en production ; false pour la couper ailleurs.
         'journal_recette' => env('RAAGA_SMS_JOURNAL_RECETTE'),
         'fichier_recette' => storage_path('logs/sms-recette.jsonl'),
+        // Environnement de recette (05/11/2026) : page « SMS envoyés » protégée par ce mot de passe commun aux testeurs,
+        // gardé dans .env seulement. Vide en recette : page fermée. Sans effet en local (page ouverte).
+        'mot_de_passe_recette' => env('RAAGA_SMS_MOT_DE_PASSE_RECETTE'),
     ],
 
     'paiement' => [

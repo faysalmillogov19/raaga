@@ -3,6 +3,11 @@
 # passage en maintenance, « php artisan up » est toujours exécuté, même en cas d'erreur (trap).
 #
 # Variables facultatives : RAAGA_BACKUP_DIR (défaut /data/backups), RAAGA_PHP_FPM (service php-fpm, défaut php8.4-fpm).
+#
+# Prérequis du serveur, une fois pour toutes (05/11/2026) : la tâche cron du planificateur Laravel, chaque minute, pour
+# l'utilisateur du serveur web (rappels de formalisation, échéances des cartes, campagnes, tranches, paiements) :
+#   * * * * * cd /chemin/vers/raaga && php artisan schedule:run >> /dev/null 2>&1
+# Le contrôle de production (raaga:verifier-production) avertit tant qu'aucun passage récent du planificateur n'est enregistré.
 set -euo pipefail
 
 cd "$(dirname "$0")"

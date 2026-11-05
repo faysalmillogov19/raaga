@@ -11,6 +11,7 @@ use App\Enums\TypeCarte;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeTitulaire;
 use App\Models\Carte;
+use App\Models\Greffe;
 use App\Models\KycDocument;
 use App\Models\ReservationBoutique;
 use App\Models\User;
@@ -63,8 +64,10 @@ class PiecesTitulairesTest extends TestCase
         return User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::NonSoumis, 'telephone' => '+2267100'.sprintf('%04d', $n),
             'nom' => 'KABORE', 'prenoms' => 'Issa', 'type_titulaire' => $type,
             'raison_sociale' => $type === TypeTitulaire::Morale ? 'Société Kaboré et Fils' : null, 'forme_morale' => $type === TypeTitulaire::Morale ? 'ENTREPRISE' : null,
-            // Personne morale : IFU donné à la création du compte.
+            // Personne morale : IFU, gérant et RCCM donnés à la création du compte (05/11/2026).
             'ifu' => $type === TypeTitulaire::Morale ? sprintf('%08d', 50_000_000 + $n).'M' : null,
+            ...($type === TypeTitulaire::Morale ? ['gerant_fonction' => 'Gérant', 'rccm' => 'BF OUA 2021 B '.(1000 + $n), 'rccm_immatricule_le' => '2021-05-04',
+                'rccm_greffe_id' => Greffe::query()->where('code', 'OUAGADOUGOU')->value('id')] : []),
             ...$attributs]);
     }
 
@@ -84,7 +87,9 @@ class PiecesTitulairesTest extends TestCase
         $cib = $this->citoyen();
         $this->actingAs($cib)->get(route('espace.verification'))->assertOk()
             ->assertSee('CNIB (carte nationale d’identité burkinabè)', false)->assertSee('CIB-AES (carte d’identité biométrique AES)', false)->assertSee('Passeport')
-            ->assertSee('name="numero_piece"', false)->assertSee('name="piece_expire_le"', false)->assertDontSee('name="rccm"', false);
+            ->assertSee('name="numero_piece"', false)->assertSee('name="piece_expire_le"', false)
+            // RCCM facultatif pour une personne physique : bloc à part, pas une pièce du dépôt (05/11/2026).
+            ->assertSee('data-rccm', false)->assertDontSee('name="rccm" type="file"', false);
         $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'selfie' => $this->image()])
             ->assertSessionHasErrors('verso');
         $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image()])
@@ -108,32 +113,35 @@ class PiecesTitulairesTest extends TestCase
         $this->assertSame(0, KycDocument::query()->where('type', TypeDocumentKyc::Ifu)->count());
     }
 
-    public function test_personne_morale_ifu_representant_et_pouvoir_sans_rccm(): void
+    public function test_personne_morale_ifu_gerant_pouvoir_et_rccm(): void
     {
         $morale = $this->citoyen(TypeTitulaire::Morale, ['ifu' => '00098765A']);
+        // RCCM de retour (05/11/2026) : justificatif parmi les pièces du dépôt, numéro repris du compte.
         $this->actingAs($morale)->get(route('espace.verification'))->assertOk()
-            ->assertSee('Société Kaboré et Fils')->assertSee('Pièce d’identité du représentant légal', false)
+            ->assertSee('Société Kaboré et Fils')
             ->assertSee('name="ifu"', false)->assertSee('name="numero_ifu"', false)->assertSee('value="00098765A"', false)->assertSee('name="pouvoir"', false)
-            ->assertDontSee('name="rccm"', false)->assertDontSee('name="numero_rccm"', false)->assertDontSee('RCCM');
+            ->assertSee('Justificatif RCCM (registre du commerce)', false)->assertSee('data-rccm', false);
 
         $complet = ['type_piece' => 'CNIB', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
             'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B7654321', 'piece_expire_le' => now()->addYears(2)->toDateString(),
             'ifu' => $this->pdf('ifu.pdf'),
-            'pouvoir' => $this->pdf('pv.pdf')];
+            'pouvoir' => $this->pdf('pv.pdf'), 'rccm' => $this->pdf('rccm.pdf')];
         // Pièce manquante (justificatif de pouvoir) : refusé. Le numéro IFU est celui du compte, corrigeable avec l'attestation.
         $this->actingAs($morale)->post(route('espace.verification.store'), array_diff_key($complet, ['pouvoir' => 1]))->assertSessionHasErrors('pouvoir');
         $this->assertSame(0, $morale->kycDocuments()->count());
 
         $this->actingAs($morale)->post(route('espace.verification.store'), $complet)->assertSessionHasNoErrors();
         $morale->refresh();
-        $this->assertEqualsCanonicalizing([TypeDocumentKyc::Cnib, TypeDocumentKyc::Cnib, TypeDocumentKyc::Selfie, TypeDocumentKyc::Ifu, TypeDocumentKyc::JustifPouvoir],
+        $this->assertEqualsCanonicalizing([TypeDocumentKyc::Cnib, TypeDocumentKyc::Cnib, TypeDocumentKyc::Selfie, TypeDocumentKyc::Ifu, TypeDocumentKyc::JustifPouvoir, TypeDocumentKyc::Rccm],
             $morale->kycDocuments()->pluck('type')->all());
+        $this->assertSame($morale->rccm, $morale->kycDocuments()->where('type', TypeDocumentKyc::Rccm)->value('numero'));
         $this->assertSame('00098765A', $morale->ifu);
         $this->assertSame('00098765A', $morale->kycDocuments()->where('type', TypeDocumentKyc::Ifu)->value('numero'));
 
         // Dossier complet : l'ADMIN le voit (raison sociale, numéros) et le marque conforme.
         $this->en($this->admin)->get(route('admin.kyc.dossier', $morale))->assertOk()->assertSee('Société Kaboré et Fils')
-            ->assertSee('00098765A')->assertDontSee('N° RCCM')->assertSee('Justificatif de pouvoir')->assertDontSee('data-dossier-incomplet', false);
+            ->assertSee('00098765A')->assertSee('N° RCCM')->assertSee($morale->rccm)->assertSee('Fonction du gérant')->assertSee('Justificatif de pouvoir')
+            ->assertDontSee('data-dossier-incomplet', false);
         $this->en($this->admin)->post(route('admin.kyc.conforme', $morale), ['piece_expire_le' => now()->addYears(2)->toDateString()])->assertSessionHas('succes');
         $this->assertSame(StatutKyc::Valide, $morale->fresh()->statut_kyc);
         $this->assertSame('Société Kaboré et Fils', $morale->fresh()->identite_validee['raison_sociale']);
@@ -153,8 +161,7 @@ class PiecesTitulairesTest extends TestCase
         $this->assertSame(StatutKyc::EnAttente, $morale->fresh()->statut_kyc);
 
         // Le titulaire voit ce qui manque et peut compléter.
-        $this->actingAs($morale)->get(route('espace.verification'))->assertSee('data-a-completer', false)->assertSee('name="pouvoir"', false)
-            ->assertDontSee('name="rccm"', false);
+        $this->actingAs($morale)->get(route('espace.verification'))->assertSee('data-a-completer', false)->assertSee('name="pouvoir"', false);
         $this->actingAs($morale)->post(route('espace.verification.store'), ['pouvoir' => $this->pdf('statuts.pdf')])->assertSessionHasNoErrors();
         $this->en($this->admin)->post(route('admin.kyc.conforme', $morale), ['piece_expire_le' => now()->addYear()->toDateString()])->assertSessionHas('succes');
     }

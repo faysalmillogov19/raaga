@@ -331,6 +331,7 @@ return [
         'parametres' => 'Paramètres (lecture)',
         'secteurs' => 'Secteurs d’activité',
         'guichets_agrees' => 'Guichets agréés',
+        'greffes' => 'Greffes du RCCM',
     ],
 
     'droits' => [
@@ -384,6 +385,8 @@ return [
         'modalites_paiement.voir' => 'Ouvrir l’onglet Modalités de paiement : moyens et délais de paiement',
         'secteurs.gerer' => 'Ajouter, modifier, activer ou désactiver les secteurs d’activité des commerçants',
         'guichets.gerer' => 'Ajouter, modifier, activer, désactiver ou supprimer les guichets agréés affichés sur « Trouver un guichet »',
+        'greffes.voir' => 'Consulter les greffes du RCCM et les greffes saisis en « Autre »',
+        'greffes.gerer' => 'Ajouter, modifier, activer ou désactiver les greffes du RCCM',
         'installation.mettre_a_jour' => 'Mettre à jour directement, sans validation, les éléments créés à l’installation : délais, durées, moyens de paiement, types de boutiques, unités, niveaux, zones',
         'unites.voir' => 'Consulter les unités de loyer',
         'unites.gerer' => 'Ajouter, modifier ou désactiver une unité de loyer, puis la soumettre',
@@ -616,7 +619,9 @@ return [
         ],
         // Emplacements du dossier (pièces manquantes).
         'emplacements' => ['recto' => 'pièce d’identité (recto ou page d’identité)', 'verso' => 'verso de la pièce', 'selfie' => 'selfie',
-            'ifu' => 'attestation IFU', 'pouvoir' => 'justificatif de pouvoir', 'numeros' => 'numéros et date d’expiration des pièces'],
+            'ifu' => 'attestation IFU', 'pouvoir' => 'justificatif de pouvoir', 'rccm' => 'justificatif RCCM', 'numeros' => 'numéros et date d’expiration des pièces'],
+        'nom_commercial' => 'Nom commercial', 'formalisation' => 'Formalisation', 'formalisation_en_cours' => 'En cours : IFU à valider avant le :date', 'formalisation_echue' => 'Délai dépassé le :date : IFU non validé',
+        'gerant_fonction' => 'Fonction du gérant', 'rccm' => 'N° RCCM', 'rccm_date' => 'Immatriculé le', 'rccm_greffe' => 'Greffe', 'greffe_autre' => 'saisi en « Autre »',
         'titulaire' => 'Titulaire', 'raison_sociale' => 'Raison sociale', 'forme' => 'Forme', 'numero_piece' => 'N° de pièce', 'expire_le' => 'Expire le',
         'numero_ifu' => 'Numéro Raaga (IFU)', 'sexe' => 'Sexe', 'lieu_naissance' => 'Lieu de naissance', 'manquantes' => 'Pièces manquantes : :pieces. Le dossier ne peut pas être marqué conforme.',
         'a_mettre_a_jour' => 'Dossier ancien marqué « pièces à mettre à jour » le :date : le titulaire doit déposer un dossier complet.',
@@ -694,6 +699,8 @@ return [
         'sous_titre' => '{0} Bonjour. Rien n’attend votre décision.|{1} Bonjour. 1 élément attend votre décision.|[2,*] Bonjour. :n éléments attendent votre décision.',
         'traiter_kyc' => 'Traiter les dossiers KYC',
         'a_traiter' => [
+            'formalisation_echue' => 'Délai de formalisation dépassé le :date (IFU non validé)',
+            'ifu_a_valider' => 'Carte déjà émise avec l’IFU :ifu : attestation IFU à valider',
             'titre' => 'À traiter',
             'rien' => 'Rien à traiter pour le moment.',
             'tranche_rejetee' => 'Tranche « :nom » rejetée, à reprendre',
@@ -714,7 +721,7 @@ return [
                 'site' => 'Site', 'type' => 'Type de boutique', 'niveau' => 'Niveau', 'zone' => 'Zone', 'grille' => 'Grille tarifaire',
                 'finances' => 'Données financières', 'campagne' => 'Campagne', 'tranche' => 'Tranche', 'distribution' => 'Dividendes',
                 'avenant' => 'Avenant', 'convention' => 'Convention', 'convention_deposee' => 'Convention signée', 'kyb' => 'Dossier KYB',
-                'virement' => 'Virement', 'appel' => 'Appel de fonds', 'kyc' => 'Dossier KYC', 'kyc_commercant' => 'Dossier KYC d’un commerçant attribué', 'kyc_a_mettre_a_jour' => 'Pièces à mettre à jour',
+                'virement' => 'Virement', 'appel' => 'Appel de fonds', 'kyc' => 'Dossier KYC', 'kyc_commercant' => 'Dossier KYC d’un commerçant attribué', 'kyc_a_mettre_a_jour' => 'Pièces à mettre à jour', 'formalisation_echue' => 'Formalisation non achevée', 'ifu_carte_emise' => 'IFU à valider pour des cartes déjà émises',
             ],
             'kyb_objet' => ':institution · :n pièce(s)',
             'citoyen' => 'Citoyen',
@@ -1182,6 +1189,7 @@ return [
             'modeMaintenance' => 'Mode maintenance',
             'messageAntiFraude' => 'Message anti-fraude',
             'dureeValiditeAnnees' => 'Durée de validité de la carte de commerçant (années)',
+            'delaiFormalisationMois' => 'Délai de formalisation sans IFU (mois)',
             'filigranePrincipalRecto' => 'Filigrane principal recto',
             'filigraneSecondaireRecto' => 'Filigrane secondaire recto',
             'filigranePrincipalVerso' => 'Filigrane principal verso',
@@ -1247,6 +1255,7 @@ return [
             'modeMaintenance' => 'Le site public affiche la page de maintenance ; le back-office reste accessible.',
             'messageAntiFraude' => 'Pied de page, FAQ, page de connexion. 250 caractères au plus.',
             'dureeValiditeAnnees' => 'Compte à partir de la date d’émission de la carte. 3 ans par défaut. La carte n’expire jamais après la pièce d’identité.',
+            'delaiFormalisationMois' => 'Délai laissé à une personne physique inscrite sur une boutique sans IFU pour déposer son IFU et son attestation, compté à partir de sa première inscription. 6 mois par défaut. Rappels par SMS à 2 mois, 1 mois et 15 jours de l’échéance.',
             'filigranePrincipalRecto' => 'Facultatif (prévu : les armoiries). Image en couleur, PNG, 5 Mo au plus, 800 px au moins sur le plus grand côté : convertie en or, opacité 14 %. Au centre du recto.',
             'filigraneSecondaireRecto' => 'Facultatif (prévu : le poing). Image en couleur, PNG, 5 Mo au plus, 800 px au moins sur le plus grand côté : convertie en or, opacité 11 %. En bas à gauche du recto.',
             'filigranePrincipalVerso' => 'Facultatif (prévu : le silure). Image en couleur, PNG, 5 Mo au plus, 800 px au moins sur le plus grand côté : convertie en or, opacité 14 %. Derrière la colonne de gauche du verso.',
@@ -1303,11 +1312,18 @@ return [
 
     // Guichet (Agent de guichet, ADMIN) : vérification des cartes d'accès Raaga, dossier du titulaire, impression.
     'guichet' => [
+        // Formalisation différée (05/11/2026) : récépissés de préinscription au guichet.
+        'formalisation' => [
+            'titre' => 'Récépissés de préinscription',
+            'formalise' => 'Formalisation achevée : IFU validé.',
+            'en_cours' => 'Formalisation en cours : IFU et attestation à déposer avant le :date.',
+            'imprimer' => 'Imprimer le récépissé :numero',
+        ],
         'titre' => 'Guichet',
         'verifier' => 'Vérifier une carte',
         'intro' => 'Scannez le QR code de la carte avec l’appareil photo du téléphone : la vérification s’ouvre directement. Vous pouvez aussi saisir le numéro inscrit sur la carte.',
         'carte' => 'Numéro de carte ou adresse scannée',
-        'carte_aide' => 'Numéro Raaga pour une carte de commerçant (son numéro IFU, par exemple 00004742U), numéro RG-C-000123 pour les autres cartes, ou code de contrôle imprimé au verso (par exemple K7M2-Q9XP).',
+        'carte_aide' => 'Numéro Raaga pour une carte de commerçant (son numéro IFU, par exemple 00004742U), numéro RG-C-000123 pour les autres cartes, ou code de contrôle imprimé au verso (par exemple K7M2-Q9XP). Récépissé de préinscription : son numéro (RP-2026-000123).',
         'code_controle' => 'Code de contrôle',
         'code_controle_aide' => 'Il doit être identique à celui imprimé au verso de la carte. Sinon, la carte a été modifiée ou n’est plus à jour.',
         'bouton' => 'Vérifier',
@@ -1942,6 +1958,7 @@ return [
             'vide_titre' => 'Aucune boutique',
             'vide' => 'Aucune boutique ne correspond à ces critères.',
             'description_type' => 'Description du type (pour le citoyen)',
+            'nom_commercial' => 'Nom commercial de l’attributaire',
             'fiche' => 'Fiche de la boutique',
             'voir_site' => 'Voir le site',
             'modifier' => 'Modifier la fiche',
@@ -3054,6 +3071,33 @@ return [
     ],
 
     // Secteurs d'activité des commerçants (SUPER_ADMIN, 04/11/2026).
+    // Greffes d'immatriculation au RCCM (réunion du 05/11/2026).
+    'greffes' => [
+        'titre' => 'Greffes du RCCM',
+        'intro' => 'Greffes proposés au titulaire qui déclare son RCCM. « Autre (préciser) » reste toujours proposé : les greffes saisis ainsi apparaissent plus bas, pour compléter la liste.',
+        'liste' => 'Greffes proposés',
+        'colonnes' => ['libelle' => 'Libellé', 'ordre' => 'Ordre', 'comptes' => 'Comptes', 'statut' => 'Statut', 'actions' => 'Actions'],
+        'actif' => 'Actif', 'desactive' => 'Désactivé',
+        'ordre_aide' => 'Position dans la liste. Laissé vide à l’ajout : en fin de liste.',
+        'ajouter' => 'Ajouter un greffe', 'ajouter_bouton' => 'Ajouter', 'modifier' => 'Modifier', 'activer' => 'Activer', 'desactiver' => 'Désactiver',
+        'confirmer_desactivation' => 'Ce greffe ne sera plus proposé. Les comptes qui l’ont choisi le gardent.',
+        'confirmer_activation' => 'Ce greffe sera de nouveau proposé aux titulaires.',
+        'autres_titre' => 'Greffes saisis en « Autre »',
+        'autres_intro' => 'Précisions saisies par les titulaires qui ont choisi « Autre (préciser) », avec le nombre de comptes.',
+        'autres_aucun' => 'Aucun greffe saisi en « Autre ».',
+        'autres_valeur' => 'Greffe saisi',
+        'autres_ajouter' => 'Ajouter à la liste',
+        'autres_confirmer' => '« :valeur » sera ajouté à la liste des greffes. Les :n compte(s) qui l’ont saisi y seront rattachés.',
+        'regles' => [
+            'autre' => '« Autre (préciser) » reste toujours proposé : il permet au titulaire de préciser un greffe absent de la liste.',
+            'libelle_existe' => 'Un greffe porte déjà ce libellé.',
+        ],
+        'messages' => [
+            'cree' => 'Greffe « :libelle » ajouté.', 'modifie' => 'Greffe « :libelle » modifié.', 'active' => 'Greffe « :libelle » activé.',
+            'desactive' => 'Greffe « :libelle » désactivé.', 'aucun_changement' => 'Aucune modification à enregistrer.',
+            'autre_ajoute' => 'Greffe « :libelle » ajouté à la liste ; les comptes qui l’avaient saisi y sont rattachés.',
+        ],
+    ],
     'secteurs' => [
         'titre' => 'Secteurs d’activité',
         'intro' => 'Activités proposées au commerçant lors de la réservation d’une boutique, classées par famille. Un secteur désactivé n’est plus proposé ; les commerçants qui l’ont déjà choisi le gardent.',

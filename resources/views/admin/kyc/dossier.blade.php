@@ -70,11 +70,26 @@
             @if ($morale)
                 <div><dt class="texte-carte">{{ $k['raison_sociale'] }}</dt><dd class="font-bold" data-raison-sociale>{{ $citoyen->raison_sociale }}</dd></div>
                 <div><dt class="texte-carte">{{ $k['forme'] }}</dt><dd>{{ $citoyen->forme_morale ? __('public.titulaires.formes.'.$citoyen->forme_morale) : '' }}</dd></div>
+                {{-- Gérant (05/11/2026) : le titulaire du compte ; sa fonction. --}}
+                <div><dt class="texte-carte">{{ $k['gerant_fonction'] }}</dt><dd data-gerant-fonction>{{ $citoyen->gerant_fonction }}</dd></div>
+            @endif
+            @if ($citoyen->nom_commercial)
+                <div><dt class="texte-carte">{{ $k['nom_commercial'] }}</dt><dd class="font-bold" data-nom-commercial>{{ $citoyen->nom_commercial }}</dd></div>
+            @endif
+            {{-- RCCM (05/11/2026) : personne morale, ou personne physique qui l'a déclaré ; jamais sur la carte. --}}
+            @if ($morale || $citoyen->rccm)
+                <div><dt class="texte-carte">{{ $k['rccm'] }}</dt><dd class="font-mono" data-rccm>{{ $citoyen->rccm }}</dd></div>
+                <div><dt class="texte-carte">{{ $k['rccm_date'] }}</dt><dd>{{ $citoyen->rccm_immatricule_le?->format('d/m/Y') }}</dd></div>
+                <div><dt class="texte-carte">{{ $k['rccm_greffe'] }}</dt><dd data-greffe>{{ \App\Models\Greffe::libellePour($citoyen) }}@if ($citoyen->rccm_greffe_autre) <span class="texte-carte">({{ $k['greffe_autre'] }})</span>@endif</dd></div>
             @endif
             <div><dt class="texte-carte">{{ $k['numero_ifu'] }}</dt><dd class="font-mono" data-ifu>{{ $citoyen->ifu }}</dd></div>
             <div><dt class="texte-carte">{{ $k['numero_piece'] }}</dt><dd class="font-mono" data-numero-piece>{{ $recto?->numero ?? $citoyen->numero_piece }}</dd></div>
             <div><dt class="texte-carte">{{ $k['expire_le'] }}</dt><dd>{{ ($recto?->expire_le ?? $citoyen->piece_expire_le)?->format('d/m/Y') }}</dd></div>
             <div><dt class="texte-carte">{{ $d['champs']['statut'] }}</dt><dd class="font-bold">{{ $k['statuts'][$citoyen->statut_kyc?->value ?? 'NON_SOUMIS'] }}</dd></div>
+            {{-- Formalisation différée (05/11/2026) : inscrit sans IFU, IFU pas encore validé. --}}
+            @if (\App\Services\Boutiques\Formalisation::enCours($citoyen))
+                <div><dt class="texte-carte">{{ $k['formalisation'] }}</dt><dd class="font-bold" data-formalisation>{{ __(\App\Services\Boutiques\Formalisation::echue($citoyen) ? 'admin.kyc.formalisation_echue' : 'admin.kyc.formalisation_en_cours', ['date' => $citoyen->formalisation_echeance_le->format('d/m/Y')]) }}</dd></div>
+            @endif
         </dl>
     </section>
 

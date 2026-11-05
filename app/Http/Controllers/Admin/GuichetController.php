@@ -6,6 +6,7 @@ use App\Enums\Droit;
 use App\Enums\StatutReservationBoutique;
 use App\Http\Controllers\Controller;
 use App\Models\Carte;
+use App\Models\Recepisse;
 use App\Models\ReservationBoutique;
 use App\Models\User;
 use App\Notifications\CarteImprimee;
@@ -46,6 +47,12 @@ class GuichetController extends Controller
     {
         Gate::authorize(Droit::CartesVerifier->value);
         $saisie = trim((string) $request->validate(['carte' => ['required', 'string', 'max:300']])['carte']);
+        // Récépissé de préinscription (05/11/2026) : numéro RP-AAAA-000123 ou QR code (/r/…) : dossier du titulaire.
+        $recepisse = preg_match('#/r/([A-Za-z0-9]+)#', $saisie, $r) ? Recepisse::query()->where('jeton', $r[1])->first()
+            : Recepisse::query()->where('numero', mb_strtoupper($saisie))->first();
+        if ($recepisse) {
+            return redirect()->route('admin.guichet.titulaire', $recepisse->user_id);
+        }
         $jeton = preg_match('#/c/([A-Za-z0-9]+)#', $saisie, $m) ? $m[1] : null;
         $code = $jeton ? null : Carte::normaliserCode($saisie);
         $carte = Carte::query()->when($jeton, fn ($q) => $q->where('jeton', $jeton), fn ($q) => $q->when($code,
@@ -109,13 +116,16 @@ class GuichetController extends Controller
     public function titulaire(User $titulaire): View
     {
         Gate::authorize(Droit::CartesVerifier->value);
-        abort_unless($titulaire->cartes()->exists(), 404);
+        // Titulaire d'une carte, ou préinscrit sans IFU avec un récépissé (05/11/2026).
+        abort_unless($titulaire->cartes()->exists() || Recepisse::query()->where('user_id', $titulaire->id)->exists(), 404);
 
         return view('admin.guichet.titulaire', [
             'titulaire' => $titulaire,
             'cartes' => $titulaire->cartes()->latest('id')->get(),
             'emplacements' => ReservationBoutique::query()->where('user_id', $titulaire->id)->where('statut', StatutReservationBoutique::Attribuee)
                 ->with('boutique.site')->get()->sortBy(fn (ReservationBoutique $r) => $r->boutique?->code)->values(),
+            // Formalisation différée (05/11/2026) : récépissés de préinscription à imprimer.
+            'recepisses' => Recepisse::query()->where('user_id', $titulaire->id)->with('boutique.site')->latest('id')->get(),
         ]);
     }
 }

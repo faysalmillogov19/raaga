@@ -65,6 +65,10 @@ enum Droit: string
     // Secteurs d'activité des commerçants et guichets agréés (04/11/2026) : SUPER_ADMIN, sans validation.
     case SecteursGerer = 'secteurs.gerer';
     case GuichetsGerer = 'guichets.gerer';
+    // Greffes d'immatriculation au RCCM (05/11/2026) : SUPER_ADMIN administre la liste ; ADMIN la consulte avec les
+    // greffes saisis en « Autre », pour la compléter.
+    case GreffesVoir = 'greffes.voir';
+    case GreffesGerer = 'greffes.gerer';
 
     case TranchesVoir = 'tranches.voir';
     case TranchesSaisir = 'tranches.saisir';
@@ -204,7 +208,7 @@ enum Droit: string
             self::SitesGerer, self::SitesConfirmer, self::UnitesGerer, self::UnitesConfirmer, self::MoyensPaiementGerer, self::MoyensPaiementConfirmer,
             self::DividendesSaisir, self::DividendesConfirmer, self::DividendesPayer,
             self::SimulationsLancer, self::AllocationExecuter,
-            self::InstallationMettreAJour, self::SecteursGerer, self::GuichetsGerer,
+            self::InstallationMettreAJour, self::SecteursGerer, self::GuichetsGerer, self::GreffesGerer,
             self::KycTraiter, self::ConformiteTraiter, self::KycAnnulationConfirmer,
             self::CartesImprimer, self::CartesGerer, self::CartesRevocationConfirmer, self::CartesFichiersRelancer, self::GuichetSouscrire,
             self::SouscriptionsRapprocher, self::RemboursementsApprouver, self::RemboursementsSuivre, self::RelancesEnvoyer,
@@ -317,7 +321,7 @@ enum Droit: string
                 self::UnitesVoir, self::MoyensPaiementVoir,
                 self::ReferentielsBoutiquesVoir, self::ModalitesPaiementVoir, self::InstallationMettreAJour,
                 // Secteurs d'activité et guichets agréés (04/11/2026) : ajout, modification, activation.
-                self::SecteursGerer, self::GuichetsGerer,
+                self::SecteursGerer, self::GuichetsGerer, self::GreffesVoir, self::GreffesGerer,
                 // Fichiers des cartes en échec (30/10/2026) : alerte et relance de la génération.
                 self::CartesFichiersRelancer,
             ],
@@ -325,7 +329,7 @@ enum Droit: string
             // interfaces de souscription et d'investissement réservées au RÉGULATEUR et au VALIDATEUR.
             Role::Admin => [...self::support(),
                 // Vérifications d'identité : voit la pièce, marque le dossier conforme ou douteux (aucun montant).
-                self::KycVoir, self::KycVoirPieces, self::KycTraiter, self::CartesVerifier, self::CartesGerer],
+                self::KycVoir, self::KycVoirPieces, self::KycTraiter, self::CartesVerifier, self::CartesGerer, self::GreffesVoir],
             // Confirme les paramétrages et exécute ; ne saisit jamais un paramètre. Droits recentrés le 16/10/2026 : plus
             // d'écran Démarches du site public, Référentiels, Capacités prévues, Grille tarifaire (décidés et consultés dans
             // « À valider »), ni Vérifications d'identité (ADMIN), Souscriptions et Remboursements (CONTRÔLEUR DES PAIEMENTS).

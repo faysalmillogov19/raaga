@@ -12,6 +12,7 @@ use App\Models\Commune;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\Ifu;
+use App\Support\Rccm;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +22,8 @@ use Illuminate\Validation\Rule;
  */
 class CreationCompte
 {
-    public const CHAMPS_IDENTITE = ['type_titulaire', 'raison_sociale', 'forme_morale', 'nom', 'prenoms', 'date_naissance', 'ifu', 'pays_residence', 'commune_id'];
+    public const CHAMPS_IDENTITE = ['type_titulaire', 'raison_sociale', 'forme_morale', 'nom', 'prenoms', 'date_naissance', 'ifu', 'pays_residence', 'commune_id',
+        'gerant_fonction', 'email', 'rccm', 'rccm_immatricule_le', 'rccm_greffe_id', 'rccm_greffe_autre'];
 
     /** Règles de l'identité saisie à la création du compte (conditions d'utilisation comprises). */
     public static function regles(): array
@@ -38,6 +40,11 @@ class CreationCompte
             'date_naissance' => ['required', 'date_format:Y-m-d', 'after:1900-01-01', 'before_or_equal:'.now()->subYears($age)->toDateString()],
             // IFU : obligatoire pour une personne morale ; une personne physique le donne à sa première réservation de boutique.
             'ifu' => Ifu::regles(null, 'nullable|required_if:type_titulaire,MORALE'),
+            // Personne morale (05/11/2026) : le titulaire du compte en est le gérant (fonction, adresse électronique) ; RCCM
+            // obligatoire (numéro, date d'immatriculation, greffe ; justificatif dans « Vérifier mon identité »).
+            'gerant_fonction' => ['nullable', 'required_if:type_titulaire,MORALE', 'string', 'min:2', 'max:120'],
+            'email' => ['nullable', 'required_if:type_titulaire,MORALE', 'email', 'max:190', Rule::unique('users', 'email')],
+            ...Rccm::regles('nullable|required_if:type_titulaire,MORALE'),
             'pays_residence' => ['required', Rule::in(array_keys(config('raaga.inscription.pays')))],
             'commune_id' => ['nullable', 'required_if:pays_residence,BF', 'integer', Rule::exists('communes', 'id')],
             'conditions' => ['accepted'],
@@ -59,6 +66,10 @@ class CreationCompte
             'date_naissance.before_or_equal' => __('public.compte.inscription.erreurs.majeur', ['age' => (int) config('raaga.inscription.age_minimum')]),
             'date_naissance.*' => $messages['date_naissance'],
             'ifu.required_if' => $messages['ifu'],
+            'gerant_fonction.*' => $titulaires['gerant_fonction'],
+            'email.unique' => $titulaires['email_existe'],
+            'email.*' => $titulaires['email'],
+            ...Rccm::messages(),
             'pays_residence.*' => $messages['pays'],
             'commune_id.*' => $messages['commune'],
             'conditions.*' => $messages['conditions'],
@@ -102,6 +113,13 @@ class CreationCompte
                 'type_titulaire' => $donnees['type_titulaire'],
                 'raison_sociale' => $morale ? trim($donnees['raison_sociale']) : null,
                 'forme_morale' => $morale ? $donnees['forme_morale'] : null,
+                // Gérant (le titulaire) et RCCM : personne morale seulement à la création (personne physique : plus tard).
+                'gerant_fonction' => $morale ? trim($donnees['gerant_fonction']) : null,
+                'email' => $morale ? mb_strtolower(trim($donnees['email'])) : null,
+                'rccm' => $morale ? Rccm::normaliser($donnees['rccm']) : null,
+                'rccm_immatricule_le' => $morale ? $donnees['rccm_immatricule_le'] : null,
+                'rccm_greffe_id' => $morale ? (int) $donnees['rccm_greffe_id'] : null,
+                'rccm_greffe_autre' => $morale ? Rccm::precisionAutre($donnees) : null,
             ]);
 
             Acceptation::create([

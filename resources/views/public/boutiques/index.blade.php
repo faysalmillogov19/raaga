@@ -73,6 +73,9 @@
                 {{-- Relance de la liste d'attente générale : boutiques de nouveau ouvertes à ce citoyen. --}}
                 <x-public.alerte variante="info" class="mt-6" data-relance>{{ trans_choice('public.boutiques.relance.bandeau', count($relance), ['n' => count($relance)]) }}</x-public.alerte>
             @endif
+            {{-- Recherche (05/11/2026) : coût à l'entrée par zone, filtres budget, zone, niveau, surface. --}}
+            @include('public.boutiques._recherche')
+
             <section class="mt-10" aria-labelledby="plan-titre" data-plan x-data="{ d: null }">
                 <h2 id="plan-titre" class="!text-xl">{{ $p['titre'] }}</h2>
 
@@ -128,20 +131,22 @@
                                     'limite' => $limiteAtteinte && $statut === 'disponible' ? $b['limites']['atteinte'] : null,
                                     // Libre, pré-réservée ou réservée : on peut s'y inscrire (réservation ou liste d'attente).
                                     'lien' => in_array($statut, ['disponible', 'pre_reservee', 'reservee'], true) && ($ouverte || in_array($boutique->id, $relance, true)) ? route('boutiques.boutique', $boutique->code) : null,
-                                    'action' => $statut === 'disponible' ? $p['detail']['reserver'] : $p['detail']['inscrire']];
+                                    'action' => $statut === 'disponible' ? $p['detail']['reserver'] : $p['detail']['inscrire'],
+                                    // Liste d'attente (05/11/2026) : un nombre seulement, jamais de nom.
+                                    'attente' => $enAttente[$boutique->id] ?? 0];
                                 $survol = $boutique->code.' · '.$boutique->type?->libelle.($boutique->surface ? ' · '.format_nombre((float) $boutique->surface, 1).' m²' : '');
                             @endphp
                             <li>
                                 @if ($detail['lien'])
                                     <a href="{{ $detail['lien'] }}" class="plan-case plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                        aria-label="{{ __('public.boutiques.plan.choisir', ['code' => $boutique->code]) }}" @mouseenter="d = @js($detail)" @focus="d = @js($detail)">
-                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut, 'limite' => $detail['limite']])
+                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut, 'limite' => $detail['limite'], 'attente' => $detail['attente']])
                                     </a>
                                 @else
                                     <button type="button" class="plan-case plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                             aria-label="{{ __('public.boutiques.plan.boutique', ['code' => $boutique->code, 'statut' => $p['statuts'][$statut]]) }}"
                                             aria-controls="plan-detail" @mouseenter="d = @js($detail)" @click="d = @js($detail)">
-                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut, 'limite' => $detail['limite']])
+                                        @include('public.boutiques._case', ['boutique' => $boutique, 'statut' => $statut, 'limite' => $detail['limite'], 'attente' => $detail['attente']])
                                     </button>
                                 @endif
                             </li>
@@ -167,7 +172,10 @@
                                     <dt>{{ $p['detail']['caution'] }}</dt><dd x-text="d.montants?.caution"></dd>
                                     <dt>{{ $p['detail']['avance'] }}</dt><dd x-text="d.montants?.avance"></dd>
                                     <dt class="font-semibold text-encre">{{ $p['detail']['total'] }}</dt><dd class="font-bold text-vert-fonce" x-text="d.montants?.total"></dd>
+                                    {{-- Montant de la 1re tranche : affiché quand l'échéancier par tranches existera. --}}
+                                    <template x-if="d.montants?.premiere_tranche"><div class="recherche-contenu"><dt>{{ $p['detail']['premiere_tranche'] }}</dt><dd x-text="d.montants.premiere_tranche"></dd></div></template>
                                 </dl>
+                                <p class="mt-2 texte-carte" data-detail-attente><span class="font-semibold">{{ $p['detail']['attente'] }} :</span> <span x-text="d.attente"></span></p>
                                 <p class="plan-limite mt-3" x-show="d.limite" x-text="d.limite" role="status"></p>
                                 <a x-show="d.lien" :href="d.lien" class="btn-primaire mt-3" x-text="d.action">{{ $p['detail']['reserver'] }}</a>
                             </div>

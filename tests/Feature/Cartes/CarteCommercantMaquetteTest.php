@@ -55,11 +55,13 @@ class CarteCommercantMaquetteTest extends TestCase
 
     private function commercant(array $attributs = []): User
     {
-        return User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'nom' => 'OUATTARA', 'prenoms' => 'Aïcha',
+        return tap(User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'nom' => 'OUATTARA', 'prenoms' => 'Aïcha',
             'ifu' => '12345678X', 'date_naissance' => '1988-03-12', 'sexe' => 'F', 'lieu_naissance' => 'Bobo-Dioulasso',
             'commune_id' => Commune::query()->where('nom', 'Ouagadougou')->value('id'), 'secteur_activite_id' => Boutiques::secteur('TISSUS'),
             'personne_prevenir_nom' => 'OUATTARA Moussa', 'personne_prevenir_telephone' => '+22670000000',
-            'piece_expire_le' => now()->addYears(10)->toDateString(), ...$attributs]);
+            'piece_expire_le' => now()->addYears(10)->toDateString(), ...$attributs]),
+            // IFU validé (formalisé, 05/11/2026) : sans attestation validée, la carte reste en attente.
+            fn (User $u) => filled($u->ifu) ? Boutiques::ifuVerifie($u) : null);
     }
 
     private function attribuer(User $user, Boutique $boutique): void

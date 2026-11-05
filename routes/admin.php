@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ConnexionController;
 use App\Http\Controllers\Admin\ConnexionsController;
 use App\Http\Controllers\Admin\ConventionsController;
 use App\Http\Controllers\Admin\DividendesController;
+use App\Http\Controllers\Admin\GreffesController;
 use App\Http\Controllers\Admin\GrillesTarifairesController;
 use App\Http\Controllers\Admin\GuichetCaisseController;
 use App\Http\Controllers\Admin\GuichetController;
@@ -49,6 +50,7 @@ use App\Http\Controllers\Admin\TranchesController;
 use App\Http\Controllers\Admin\TypesBoutiqueController;
 use App\Http\Controllers\Admin\UtilisateursController;
 use App\Http\Controllers\Admin\VerificationsIdentiteController;
+use App\Http\Controllers\RecepissesController;
 use App\Support\MenuBackoffice;
 use Illuminate\Support\Facades\Route;
 
@@ -234,6 +236,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/rechercher', 'rechercher')->name('.rechercher');
             Route::get('/cartes/{jeton}', 'carte')->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:cartes-verification')->name('.carte');
             Route::get('/titulaires/{titulaire}', 'titulaire')->whereNumber('titulaire')->name('.titulaire');
+            // Récépissé de préinscription (05/11/2026), imprimé au guichet.
+            Route::get('/recepisses/{numero}', [RecepissesController::class, 'guichet'])->where('numero', 'RP-[0-9]{4}-[0-9]{6}')->name('.recepisse');
             Route::post('/cartes/{jeton}/imprimer', 'imprimer')->where('jeton', '[A-Za-z0-9]{1,100}')->middleware(['can:'.Droit::CartesImprimer->value, 'throttle:20,1'])->name('.imprimer');
         });
         // Souscription d'actions au guichet (AGENT DE GUICHET) pour une personne présente : code SMS, compte, identité
@@ -350,6 +354,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/{secteur}', 'update')->whereNumber('secteur')->name('.update');
             Route::post('/{secteur}/activer', 'activer')->whereNumber('secteur')->name('.activer');
             Route::post('/{secteur}/desactiver', 'desactiver')->whereNumber('secteur')->name('.desactiver');
+        });
+
+        // Greffes du RCCM (05/11/2026) : ADMIN et SUPER_ADMIN consultent (avec les greffes saisis en « Autre ») ; SUPER_ADMIN administre.
+        Route::controller(GreffesController::class)->prefix('parametres/greffes')->name('greffes')->group(function () {
+            Route::get('/', 'index')->middleware('can:'.Droit::GreffesVoir->value);
+            Route::post('/', 'store')->middleware('can:'.Droit::GreffesGerer->value)->name('.store');
+            Route::post('/autres', 'ajouterAutre')->middleware('can:'.Droit::GreffesGerer->value)->name('.autre');
+            Route::put('/{greffe}', 'update')->whereNumber('greffe')->middleware('can:'.Droit::GreffesGerer->value)->name('.update');
+            Route::post('/{greffe}/activer', 'activer')->whereNumber('greffe')->middleware('can:'.Droit::GreffesGerer->value)->name('.activer');
+            Route::post('/{greffe}/desactiver', 'desactiver')->whereNumber('greffe')->middleware('can:'.Droit::GreffesGerer->value)->name('.desactiver');
         });
 
         // Guichets agréés affichés sur « Trouver un guichet » (SUPER_ADMIN) : ajout, modification, activation, suppression.

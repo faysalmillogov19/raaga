@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers\Compte;
 
+use App\Enums\TypeCarte;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeTitulaire;
 use App\Http\Controllers\Controller;
 use App\Models\KycDocument;
+use App\Models\User;
+use App\Services\Cartes\Cartes;
+use App\Services\Kyc\JustificatifsGroupeSanguin;
+use App\Services\Kyc\RegistreCommerce;
 use App\Services\Kyc\VerificationIdentite;
+use App\Support\Rccm;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -28,6 +34,8 @@ class VerificationController extends Controller
             'dossier' => $this->verification->dossier($user),
             'typePiece' => $this->verification->typePiece($user),
             'aFournir' => $this->verification->aFournir($user),
+            'justificatifGroupe' => JustificatifsGroupeSanguin::dernier($user),
+            'justificatifRccm' => RegistreCommerce::justificatif($user),
         ]);
     }
 
@@ -45,7 +53,7 @@ class VerificationController extends Controller
             // Date d'expiration de la pièce : obligatoire ; la carte Raaga ne la dépasse jamais.
             'piece_expire_le' => ['nullable', 'date_format:Y-m-d', 'after:today'],
             'recto' => $fichier, 'verso' => $fichier, 'selfie' => $fichier,
-            'ifu' => $document, 'pouvoir' => $document,
+            'ifu' => $document, 'pouvoir' => $document, 'rccm' => $document,
             ...VerificationIdentite::reglesInfos($request->user()),
         ], [...$e['fichiers'], 'type_piece.*' => $e['type'], 'piece_expire_le.*' => $e['expiration'], 'numero_piece.*' => $e['numero_piece'],
             'sexe.*' => $e['sexe'], 'lieu_naissance.*' => $e['lieu_naissance']], __('public.verification.attributs'));
@@ -53,11 +61,49 @@ class VerificationController extends Controller
         $this->verification->deposer(
             $request->user(),
             isset($donnees['type_piece']) ? TypeDocumentKyc::from($donnees['type_piece']) : null,
-            array_filter($request->only(['recto', 'verso', 'selfie', 'ifu', 'pouvoir'])),
+            array_filter($request->only(['recto', 'verso', 'selfie', 'ifu', 'pouvoir', 'rccm'])),
             array_intersect_key($donnees, array_flip(['numero_piece', 'piece_expire_le', 'sexe', 'lieu_naissance', 'numero_ifu'])),
         );
 
         return redirect()->route('espace.verification')->avecSucces('public.verification.envoye');
+    }
+
+    /**
+     * Groupe sanguin (05/11/2026) : groupe déclaré avec l'accord daté et son justificatif, modifiables à tout moment ;
+     * l'ADMIN valide le justificatif. Groupe retiré : l'accord aussi, rien n'est imprimé.
+     */
+    public function groupeSanguin(Request $request, JustificatifsGroupeSanguin $justificatifs): RedirectResponse
+    {
+        $user = $request->user();
+        $e = __('public.verification.groupe_sanguin.erreurs');
+        $donnees = $request->validate([
+            'groupe_sanguin' => ['nullable', Rule::in(User::GROUPES_SANGUINS)],
+            'consentement_groupe_sanguin' => [filled($request->input('groupe_sanguin')) ? 'accepted' : 'nullable'],
+            'justificatif' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'],
+        ], ['groupe_sanguin.*' => $e['groupe'], 'consentement_groupe_sanguin.*' => $e['consentement'], 'justificatif.*' => $e['justificatif']]);
+        $groupe = $donnees['groupe_sanguin'] ?? null;
+
+        $justificatifs->enregistrerGroupe($user, $groupe);
+        if ($groupe && $request->hasFile('justificatif')) {
+            $justificatifs->deposer($user, $request->file('justificatif'));
+        } elseif (Cartes::courante($user, TypeCarte::Commercant)) {
+            app(Cartes::class)->synchroniser($user, TypeCarte::Commercant, $user);
+        }
+
+        return redirect()->to(route('espace.verification').'#groupe-sanguin')->avecSucces('public.verification.groupe_sanguin.enregistre');
+    }
+
+    /** RCCM (05/11/2026) : numéro, date, greffe et justificatif ; obligatoire pour une personne morale, facultatif sinon. */
+    public function rccm(Request $request, RegistreCommerce $registre): RedirectResponse
+    {
+        $user = $request->user();
+        $donnees = $request->validate([
+            ...Rccm::regles($user->estPersonneMorale() ? 'required' : 'nullable', $user),
+            'document' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'],
+        ], [...Rccm::messages(), 'document.*' => __('public.rccm.erreurs.document')]);
+        $registre->enregistrer($user, $donnees, $request->file('document'));
+
+        return redirect()->to(route('espace.verification').'#rccm')->avecSucces('public.verification.rccm.enregistre');
     }
 
     /** Type de titulaire (physique ou moral) : modifiable seulement en repassant par la vérification d'identité. */

@@ -125,6 +125,64 @@ class ReservationsBoutiques
             ->sortBy('numero', SORT_NATURAL)->values();
     }
 
+    /** Filtres de la recherche des boutiques (réunion du 05/11/2026) : budget sur le total à l'entrée, zone, niveau, surface. */
+    public const FILTRES_RECHERCHE = ['budget_min', 'budget_max', 'zone', 'niveau', 'surface_min', 'surface_max'];
+
+    /**
+     * Boutiques réservables d'un site avec leur tarif (grille confirmée) : [boutique, tarif]. Sans tarif : écartées.
+     *
+     * @return Collection<int, array{0: Boutique, 1: array{loyer_mensuel: int, caution: int, avance: int, mois_caution: int, mois_avance: int}}>
+     */
+    private static function tarifees(CampagneBoutiques $campagne, int $siteId, ?int $typeId = null): Collection
+    {
+        return self::requeteReservables($campagne)->where('site_id', $siteId)->when($typeId, fn ($q) => $q->where('type_boutique_id', $typeId))
+            ->with(['type', 'site', 'niveauRef'])->get()
+            ->map(fn (Boutique $b) => [$b, self::tarifer($b)])->filter(fn (array $l) => $l[1] !== null)->values();
+    }
+
+    /** Total à l'entrée : caution et avance, montants de la grille confirmée. */
+    public static function totalEntree(array $tarif): int
+    {
+        return (int) $tarif['caution'] + (int) $tarif['avance'];
+    }
+
+    /**
+     * Coût à l'entrée (caution + avance) minimum et maximum par zone d'un site, et nombre de boutiques tarifées.
+     *
+     * @return Collection<string, array{min: int, max: int, nombre: int}>
+     */
+    public static function coutsParZone(CampagneBoutiques $campagne, int $siteId, ?int $typeId = null): Collection
+    {
+        return self::tarifees($campagne, $siteId, $typeId)->groupBy(fn (array $l) => (string) $l[0]->bloc)
+            ->map(fn (Collection $g) => ['min' => $g->min(fn ($l) => self::totalEntree($l[1])), 'max' => $g->max(fn ($l) => self::totalEntree($l[1])), 'nombre' => $g->count()])
+            ->sortKeys(SORT_NATURAL);
+    }
+
+    /**
+     * Recherche des boutiques d'un site : budget (total à l'entrée), zone, niveau, surface ; boutiques tarifées
+     * seulement, de la moins chère à la plus chère.
+     *
+     * @param  array<string, mixed>  $filtres  clés de FILTRES_RECHERCHE
+     * @return Collection<int, Boutique>
+     */
+    public static function rechercher(CampagneBoutiques $campagne, int $siteId, array $filtres, ?int $typeId = null): Collection
+    {
+        $f = fn (string $cle) => $filtres[$cle] ?? null;
+
+        return self::tarifees($campagne, $siteId, $typeId)
+            ->filter(function (array $l) use ($f) {
+                [$b, $tarif] = $l;
+                $total = self::totalEntree($tarif);
+                $surface = (float) $b->surface;
+
+                return ($f('budget_min') === null || $total >= $f('budget_min')) && ($f('budget_max') === null || $total <= $f('budget_max'))
+                    && ($f('zone') === null || (string) $b->bloc === (string) $f('zone')) && ($f('niveau') === null || (string) $b->niveau === (string) $f('niveau'))
+                    && ($f('surface_min') === null || $surface >= $f('surface_min')) && ($f('surface_max') === null || $surface <= $f('surface_max'));
+            })
+            ->sortBy(fn (array $l) => [self::totalEntree($l[1]), $l[0]->code])
+            ->map(fn (array $l) => $l[0])->values();
+    }
+
     /**
      * Un commerçant n'est jamais attributaire de plus de deux boutiques, toutes campagnes et tous types confondus
      * (04/11/2026). Les réservations en cours comptent : chacune peut devenir une attribution.
@@ -218,8 +276,10 @@ class ReservationsBoutiques
             'observations' => $b->observations,
             'montants' => $tarif ? [
                 'loyer' => format_fcfa($tarif['loyer_mensuel']), 'caution' => format_fcfa($tarif['caution']),
-                'avance' => format_fcfa($tarif['avance']), 'total' => format_fcfa($tarif['caution'] + $tarif['avance']),
+                'avance' => format_fcfa($tarif['avance']), 'total' => format_fcfa(self::totalEntree($tarif)),
                 'mois_caution' => $tarif['mois_caution'], 'mois_avance' => $tarif['mois_avance'],
+                // Montant de la 1re tranche (05/11/2026) : affiché quand l'échéancier par tranches existera ; null, ligne absente.
+                'premiere_tranche' => null,
             ] : null,
         ];
     }

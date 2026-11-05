@@ -8,6 +8,7 @@ use App\Services\Paiement\OuverturePaiements;
 use App\Services\Securite\ComptesDemo;
 use App\Support\GardeFouBase;
 use App\Support\ImagesPlateforme;
+use App\Support\Planificateur;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -88,7 +89,15 @@ class VerifierProduction extends Command
 
         // Carte d'identification : armoiries et logo par défaut trop petits pour l'impression (un fichier déposé n'est pas contrôlé
         // ici, un SVG non plus : vectoriel, net à toute taille).
+        // Armoiries fournies avec le code (avec écusson, fond blanc, 05/11/2026) : version provisoire en basse résolution, à
+        // remplacer par la version officielle quelle que soit sa taille.
+        if (! ImagesPlateforme::deposee('armoiries')) {
+            $avertissements[] = 'Armoiries par défaut : version provisoire en basse résolution, déposer la version officielle dans « Paramètres de la plateforme », section Identité.';
+        }
         foreach (self::IMAGES_CARTE as $champ => $libelle) {
+            if ($champ === 'armoiries') {
+                continue;
+            }
             $chemin = ImagesPlateforme::deposee($champ) ? null : ImagesPlateforme::chemin($champ);
             $chemin = $chemin && str_ends_with(strtolower($chemin), '.svg') ? null : $chemin;
             $hauteur = $chemin && is_file($chemin) ? (getimagesize($chemin)[1] ?? 0) : null;
@@ -98,6 +107,14 @@ class VerifierProduction extends Command
         }
 
         $this->fileAttente($bloquants, $avertissements);
+
+        // Planificateur Laravel (05/11/2026) : sans la tâche cron « schedule:run » chaque minute, ni rappels de
+        // formalisation, ni échéances des cartes, des campagnes et des tranches. Avertissement : au premier déploiement,
+        // aucun battement n'existe encore.
+        if (! Planificateur::actif()) {
+            $avertissements[] = 'Planificateur Laravel inactif (aucun passage depuis '.Planificateur::DELAI_MINUTES.' minutes) : ajoutez la tâche cron « '.Planificateur::ligneCron().' » '
+                .'(rappels de formalisation, échéances des cartes, ouverture et clôture des campagnes et des tranches).';
+        }
         try {
             $chrome->essai();
         } catch (Throwable $e) {

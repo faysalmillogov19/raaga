@@ -24,12 +24,41 @@ final class GardeFouBase
     public const SEEDERS_PRODUCTION = ['ReferentielsSeeder', 'Database\\Seeders\\ReferentielsSeeder'];
 
     /** Commandes réservées au poste de développement (APP_ENV=local) : refusées partout ailleurs, avant tout accès à la base. */
-    public const COMMANDES_POSTE_LOCAL = ['raaga:inventaire', 'raaga:simulation'];
+    public const COMMANDES_POSTE_LOCAL = ['raaga:inventaire'];
+
+    /** Commandes admises sur le poste de développement et en recette (réunion du 05/11/2026), jamais en production. */
+    public const COMMANDES_LOCAL_OU_RECETTE = ['raaga:simulation'];
 
     /** Une commande réservée au poste local peut-elle tourner dans cet environnement ? */
     public static function posteLocal(?string $environnement = null): bool
     {
         return ($environnement ?? app()->environment()) === 'local';
+    }
+
+    /** @throws RuntimeException hors du poste de développement et de la recette */
+    public static function exigerLocalOuRecette(string $commande): void
+    {
+        if (! self::posteLocal() && ! Recette::active()) {
+            throw new RuntimeException("Commande refusée : « {$commande} » ne tourne que sur un poste de développement ou en recette (APP_ENV=local ou recette). "
+                .'Environnement actuel : « '.app()->environment().' ». Aucun accès à la base n’a été fait.');
+        }
+    }
+
+    /**
+     * Confirmation d'une opération qui efface ou réécrit la base : saisie du nom de la base. Refusée sans interaction.
+     *
+     * @throws RuntimeException sans confirmation, ou nom différent
+     */
+    public static function confirmerNomBase(InputInterface $input, OutputInterface $output, string $question, string $annulee, string $sansInteraction, ?\Closure $demander = null): void
+    {
+        if (! $input->isInteractive()) {
+            throw new RuntimeException($sansInteraction);
+        }
+        // Question posée par la commande elle-même quand elle le peut (style de sortie de la commande).
+        $saisie = $demander ? $demander($question) : (new SymfonyStyle($input, $output))->ask($question);
+        if (trim((string) $saisie) !== self::baseCourante()) {
+            throw new RuntimeException($annulee);
+        }
     }
 
     /** @throws RuntimeException hors du poste de développement */
@@ -87,13 +116,9 @@ final class GardeFouBase
             throw new RuntimeException("Commande refusée en production : « {$commande} » effacerait ou réécrirait les données de la base « {$base} ».");
         }
 
-        if (! $input->isInteractive()) {
-            throw new RuntimeException("Commande refusée : « {$commande} » sur la base « {$base} » demande une confirmation. Relancez-la sans --no-interaction.");
-        }
-        $saisie = (new SymfonyStyle($input, $output))->ask("« {$commande} » va effacer ou réécrire les données de la base « {$base} » (".app()->environment().'). '
-            .'Pour confirmer, tapez le nom de la base');
-        if (trim((string) $saisie) !== $base) {
-            throw new RuntimeException("Commande annulée : le nom saisi ne correspond pas à la base « {$base} ».");
-        }
+        self::confirmerNomBase($input, $output,
+            "« {$commande} » va effacer ou réécrire les données de la base « {$base} » (".app()->environment().'). Pour confirmer, tapez le nom de la base',
+            "Commande annulée : le nom saisi ne correspond pas à la base « {$base} ».",
+            "Commande refusée : « {$commande} » sur la base « {$base} » demande une confirmation. Relancez-la sans --no-interaction.");
     }
 }

@@ -54,8 +54,14 @@ class IfuCommercantTest extends TestCase
         static $n = 0;
         $n++;
 
-        return User::factory()->role(Role::Citoyen)->create(['telephone' => '+2267200'.sprintf('%04d', $n), 'statut_kyc' => StatutKyc::Valide, 'nom' => 'OUEDRAOGO', 'prenoms' => 'Awa',
+        $user = User::factory()->role(Role::Citoyen)->create(['telephone' => '+2267200'.sprintf('%04d', $n), 'statut_kyc' => StatutKyc::Valide, 'nom' => 'OUEDRAOGO', 'prenoms' => 'Awa',
             'piece_expire_le' => now()->addYears(10)->toDateString(), 'identite_validee' => ['nom' => 'OUEDRAOGO', 'prenoms' => 'Awa'], ...$attributs]);
+        // IFU donné : attestation validée (formalisé ; sans elle, la carte reste en attente depuis le 05/11/2026).
+        if (filled($user->ifu)) {
+            Boutiques::ifuVerifie($user);
+        }
+
+        return $user;
     }
 
     /** Réservation réservée, avance payée, puis attribuée. */
@@ -87,9 +93,8 @@ class IfuCommercantTest extends TestCase
         $this->actingAs($citoyen)->get(route('boutiques.boutique', $boutique->code))->assertOk()
             ->assertSee('data-ifu-reservation', false)->assertSee('Votre numéro IFU')->assertSee('Numéro IFU')->assertDontSee('Numéro Raaga (IFU)')->assertSee('name="ifu"', false)->assertSee('name="attestation_ifu"', false);
 
-        // Sans IFU, sans attestation, IFU déjà pris : rien n'est enregistré.
-        $this->candidater($citoyen, $boutique, ['attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf')])
-            ->assertSessionHasErrors(['ifu' => 'Le numéro IFU est obligatoire pour souscrire à une boutique.']);
+        // IFU sans attestation, IFU déjà pris : rien n'est enregistré. (Sans IFU du tout : réservation possible avec un
+        // récépissé de préinscription depuis le 05/11/2026, voir FormalisationTest.)
         $this->candidater($citoyen, $boutique, ['ifu' => '00004742U'])->assertSessionHasErrors('attestation_ifu');
         $this->citoyen(['ifu' => '00009999Z']);
         $this->candidater($citoyen, $boutique, ['ifu' => '0000 9999 z', 'attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf')])
@@ -155,8 +160,11 @@ class IfuCommercantTest extends TestCase
         $this->attribuer($sansIfu, Boutiques::boutique('A', 2));
         $enAttente = Cartes::courante($sansIfu, TypeCarte::Commercant);
         $this->assertSame([StatutCarte::EnAttente, null], [$enAttente->statut, $enAttente->numero]);
-        // IFU donné ensuite : la carte prend ce numéro et devient active.
+        // IFU donné ensuite : la carte reste en attente tant que l'attestation n'est pas validée (05/11/2026) ; validée, elle
+        // prend ce numéro et devient active.
         $sansIfu->forceFill(['ifu' => '00054321B'])->save();
+        $this->assertSame([StatutCarte::EnAttente, null], [Cartes::courante($sansIfu, TypeCarte::Commercant)->statut, Cartes::courante($sansIfu, TypeCarte::Commercant)->numero]);
+        Boutiques::ifuVerifie($sansIfu->fresh());
         $active = app(Cartes::class)->synchroniser($sansIfu->fresh(), TypeCarte::Commercant);
         $this->assertSame([StatutCarte::Active, '00054321B'], [$active->statut, $active->numero]);
         $this->assertStringContainsString('Numéro Raaga', $html);

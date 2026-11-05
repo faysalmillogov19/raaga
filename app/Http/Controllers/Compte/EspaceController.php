@@ -12,6 +12,7 @@ use App\Models\Acceptation;
 use App\Models\InscriptionBoutique;
 use App\Models\LigneRegistre;
 use App\Models\ManifestationInteret;
+use App\Models\Recepisse;
 use App\Models\ReservationBoutique;
 use App\Models\Souscription;
 use App\Services\Documents\GenerateurPdf;
@@ -93,6 +94,8 @@ class EspaceController extends Controller
                 ->where('statut', StatutInscriptionBoutique::EnAttente)->with(['boutique.type', 'campagne'])->latest('id')->get() : collect(),
             'retenues' => InscriptionBoutique::query()->where('user_id', $user->id)->where('statut', StatutInscriptionBoutique::Retenue)
                 ->pluck('id', 'reservation_boutique_id'),
+            // Formalisation différée (05/11/2026) : récépissés de préinscription du citoyen.
+            'recepisses' => $onglet === 'boutiques' ? Recepisse::query()->where('user_id', $user->id)->with('boutique')->latest('id')->get() : collect(),
             // RAAGA Invest : manifestations d'intérêt du citoyen (simulations non engageantes, aucun paiement).
             'interets' => $actions ? ManifestationInteret::query()->where('user_id', $user->id)->latest('id')->get() : collect(),
         ]);

@@ -3,3 +3,5 @@
 <span class="plan-etat">{{ __('public.boutiques.plan.statuts.'.$statut) }}</span>
 @if ($boutique->surface)<span class="plan-surface">{{ __('public.boutiques.plan.surface', ['surface' => format_nombre((float) $boutique->surface, 1)]) }}</span>@endif
 @if ($limite ?? null)<span class="plan-limite" data-limite-atteinte>{{ $limite }}</span>@endif
+{{-- Liste d'attente (05/11/2026) : nombre de personnes inscrites, jamais de nom. --}}
+@if (($attente ?? 0) > 0)<span class="plan-attente" data-attente>{{ trans_choice('public.boutiques.plan.attente_case', $attente, ['n' => $attente]) }}</span>@endif

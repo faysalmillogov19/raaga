@@ -23,6 +23,7 @@ use App\Http\Controllers\Publique\ImagePlateformeController;
 use App\Http\Controllers\Publique\InvestController;
 use App\Http\Controllers\Publique\PageController;
 use App\Http\Controllers\Publique\SmsRecetteController;
+use App\Http\Controllers\RecepissesController;
 use App\Http\Controllers\VerificationCarteController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,8 @@ Route::get('/guichets', GuichetController::class)->name('guichets');
 
 // SMS simulés, pour saisir les codes de confirmation en recette (jamais en production).
 Route::get('/recette/sms', SmsRecetteController::class)->name('recette.sms');
+// Recette (05/11/2026) : accès à la page par le mot de passe commun des testeurs.
+Route::post('/recette/sms', [SmsRecetteController::class, 'acceder'])->middleware('throttle:5,1')->name('recette.sms.acceder');
 Route::redirect('/admin/recette', '/recette/sms');
 Route::redirect('/admin/recette/sms', '/recette/sms');
 
@@ -158,6 +161,10 @@ Route::middleware(['auth', 'role:citoyen'])->controller(VerificationController::
     Route::get('/', 'show');
     Route::post('/', 'store')->middleware('throttle:10,1')->name('.store');
     Route::post('/titulaire', 'titulaire')->middleware('throttle:10,1')->name('.titulaire');
+    // Groupe sanguin et son justificatif (05/11/2026), modifiables à tout moment.
+    Route::post('/groupe-sanguin', 'groupeSanguin')->middleware('throttle:10,1')->name('.groupe-sanguin');
+    // RCCM (05/11/2026) : numéro, date d'immatriculation, greffe et justificatif, modifiables à tout moment.
+    Route::post('/rccm', 'rccm')->middleware('throttle:10,1')->name('.rccm');
     Route::get('/fichiers/{document}', 'fichier')->whereNumber('document')->name('.fichier');
 });
 
@@ -199,6 +206,9 @@ Route::redirect('/guichet', '/admin')->name('guichet');
 // avec la clé RAAGA_CLE_PORTIQUES (en-tête X-Cle-Portique). Limites : QR code par adresse IP (par compte pour un agent
 // autorisé, AppServiceProvider) ; portiques, essais avec une mauvaise clé seulement (VerificationCarteController).
 Route::get('/c/{jeton}', [VerificationCarteController::class, 'show'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:cartes-verification')->name('cartes.verifier');
+// Récépissé de préinscription Raaga (05/11/2026) : vérification publique par QR code ; PDF du titulaire.
+Route::get('/r/{jeton}', [RecepissesController::class, 'verifier'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:cartes-verification')->name('recepisses.verifier');
+Route::get('/espace/recepisses/{numero}', [RecepissesController::class, 'pdf'])->where('numero', 'RP-[0-9]{4}-[0-9]{6}')->middleware(['auth', 'role:citoyen'])->name('espace.recepisse');
 Route::get('/portiques/cartes/{jeton}', [VerificationCarteController::class, 'portique'])->where('jeton', '[A-Za-z0-9]{1,100}')->name('cartes.portique');
 
 // Redirige chaque utilisateur vers le tableau de bord de son rôle.

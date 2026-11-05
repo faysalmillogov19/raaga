@@ -50,7 +50,7 @@
 
         @else
             @php
-                $valeurs = array_merge($saisie, array_filter(old() ?: [], fn ($cle) => in_array($cle, ['type_titulaire', 'raison_sociale', 'forme_morale', 'nom', 'prenoms', 'date_naissance', 'ifu', 'pays_residence', 'commune_id'], true), ARRAY_FILTER_USE_KEY));
+                $valeurs = array_merge($saisie, array_filter(old() ?: [], fn ($cle) => in_array($cle, \App\Services\Compte\CreationCompte::CHAMPS_IDENTITE, true), ARRAY_FILTER_USE_KEY));
                 $messages = __('public.compte.inscription.erreurs');
                 $messages['majeur'] = __('public.compte.inscription.erreurs.majeur', ['age' => config('raaga.inscription.age_minimum')]);
             @endphp
@@ -102,6 +102,39 @@
                                x-show="erreurs.ifu || @js($errors->has('ifu'))"
                                x-text="erreurs.ifu || @js($errors->first('ifu'))">{{ $errors->first('ifu') }}</p>
                         </div>
+
+                        {{-- Gérant (05/11/2026) : le titulaire du compte ; sa fonction et son adresse électronique. --}}
+                        <fieldset class="formulaire-champ space-y-4" data-gerant>
+                            <legend class="font-semibold text-encre">{{ $t['gerant_titre'] }}</legend>
+                            <p class="texte-carte">{{ $t['gerant_aide'] }}</p>
+                            @foreach ([['gerant_fonction', 'text', 'organization-title', $t['gerant_fonction'], $t['gerant_fonction_aide'], 120], ['email', 'email', 'email', $t['email'], null, 190]] as [$champ, $type, $auto, $libelle, $aide, $max])
+                                <div>
+                                    <label for="{{ $champ }}"><x-requis /> {{ $libelle }}</label>
+                                    @if ($aide)<p class="texte-carte">{{ $aide }}</p>@endif
+                                    <input id="{{ $champ }}" name="{{ $champ }}" type="{{ $type }}" maxlength="{{ $max }}" autocomplete="{{ $auto }}" value="{{ $valeurs[$champ] ?? '' }}"
+                                           :disabled="titulaire !== 'MORALE'" class="champ @error($champ) est-invalide @enderror" aria-describedby="{{ $champ }}-erreur">
+                                    @error($champ)<p id="{{ $champ }}-erreur" class="message-erreur" role="alert">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                        </fieldset>
+
+                        {{-- RCCM (05/11/2026) : obligatoire pour une personne morale ; justificatif à déposer dans « Vérifier mon identité ». --}}
+                        @php($rc = __('public.rccm'))
+                        <fieldset class="formulaire-champ space-y-4" data-rccm>
+                            <legend class="font-semibold text-encre">{{ $t['rccm_titre'] }}</legend>
+                            @foreach ([['rccm', 'text', $rc['numero'], $rc['numero_aide'], 60], ['rccm_immatricule_le', 'date', $rc['date'], null, null]] as [$champ, $type, $libelle, $aide, $max])
+                                <div>
+                                    <label for="{{ $champ }}"><x-requis /> {{ $libelle }}</label>
+                                    @if ($aide)<p class="texte-carte">{{ $aide }}</p>@endif
+                                    <input id="{{ $champ }}" name="{{ $champ }}" type="{{ $type }}" @if ($max) maxlength="{{ $max }}" @endif autocomplete="off" value="{{ $valeurs[$champ] ?? '' }}"
+                                           @if ($type === 'date') max="{{ now()->toDateString() }}" @endif @if ($champ === 'rccm') autocapitalize="characters" @endif
+                                           :disabled="titulaire !== 'MORALE'" class="champ @error($champ) est-invalide @enderror" aria-describedby="{{ $champ }}-erreur">
+                                    @error($champ)<p id="{{ $champ }}-erreur" class="message-erreur" role="alert">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                            @include('public.partials.champ-greffe', ['valeurId' => $valeurs['rccm_greffe_id'] ?? null, 'valeurAutre' => $valeurs['rccm_greffe_autre'] ?? null,
+                                'obligatoire' => true, 'desactive' => "titulaire !== 'MORALE'"])
+                        </fieldset>
                     </div>
                 </div>
 

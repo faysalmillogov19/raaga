@@ -12,6 +12,12 @@
         $f['position'] => $boutique->position?->label(), $f['coffret'] => $boutique->coffret, $f['planche'] => $boutique->planche,
         $f['etat_physique'] => $boutique->etat_physique?->label(), $f['statut'] => $boutique->statut->label(), $f['observations'] => $boutique->observations,
     ];
+    // Nom commercial de l'attributaire (05/11/2026) : seule information affichée sur lui, s'il l'a indiqué.
+    $nomCommercial = \App\Models\ReservationBoutique::query()->where('boutique_id', $boutique->id)->where('statut', \App\Enums\StatutReservationBoutique::Attribuee)
+        ->with('user:id,nom_commercial')->first()?->user?->nom_commercial;
+    if ($nomCommercial) {
+        $lignes[$b['nom_commercial']] = $nomCommercial;
+    }
 @endphp
 
 <x-admin.layout :titre="$b['fiche'].' '.$boutique->reference()" :fil="[['libelle' => $b['titre'], 'url' => route('admin.referencement.boutiques')], ['libelle' => $boutique->reference()]]">

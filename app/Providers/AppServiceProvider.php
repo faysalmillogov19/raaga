@@ -16,6 +16,7 @@ use App\Services\Plateforme\ParametresPlateforme;
 use App\Services\Sms\LogSmsProvider;
 use App\Support\GardeFouBase;
 use App\Support\MemoRequete;
+use App\Support\OrdreMigrations;
 use App\Support\Recherche;
 use App\Support\TitreSucces;
 use App\Support\Verrou;
@@ -96,7 +97,8 @@ class AppServiceProvider extends ServiceProvider
         });
         LigneRegistre::created(fn (LigneRegistre $l) => DB::afterCommit(fn () => app(Cartes::class)->synchroniser($l->user, TypeCarte::Actionnaire)));
         User::saved(function (User $u) {
-            if ($u->wasChanged('statut_kyc') || $u->wasChanged('piece_expire_le') || $u->wasChanged('actions_gelees_le')) {
+            // IFU (05/11/2026) : la carte de commerçant n'est émise qu'avec un IFU validé.
+            if ($u->wasChanged('statut_kyc') || $u->wasChanged('piece_expire_le') || $u->wasChanged('actions_gelees_le') || $u->wasChanged('ifu')) {
                 DB::afterCommit(function () use ($u) {
                     app(Cartes::class)->synchroniser($u, TypeCarte::Commercant);
                     app(Cartes::class)->synchroniser($u, TypeCarte::Actionnaire);
@@ -130,6 +132,14 @@ class AppServiceProvider extends ServiceProvider
             GardeFouBase::exigerBaseDeTest();
         }
         Event::listen(CommandStarting::class, fn (CommandStarting $e) => GardeFouBase::avantCommande((string) $e->command, $e->input, $e->output));
+        // Avant « migrate » : migration datée avant la plus récente déjà exécutée, signalée (les noms servent à l'ordre).
+        Event::listen(CommandStarting::class, function (CommandStarting $e) {
+            if ($e->command === 'migrate' && ! $this->app->environment('testing')) {
+                foreach (OrdreMigrations::enRetard(OrdreMigrations::fichiers(), OrdreMigrations::executees()) as $nom) {
+                    $e->output->writeln("<comment>Attention : la migration {$nom} est datée avant la plus récente déjà exécutée. Les noms servent à l'ordre : renommez-la avec une date postérieure (php artisan raaga:migrations-ordre).</comment>");
+                }
+            }
+        });
 
         // Après chaque « php artisan migrate » réussi (même sans nouvelle migration) : table des rôles alignée
         // sur l'enum (RoleSeeder, sans effet de bord).

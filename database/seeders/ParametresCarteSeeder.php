@@ -18,6 +18,9 @@ class ParametresCarteSeeder extends Seeder
 {
     public const DUREE_VALIDITE_ANNEES = 3;
 
+    /** Délai de formalisation sans IFU (05/11/2026), en mois. */
+    public const DELAI_FORMALISATION_MOIS = 6;
+
     /**
      * Filigrane => image fournie (images en couleur, converties en monochrome or au rendu ; remplacées le 05/11/2026,
      * contour du Burkina Faso au recto ajouté le même jour).
@@ -35,6 +38,9 @@ class ParametresCarteSeeder extends Seeder
         $complements = [];
         if (blank($carte['dureeValiditeAnnees'] ?? null)) {
             $complements['dureeValiditeAnnees'] = self::DUREE_VALIDITE_ANNEES;
+        }
+        if (blank($carte['delaiFormalisationMois'] ?? null)) {
+            $complements['delaiFormalisationMois'] = self::DELAI_FORMALISATION_MOIS;
         }
         foreach (self::FILIGRANES as $champ => $image) {
             if (ReglagesCarte::chemin($carte[$champ] ?? null) === null) {

@@ -17,8 +17,10 @@ use App\Models\User;
 use App\Notifications\CarteEmise;
 use App\Notifications\PieceBientotExpiree;
 use App\Services\Audit\Journal;
+use App\Services\Boutiques\Formalisation;
 use App\Support\Plateforme\ReglagesCarte;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -260,10 +262,11 @@ class Cartes
             $validite = $validite->min(CarbonImmutable::parse($user->piece_expire_le));
         }
 
-        // Actions gelées (identité non corrigée dans le délai) : carte d'actionnaire bloquée jusqu'au dégel. Commerçant sans
-        // numéro Raaga (IFU) : carte en attente.
+        // Actions gelées (identité non corrigée dans le délai) : carte d'actionnaire bloquée jusqu'au dégel. Commerçant : IFU
+        // saisi et validé par l'ADMIN (formalisation, 05/11/2026), sinon carte en attente ; une carte déjà émise avec cet IFU
+        // reste valable (IfuReconnu).
         $conforme = $user->statut_kyc === StatutKyc::Valide && ! $validite->isPast() && ! ($type === TypeCarte::Actionnaire && $user->actionsGelees())
-            && ($type !== TypeCarte::Commercant || filled($user->ifu));
+            && ($type !== TypeCarte::Commercant || self::ifuReconnu($user, $courante));
         $statut = match (true) {
             $conforme => StatutCarte::Active,
             // Identité douteuse : aucune carte ; une carte déjà émise est suspendue jusqu'à régularisation.
@@ -359,13 +362,35 @@ class Cartes
     }
 
     /**
+     * IFU reconnu pour la carte de commerçant (05/11/2026) : validé par l'ADMIN (formalisation), ou déjà imprimé sur la
+     * carte en cours, émise avant la règle (jamais remise en attente). Une nouvelle émission (première carte, réémission
+     * après perte) exige un IFU validé.
+     */
+    public static function ifuReconnu(User $user, ?Carte $carte): bool
+    {
+        return Formalisation::formalise($user)
+            || ($carte !== null && $carte->emise_le !== null && filled($user->ifu) && $carte->numero === $user->ifu);
+    }
+
+    /**
+     * Cartes de commerçant en cours, émises avec un IFU que l'ADMIN n'a pas encore validé (« À traiter »).
+     *
+     * @return Collection<int, User>
+     */
+    public static function ifuAValider(): Collection
+    {
+        return User::query()->whereNotNull('ifu')->whereHas('cartes', fn ($q) => $q->courantes()->where('type', TypeCarte::Commercant)->whereColumn('cartes.numero', 'users.ifu'))
+            ->orderBy('id')->get()->reject(fn (User $u) => Formalisation::formalise($u))->values();
+    }
+
+    /**
      * Numéro imprimé. Carte de commerçant : le numéro Raaga, c'est-à-dire son IFU, seul numéro du commerçant (comité
      * restreint du 03/11/2026) ; sans IFU, aucun numéro. Autres cartes : RG-C suivi du numéro de la carte.
      */
     private static function numero(User $user, TypeCarte $type, Carte $carte): ?string
     {
         if ($type === TypeCarte::Commercant) {
-            return filled($user->ifu) ? $user->ifu : null;
+            return self::ifuReconnu($user, $carte) ? $user->ifu : null;
         }
 
         return sprintf('RG-C-%06d', $carte->id);

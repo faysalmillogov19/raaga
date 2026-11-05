@@ -104,7 +104,7 @@
                 @endif
 
                 <div class="mt-5 space-y-5">
-                    @foreach (['recto', 'verso', 'selfie', 'ifu', 'pouvoir'] as $cle)
+                    @foreach (['recto', 'verso', 'selfie', 'ifu', 'pouvoir', 'rccm'] as $cle)
                         @if (in_array($cle, $aFournir, true))
                             @php($document = in_array($cle, $documents, true))
                             <div x-data="pieceKyc(@js($options))" @if ($cle === 'verso' && $choixPiece) x-show="piece !== 'PASSEPORT'" @endif data-emplacement="{{ $cle }}">
@@ -166,6 +166,76 @@
         @endif
 
         {{-- Type de titulaire : modifiable seulement en repassant par la vérification d'identité. --}}
+        {{-- RCCM (05/11/2026) : obligatoire pour une personne morale, facultatif pour une personne physique ; modifiable à tout
+             moment ; un nouveau justificatif est vérifié par l'ADMIN ; jamais imprimé sur la carte. --}}
+        @php($rc = __('public.rccm'))
+        @php($rv = __('public.verification.rccm'))
+        <form method="POST" action="{{ route('espace.verification.rccm') }}" enctype="multipart/form-data" novalidate class="carte mt-6 p-5" id="rccm" data-rccm>
+            @csrf
+            <h2 class="!text-lg">{{ $rv['titre'] }}</h2>
+            <p class="texte-carte">{{ $titulaire === TypeTitulaire::Morale ? $rv['aide_morale'] : $rv['aide_physique'] }}</p>
+            @if ($justificatifRccm && $justificatifRccm->numero === $user->rccm)
+                <p class="mt-3 font-semibold text-encre" data-statut-rccm>{{ $rv['statuts'][$justificatifRccm->statut->value] }}</p>
+                @if ($justificatifRccm->statut === StatutDocumentKyc::Rejete && $justificatifRccm->commentaire)
+                    <p class="texte-carte">{{ $rv['motif'] }} {{ $justificatifRccm->commentaire }}</p>
+                @endif
+            @endif
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <x-public.champ nom="rccm" :libelle="$rc['numero']" :aide="$rc['numero_aide']" :valeur="$user->rccm" maxlength="60" autocomplete="off" autocapitalize="characters" :obligatoire="$titulaire === TypeTitulaire::Morale" />
+                <x-public.champ nom="rccm_immatricule_le" type="date" :libelle="$rc['date']" :valeur="$user->rccm_immatricule_le?->toDateString()" max="{{ now()->toDateString() }}" :obligatoire="$titulaire === TypeTitulaire::Morale" />
+                <div>@include('public.partials.champ-greffe', ['valeurId' => old('rccm_greffe_id', $user->rccm_greffe_id), 'valeurAutre' => old('rccm_greffe_autre', $user->rccm_greffe_autre),
+                    'obligatoire' => $titulaire === TypeTitulaire::Morale])</div>
+            </div>
+            <div class="mt-4">
+                <label for="document_rccm" class="block font-semibold text-encre">{{ $justificatifRccm ? $rv['remplacer'] : $rc['document'] }}</label>
+                <p id="document_rccm-aide" class="texte-carte">{{ $rv['document_aide'] }}</p>
+                <input id="document_rccm" name="document" type="file" accept="image/jpeg,image/png,application/pdf" aria-describedby="document_rccm-aide"
+                       class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
+                <x-public.erreur :messages="$errors->get('document')" />
+            </div>
+            <button type="submit" class="btn-secondaire mt-4">{{ $rv['enregistrer'] }}</button>
+        </form>
+
+        {{-- Groupe sanguin (05/11/2026) : facultatif, modifiable à tout moment ; imprimé sur la carte de commerçant seulement avec
+             l'accord et un justificatif vérifié par l'ADMIN. --}}
+        @php($gs = __('public.verification.groupe_sanguin'))
+        @php($groupeChoisi = (string) old('groupe_sanguin', $user->groupe_sanguin_consenti_le ? $user->groupe_sanguin : ''))
+        <form method="POST" action="{{ route('espace.verification.groupe-sanguin') }}" enctype="multipart/form-data" novalidate class="carte mt-6 p-5"
+              id="groupe-sanguin" x-data="{ groupe: @js($groupeChoisi) }" data-groupe-sanguin>
+            @csrf
+            <h2 class="!text-lg">{{ $gs['titre'] }}</h2>
+            <p class="texte-carte">{{ $gs['aide'] }}</p>
+            @if ($justificatifGroupe)
+                <p class="mt-3 font-semibold text-encre" data-statut-justificatif>{{ $gs['statuts'][$justificatifGroupe->statut->value] }}</p>
+                @if ($justificatifGroupe->statut === StatutDocumentKyc::Rejete && $justificatifGroupe->commentaire)
+                    <p class="texte-carte">{{ $gs['motif'] }} {{ $justificatifGroupe->commentaire }}</p>
+                @endif
+            @endif
+            <div class="mt-4">
+                <label for="groupe_sanguin" class="block font-semibold text-encre">{{ $gs['groupe'] }}</label>
+                <select id="groupe_sanguin" name="groupe_sanguin" x-model="groupe" class="champ mt-2">
+                    <option value="">{{ $gs['aucun'] }}</option>
+                    @foreach (\App\Models\User::GROUPES_SANGUINS as $g)
+                        <option value="{{ $g }}" @selected($groupeChoisi === $g)>{{ $g }}</option>
+                    @endforeach
+                </select>
+                <x-public.erreur :messages="$errors->get('groupe_sanguin')" />
+            </div>
+            <div class="mt-4 space-y-4" x-show="groupe !== ''" @if ($groupeChoisi === '') x-cloak @endif>
+                <x-public.case nom="consentement_groupe_sanguin" id="consentement_groupe_sanguin" value="1" :libelle="__('public.boutiques.reservation.groupe_sanguin_consentement')"
+                               :checked="(bool) old('consentement_groupe_sanguin', $user->groupe_sanguin_consenti_le !== null)" />
+                <x-public.erreur :messages="$errors->get('consentement_groupe_sanguin')" />
+                <div>
+                    <label for="justificatif" class="block font-semibold text-encre">{{ $justificatifGroupe ? $gs['remplacer'] : $gs['justificatif'] }}</label>
+                    <p id="justificatif-aide" class="texte-carte">{{ $gs['justificatif_aide'] }}</p>
+                    <input id="justificatif" name="justificatif" type="file" accept="image/jpeg,image/png,application/pdf" aria-describedby="justificatif-aide"
+                           class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
+                    <x-public.erreur :messages="$errors->get('justificatif')" />
+                </div>
+            </div>
+            <button type="submit" class="btn-secondaire mt-4">{{ $gs['enregistrer'] }}</button>
+        </form>
+
         @if ($titulaireModifiable)
             <details class="carte mt-6 p-5" @if ($errors->hasAny(['type_titulaire', 'raison_sociale', 'forme_morale'])) open @endif data-changer-titulaire>
                 <summary class="cursor-pointer font-semibold text-encre">{{ $t['changer'] }}</summary>

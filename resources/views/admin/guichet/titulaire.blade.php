@@ -22,6 +22,9 @@
                 @if ($titulaire->ifu)
                     <dt>{{ $t['ifu'] }}</dt><dd class="font-mono" data-ifu>{{ $titulaire->ifu }}</dd>
                 @endif
+                @if ($titulaire->nom_commercial)
+                    <dt>{{ __('admin.kyc.nom_commercial') }}</dt><dd data-nom-commercial>{{ $titulaire->nom_commercial }}</dd>
+                @endif
                 @if ($titulaire->secteur_activite_id)
                     <dt>{{ $t['secteur'] }}</dt><dd data-secteur-activite>{{ \App\Models\SecteurActivite::libellePour($titulaire) }}</dd>
                 @endif
@@ -93,4 +96,24 @@
             </ul>
         @endif
     </section>
+    {{-- Formalisation différée (05/11/2026) : état et récépissés de préinscription à imprimer. --}}
+    @if ($recepisses->isNotEmpty())
+        @php($fr = __('admin.guichet.formalisation'))
+        <section class="bo-carte" aria-labelledby="recepisses-titre" data-recepisses>
+            <h2 id="recepisses-titre" class="!text-[1.15rem]">{{ $fr['titre'] }}</h2>
+            <p class="mt-1" data-etat-formalisation>
+                @if (\App\Services\Boutiques\Formalisation::formalise($titulaire))
+                    {{ $fr['formalise'] }}
+                @else
+                    {{ __('admin.guichet.formalisation.en_cours', ['date' => $titulaire->formalisation_echeance_le?->format('d/m/Y')]) }}
+                @endif
+            </p>
+            <ul class="mt-3 space-y-2">
+                @foreach ($recepisses as $rp)
+                    <li><a href="{{ route('admin.guichet.recepisse', $rp->numero) }}" class="lien" data-recepisse="{{ $rp->numero }}">{{ __('admin.guichet.formalisation.imprimer', ['numero' => $rp->numero]) }}</a>
+                        <span class="texte-carte"> · {{ $rp->boutique?->code }} · {{ $rp->boutique?->site?->nom }}</span></li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
 </x-admin.layout>

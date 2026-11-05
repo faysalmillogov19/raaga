@@ -20,6 +20,7 @@ use Illuminate\Notifications\Notifiable;
     'date_naissance', 'nationalite', 'pays_residence', 'commune_id', 'ifu',
     'statut_kyc', 'niveau_kyc', 'actif', 'institution_id', 'piece_expire_le',
     'type_titulaire', 'raison_sociale', 'forme_morale', 'secteur_activite_id', 'secteur_activite_autre',
+    'rccm', 'rccm_immatricule_le', 'rccm_greffe_id', 'rccm_greffe_autre', 'gerant_fonction', 'nom_commercial',
 ])]
 #[Hidden(['password', 'remember_token', 'totp_secret', 'codes_secours', 'groupe_sanguin'])]
 class User extends Authenticatable
@@ -66,6 +67,12 @@ class User extends Authenticatable
             'actif' => 'boolean',
             // Carte Raaga : expiration de la pièce d'identité, avertissement envoyé, identité validée par l'ADMIN.
             'piece_expire_le' => 'date',
+            'rccm_immatricule_le' => 'date',
+            // Formalisation différée (05/11/2026).
+            'formalisation_debut_le' => 'datetime',
+            'formalisation_echeance_le' => 'date',
+            'formalisation_rappels' => 'array',
+            'formalisation_alerte_le' => 'datetime',
             'type_titulaire' => TypeTitulaire::class,
             'kyc_maj_demandee_le' => 'datetime',
             'piece_avertie_le' => 'datetime',

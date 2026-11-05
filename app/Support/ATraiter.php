@@ -31,6 +31,8 @@ use App\Models\Tranche;
 use App\Models\TypeBoutique;
 use App\Models\User;
 use App\Models\ZoneSite;
+use App\Services\Boutiques\Formalisation;
+use App\Services\Cartes\Cartes;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -190,6 +192,17 @@ class ATraiter
                 $heures = (int) $c->updated_at->diffInHours(now());
                 $e[] = self::element('kyc', 'CIT-'.$c->updated_at->format('Y').'-'.str_pad((string) $c->id, 5, '0', STR_PAD_LEFT), __('admin.tableau.a_traiter.citoyen'),
                     $c->updated_at, __('admin.tableau.a_traiter.en_attente_depuis', ['h' => $heures]), route('admin.kyc'));
+            }
+            // Cartes déjà émises avec un IFU pas encore validé (05/11/2026) : elles restent valables ; l'ADMIN valide l'attestation.
+            foreach (Cartes::ifuAValider()->take(self::KYC_MAX) as $c) {
+                $e[] = self::element('ifu_carte_emise', 'CIT-'.$c->created_at->format('Y').'-'.str_pad((string) $c->id, 5, '0', STR_PAD_LEFT), __('admin.tableau.a_traiter.citoyen'),
+                    $c->updated_at, __('admin.tableau.a_traiter.ifu_a_valider', ['ifu' => $c->ifu]), route('admin.kyc.dossier', $c));
+            }
+            // Formalisation différée (05/11/2026) : délai dépassé sans IFU validé ; alerte seulement, aucune action sur la boutique.
+            foreach (User::query()->whereNotNull('formalisation_alerte_le')->oldest('formalisation_echeance_le')->limit(self::KYC_MAX)->get()
+                ->filter(fn (User $c) => Formalisation::enCours($c)) as $c) {
+                $e[] = [...self::element('formalisation_echue', 'CIT-'.$c->created_at->format('Y').'-'.str_pad((string) $c->id, 5, '0', STR_PAD_LEFT), __('admin.tableau.a_traiter.citoyen'),
+                    $c->formalisation_echeance_le, __('admin.tableau.a_traiter.formalisation_echue', ['date' => $c->formalisation_echeance_le->format('d/m/Y')]), route('admin.kyc.dossier', $c)), 'prioritaire' => true];
             }
         }
 

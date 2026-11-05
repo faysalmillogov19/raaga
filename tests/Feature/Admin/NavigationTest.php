@@ -29,8 +29,8 @@ class NavigationTest extends TestCase
 
     /** Écrans autorisés par profil (d'après le tableau des droits) ; le menu les montre tous, sauf les pages en préparation. */
     private const MENUS = [
-        'superadmin' => ['tableau', 'types', 'niveaux', 'zones', 'assistance', 'demandes', 'contenus', 'institutions', 'approbations', 'utilisateurs', 'plateforme', 'securite', 'audit', 'connexions', 'unites', 'moyens', 'delais', 'secteurs', 'guichets_agrees'],
-        'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme', 'kyc', 'guichet', 'photos_personnel'],
+        'superadmin' => ['tableau', 'types', 'niveaux', 'zones', 'assistance', 'demandes', 'contenus', 'institutions', 'approbations', 'utilisateurs', 'plateforme', 'securite', 'audit', 'connexions', 'unites', 'moyens', 'delais', 'secteurs', 'guichets_agrees', 'greffes'],
+        'admin' => ['tableau', 'assistance', 'demandes', 'contenus', 'institutions', 'plateforme', 'kyc', 'greffes', 'guichet', 'photos_personnel'],
         'agent_guichet' => ['tableau', 'guichet', 'guichet_souscription', 'guichet_caisse'],
         'controleur_paiements' => ['tableau', 'paiements', 'remboursements'],
         'gestionnaire_sites' => ['tableau', 'brouillons', 'sites', 'types', 'niveaux', 'zones', 'boutiques_referentiel', 'capacites', 'imports_sites', 'imports_boutiques'],

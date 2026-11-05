@@ -13,6 +13,7 @@
     <x-assets />
 </head>
 <body class="site-public bo font-public">
+    <x-bandeau-recette />
     <main class="compte-fond min-h-screen">
         <div class="compte-carte">
             {{-- Pages d'authentification : ni « Retour » ni « Suivant » (30/10/2026). --}}

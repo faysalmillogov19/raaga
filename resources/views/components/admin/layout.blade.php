@@ -39,6 +39,7 @@
 <body class="site-public bo adm theme-{{ $theme }}" data-layout="admin"
       x-data="cadreAdmin({ theme: @js($theme), urlTheme: @js(route('admin.preferences.theme')), urlLues: @js(route('admin.notifications.lues')) })"
       :class="{ 'theme-clair': theme !== 'foret', 'theme-foret': theme === 'foret' }">
+    <x-bandeau-recette />
     <a href="#contenu" class="sr-only focus:not-sr-only">{{ __('admin.cadre.aller_contenu') }}</a>
 
     <div class="adm-cadre" :class="{ 'adm-ferme': ! ouvert }">

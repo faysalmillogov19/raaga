@@ -10,10 +10,12 @@ use App\Models\User;
 use App\Services\Audit\Journal;
 use App\Services\Auth\OtpException;
 use App\Services\Auth\OtpService;
+use App\Services\Boutiques\Formalisation;
 use App\Services\Cartes\Cartes;
 use App\Services\Compte\CreationCompte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -64,6 +66,8 @@ class ProfilController extends Controller
             'pays_residence' => ['required', Rule::in(array_keys(config('raaga.inscription.pays')))],
             'commune_id' => ['nullable', 'required_if:pays_residence,BF', 'integer', Rule::exists('communes', 'id')],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            // Nom commercial (05/11/2026) : facultatif, seulement une fois l'IFU validé ; jamais sur la carte.
+            'nom_commercial' => [Formalisation::formalise($user) ? 'nullable' : 'prohibited', 'string', 'min:2', 'max:120'],
         ], [
             'nom.*' => $messages['nom'],
             'prenoms.*' => $messages['prenoms'],
@@ -73,6 +77,7 @@ class ProfilController extends Controller
             'commune_id.*' => $messages['commune'],
             'email.unique' => __('public.compte.profil.erreurs.email_existe'),
             'email.*' => __('public.compte.profil.erreurs.email'),
+            'nom_commercial.*' => __('public.compte.profil.erreurs.nom_commercial'),
         ]);
 
         $nom = mb_strtoupper(trim($donnees['nom']), 'UTF-8');
@@ -86,6 +91,7 @@ class ProfilController extends Controller
             'pays_residence' => $donnees['pays_residence'],
             ...CreationCompte::residence($donnees),
             'email' => $donnees['email'] ? mb_strtolower(trim($donnees['email'])) : null,
+            ...(Formalisation::formalise($user) ? ['nom_commercial' => filled($donnees['nom_commercial'] ?? null) ? Str::squish($donnees['nom_commercial']) : null] : []),
         ]);
 
         $modifies = array_values(array_diff(array_keys($user->getDirty()), ['name']));

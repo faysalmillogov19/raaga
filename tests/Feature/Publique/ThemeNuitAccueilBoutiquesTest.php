@@ -88,7 +88,7 @@ class ThemeNuitAccueilBoutiquesTest extends TestCase
             ->assertSee('Choisissez <strong>votre emplacement</strong>', false)
             ->assertSee('data-choix="niveau"', false)->assertSee('class="nuit-pilule nuit-pilule-choix" aria-current="page"', false)
             ->assertSee('data-plan', false)->assertSee('data-statut="disponible"', false)->assertSee('MCE-RC-A-001')
-            ->assertSee('data-plan-detail', false)->assertSee('Total à payer (caution et avance)')->assertSee('Voir et réserver cet emplacement')
+            ->assertSee('data-plan-detail', false)->assertSee('Total à l’entrée (caution + avance)')->assertSee('Voir et réserver cet emplacement')
             ->assertSeeInOrder(['Tout savoir sur la campagne', 'Comment <strong>ça marche</strong>', 'Étape 1', 'Je choisis ma boutique', 'Étape 4', 'Sans lien avec les actions'], false);
     }
 

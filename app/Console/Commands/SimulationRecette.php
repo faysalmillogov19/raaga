@@ -37,6 +37,7 @@ use App\Services\Souscriptions\IdentitesInvestisseurs;
 use App\Services\Souscriptions\PreparationSouscription;
 use App\Support\GardeFouBase;
 use App\Support\Phase;
+use App\Support\Recette;
 use App\Support\Telephone;
 use Database\Seeders\ParametresPaiementsSeeder;
 use Illuminate\Console\Command;
@@ -53,7 +54,7 @@ use Throwable;
  * paiement manuel à contrôler). Les paiements passent par le module de paiement (simulateur de recette) et les
  * services de la plateforme, comme à l'écran. Idempotente : un scénario dont le citoyen existe déjà est sauté.
  *
- * Jamais en production : refusée hors APP_ENV=local, avant tout accès à la base. Les codes de connexion des citoyens
+ * Jamais en production : refusée hors APP_ENV=local ou recette (05/11/2026), avant tout accès à la base. Les codes de connexion des citoyens
  * s'affichent sur /recette/sms.
  */
 class SimulationRecette extends Command
@@ -77,7 +78,7 @@ class SimulationRecette extends Command
     {
         // Jamais hors du poste de développement : refus avant tout accès à la base.
         try {
-            GardeFouBase::exigerPosteLocal('raaga:simulation');
+            GardeFouBase::exigerLocalOuRecette('raaga:simulation');
         } catch (\RuntimeException $e) {
             $this->error($e->getMessage());
 
@@ -100,7 +101,9 @@ class SimulationRecette extends Command
         $this->table(['Citoyen', 'Téléphone', 'Scénario', 'À tester'], $this->lignes);
         $this->newLine();
         $this->line('Connexion des citoyens : /connexion avec le numéro, code affiché sur http://localhost:8000/recette/sms.');
-        $this->line('Back-office : comptes de démonstration (regulation@, validation@, admin@, paiements@raaga.test ; mot de passe = adresse).');
+        $this->line(Recette::active()
+            ? 'Back-office : comptes de recette (php artisan raaga:recette-comptes).'
+            : 'Back-office : comptes de démonstration (regulation@, validation@, admin@, paiements@raaga.test ; mot de passe = adresse).');
         $this->line('Paiement par opérateur : simulateur de recette (boutons « succès » ou « échec » sur la page de paiement).');
 
         return self::SUCCESS;

@@ -31,6 +31,7 @@
     <x-assets />
 </head>
 <body class="site-public bo bo-inst font-public">
+    <x-bandeau-recette />
     <div class="bo-cadre" x-data="menuBackoffice" :class="{ 'bo-replie': replie }">
         <aside class="bo-lateral">
             <div class="bo-marque">

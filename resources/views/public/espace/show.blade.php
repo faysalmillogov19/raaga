@@ -173,6 +173,26 @@
                     @break
 
                 @case('boutiques')
+                    {{-- Formalisation différée (05/11/2026) : échéance, lien vers les pièces, récépissés de préinscription. --}}
+                    @if (\App\Services\Boutiques\Formalisation::enCours($user))
+                        @php($f = __('public.formalisation.espace'))
+                        <x-public.alerte :variante="\App\Services\Boutiques\Formalisation::echue($user) ? 'attention' : 'info'" class="mb-4" data-formalisation>
+                            <p class="font-bold">{{ $f['titre'] }}</p>
+                            <p>{{ __(\App\Services\Boutiques\Formalisation::echue($user) ? 'public.formalisation.espace.echu' : 'public.formalisation.espace.en_cours', ['date' => $user->formalisation_echeance_le->format('d/m/Y')]) }}</p>
+                            <a href="{{ route('espace.verification') }}" class="lien mt-1">{{ $f['lien'] }}</a>
+                        </x-public.alerte>
+                    @endif
+                    @if ($recepisses->isNotEmpty())
+                        <section class="carte mb-4 p-4 tab:p-5" aria-labelledby="recepisses-titre" data-recepisses>
+                            <h2 id="recepisses-titre" class="!text-lg">{{ __('public.formalisation.espace.recepisses') }}</h2>
+                            <ul class="mt-2 space-y-2">
+                                @foreach ($recepisses as $rp)
+                                    <li><a href="{{ route('espace.recepisse', $rp->numero) }}" class="lien" data-recepisse="{{ $rp->numero }}">{{ __('public.formalisation.espace.telecharger', ['numero' => $rp->numero]) }}</a>
+                                        <span class="texte-carte"> · {{ $rp->boutique?->code }}</span></li>
+                                @endforeach
+                            </ul>
+                        </section>
+                    @endif
                     @forelse ($candidatures as $c)
                         @if ($loop->first)<ul class="space-y-3">@endif
                         <li class="carte p-4 tab:p-5">
@@ -182,7 +202,8 @@
                             </div>
                             <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.95rem] tab:grid-cols-3">
                                 <div><dt class="text-sm text-gris">{{ __('public.boutiques.reservation.campagne') }}</dt><dd class="font-semibold">{{ $c->campagne->nom }}</dd></div>
-                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.reservation.boutique') }}</dt><dd class="whitespace-nowrap font-extrabold text-vert-fonce">{{ $c->boutique?->code }}</dd></div>
+                                <div><dt class="text-sm text-gris">{{ __('public.boutiques.reservation.boutique') }}</dt><dd class="whitespace-nowrap font-extrabold text-vert-fonce">{{ $c->boutique?->code }}</dd>
+                                    @if ($c->statut === \App\Enums\StatutReservationBoutique::Attribuee && $user->nom_commercial)<dd class="text-sm font-semibold text-encre" data-nom-commercial>{{ $user->nom_commercial }}</dd>@endif</div>
                                 @foreach ($c->lignesMontants() as $ligne)
                                     <div><dt class="text-sm text-gris">{{ $ligne['libelle'] }}</dt><dd class="font-semibold">{{ format_fcfa($ligne['montant']) }}</dd>
                                         <dd class="text-sm text-gris">{{ $ligne['mention'] }}</dd></div>

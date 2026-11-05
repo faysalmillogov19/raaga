@@ -128,9 +128,11 @@ class MatriceDroitsTest extends TestCase
     {
         $admin = User::factory()->role(Role::Admin)->create();
 
-        // Support, plus les vérifications d'identité (que le SUPER_ADMIN n'a pas) ; plus de manifestations d'intérêt (25/10/2026).
+        // Support, plus les vérifications d'identité (que le SUPER_ADMIN n'a pas) ; plus de manifestations d'intérêt (25/10/2026) ;
+        // lecture des greffes du RCCM et des greffes saisis en « Autre » (05/11/2026).
         foreach (Droit::cases() as $droit) {
-            $this->assertSame(in_array($droit, [...Droit::support(), Droit::KycVoir, Droit::KycVoirPieces, Droit::KycTraiter, Droit::CartesVerifier, Droit::CartesGerer], true),
+            $this->assertSame(in_array($droit, [...Droit::support(), Droit::KycVoir, Droit::KycVoirPieces, Droit::KycTraiter, Droit::CartesVerifier, Droit::CartesGerer,
+                Droit::GreffesVoir], true),
                 $admin->can($droit->value), $droit->value);
         }
         $this->assertFalse(User::factory()->role(Role::SuperAdmin)->create()->can(Droit::InteretsVoir->value));

@@ -53,6 +53,14 @@
                         </div>
                     @endif
 
+                    {{-- Nom commercial (05/11/2026) : facultatif, une fois l'IFU validé ; jamais sur la carte. --}}
+                    @if (\App\Services\Boutiques\Formalisation::formalise($user))
+                        <x-public.champ nom="nom_commercial" :libelle="__('public.compte.profil.nom_commercial')" :aide="__('public.compte.profil.nom_commercial_aide')"
+                                        :valeur="old('nom_commercial', $user->nom_commercial)" maxlength="120" autocomplete="organization" data-nom-commercial />
+                    @elseif ($user->formalisation_debut_le || $user->ifu)
+                        <p class="texte-carte formulaire-champ" data-nom-commercial-attente>{{ __('public.compte.profil.nom_commercial_attente') }}</p>
+                    @endif
+
                     <div class="formulaire-champ">
                         <label for="pays_residence"><x-requis /> {{ __('public.compte.inscription.pays_residence') }}</label>
                         <select id="pays_residence" name="pays_residence" class="champ" x-model="pays">

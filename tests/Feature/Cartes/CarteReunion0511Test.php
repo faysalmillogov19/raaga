@@ -37,20 +37,21 @@ class CarteReunion0511Test extends TestCase
         Boutiques::campagneOuverte();
     }
 
-    public function test_justificatif_depose_a_la_reservation_puis_valide_ou_refuse_par_l_admin(): void
+    public function test_justificatif_depose_dans_les_pieces_d_identite_puis_valide_ou_refuse_par_l_admin(): void
     {
         $citoyen = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::Valide, 'telephone' => '+22670001234', 'email' => null]);
-        $boutique = Boutiques::boutique('A', 1);
-        $this->actingAs($citoyen)->get(route('boutiques.boutique', $boutique->code))->assertOk()
-            ->assertSee('data-justificatif-groupe-sanguin', false)->assertSee('name="justificatif_groupe_sanguin"', false);
+        // Réservation : plus de champ de justificatif, un renvoi vers « Vérifier mon identité ».
+        $this->actingAs($citoyen)->get(route('boutiques.boutique', Boutiques::boutique('A', 1)->code))->assertOk()
+            ->assertSee('data-renvoi-justificatif', false)->assertDontSee('name="justificatif_groupe_sanguin"', false);
 
-        Boutiques::ifuVerifie($citoyen);
-        $this->actingAs($citoyen)->post(route('boutiques.reserver', $boutique->code), [
-            'type_piece' => 'CNIB', 'numero_piece' => 'B1234567', 'piece' => UploadedFile::fake()->image('piece.jpg'), ...Boutiques::donneesCommercant(),
-            'groupe_sanguin' => 'B+', 'consentement_groupe_sanguin' => '1', 'justificatif_groupe_sanguin' => UploadedFile::fake()->image('groupe.jpg'),
-        ])->assertSessionHasNoErrors();
+        // Pièces d'identité : groupe, accord et justificatif, modifiables à tout moment.
+        $this->actingAs($citoyen)->get(route('espace.verification'))->assertOk()->assertSee('data-groupe-sanguin', false)->assertSee('name="justificatif"', false);
+        $this->actingAs($citoyen)->post(route('espace.verification.groupe-sanguin'), ['groupe_sanguin' => 'B+'])->assertSessionHasErrors('consentement_groupe_sanguin');
+        $this->actingAs($citoyen)->post(route('espace.verification.groupe-sanguin'), ['groupe_sanguin' => 'B+', 'consentement_groupe_sanguin' => '1',
+            'justificatif' => UploadedFile::fake()->image('groupe.jpg')])->assertSessionHasNoErrors()->assertRedirect(route('espace.verification').'#groupe-sanguin');
         $document = JustificatifsGroupeSanguin::dernier($citoyen);
-        $this->assertSame([TypeDocumentKyc::GroupeSanguin, StatutDocumentKyc::EnAttente], [$document->type, $document->statut]);
+        $this->assertSame([TypeDocumentKyc::GroupeSanguin, StatutDocumentKyc::EnAttente, 'B+'], [$document->type, $document->statut, $citoyen->fresh()->groupe_sanguin]);
+        $this->actingAs($citoyen)->get(route('espace.verification'))->assertSee(__('public.verification.groupe_sanguin.statuts.EN_ATTENTE'));
 
         // Dossier de l'ADMIN : groupe déclaré, justificatif à vérifier, boutons Valider et Refuser.
         $this->connecterBackoffice(Role::Admin);

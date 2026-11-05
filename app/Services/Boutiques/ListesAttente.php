@@ -79,6 +79,20 @@ class ListesAttente
             ->map(fn ($n) => (int) $n)->all();
     }
 
+    /**
+     * Personnes en liste d'attente par boutique (inscriptions en attente seulement, sans l'attributaire en cours), en
+     * une requête (réunion du 05/11/2026 : un nombre, jamais de nom).
+     *
+     * @param  list<int>  $boutiques
+     * @return array<int, int> identifiant de boutique => nombre
+     */
+    public static function enAttenteParBoutique(array $boutiques): array
+    {
+        return InscriptionBoutique::query()->whereIn('boutique_id', $boutiques)->where('statut', StatutInscriptionBoutique::EnAttente)
+            ->groupBy('boutique_id')->selectRaw('boutique_id, count(*) as n')->pluck('n', 'boutique_id')
+            ->map(fn ($n) => (int) $n)->all();
+    }
+
     /** Inscription active du citoyen sur cette boutique, ou null. */
     public static function inscriptionDe(Boutique $boutique, User $user): ?InscriptionBoutique
     {
@@ -105,14 +119,17 @@ class ListesAttente
         ?UploadedFile $piece, array $engagements, string $ip, string $userAgent, ?string $ifu = null, ?UploadedFile $attestationIfu = null): InscriptionBoutique
     {
         $erreur = fn (string $cle, array $params = []) => throw ValidationException::withMessages(['boutique' => __('public.boutiques.erreurs.'.$cle, $params)]);
-        // IFU obligatoire pour souscrire à une boutique (comité restreint du 03/11/2026).
-        // Personne morale : le numéro de sa pièce est son IFU.
+        // Personne morale : IFU obligatoire (le numéro de sa pièce est son IFU). Personne physique (05/11/2026) : sans IFU,
+        // inscription possible, dossier « en cours de formalisation » et récépissé de préinscription ; IFU donné : avec
+        // son attestation.
         $ifu ??= $typePiece === TypeDocumentKyc::Ifu ? $numeroPiece : null;
-        if (blank($user->ifu) && blank($ifu)) {
+        $sansIfu = blank($user->ifu) && blank($ifu);
+        if ($sansIfu && $user->estPersonneMorale()) {
             throw ValidationException::withMessages(['ifu' => __('public.boutiques.erreurs.sans_ifu')]);
         }
-        $attestationIfu = ReservationsBoutiques::attestationIfuAFournir($user) ? $attestationIfu : null;
-        if (ReservationsBoutiques::attestationIfuAFournir($user) && $attestationIfu === null) {
+        $aFournir = ! $sansIfu && ReservationsBoutiques::attestationIfuAFournir($user);
+        $attestationIfu = $aFournir ? $attestationIfu : null;
+        if ($aFournir && $attestationIfu === null) {
             throw ValidationException::withMessages(['attestation_ifu' => __('public.boutiques.erreurs.attestation_ifu')]);
         }
         if (! $user->telephone) {
@@ -146,7 +163,7 @@ class ListesAttente
 
         $chemins = [];
         try {
-            $inscription = DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $deja, $duCompte, $ip, $userAgent, $erreur, $ifu, $attestationIfu, &$chemins) {
+            $inscription = DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $deja, $duCompte, $sansIfu, $ip, $userAgent, $erreur, $ifu, $attestationIfu, &$chemins) {
                 $campagne = CampagneBoutiques::query()->lockForUpdate()->findOrFail($campagne->id);
                 // Réservations ouvertes, ou relance en cours de cette boutique pour ce membre de la liste générale.
                 if (! $campagne->accepteReservations() && RelancesInteret::ouvertePour($boutique, $user)?->campagne_boutiques_id !== $campagne->id) {
@@ -174,6 +191,10 @@ class ListesAttente
                 }
                 if ($attestationIfu) {
                     ReservationsBoutiques::deposerAttestationIfu($user, $ifu ?? (string) $user->ifu, $attestationIfu, $chemins);
+                }
+                // Sans IFU : formalisation différée, récépissé de préinscription pour cette inscription.
+                if ($sansIfu) {
+                    app(Formalisation::class)->demarrer($user, $inscription);
                 }
 
                 // Boutique libre et citoyen sous la limite de ce type : il en devient l'attributaire tout de suite. Si une

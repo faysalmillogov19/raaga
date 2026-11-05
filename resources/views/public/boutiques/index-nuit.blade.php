@@ -93,6 +93,9 @@
             @endif
         </section>
 
+        {{-- Recherche (05/11/2026) : coût à l'entrée par zone, filtres budget, zone, niveau, surface (vue commune aux deux thèmes). --}}
+        <div class="conteneur">@include('public.boutiques._recherche')</div>
+
         {{-- Plan : choix en pilules, légende, cases, fiche blanche de l'emplacement survolé ou choisi. --}}
         @php
             $disponibles = $plan->filter(fn ($bt) => $bt->statut->surPlan() === 'disponible')->count();
@@ -186,16 +189,20 @@
                                     $survol = $boutique->code.' · '.$boutique->type?->libelle.($boutique->surface ? ' · '.format_nombre((float) $boutique->surface, 1).' m²' : '');
                                     $etiquette = __('public.nuit.boutiques.case', ['code' => $boutique->code, 'statut' => $p['statuts'][$statut]]);
                                     $contenu = isset($icones[$statut]) ? null : str_pad((string) $boutique->numero, 3, '0', STR_PAD_LEFT);
+                                    // Liste d'attente (05/11/2026) : nombre de personnes en attente, jamais de nom.
+                                    $nbAttente = $enAttente[$boutique->id] ?? 0;
+                                    $pastille = $nbAttente > 0 ? '<span class="nuit-case-attente" data-attente title="'.e(trans_choice('public.boutiques.plan.attente_case', $nbAttente, ['n' => $nbAttente])).'">'.$nbAttente
+                                        .'<span class="sr-only"> '.e(trans_choice('public.boutiques.plan.attente_case', $nbAttente, ['n' => $nbAttente])).'</span></span>' : '';
                                 @endphp
                                 <li>
                                     @if ($detail['lien'])
                                         <a href="{{ $detail['lien'] }}" class="nuit-case nuit-plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                            :class="d && d.code === @js($boutique->code) ? 'est-choisie' : ''"
-                                           aria-label="{{ $etiquette }}" aria-controls="plan-detail" @click.prevent="d = @js($detail)">@isset($icones[$statut])<x-icon :name="$icones[$statut]" class="nuit-case-icone" />@endisset{{ $contenu }}@if ($detail['limite'])<span class="sr-only" data-limite-atteinte>{{ $detail['limite'] }}</span><span class="nuit-case-limite" aria-hidden="true">!</span>@endif</a>
+                                           aria-label="{{ $etiquette }}" aria-controls="plan-detail" @click.prevent="d = @js($detail)">@isset($icones[$statut])<x-icon :name="$icones[$statut]" class="nuit-case-icone" />@endisset{{ $contenu }}{!! $pastille !!}@if ($detail['limite'])<span class="sr-only" data-limite-atteinte>{{ $detail['limite'] }}</span><span class="nuit-case-limite" aria-hidden="true">!</span>@endif</a>
                                     @else
                                         <button type="button" class="nuit-case nuit-plan-{{ $statut }}" data-statut="{{ $statut }}" data-type="{{ $boutique->type?->code }}" title="{{ $survol }}"
                                                 :class="d && d.code === @js($boutique->code) ? 'est-choisie' : ''"
-                                                aria-label="{{ $etiquette }}" aria-controls="plan-detail" @click="d = @js($detail)">@isset($icones[$statut])<x-icon :name="$icones[$statut]" class="nuit-case-icone" />@endisset{{ $contenu }}@if ($detail['limite'])<span class="sr-only" data-limite-atteinte>{{ $detail['limite'] }}</span><span class="nuit-case-limite" aria-hidden="true">!</span>@endif</button>
+                                                aria-label="{{ $etiquette }}" aria-controls="plan-detail" @click="d = @js($detail)">@isset($icones[$statut])<x-icon :name="$icones[$statut]" class="nuit-case-icone" />@endisset{{ $contenu }}{!! $pastille !!}@if ($detail['limite'])<span class="sr-only" data-limite-atteinte>{{ $detail['limite'] }}</span><span class="nuit-case-limite" aria-hidden="true">!</span>@endif</button>
                                     @endif
                                 </li>
                             @endforeach
@@ -225,6 +232,8 @@
                                         </dl>
                                         <p class="nuit-fiche-total-libelle">{{ $p['detail']['total'] }}</p>
                                         <p class="nuit-fiche-total" x-text="d.montants.total"></p>
+                                        {{-- Montant de la 1re tranche : affiché quand l'échéancier par tranches existera. --}}
+                                        <template x-if="d.montants.premiere_tranche"><p class="nuit-fiche-note"><span class="font-semibold">{{ $p['detail']['premiere_tranche'] }} :</span> <span x-text="d.montants.premiere_tranche"></span></p></template>
                                     </div>
                                 </template>
                                 <p class="nuit-fiche-limite" x-show="d.limite" x-text="d.limite" role="status"></p>

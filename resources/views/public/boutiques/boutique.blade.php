@@ -143,19 +143,24 @@
 
                 @if ($attestationIfu)
                     {{-- Première réservation d'une personne physique : numéro IFU et attestation, vérifiés par le VALIDATEUR. --}}
+                    {{-- Personne physique sans IFU (05/11/2026) : facultatif ; sans IFU, récépissé de préinscription et délai pour se formaliser. --}}
+                    @php($ifuConnu = filled(auth()->user()->ifu))
                     <fieldset class="mt-6" data-ifu-reservation>
-                        <legend class="text-lg font-bold text-encre"><x-requis /> {{ $r['ifu_titre'] }}</legend>
+                        <legend class="text-lg font-bold text-encre">@if ($ifuConnu)<x-requis /> @endif{{ $r['ifu_titre'] }}</legend>
                         <p class="texte-carte">{{ $r['ifu_aide'] }}</p>
+                        @unless ($ifuConnu)
+                            <p class="mt-2 texte-carte" data-sans-ifu>{{ __('public.formalisation.reservation', ['mois' => \App\Services\Boutiques\Formalisation::delaiMois()]) }}</p>
+                        @endunless
                         @if (filled(auth()->user()->ifu) && ! $errors->has('ifu'))
                             {{-- IFU déjà donné : rappelé, seule l'attestation est demandée (correction depuis « Vérifier mon identité »). --}}
                             <input type="hidden" name="ifu" value="{{ auth()->user()->ifu }}">
                             <p class="mt-3 text-encre" data-ifu-connu><span class="font-semibold">{{ $r['ifu'] }} :</span> {{ auth()->user()->ifu }}</p>
                         @else
-                            <x-public.champ nom="ifu" :libelle="$r['ifu']" :valeur="auth()->user()->ifu" class="mt-3" maxlength="30" autocomplete="off" autocapitalize="characters" obligatoire />
+                            <x-public.champ nom="ifu" :libelle="$r['ifu']" :valeur="auth()->user()->ifu" class="mt-3" maxlength="30" autocomplete="off" autocapitalize="characters" :obligatoire="$ifuConnu" />
                         @endif
                         <div class="mt-4">
-                            <label for="attestation_ifu" class="block font-semibold text-encre"><x-requis /> {{ $r['attestation_ifu'] }}</label>
-                            <input id="attestation_ifu" name="attestation_ifu" type="file" accept="image/jpeg,image/png,application/pdf" required aria-describedby="attestation_ifu-erreur"
+                            <label for="attestation_ifu" class="block font-semibold text-encre">@if ($ifuConnu)<x-requis /> @endif{{ $r['attestation_ifu'] }}</label>
+                            <input id="attestation_ifu" name="attestation_ifu" type="file" accept="image/jpeg,image/png,application/pdf" @if ($ifuConnu) required @endif aria-describedby="attestation_ifu-erreur"
                                    class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
                             <x-public.erreur :messages="$errors->get('attestation_ifu')" id="attestation_ifu-erreur" />
                         </div>
@@ -226,14 +231,8 @@
                             <x-public.case nom="consentement_groupe_sanguin" id="consentement_groupe_sanguin" value="1" :libelle="$r['groupe_sanguin_consentement']"
                                            :checked="(bool) old('consentement_groupe_sanguin', $moi->groupe_sanguin_consenti_le !== null)" />
                             <x-public.erreur :messages="$errors->get('consentement_groupe_sanguin')" />
-                            {{-- Justificatif facultatif : sans lui (vérifié par l'ADMIN), le groupe n'est pas imprimé (05/11/2026). --}}
-                            <div class="mt-3" data-justificatif-groupe-sanguin>
-                                <label for="justificatif_groupe_sanguin" class="block font-semibold text-encre">{{ $r['justificatif_groupe_sanguin'] }}</label>
-                                <p id="justificatif_groupe_sanguin-aide" class="texte-carte">{{ $r['justificatif_groupe_sanguin_aide'] }}</p>
-                                <input id="justificatif_groupe_sanguin" name="justificatif_groupe_sanguin" type="file" accept="image/jpeg,image/png,application/pdf" aria-describedby="justificatif_groupe_sanguin-aide"
-                                       class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
-                                <x-public.erreur :messages="$errors->get('justificatif_groupe_sanguin')" />
-                            </div>
+                            {{-- Justificatif : dans « Vérifier mon identité », modifiable à tout moment (05/11/2026). --}}
+                            <p class="mt-2 texte-carte" data-renvoi-justificatif>{{ $r['justificatif_groupe_sanguin_renvoi'] }} <a href="{{ route('espace.verification') }}#groupe-sanguin" class="lien">{{ $r['justificatif_groupe_sanguin_lien'] }}</a></p>
                         </div>
                     </div>
                 </fieldset>
