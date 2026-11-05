@@ -97,6 +97,40 @@
         @endif
     </section>
 
+    {{-- Groupe sanguin (05/11/2026) : imprimé sur la carte de commerçant seulement avec l'accord et un justificatif validé ici. --}}
+    @php($g = __('admin.kyc.groupe_sanguin'))
+    @if ($citoyen->groupe_sanguin || $justificatifGroupe)
+        <section class="bo-carte" aria-labelledby="groupe-sanguin-titre" data-groupe-sanguin>
+            <h2 id="groupe-sanguin-titre" class="!text-[1.15rem]">{{ $g['titre'] }}</h2>
+            <p class="texte-carte mt-1">{{ $g['intro'] }}</p>
+            <dl class="mt-3 grid gap-3 sm:grid-cols-2">
+                <div><dt class="texte-carte">{{ $g['declare'] }}</dt><dd class="font-bold">{{ $citoyen->groupe_sanguin_consenti_le ? $citoyen->groupe_sanguin : $g['sans_accord'] }}</dd></div>
+                <div>
+                    <dt class="texte-carte">{{ $k['pieces']['groupe_sanguin'] }}</dt>
+                    <dd data-statut-justificatif>
+                        @if ($justificatifGroupe)
+                            {{ $g['statuts'][$justificatifGroupe->statut->value] }}
+                            @can(Droit::KycVoirPieces->value) · <a href="{{ route('admin.kyc.piece', $justificatifGroupe) }}" class="lien" target="_blank" rel="noopener">{{ $d['voir'] }}</a>@endcan
+                        @else
+                            {{ $g['aucun'] }}
+                        @endif
+                    </dd>
+                </div>
+            </dl>
+            @if ($traiter && $justificatifGroupe?->statut === \App\Enums\StatutDocumentKyc::EnAttente)
+                <div class="mt-4 flex flex-wrap gap-3">
+                    <x-admin.confirmation id="groupe-valider" :titre="$g['valider']" :message="$g['confirmer_valider']" :action="route('admin.kyc.groupe-sanguin.valider', $justificatifGroupe)" :bouton="$g['valider']">
+                        <x-slot:declencheur>{{ $g['valider'] }}</x-slot:declencheur>
+                    </x-admin.confirmation>
+                    <x-admin.confirmation id="groupe-refuser" :titre="$g['refuser']" :message="$g['confirmer_refuser']" :action="route('admin.kyc.groupe-sanguin.refuser', $justificatifGroupe)" :bouton="$g['refuser']"
+                                          motif="obligatoire" danger>
+                        <x-slot:declencheur>{{ $g['refuser'] }}</x-slot:declencheur>
+                    </x-admin.confirmation>
+                </div>
+            @endif
+        </section>
+    @endif
+
     <section class="bo-carte" aria-labelledby="dossiers-titre">
         <h2 id="dossiers-titre" class="!text-[1.15rem]">{{ $d['dossiers'] }}</h2>
         <div class="mt-3 grid gap-4 sm:grid-cols-2" data-dossiers-citoyen>

@@ -1,10 +1,11 @@
 {{--
-    Recto et verso de la carte d'identification (maquette du comité restreint du 03/11/2026), en mm. Variables : $d
-    (RenduCarte::donnees ou ::specimen). Toutes les images sont intégrées (data URI) : aucune adresse, rendu identique dans
-    Chrome et à l'écran. Recto : armoiries, BURKINA FASO, CARTE D'IDENTIFICATION + type, QR code avec logo (jeton de
-    vérification seulement, jamais l'IFU), n° de carte (IFU du commerçant), nom et prénom(s), sexe, date et lieu de
-    naissance, secteur d'activité, site(s), établie le, expire le, photo. Verso : groupe sanguin (« Non renseigné » sans
-    consentement), lieu de résidence, personne à prévenir, consignes, code-barres (IFU et expiration MMAA) ; organisme
+    Recto et verso de la carte d'identification (maquette du comité restreint du 03/11/2026, réunion du 05/11/2026), en mm.
+    Variables : $d (RenduCarte::donnees ou ::specimen). Toutes les images sont intégrées (data URI) : aucune adresse, rendu
+    identique dans Chrome et à l'écran. Recto : armoiries, BURKINA FASO, CARTE D'IDENTIFICATION RAAGA et le type en
+    dessous, QR code avec logo (jeton de vérification seulement, jamais l'IFU), n° de carte (IFU du commerçant), nom et
+    prénom(s) (personne morale : gérant, puis raison sociale), sexe, date et lieu de naissance, secteur d'activité et
+    site(s) sur toute la largeur de la colonne, établie le, expire le, photo. Verso : groupe sanguin (seulement avec un
+    justificatif validé), lieu de résidence, personne à prévenir, consignes, code-barres (IFU et expiration MMAA) ; organisme
     émetteur, logo, mention de carte électronique et code de contrôle, à la place de l'autorité, de la signature, du
     cachet et du numéro vert. Aucun bandeau tricolore.
 --}}
@@ -46,7 +47,8 @@
         @if ($d['armoiries'])<img class="cr-entete-armoiries" src="{{ $d['armoiries'] }}" alt="">@endif
         <div>
             <p class="cr-pays">{{ __('carte.pays') }}</p>
-            <p class="cr-titre">{{ __('carte.titre') }} <span>{{ $d['type'] }}</span></p>
+            <p class="cr-titre">{{ __('carte.titre') }}</p>
+            <p class="cr-type" data-champ="type">{{ $d['type'] }}</p>
         </div>
     </div>
 
@@ -63,9 +65,10 @@
             <p class="cr-numero" data-champ="numero">{{ $d['numero'] }}</p>
         </div>
         <div>
-            <p class="cr-libelle">{{ $d['representant'] ? __('carte.raison_sociale') : __('carte.titulaire') }}</p>
+            {{-- Personne morale : nom du gérant, puis la raison sociale de l'entreprise. --}}
+            <p class="cr-libelle">{{ $d['raison_sociale'] ? __('carte.gerant') : __('carte.titulaire') }}</p>
             <p class="cr-titulaire" data-champ="titulaire">{{ $d['titulaire'] }}</p>
-            @if ($d['representant'])<p class="cr-representant">{{ __('carte.representant', ['nom' => $d['representant']]) }}</p>@endif
+            @if ($d['raison_sociale'])<p class="cr-representant" data-champ="raison_sociale">{{ __('carte.entreprise', ['raison_sociale' => $d['raison_sociale']]) }}</p>@endif
         </div>
         <div class="cr-grille {{ $d['commercant'] ? 'cr-grille-3' : '' }}">
             @if ($d['commercant'])
@@ -76,11 +79,10 @@
                 <div><p class="cr-libelle">{{ __('carte.lieu_naissance') }}</p><p class="cr-valeur" data-champ="lieu_naissance">{!! $manque($d['lieu_naissance']) !!}</p></div>
             @endif
         </div>
+        {{-- Activité et site(s) : chacun sur toute la largeur de la colonne, avec retour à la ligne (réunion du 05/11/2026). --}}
         @if ($d['commercant'])
-            <div class="cr-grille">
-                <div><p class="cr-libelle">{{ __('carte.secteur') }}</p><p class="cr-valeur cr-valeur-long" data-champ="secteur">{!! $manque($d['secteur']) !!}</p></div>
-                <div><p class="cr-libelle">{{ str_contains((string) $d['sites'], ' · ') ? __('carte.sites') : __('carte.site') }}</p><p class="cr-valeur cr-valeur-long" data-champ="sites">{!! $manque($d['sites']) !!}</p></div>
-            </div>
+            <div><p class="cr-libelle">{{ __('carte.secteur') }}</p><p class="cr-valeur cr-valeur-long" data-champ="secteur">{!! $manque($d['secteur']) !!}</p></div>
+            <div><p class="cr-libelle">{{ str_contains((string) $d['sites'], ' · ') ? __('carte.sites') : __('carte.site') }}</p><p class="cr-valeur cr-valeur-long" data-champ="sites">{!! $manque($d['sites']) !!}</p></div>
         @endif
         <div class="cr-grille">
             <div><p class="cr-libelle">{{ __('carte.etablie') }}</p><p class="cr-valeur" data-champ="etablie">{!! $manque($d['etablie']) !!}</p></div>
@@ -111,10 +113,15 @@
         <div class="cr-gauche">
             <div class="cr-mentions">
                 @if ($d['commercant'])
-                    <div class="cr-grille">
-                        <div><p class="cr-libelle">{{ __('carte.groupe_sanguin') }}</p><p class="cr-valeur" data-champ="groupe_sanguin">{{ $d['groupe_sanguin'] ?? __('carte.non_renseigne') }}</p></div>
+                    {{-- Groupe sanguin : imprimé seulement avec un justificatif validé (réunion du 05/11/2026) ; sinon, aucune ligne. --}}
+                    @if ($d['groupe_sanguin'])
+                        <div class="cr-grille">
+                            <div><p class="cr-libelle">{{ __('carte.groupe_sanguin') }}</p><p class="cr-valeur" data-champ="groupe_sanguin">{{ $d['groupe_sanguin'] }}</p></div>
+                            <div><p class="cr-libelle">{{ __('carte.residence') }}</p><p class="cr-valeur" data-champ="residence">{!! $manque($d['residence']) !!}</p></div>
+                        </div>
+                    @else
                         <div><p class="cr-libelle">{{ __('carte.residence') }}</p><p class="cr-valeur" data-champ="residence">{!! $manque($d['residence']) !!}</p></div>
-                    </div>
+                    @endif
                     <div><p class="cr-libelle">{{ __('carte.personne_prevenir') }}</p><p class="cr-valeur" data-champ="personne_prevenir">{!! $manque($d['personne_prevenir']) !!}</p></div>
                 @endif
                 <p class="cr-texte">{{ __('carte.personnelle') }} {{ __('carte.perte') }}</p>

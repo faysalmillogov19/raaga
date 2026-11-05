@@ -41,6 +41,8 @@
 .cr-pays { font-size: 1.4mm; letter-spacing: 0.14em; color: #8A6A1E; text-transform: uppercase; }
 .cr-titre { margin-top: 0.2mm !important; font-size: 1.7mm; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 .cr-titre span { color: #8A6A1E; }
+/* Type de carte (commerçant, actionnaire, personnel), en petit sous l'intitulé (réunion du 05/11/2026). */
+.cr-type { margin-top: 0.2mm !important; font-size: 1.25mm; font-weight: 700; letter-spacing: 0.14em; color: #8A6A1E; text-transform: uppercase; }
 .cr-qr {
     position: absolute;
     left: 4.4mm;
@@ -65,8 +67,10 @@
 }
 .cr-qr-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 /* À droite du QR code (18 mm imprimés au moins, cadre compris : 27,6 mm), jusqu'à la photo. */
-.cr-infos { position: absolute; left: 27.6mm; top: 12.4mm; width: 34.4mm; display: flex; flex-direction: column; gap: 1.1mm; }
+/* Colonne centrale : s'arrête 2 mm avant la photo (63,2 mm), rien n'est masqué. */
+.cr-infos { position: absolute; left: 27.6mm; top: 12.4mm; width: 33.6mm; display: flex; flex-direction: column; gap: 1.1mm; }
 .cr-numero { margin-top: 0.2mm !important; font-size: 2.3mm; font-weight: 800; letter-spacing: 0.12em; color: #8A6A1E; white-space: nowrap; }
+/* Nom complet : jusqu'à trois lignes (réunion du 05/11/2026 : aucun nom tronqué sur une carte d'identification). */
 .cr-titulaire {
     margin-top: 0.2mm !important;
     font-size: 2.2mm;
@@ -74,7 +78,7 @@
     letter-spacing: 0.03em;
     line-height: 1.15;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -82,8 +86,9 @@
 .cr-grille { display: grid; grid-template-columns: 17.4mm 1fr; column-gap: 1.4mm; }
 .cr-grille-3 { grid-template-columns: 5mm 11mm 1fr; }
 .cr-valeur { margin-top: 0.3mm !important; font-size: 1.5mm; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Activité, site(s) : deux lignes au plus. */
-.cr-valeur-long { white-space: normal; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* Activité, site(s) : toute la largeur de la colonne, retour à la ligne ; deux lignes pour l'activité, trois pour le(s) site(s). */
+.cr-valeur-long { white-space: normal; overflow-wrap: anywhere; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.cr-valeur-long[data-champ=sites] { -webkit-line-clamp: 3; }
 .cr-photo {
     position: absolute;
     right: 4.4mm;

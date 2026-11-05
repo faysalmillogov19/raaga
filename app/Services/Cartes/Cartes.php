@@ -339,10 +339,23 @@ class Cartes
             'sexe' => $user->sexe,
             'lieu_naissance' => $user->lieu_naissance,
             'secteur' => SecteurActivite::libellePour($user),
-            'groupe_sanguin' => $user->groupe_sanguin_consenti_le ? $user->groupe_sanguin : null,
+            // Groupe sanguin (réunion du 05/11/2026) : accord du titulaire et justificatif validé par l'ADMIN ; sinon, aucune ligne.
+            'groupe_sanguin' => $user->groupe_sanguin_consenti_le && self::groupeSanguinJustifie($user) ? $user->groupe_sanguin : null,
             'residence' => $user->commune?->nom,
             'personne_prevenir' => filled($user->personne_prevenir_nom) ? ['nom' => $user->personne_prevenir_nom, 'telephone' => $user->personne_prevenir_telephone] : null,
         ];
+    }
+
+    /**
+     * Le dernier justificatif du groupe sanguin est-il validé, et déposé depuis l'accord en vigueur ? Un changement de
+     * groupe redate l'accord : le justificatif déposé avant ne vaut plus.
+     */
+    public static function groupeSanguinJustifie(User $user): bool
+    {
+        $document = KycDocument::query()->where('user_id', $user->id)->where('type', TypeDocumentKyc::GroupeSanguin)->latest('id')->first();
+
+        return $document?->statut === StatutDocumentKyc::Valide && $user->groupe_sanguin_consenti_le !== null
+            && $document->created_at->gte($user->groupe_sanguin_consenti_le->copy()->startOfSecond());
     }
 
     /**

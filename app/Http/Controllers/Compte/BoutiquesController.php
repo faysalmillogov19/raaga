@@ -22,6 +22,7 @@ use App\Services\Boutiques\ListesAttente;
 use App\Services\Boutiques\RelancesInteret;
 use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Cartes\Cartes;
+use App\Services\Kyc\JustificatifsGroupeSanguin;
 use App\Support\Ifu;
 use App\Support\Telephone;
 use App\Support\ThemePublic;
@@ -220,6 +221,8 @@ class BoutiquesController extends Controller
             'personne_prevenir_telephone' => ['required', 'string', 'max:20', fn (string $a, mixed $v, \Closure $echec) => Telephone::estValide((string) $v) ? null : $echec(__('public.boutiques.erreurs.prevenir_telephone'))],
             'groupe_sanguin' => ['nullable', Rule::in(User::GROUPES_SANGUINS)],
             'consentement_groupe_sanguin' => [filled($request->input('groupe_sanguin')) ? 'accepted' : 'nullable'],
+            // Justificatif du groupe (facultatif, 05/11/2026) : sans justificatif validé, le groupe n'est pas imprimé.
+            'justificatif_groupe_sanguin' => ['nullable', ...$document],
         ], [
             'secteur_activite_id.*' => __('public.boutiques.erreurs.secteur'),
             'sexe.*' => __('public.verification.erreurs.sexe'),
@@ -230,6 +233,7 @@ class BoutiquesController extends Controller
             'personne_prevenir_telephone.*' => __('public.boutiques.erreurs.prevenir_telephone'),
             'groupe_sanguin.*' => __('public.boutiques.erreurs.groupe_sanguin'),
             'consentement_groupe_sanguin.*' => __('public.boutiques.erreurs.consentement_groupe_sanguin'),
+            'justificatif_groupe_sanguin.*' => __('public.boutiques.erreurs.justificatif_groupe_sanguin'),
         ], __('public.boutiques.reservation.attributs'));
         $secteur = SecteurActivite::query()->findOrFail($donnees['secteur_activite_id']);
         $autre = $secteur->code === SecteurActivite::AUTRE ? trim((string) ($donnees['secteur_activite_autre'] ?? '')) : null;
@@ -244,14 +248,19 @@ class BoutiquesController extends Controller
         );
         $groupe = $donnees['groupe_sanguin'] ?? null;
         $consentiAvant = $user->groupe_sanguin_consenti_le !== null;
+        // Groupe changé : l'accord est redaté, un justificatif déposé avant ne vaut plus (Cartes::groupeSanguinJustifie).
+        $groupeChange = $groupe !== null && $consentiAvant && $user->groupe_sanguin !== $groupe;
         $user->forceFill(array_filter(['sexe' => $donnees['sexe'] ?? null, 'lieu_naissance' => isset($donnees['lieu_naissance']) ? trim($donnees['lieu_naissance']) : null]))->forceFill([
             'secteur_activite_id' => $secteur->id, 'secteur_activite_autre' => $autre,
             'personne_prevenir_nom' => trim($donnees['personne_prevenir_nom']),
             'personne_prevenir_telephone' => Telephone::normaliser($donnees['personne_prevenir_telephone']),
             // Donnée de santé : gardée seulement avec le consentement, daté.
             'groupe_sanguin' => $groupe,
-            'groupe_sanguin_consenti_le' => $groupe ? ($user->groupe_sanguin_consenti_le ?? now()) : null,
+            'groupe_sanguin_consenti_le' => $groupe ? ($groupeChange ? now() : ($user->groupe_sanguin_consenti_le ?? now())) : null,
         ])->save();
+        if ($groupe && $request->hasFile('justificatif_groupe_sanguin')) {
+            app(JustificatifsGroupeSanguin::class)->deposer($user, $request->file('justificatif_groupe_sanguin'));
+        }
         if ($consentiAvant !== ($groupe !== null)) {
             // Jamais la valeur au journal : seulement le consentement donné ou retiré.
             app(Journal::class)->ecrire($user, $groupe ? 'groupe_sanguin.consenti' : 'groupe_sanguin.retire', 'User', $user->id);

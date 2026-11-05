@@ -170,6 +170,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/dossiers/{citoyen}', 'dossier')->whereNumber('citoyen')->middleware('can:'.Droit::KycVoir->value)->name('.dossier');
             Route::post('/dossiers/{citoyen}/conforme', 'conforme')->whereNumber('citoyen')->middleware('can:'.Droit::KycTraiter->value)->name('.conforme');
             Route::post('/dossiers/{citoyen}/douteux', 'douteux')->whereNumber('citoyen')->middleware('can:'.Droit::KycTraiter->value)->name('.douteux');
+            // Justificatif du groupe sanguin (05/11/2026) : l'ADMIN le valide ou le refuse.
+            Route::post('/groupe-sanguin/{document}/valider', 'groupeSanguin')->whereNumber('document')->middleware('can:'.Droit::KycTraiter->value)->name('.groupe-sanguin.valider');
+            Route::post('/groupe-sanguin/{document}/refuser', 'groupeSanguin')->whereNumber('document')->middleware('can:'.Droit::KycTraiter->value)->name('.groupe-sanguin.refuser');
             Route::post('/propositions/{verification}/confirmer', 'confirmerAnnulation')->whereNumber('verification')->middleware('can:'.Droit::KycAnnulationConfirmer->value)->name('.annulation.confirmer');
             Route::post('/propositions/{verification}/rejeter', 'rejeterAnnulation')->whereNumber('verification')->middleware('can:'.Droit::KycAnnulationConfirmer->value)->name('.annulation.rejeter');
         });

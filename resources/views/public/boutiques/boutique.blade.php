@@ -226,6 +226,14 @@
                             <x-public.case nom="consentement_groupe_sanguin" id="consentement_groupe_sanguin" value="1" :libelle="$r['groupe_sanguin_consentement']"
                                            :checked="(bool) old('consentement_groupe_sanguin', $moi->groupe_sanguin_consenti_le !== null)" />
                             <x-public.erreur :messages="$errors->get('consentement_groupe_sanguin')" />
+                            {{-- Justificatif facultatif : sans lui (vérifié par l'ADMIN), le groupe n'est pas imprimé (05/11/2026). --}}
+                            <div class="mt-3" data-justificatif-groupe-sanguin>
+                                <label for="justificatif_groupe_sanguin" class="block font-semibold text-encre">{{ $r['justificatif_groupe_sanguin'] }}</label>
+                                <p id="justificatif_groupe_sanguin-aide" class="texte-carte">{{ $r['justificatif_groupe_sanguin_aide'] }}</p>
+                                <input id="justificatif_groupe_sanguin" name="justificatif_groupe_sanguin" type="file" accept="image/jpeg,image/png,application/pdf" aria-describedby="justificatif_groupe_sanguin-aide"
+                                       class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
+                                <x-public.erreur :messages="$errors->get('justificatif_groupe_sanguin')" />
+                            </div>
                         </div>
                     </div>
                 </fieldset>

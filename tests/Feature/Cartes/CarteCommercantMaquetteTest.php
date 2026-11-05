@@ -16,11 +16,13 @@ use App\Models\User;
 use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Cartes\Cartes;
 use App\Services\Cartes\RenduCarte;
+use App\Services\Kyc\JustificatifsGroupeSanguin;
 use App\Services\Plateforme\ParametresPlateforme;
 use App\Support\Plateforme\ReglagesCarte;
 use Database\Seeders\CommunesSeeder;
 use Database\Seeders\ParametresCarteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -32,8 +34,8 @@ use Tests\TestCase;
 
 /**
  * Carte de commerçant selon la maquette du comité restreint du 03/11/2026 : numéro = IFU, sexe, date et lieu de
- * naissance, secteur, site(s), établie le, expire le ; au verso groupe sanguin (seulement avec consentement, sinon « Non
- * renseigné »), lieu de résidence, personne à prévenir, code-barres IFU et expiration MMAA ; QR code sans l'IFU ; aucun
+ * naissance, secteur, site(s), établie le, expire le ; au verso groupe sanguin (seulement avec consentement et
+ * justificatif validé, sinon aucune ligne, 05/11/2026), lieu de résidence, personne à prévenir, code-barres IFU et expiration MMAA ; QR code sans l'IFU ; aucun
  * bandeau tricolore ; validité de 3 ans par défaut, réglable ; organisme émetteur et code de contrôle à la place de
  * l'autorité, de la signature, du cachet et du numéro vert ; seeder des paramètres ; toute modification donne une
  * nouvelle version.
@@ -86,11 +88,13 @@ class CarteCommercantMaquetteTest extends TestCase
 
         $html = app(RenduCarte::class)->html($d, 'pdf');
         $this->assertStringContainsString('Numéro Raaga', $html);
-        foreach (['Sexe', 'Né(e) le', 'Secteur d’activité', 'Établie le', 'Expire le', 'Groupe sanguin', 'Lieu de résidence', 'Personne à prévenir', 'N° 12345678X', 'Numéro Raaga · Expiration'] as $texte) {
+        foreach (['Carte d’identification Raaga', 'data-champ="type">COMMERÇANT', 'Sexe', 'Né(e) le', 'Secteur d’activité', 'Établie le', 'Expire le',
+            'Lieu de résidence', 'Personne à prévenir', 'N° 12345678X', 'Numéro Raaga · Expiration'] as $texte) {
             $this->assertStringContainsString($texte, $html);
         }
-        // Sans consentement : « Non renseigné » ; jamais de code de boutique ni de bandeau tricolore.
-        $this->assertStringContainsString('data-champ="groupe_sanguin">Non renseigné', $html);
+        // Sans justificatif validé (05/11/2026) : aucune ligne de groupe sanguin ; jamais de code de boutique ni de bandeau tricolore.
+        $this->assertStringNotContainsString('data-champ="groupe_sanguin"', $html);
+        $this->assertStringNotContainsString('Groupe sanguin', $html);
         $this->assertStringNotContainsString(Boutiques::boutique('A', 1)->code, $html);
         $this->assertStringNotContainsString('class="cr-bande"', $html);
         $this->assertStringNotContainsString('#CE1126; }', $html);
@@ -99,16 +103,29 @@ class CarteCommercantMaquetteTest extends TestCase
         $this->assertStringEndsWith($carte->jeton, $carte->urlVerification());
     }
 
-    public function test_groupe_sanguin_seulement_avec_consentement_et_chiffre_en_base(): void
+    public function test_groupe_sanguin_seulement_avec_consentement_et_justificatif_valide_et_chiffre_en_base(): void
     {
+        Storage::fake('local');
         $user = $this->commercant(['groupe_sanguin' => 'O+']);
         $this->attribuer($user, Boutiques::boutique('A', 1));
         $carte = Cartes::courante($user, TypeCarte::Commercant);
         $this->assertNull($carte->contenu['groupe_sanguin']);
 
-        $user->forceFill(['groupe_sanguin_consenti_le' => now()])->save();
-        $mise = app(Cartes::class)->synchroniser($user->fresh(), TypeCarte::Commercant);
+        // Accord sans justificatif (05/11/2026) : toujours rien d'imprimé.
+        $user->forceFill(['groupe_sanguin_consenti_le' => now()->subMinute()])->save();
+        $this->assertNull(app(Cartes::class)->synchroniser($user->fresh(), TypeCarte::Commercant)->contenu['groupe_sanguin']);
+
+        // Justificatif déposé, puis validé par l'ADMIN : le groupe est imprimé (nouvelle version).
+        $justificatifs = app(JustificatifsGroupeSanguin::class);
+        $document = $justificatifs->deposer($user->fresh(), UploadedFile::fake()->image('groupe.jpg'));
+        $this->assertNull(Cartes::courante($user, TypeCarte::Commercant)->contenu['groupe_sanguin']);
+        $justificatifs->decider($document, User::factory()->role(Role::Admin)->create(), true);
+        $mise = Cartes::courante($user, TypeCarte::Commercant);
         $this->assertSame(['O+', $carte->version + 1], [$mise->contenu['groupe_sanguin'], $mise->version]);
+
+        // Groupe changé (accord redaté) : le justificatif d'avant ne vaut plus.
+        $user->fresh()->forceFill(['groupe_sanguin' => 'A+', 'groupe_sanguin_consenti_le' => now()->addMinute()])->save();
+        $this->assertNull(app(Cartes::class)->synchroniser($user->fresh(), TypeCarte::Commercant)->contenu['groupe_sanguin']);
         // Chiffré en base, jamais dans les attributs exposés.
         $this->assertNotSame('O+', DB::table('users')->where('id', $user->id)->value('groupe_sanguin'));
         $this->assertArrayNotHasKey('groupe_sanguin', $user->fresh()->toArray());

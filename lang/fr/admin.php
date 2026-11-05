@@ -598,7 +598,22 @@ return [
         'proposition_en_attente' => 'Proposée, en attente du VALIDATEUR',
         'examiner' => 'Examiner',
         'examiner_dossier' => 'Examiner le dossier de :nom',
-        'pieces' => ['cnib' => 'CNIB', 'cib_aes' => 'CIB-AES', 'passeport' => 'Passeport', 'ifu' => 'Attestation IFU', 'rccm' => 'RCCM', 'justif_pouvoir' => 'Justificatif de pouvoir', 'selfie' => 'Selfie', 'justif_fonds' => 'Justificatif'],
+        'pieces' => ['cnib' => 'CNIB', 'cib_aes' => 'CIB-AES', 'passeport' => 'Passeport', 'ifu' => 'Attestation IFU', 'rccm' => 'RCCM', 'justif_pouvoir' => 'Justificatif de pouvoir', 'selfie' => 'Selfie', 'justif_fonds' => 'Justificatif', 'groupe_sanguin' => 'Justificatif du groupe sanguin'],
+        // Groupe sanguin (réunion du 05/11/2026) : imprimé sur la carte de commerçant seulement avec un justificatif validé.
+        'groupe_sanguin' => [
+            'titre' => 'Groupe sanguin',
+            'intro' => 'Facultatif. Imprimé sur la carte de commerçant seulement si le titulaire a donné son accord et si son justificatif est validé ici.',
+            'declare' => 'Groupe déclaré',
+            'sans_accord' => 'Aucun accord du titulaire : rien n’est imprimé.',
+            'statuts' => ['EN_ATTENTE' => 'Justificatif à vérifier', 'VALIDE' => 'Justificatif validé', 'REJETE' => 'Justificatif refusé'],
+            'aucun' => 'Aucun justificatif déposé : le groupe n’est pas imprimé.',
+            'valider' => 'Valider le justificatif',
+            'refuser' => 'Refuser le justificatif',
+            'confirmer_valider' => 'Le justificatif correspond au groupe déclaré. Le groupe sera imprimé sur la carte de commerçant.',
+            'confirmer_refuser' => 'Le justificatif ne permet pas de confirmer le groupe déclaré. Le groupe ne sera pas imprimé.',
+            'motif' => 'motif du refus',
+            'messages' => ['valide' => 'Justificatif du groupe sanguin validé.', 'refuse' => 'Justificatif du groupe sanguin refusé.'],
+        ],
         // Emplacements du dossier (pièces manquantes).
         'emplacements' => ['recto' => 'pièce d’identité (recto ou page d’identité)', 'verso' => 'verso de la pièce', 'selfie' => 'selfie',
             'ifu' => 'attestation IFU', 'pouvoir' => 'justificatif de pouvoir', 'numeros' => 'numéros et date d’expiration des pièces'],

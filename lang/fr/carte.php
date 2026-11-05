@@ -3,10 +3,12 @@
 // Carte d'identification Raaga (rendu PNG, PDF et aperçu du back-office) : textes du recto et du verso, maquette du comité restreint du 03/11/2026.
 return [
     'pays' => 'Burkina Faso',
-    'titre' => 'Carte d’identification',
+    // Intitulé unique (réunion du 05/11/2026), le type de carte en petit en dessous.
+    'titre' => 'Carte d’identification Raaga',
     'titulaire' => 'Nom et prénom(s)',
-    'raison_sociale' => 'Titulaire',
-    'representant' => 'Représentant : :nom',
+    // Personne morale : carte au nom du gérant, avec la raison sociale de l'entreprise.
+    'gerant' => 'Gérant : nom et prénom(s)',
+    'entreprise' => 'Entreprise : :raison_sociale',
     'ne_le' => 'Né(e) le',
     'sexe' => 'Sexe',
     'lieu_naissance' => 'À',

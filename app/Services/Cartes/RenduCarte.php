@@ -130,9 +130,10 @@ class RenduCarte
         return [
             'commercant' => $commercant,
             'type' => mb_strtoupper($carte->type->label()),
-            // Personne morale : raison sociale, puis le représentant légal (nom, date de naissance et photo).
-            'titulaire' => (string) ($c['raison_sociale'] ?? $c['nom'] ?? ''),
-            'representant' => ! empty($c['raison_sociale']) ? ($c['nom'] ?? null) : null,
+            // Personne morale (réunion du 05/11/2026) : carte au nom du gérant (nom, date de naissance et photo), avec la
+            // raison sociale et l'IFU de l'entreprise (numéro de la carte).
+            'titulaire' => (string) ($c['nom'] ?? ''),
+            'raison_sociale' => filled($c['raison_sociale'] ?? null) ? $c['raison_sociale'] : null,
             'ne_le' => $naissance ? CarbonImmutable::parse($naissance)->format('d/m/Y') : null,
             'numero' => $carte->numero,
             'etablie' => $carte->emise_le?->format('d/m/Y'),
@@ -184,7 +185,7 @@ class RenduCarte
             'commercant' => $commercant,
             'type' => mb_strtoupper($type->label()),
             'titulaire' => __('carte.specimen'),
-            'representant' => null,
+            'raison_sociale' => null,
             'ne_le' => '01/01/1990',
             'numero' => $numero,
             'etablie' => CarbonImmutable::today()->format('d/m/Y'),
@@ -194,7 +195,8 @@ class RenduCarte
             'lieu_naissance' => $commercant ? __('carte.specimen') : null,
             'secteur' => $commercant ? __('carte.specimen') : null,
             'sites' => $commercant ? __('carte.specimen') : null,
-            'groupe_sanguin' => null,
+            // Aperçu : toutes les lignes du commerçant, groupe sanguin compris (imprimé sur une vraie carte seulement s'il est justifié).
+            'groupe_sanguin' => $commercant ? __('carte.specimen') : null,
             'residence' => $commercant ? __('carte.specimen') : null,
             'personne_prevenir' => $commercant ? __('carte.specimen') : null,
             'photo' => null,

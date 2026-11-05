@@ -6,10 +6,12 @@ use App\Enums\Droit;
 use App\Enums\Role;
 use App\Enums\StatutKyc;
 use App\Http\Controllers\Controller;
+use App\Models\KycDocument;
 use App\Models\ReservationBoutique;
 use App\Models\User;
 use App\Models\VerificationKyc;
 use App\Services\Kyc\DossiersIdentite;
+use App\Services\Kyc\JustificatifsGroupeSanguin;
 use App\Services\Kyc\VerificationIdentite;
 use App\Support\Tableau\Colonne;
 use App\Support\Tableau\Filtre;
@@ -70,7 +72,20 @@ class VerificationsIdentiteController extends Controller
             // Références et statuts seulement : aucun montant pour l'ADMIN.
             'souscriptions' => $citoyen->souscriptions()->latest('id')->get(['id', 'reference', 'statut']),
             'candidatures' => ReservationBoutique::query()->where('user_id', $citoyen->id)->latest('id')->get(['id', 'reference', 'statut']),
+            // Groupe sanguin (05/11/2026) : dernier justificatif déposé, à valider ou refuser.
+            'justificatifGroupe' => JustificatifsGroupeSanguin::dernier($citoyen),
         ]);
+    }
+
+    /** Justificatif du groupe sanguin : validé (le groupe est imprimé, avec l'accord du titulaire) ou refusé avec un motif. */
+    public function groupeSanguin(Request $request, KycDocument $document, JustificatifsGroupeSanguin $justificatifs): RedirectResponse
+    {
+        Gate::authorize(Droit::KycTraiter->value);
+        $valide = $request->routeIs('admin.kyc.groupe-sanguin.valider');
+        $motif = $valide ? null : $request->validate(['motif' => ['required', 'string', 'min:5', 'max:1000']], [], __('admin.kyc.champs'))['motif'];
+        $justificatifs->decider($document, $request->user(), $valide, $motif);
+
+        return redirect()->route('admin.kyc.dossier', $document->user_id)->avecSucces('admin.kyc.groupe_sanguin.messages.'.($valide ? 'valide' : 'refuse'));
     }
 
     public function conforme(Request $request, User $citoyen): RedirectResponse

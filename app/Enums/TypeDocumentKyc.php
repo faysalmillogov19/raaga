@@ -16,6 +16,9 @@ enum TypeDocumentKyc: string
     case JustifPouvoir = 'JUSTIF_POUVOIR';
     case Selfie = 'SELFIE';
     case JustifFonds = 'JUSTIF_FONDS';
+    // Justificatif du groupe sanguin (carte de groupe, analyse) : facultatif, hors du dossier d'identité ; validé par
+    // l'ADMIN, il conditionne l'impression du groupe sur la carte de commerçant (réunion du 05/11/2026).
+    case GroupeSanguin = 'GROUPE_SANGUIN';
 
     /** Pièces d'identité acceptées, et rien d'autre. @return list<self> */
     public static function piecesIdentite(): array
