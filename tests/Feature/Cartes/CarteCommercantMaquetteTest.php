@@ -162,7 +162,8 @@ class CarteCommercantMaquetteTest extends TestCase
         foreach (array_keys(ParametresCarteSeeder::FILIGRANES) as $champ) {
             $this->assertNotNull(ReglagesCarte::chemin(plateforme('carte.'.$champ)), $champ);
         }
-        $this->assertNull(plateforme('carte.filigraneSecondaireRecto'));
+        // Les quatre filigranes sont fournis.
+        $this->assertSame([], ReglagesCarte::filigranesManquants());
 
         // Réglages du SUPER_ADMIN gardés ; seeder relancé : rien ne change.
         $parametres = app(ParametresPlateforme::class);

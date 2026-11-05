@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 /**
  * Paramètres de la carte d'identification (comité restreint du 03/11/2026) : durée de validité de la carte de commerçant (3 ans) et
- * filigranes de la maquette (armoiries au recto, silure et chapeau de Saponé au verso), images dans
+ * filigranes de la maquette (armoiries et contour du Burkina Faso au recto, silure et chapeau de Saponé au verso), images dans
  * database/seeders/images/carte. S'exécute aussi en production, depuis ReferentielsSeeder. Ne remplit que les réglages
  * vides : ce que le SUPER_ADMIN a saisi ou déposé n'est jamais remplacé.
  */
@@ -18,9 +18,13 @@ class ParametresCarteSeeder extends Seeder
 {
     public const DUREE_VALIDITE_ANNEES = 3;
 
-    /** Filigrane => image fournie. Le filigrane secondaire du recto reste vide. */
+    /**
+     * Filigrane => image fournie (images en couleur, converties en monochrome or au rendu ; remplacées le 05/11/2026,
+     * contour du Burkina Faso au recto ajouté le même jour).
+     */
     public const FILIGRANES = [
         'filigranePrincipalRecto' => 'filigrane-armoiries.png',
+        'filigraneSecondaireRecto' => 'filigrane-carte-burkina.png',
         'filigranePrincipalVerso' => 'filigrane-silure.png',
         'filigraneSecondaireVerso' => 'filigrane-chapeau.png',
     ];
