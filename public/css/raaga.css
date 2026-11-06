@@ -3293,3 +3293,79 @@ html,
 }
 /* Thème nuit : la recherche garde un fond clair lisible (tableau, filtres, résultats). */
 .theme-nuit .recherche-boutiques { background: #FFFFFF; color: #1E1A14; }
+
+/* Commune de résidence (06/11/2026) : champ de saisie avec suggestions (x-choix-commune). */
+.choix-commune {
+    position: relative;
+}
+/* Champ de saisie masqué sans JavaScript, liste d'origine masquée avec : « hidden » l'emporte sur .champ. */
+.choix-commune [hidden] {
+    display: none !important;
+}
+.choix-commune-liste {
+    position: absolute;
+    z-index: 40;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 18rem;
+    overflow-y: auto;
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    border: 1px solid var(--ligne);
+    border-radius: 8px;
+    background: #FFFFFF;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .12);
+}
+.choix-commune-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: var(--encre);
+}
+.choix-commune-option.est-actif {
+    background: var(--vert-pale);
+}
+.choix-commune-nom {
+    font-weight: 600;
+}
+.choix-commune-province {
+    font-size: .8125rem;
+    color: var(--gris);
+}
+.choix-commune-vide {
+    padding: 10px 12px;
+    color: var(--gris);
+}
+/* Thème nuit (pages publiques) et thème forêt (back-office). */
+.theme-nuit .nuit-page .choix-commune-liste {
+    border-color: var(--nuit-bordure);
+    background: var(--nuit-carte);
+}
+.theme-nuit .nuit-page .choix-commune-option {
+    color: var(--nuit-texte);
+}
+.theme-nuit .nuit-page .choix-commune-option.est-actif {
+    background: var(--nuit-bordure);
+}
+.theme-nuit .nuit-page :is(.choix-commune-province, .choix-commune-vide) {
+    color: var(--nuit-texte-2);
+}
+.theme-foret .choix-commune-liste {
+    border-color: var(--line);
+    background: var(--card);
+}
+.theme-foret .choix-commune-option {
+    color: var(--text);
+}
+.theme-foret .choix-commune-option.est-actif {
+    background: var(--hover);
+}
+.theme-foret :is(.choix-commune-province, .choix-commune-vide) {
+    color: var(--muted);
+}

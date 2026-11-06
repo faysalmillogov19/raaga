@@ -86,7 +86,7 @@
                     <x-admin.champ nom="date_naissance" type="date" :libelle="__('public.compte.inscription.date_naissance')" required />
                     <x-admin.champ nom="pays_residence" type="liste" :libelle="$g['champs']['pays']" :options="$pays" valeur="BF" required x-model="pays" />
                     <div x-show="pays === 'BF'">
-                        <x-admin.champ nom="commune_id" type="liste" :libelle="__('public.compte.inscription.commune')" :options="$communes" :vide="$g['champs']['choisir']" />
+                        <x-admin.champ nom="commune_id" type="liste" :libelle="__('public.compte.inscription.commune')" :options="$communes" :vide="$g['champs']['choisir']" recherche />
                     </div>
                     <x-admin.champ nom="conditions" type="case" :libelle="$g['conditions']" required class="tab:col-span-2" />
                     <div class="tab:col-span-2"><x-admin.bouton type="submit" icone="utilisateur">{{ $g['creer_compte'] }}</x-admin.bouton></div>
@@ -108,7 +108,7 @@
                         @if (in_array('recto', $demandes, true))
                             <div @change="piece = $event.target.value"><x-admin.champ nom="type_piece" type="radio" :libelle="$v['type_piece']" :options="$v['types']" :valeur="$typePiece?->value ?? 'CNIB'" required /></div>
                             <div class="grid gap-4 tab:grid-cols-2">
-                                <x-admin.champ nom="numero_piece" :libelle="$g['champs']['numero_piece']" :aide="$v['aides']['numero_piece']" maxlength="40" autocomplete="off" required />
+                                <x-admin.champ nom="numero_piece" :libelle="$g['champs']['numero_piece']" :aide="$v['aides']['numero_piece']" maxlength="40" autocomplete="off" required nip />
                                 <x-admin.champ nom="piece_expire_le" type="date" :libelle="$v['expiration']" required />
                                 <x-admin.champ nom="sexe" type="radio" :libelle="$v['sexe']" :options="$v['sexes']" required />
                                 <x-admin.champ nom="lieu_naissance" :libelle="$v['lieu_naissance']" maxlength="100" autocomplete="off" required />

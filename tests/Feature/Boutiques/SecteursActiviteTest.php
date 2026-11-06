@@ -49,7 +49,7 @@ class SecteursActiviteTest extends TestCase
 
     private function candidature(array $donnees, string $boutique = 'A'): array
     {
-        return ['type_piece' => 'CNIB', 'numero_piece' => 'B1234567', 'piece' => UploadedFile::fake()->image('piece.jpg'),
+        return ['type_piece' => 'CNIB', 'numero_piece' => Boutiques::nip('B1234567'), 'piece' => UploadedFile::fake()->image('piece.jpg'),
             ...array_diff_key(Boutiques::donneesCommercant(), ['secteur_activite_id' => 0]), ...$donnees];
     }
 

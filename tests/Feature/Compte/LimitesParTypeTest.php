@@ -143,7 +143,7 @@ class LimitesParTypeTest extends TestCase
         $this->assertNotFalse($comptage);
         $this->assertLessThan($comptage, $verrou);
 
-        $this->assertSame(1, ReservationBoutique::query()->where('numero_piece', 'B1234567')->count());
+        $this->assertSame(1, ReservationBoutique::query()->where('numero_piece', Boutiques::nip('B1234567'))->count());
         $this->assertSame(StatutBoutique::Disponible, $this->boutique(2)->statut);
     }
 

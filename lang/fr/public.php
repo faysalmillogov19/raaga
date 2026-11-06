@@ -1107,6 +1107,13 @@ return [
     ],
 
     // Registre du commerce et du crédit mobilier (réunion du 05/11/2026) : jamais imprimé sur la carte.
+    // NIP de la CNIB et de la CIB-AES (06/11/2026) : 17 chiffres, à la place du numéro de la pièce.
+    'nip' => [
+        'pieces' => ['CNIB' => 'la CNIB', 'CIB_AES' => 'la CIB-AES'],
+        'libelle' => 'NIP de :piece',
+        'indication' => 'Les 17 chiffres du NIP inscrits sur :piece',
+        'erreur' => 'Le NIP de :piece compte 17 chiffres. Recopiez-le tel qu’il est inscrit sur la pièce.',
+    ],
     'rccm' => [
         'numero' => 'Numéro RCCM',
         'numero_aide' => 'Tel qu’inscrit au registre, par exemple BF OUA 2020 B 12345.',
@@ -1759,6 +1766,9 @@ return [
             'diaspora' => 'Burkinabè de la diaspora',
             'commune' => 'Commune de résidence',
             'choisir' => 'Choisissez…',
+            // Champ de saisie avec suggestions de la commune (06/11/2026).
+            'commune_saisie' => 'Tapez le nom de la commune',
+            'commune_aucune' => 'Aucune commune ne correspond à votre saisie.',
             'conditions' => 'J’accepte les :cgu et la :donnees',
             'cgu' => 'conditions d’utilisation',
             'politique' => 'politique de protection des données personnelles',

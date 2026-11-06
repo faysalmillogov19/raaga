@@ -16,11 +16,13 @@ use App\Models\GrilleTarifaire;
 use App\Models\GrilleTarifaireVersion;
 use App\Models\KycDocument;
 use App\Models\ParametrageDecision;
+use App\Models\ReservationBoutique;
 use App\Models\SecteurActivite;
 use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\User;
 use App\Services\Boutiques\ReservationsBoutiques;
+use App\Support\Nip;
 use Database\Seeders\SecteursActiviteSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -86,11 +88,28 @@ final class Boutiques
         return Boutique::query()->where('bloc', $bloc)->where('numero', $numero)->firstOrFail();
     }
 
-    /** Réservation par le formulaire public (pièce jointe factice, engagements cochés). */
+    /**
+     * NIP de test (17 chiffres) tiré d'un ancien numéro de pièce (06/11/2026) : lettres et chiffres gardés (majuscules,
+     * sans espaces ni tirets), chaque lettre remplacée par deux chiffres. Deux écritures du même numéro donnent le même NIP.
+     */
+    public static function nip(string $numero): string
+    {
+        $chiffres = preg_replace_callback('/[A-Z]/', fn (array $m) => (string) (ord($m[0]) - 55), ReservationBoutique::normaliserPiece($numero));
+
+        return str_pad(substr($chiffres, -Nip::LONGUEUR), Nip::LONGUEUR, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Réservation par le formulaire public (pièce jointe factice, engagements cochés). CNIB ou CIB-AES : numéro converti en
+     * NIP (Boutiques::nip) s'il n'en est pas déjà un.
+     */
     public static function reserver(TestCase $test, User $user, Boutique $boutique, string $numeroPiece = 'B1234567', string $type = 'CNIB'): TestResponse
     {
         Storage::fake('local');
         self::ifuVerifie($user);
+        if (Nip::porteNip(TypeDocumentKyc::tryFrom($type)) && ! Nip::valide($numeroPiece)) {
+            $numeroPiece = self::nip($numeroPiece);
+        }
 
         return $test->actingAs($user)->post(route('boutiques.reserver', $boutique->code), [
             'type_piece' => $type, 'numero_piece' => $numeroPiece, 'piece' => UploadedFile::fake()->image('piece.jpg'),

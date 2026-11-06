@@ -172,17 +172,19 @@
 
                 <div class="formulaire-champ" x-show="! diaspora" @if (($valeurs['pays_residence'] ?? 'BF') !== 'BF') x-cloak @endif>
                     <label for="commune_id">{{ __('public.compte.inscription.commune') }}</label>
-                    <select id="commune_id" name="commune_id" class="champ @error('commune_id') est-invalide @enderror"
-                            :class="{ 'est-invalide': erreurs.commune_id }" :disabled="diaspora" aria-describedby="commune_id-erreur">
-                        <option value="">{{ __('public.compte.inscription.choisir') }}</option>
-                        @foreach ($communes as $province => $liste)
-                            <optgroup label="{{ $province }}">
-                                @foreach ($liste as $id => $nom)
-                                    <option value="{{ $id }}" @selected((string) ($valeurs['commune_id'] ?? '') === (string) $id)>{{ $nom }}</option>
-                                @endforeach
-                            </optgroup>
-                        @endforeach
-                    </select>
+                    <x-choix-commune id="commune_id">
+                        <select id="commune_id" name="commune_id" class="champ @error('commune_id') est-invalide @enderror"
+                                :class="{ 'est-invalide': erreurs.commune_id }" :disabled="diaspora" aria-describedby="commune_id-erreur">
+                            <option value="">{{ __('public.compte.inscription.choisir') }}</option>
+                            @foreach ($communes as $province => $liste)
+                                <optgroup label="{{ $province }}">
+                                    @foreach ($liste as $id => $nom)
+                                        <option value="{{ $id }}" @selected((string) ($valeurs['commune_id'] ?? '') === (string) $id)>{{ $nom }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
+                        </select>
+                    </x-choix-commune>
                     <p id="commune_id-erreur" class="message-erreur" role="alert"
                        x-show="erreurs.commune_id || @js($errors->has('commune_id'))"
                        x-text="erreurs.commune_id || @js($errors->first('commune_id'))">{{ $errors->first('commune_id') }}</p>

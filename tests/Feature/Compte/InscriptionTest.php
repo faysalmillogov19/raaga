@@ -183,6 +183,8 @@ class InscriptionTest extends TestCase
         $this->get('/inscription')->assertOk()
             ->assertSee('Commune de résidence')
             ->assertSee('<optgroup label="Kadiogo (Kadiogo)">', false)
+            // Commune : champ de saisie avec suggestions sur la liste d'origine (06/11/2026).
+            ->assertSee('data-choix-commune', false)->assertSee('id="commune_id-saisie"', false)->assertSee('role="combobox"', false)
             ->assertSee('<option value="'.$this->ouagadougou()->id.'" >Ouagadougou</option>', false)
             ->assertDontSee('Boucle du Mouhoun');
 

@@ -54,7 +54,7 @@ class VerificationTest extends TestCase
     {
         $this->actingAs($this->citoyen)->post('/espace/verification', [
             'type_piece' => 'CNIB', 'recto' => $this->photo('recto.jpg'), 'verso' => $this->photo('verso.png'), 'selfie' => $this->photo('selfie.jpg'),
-            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B 1234 5678', 'piece_expire_le' => now()->addYears(5)->toDateString(),
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => '0304 0602 6180 0450 1', 'piece_expire_le' => now()->addYears(5)->toDateString(),
         ])->assertRedirect(route('espace.verification'))->assertSessionHasNoErrors();
     }
 

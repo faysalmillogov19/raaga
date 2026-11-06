@@ -19,6 +19,7 @@ use App\Services\Documents\GenerateurPdf;
 use App\Services\Guichet\SouscriptionGuichet;
 use App\Services\Kyc\VerificationIdentite;
 use App\Services\Souscriptions\PreparationSouscription;
+use App\Support\Nip;
 use App\Support\Recu;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -151,15 +152,17 @@ class GuichetSouscriptionController extends Controller
         $fichier = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'mimetypes:image/jpeg,image/png', 'max:5120'];
         $document = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
         $e = __('public.verification.erreurs');
+        // CNIB ou CIB-AES : le numéro est le NIP (06/11/2026).
+        $typePiece = TypeDocumentKyc::tryFrom((string) $request->input('type_piece')) ?? app(VerificationIdentite::class)->typePiece($citoyen);
         $donnees = $request->validate([
             'type_piece' => ['nullable', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, TypeDocumentKyc::piecesIdentite()))],
-            'numero_piece' => ['nullable', 'string', 'min:5', 'max:40'],
+            'numero_piece' => ['nullable', 'string', 'min:5', 'max:40', Nip::regle($typePiece)],
             'piece_expire_le' => ['nullable', 'date_format:Y-m-d', 'after:today'],
             'recto' => $fichier, 'verso' => $fichier, 'selfie' => $fichier,
             'ifu' => $document, 'pouvoir' => $document,
             'piece_conforme' => ['accepted'],
             ...VerificationIdentite::reglesInfos($citoyen),
-        ], [...$e['fichiers'], 'type_piece.*' => $e['type'], 'piece_expire_le.*' => $e['expiration'], 'numero_piece.*' => $e['numero_piece'],
+        ], [...$e['fichiers'], 'type_piece.*' => $e['type'], 'piece_expire_le.*' => $e['expiration'], ...array_fill_keys(['numero_piece.required', 'numero_piece.string', 'numero_piece.min', 'numero_piece.max'], $e['numero_piece']),
             'sexe.*' => $e['sexe'], 'lieu_naissance.*' => $e['lieu_naissance'],
             'piece_conforme.accepted' => __('admin.guichet.souscription.erreurs.piece_conforme')], __('public.verification.attributs'));
 

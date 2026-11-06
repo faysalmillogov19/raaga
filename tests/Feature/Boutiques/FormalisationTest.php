@@ -55,7 +55,7 @@ class FormalisationTest extends TestCase
     private function reserver(User $user, string $bloc = 'A', int $numero = 1): void
     {
         $this->actingAs($user)->post(route('boutiques.reserver', Boutiques::boutique($bloc, $numero)->code), [
-            'type_piece' => 'CNIB', 'numero_piece' => 'B'.sprintf('%07d', $user->id), 'piece' => UploadedFile::fake()->image('piece.jpg'),
+            'type_piece' => 'CNIB', 'numero_piece' => Boutiques::nip('B'.sprintf('%07d', $user->id)), 'piece' => UploadedFile::fake()->image('piece.jpg'),
             ...Boutiques::donneesCommercant(),
         ])->assertSessionHasNoErrors();
     }

@@ -121,7 +121,8 @@ class ProfilPersonnelTest extends TestCase
         $citoyen = $this->citoyen(['statut_kyc' => StatutKyc::Valide]);
         $commune = $this->ouagadougou();
 
-        $this->actingAs($citoyen)->get('/espace/profil')->assertOk()->assertSee('Commune de résidence')->assertSee('<optgroup label="Kadiogo (Kadiogo)">', false);
+        $this->actingAs($citoyen)->get('/espace/profil')->assertOk()->assertSee('Commune de résidence')->assertSee('<optgroup label="Kadiogo (Kadiogo)">', false)
+            ->assertSee('data-choix-commune', false)->assertSee('id="commune_id-saisie"', false)->assertSee('role="combobox"', false);
         $this->actingAs($citoyen)->post('/espace/profil', $this->identite())->assertSessionHasNoErrors();
 
         $citoyen->refresh();

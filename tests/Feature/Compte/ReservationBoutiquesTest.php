@@ -70,14 +70,14 @@ class ReservationBoutiquesTest extends TestCase
             ->assertSee("120\u{00A0}000\u{00A0}FCFA")->assertSee("1\u{00A0}440\u{00A0}000\u{00A0}FCFA")->assertSee("360\u{00A0}000\u{00A0}FCFA");
 
         // Pièce obligatoire, engagements obligatoires.
-        $this->actingAs($citoyen)->post(route('boutiques.reserver', $boutique->code), ['type_piece' => 'CNIB', 'numero_piece' => 'B1234567'])
+        $this->actingAs($citoyen)->post(route('boutiques.reserver', $boutique->code), ['type_piece' => 'CNIB', 'numero_piece' => Boutiques::nip('B1234567')])
             ->assertSessionHasErrors('piece');
 
         $reponse = Boutiques::reserver($this, $citoyen, $boutique)->assertSessionHasNoErrors();
         $r = ReservationBoutique::sole();
         $reponse->assertRedirect(route('boutiques.reservation.show', $r->reference));
         $this->assertSame(StatutReservationBoutique::PreReservee, $r->statut);
-        $this->assertSame(['CNIB', 'B1234567'], [$r->type_piece, $r->numero_piece]);
+        $this->assertSame(['CNIB', Boutiques::nip('B1234567')], [$r->type_piece, $r->numero_piece]);
         $this->assertSame([1_440_000, 360_000], [$r->caution, $r->avance]);
         $this->assertTrue($r->expire_le->equalTo(now()->addHours(72)) || $r->expire_le->diffInSeconds(now()->addHours(72), true) < 5);
         $this->assertSame(StatutBoutique::PreReservee, $boutique->fresh()->statut);

@@ -193,6 +193,119 @@ composant('formulaireIdentite', ({ valeurs = {}, messages = {}, ageMinimum = 18 
     },
 }));
 
+/*
+ * Commune de résidence (06/11/2026) : champ de saisie avec suggestions, sans accents ni majuscules à respecter
+ * (« bobo » trouve « Bobo-Dioulasso »), recherche aussi sur la province. La liste d'origine reste la valeur envoyée :
+ * sans JavaScript, elle s'affiche seule. Clavier : flèches, Entrée, Échap.
+ */
+const sansAccents = (texte) => String(texte ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+composant('choixCommune', () => ({
+    ouvert: false,
+    saisie: '',
+    actif: -1,
+    communes: [],
+    resultats: [],
+    init() {
+        const liste = this.$root.querySelector('select');
+        const saisie = this.$refs.saisie;
+        this.communes = [...liste.options].filter((o) => o.value !== '').map((o) => ({
+            valeur: o.value, nom: o.text, province: o.parentElement.tagName === 'OPTGROUP' ? o.parentElement.label : '',
+            cle: sansAccents(o.text), cleProvince: sansAccents(o.parentElement.label ?? ''),
+        }));
+        this.saisie = this.nomChoisi();
+        // Le libellé, les erreurs, l'état désactivé et le focus passent de la liste au champ de saisie.
+        document.querySelectorAll(`label[for="${liste.id}"]`).forEach((l) => { l.htmlFor = saisie.id; });
+        if (liste.hasAttribute('aria-describedby')) saisie.setAttribute('aria-describedby', liste.getAttribute('aria-describedby'));
+        const reporter = () => {
+            saisie.classList.toggle('est-invalide', liste.classList.contains('est-invalide') || liste.getAttribute('aria-invalid') === 'true');
+            saisie.disabled = liste.disabled;
+        };
+        reporter();
+        new MutationObserver(reporter).observe(liste, { attributes: true, attributeFilter: ['class', 'disabled', 'aria-invalid'] });
+        liste.focus = () => saisie.focus();
+        liste.hidden = true;
+        liste.tabIndex = -1;
+        saisie.hidden = false;
+        this.filtrer();
+    },
+    // Liste d'origine lue à chaque fois : jamais gardée dans l'état réactif d'Alpine.
+    get liste() {
+        return this.$root.querySelector('select');
+    },
+    nomChoisi() {
+        return this.communes.find((c) => c.valeur === this.liste.value)?.nom ?? '';
+    },
+    filtrer() {
+        const q = sansAccents(this.saisie);
+        const rang = (c) => {
+            if (q === '') return 0;
+            if (c.cle.startsWith(q)) return 1;
+            if (c.cle.split(' ').some((mot) => mot.startsWith(q))) return 2;
+            if (c.cle.includes(q)) return 3;
+            return c.cleProvince.includes(q) ? 4 : null;
+        };
+        this.resultats = this.communes.map((c) => [rang(c), c]).filter(([r]) => r !== null)
+            .sort((a, b) => a[0] - b[0] || (q === '' ? 0 : a[1].cle.localeCompare(b[1].cle)))
+            .map(([, c]) => c);
+        this.actif = this.resultats.length > 0 && q !== '' ? 0 : -1;
+    },
+    ouvrir() {
+        if (this.$refs.saisie.disabled) return;
+        this.filtrer();
+        this.ouvert = true;
+    },
+    fermer() {
+        this.ouvert = false;
+        this.actif = -1;
+    },
+    saisir() {
+        if (this.saisie.trim() === '' && this.liste.value !== '') this.envoyer('');
+        this.filtrer();
+        this.ouvert = true;
+    },
+    deplacer(pas) {
+        if (!this.ouvert) {
+            this.ouvrir();
+            return;
+        }
+        const n = this.resultats.length;
+        if (n === 0) return;
+        this.actif = (this.actif + pas + n) % n;
+        this.$nextTick(() => document.getElementById(this.idOption(this.actif))?.scrollIntoView({ block: 'nearest' }));
+    },
+    valider(event) {
+        if (!this.ouvert) return;
+        event.preventDefault();
+        const c = this.resultats[this.actif] ?? (this.resultats.length === 1 ? this.resultats[0] : null);
+        if (c) this.choisir(c);
+    },
+    choisir(c) {
+        this.envoyer(c.valeur);
+        this.saisie = c.nom;
+        this.fermer();
+    },
+    // Champ quitté : une seule commune correspond, elle est retenue ; sinon le texte reprend la commune choisie.
+    quitter() {
+        if (this.ouvert && this.saisie.trim() !== '' && this.saisie !== this.nomChoisi()) {
+            if (this.resultats.length === 1) {
+                this.choisir(this.resultats[0]);
+                return;
+            }
+            this.saisie = this.nomChoisi();
+        }
+        this.fermer();
+    },
+    envoyer(valeur) {
+        this.liste.value = valeur;
+        this.liste.dispatchEvent(new Event('change', { bubbles: true }));
+    },
+    idOption(i) {
+        return `${this.$refs.saisie.id}-${i}`;
+    },
+}));
+
 // Back-office : barre latérale repliable, état mémorisé dans le navigateur.
 composant('menuBackoffice', () => ({
     replie: false,

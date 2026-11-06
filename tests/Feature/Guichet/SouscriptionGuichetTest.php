@@ -201,15 +201,16 @@ class SouscriptionGuichetTest extends TestCase
         $this->post(route('admin.guichet-souscription.code'), ['code' => $sms->dernierCode()])->assertRedirect($page);
 
         // Compte, identité, souscription.
-        $this->get($page)->assertSee('data-etape="compte"', false)->assertSee('Commune de résidence')->assertSee('<optgroup label="Kadiogo (Kadiogo)">', false);
+        $this->get($page)->assertSee('data-etape="compte"', false)->assertSee('Commune de résidence')->assertSee('<optgroup label="Kadiogo (Kadiogo)">', false)
+            ->assertSee('data-choix-commune', false)->assertSee('id="commune_id-saisie"', false)->assertSee('role="combobox"', false);
         $this->post(route('admin.guichet-souscription.compte'), $this->identite())->assertSessionHasNoErrors()->assertRedirect($page);
         $issa = User::query()->where('telephone', '+22670111222')->sole();
         // Personne physique : l'IFU sera demandé à sa première réservation de boutique.
         $this->assertNull($issa->ifu);
         $this->get($page)->assertSee('data-etape="identite"', false)->assertSee('Issa SAWADOGO');
-        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B12345678',
+        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => '03040602618004501',
             'piece_expire_le' => now()->addYears(2)->toDateString(), ...$this->pieces()])->assertSessionHasErrors('piece_conforme');
-        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B12345678',
+        $this->post(route('admin.guichet-souscription.identite'), ['type_piece' => 'CNIB', 'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => '03040602618004501',
             'piece_expire_le' => now()->addYears(2)->toDateString(), 'piece_conforme' => '1', ...$this->pieces()])->assertSessionHasNoErrors();
         $this->assertSame(StatutKyc::Valide, $issa->fresh()->statut_kyc);
         $this->get($page)->assertSee('data-etape="souscription"', false)->assertSee('Lisez à la personne');

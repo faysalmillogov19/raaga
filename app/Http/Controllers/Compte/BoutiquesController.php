@@ -23,6 +23,7 @@ use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Cartes\Cartes;
 use App\Services\Kyc\JustificatifsGroupeSanguin;
 use App\Support\Ifu;
+use App\Support\Nip;
 use App\Support\Telephone;
 use App\Support\ThemePublic;
 use Illuminate\Http\RedirectResponse;
@@ -242,7 +243,8 @@ class BoutiquesController extends Controller
         $document = ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
         $donnees = $request->validate([
             'type_piece' => [Rule::requiredIf($premiere), 'nullable', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, ReservationsBoutiques::piecesPour($request->user())))],
-            'numero_piece' => [Rule::requiredIf($premiere), 'nullable', 'string', 'min:5', 'max:40'],
+            // CNIB ou CIB-AES : le numéro est le NIP, 17 chiffres (06/11/2026).
+            'numero_piece' => [Rule::requiredIf($premiere), 'nullable', 'string', 'min:5', 'max:40', Nip::regle(TypeDocumentKyc::tryFrom((string) $request->input('type_piece')))],
             'piece' => [Rule::requiredIf($premiere), 'nullable', ...$document],
             // Sexe et lieu de naissance, lus sur la pièce d'identité d'une personne physique (carte de commerçant).
             'sexe' => [Rule::requiredIf($sexeLieu), 'nullable', Rule::in(User::SEXES)],

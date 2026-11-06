@@ -79,7 +79,7 @@ class IfuCommercantTest extends TestCase
     private function candidater(User $citoyen, Boutique $boutique, array $donnees = []): TestResponse
     {
         return $this->actingAs($citoyen)->post(route('boutiques.reserver', $boutique->code), [
-            'type_piece' => 'CNIB', 'numero_piece' => 'B'.sprintf('%07d', $citoyen->id), 'piece' => UploadedFile::fake()->image('piece.jpg'),
+            'type_piece' => 'CNIB', 'numero_piece' => Boutiques::nip('B'.sprintf('%07d', $citoyen->id)), 'piece' => UploadedFile::fake()->image('piece.jpg'),
             ...Boutiques::donneesCommercant(), ...$donnees,
         ]);
     }

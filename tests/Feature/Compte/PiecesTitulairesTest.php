@@ -95,14 +95,14 @@ class PiecesTitulairesTest extends TestCase
         $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image()])
             ->assertSessionHasErrors(['numero_piece', 'piece_expire_le']);
         $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
-            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'AES-0012 3456', 'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => '0304-0602 6180 0450 1', 'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
         $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
-            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'AES-0012 3456', 'piece_expire_le' => now()->addYears(3)->toDateString()])->assertSessionHasNoErrors();
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => '0304-0602 6180 0450 1', 'piece_expire_le' => now()->addYears(3)->toDateString()])->assertSessionHasNoErrors();
         $cib->refresh();
         $this->assertSame(StatutKyc::EnAttente, $cib->statut_kyc);
-        $this->assertSame('AES00123456', $cib->numero_piece);
+        $this->assertSame('03040602618004501', $cib->numero_piece);
         $recto = $cib->kycDocuments()->where('type', TypeDocumentKyc::CibAes)->where('face', 'RECTO')->sole();
-        $this->assertSame(['AES00123456', now()->addYears(3)->toDateString()], [$recto->numero, $recto->expire_le->toDateString()]);
+        $this->assertSame(['03040602618004501', now()->addYears(3)->toDateString()], [$recto->numero, $recto->expire_le->toDateString()]);
 
         // Passeport : une page, sans verso.
         $passeport = $this->citoyen();
@@ -123,7 +123,7 @@ class PiecesTitulairesTest extends TestCase
             ->assertSee('Justificatif RCCM (registre du commerce)', false)->assertSee('data-rccm', false);
 
         $complet = ['type_piece' => 'CNIB', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
-            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'B7654321', 'piece_expire_le' => now()->addYears(2)->toDateString(),
+            'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => Boutiques::nip('B7654321'), 'piece_expire_le' => now()->addYears(2)->toDateString(),
             'ifu' => $this->pdf('ifu.pdf'),
             'pouvoir' => $this->pdf('pv.pdf'), 'rccm' => $this->pdf('rccm.pdf')];
         // Pièce manquante (justificatif de pouvoir) : refusé. Le numéro IFU est celui du compte, corrigeable avec l'attestation.

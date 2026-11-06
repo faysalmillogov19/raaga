@@ -115,7 +115,7 @@
                     <x-public.erreur :messages="$errors->get('type_piece')" />
                 </fieldset>
 
-                <x-public.champ nom="numero_piece" :libelle="$r['numero_piece']" class="mt-4" maxlength="40" autocomplete="off" required />
+                <x-public.champ nom="numero_piece" :libelle="$r['numero_piece']" class="mt-4" maxlength="40" autocomplete="off" required nip />
 
                 <div class="mt-4">
                     <label for="piece" class="block font-semibold text-encre"><x-requis /> {{ $r['piece'] }}</label>

@@ -131,7 +131,9 @@
                             {{-- Numéros et date d'expiration, à côté de la pièce qui les porte. --}}
                             @if ($cle === 'recto')
                                 {{-- Valeurs déjà connues du compte reprises (05/11/2026) ; date d'expiration seulement si elle est à venir. --}}
-                                <x-public.champ nom="numero_piece" :libelle="$v['numero_piece']" :aide="$v['aides']['numero_piece']" :valeur="$user->numero_piece" maxlength="40" autocomplete="off" obligatoire />
+                                {{-- CNIB ou CIB-AES : NIP (06/11/2026) ; un ancien numéro de carte n'est pas repris, le NIP est demandé. --}}
+                                <x-public.champ nom="numero_piece" :libelle="$v['numero_piece']" :aide="$v['aides']['numero_piece']" nip
+                                    :valeur="\App\Support\Nip::porteNip($typePiece ?? \App\Enums\TypeDocumentKyc::Cnib) && ! \App\Support\Nip::valide($user->numero_piece) ? null : $user->numero_piece" maxlength="40" autocomplete="off" obligatoire />
                                 <div data-expiration-piece>
                                     <label for="piece_expire_le" class="block font-semibold text-encre"><x-requis /> {{ $v['expiration'] }}</label>
                                     <p id="piece_expire_le-aide" class="texte-carte">{{ $v['aides']['expiration'] }}</p>

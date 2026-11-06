@@ -12,6 +12,7 @@ use App\Services\Cartes\Cartes;
 use App\Services\Kyc\JustificatifsGroupeSanguin;
 use App\Services\Kyc\RegistreCommerce;
 use App\Services\Kyc\VerificationIdentite;
+use App\Support\Nip;
 use App\Support\Rccm;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,17 +46,19 @@ class VerificationController extends Controller
         // Attestation IFU, justificatif de pouvoir : souvent des PDF.
         $document = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
         $e = __('public.verification.erreurs');
+        // Type de la pièce : choisi ici, sinon celui déjà déposé ; CNIB ou CIB-AES : le numéro est le NIP (06/11/2026).
+        $typePiece = TypeDocumentKyc::tryFrom((string) $request->input('type_piece')) ?? $this->verification->typePiece($request->user());
 
         $donnees = $request->validate([
             // CNIB, CIB-AES ou passeport, et rien d'autre.
             'type_piece' => ['nullable', Rule::in(array_map(fn (TypeDocumentKyc $t) => $t->value, TypeDocumentKyc::piecesIdentite()))],
-            'numero_piece' => ['nullable', 'string', 'min:5', 'max:40'],
+            'numero_piece' => ['nullable', 'string', 'min:5', 'max:40', Nip::regle($typePiece)],
             // Date d'expiration de la pièce : obligatoire ; la carte Raaga ne la dépasse jamais.
             'piece_expire_le' => ['nullable', 'date_format:Y-m-d', 'after:today'],
             'recto' => $fichier, 'verso' => $fichier, 'selfie' => $fichier,
             'ifu' => $document, 'pouvoir' => $document, 'rccm' => $document,
             ...VerificationIdentite::reglesInfos($request->user()),
-        ], [...$e['fichiers'], 'type_piece.*' => $e['type'], 'piece_expire_le.*' => $e['expiration'], 'numero_piece.*' => $e['numero_piece'],
+        ], [...$e['fichiers'], 'type_piece.*' => $e['type'], 'piece_expire_le.*' => $e['expiration'], ...array_fill_keys(['numero_piece.required', 'numero_piece.string', 'numero_piece.min', 'numero_piece.max'], $e['numero_piece']),
             'sexe.*' => $e['sexe'], 'lieu_naissance.*' => $e['lieu_naissance']], __('public.verification.attributs'));
 
         $this->verification->deposer(
