@@ -52,7 +52,7 @@ class VerificationTest extends TestCase
 
     private function deposerCnib(): void
     {
-        $this->actingAs($this->citoyen)->post('/espace/verification', [
+        $this->actingAs($this->citoyen)->post('/espace/verification', ['formalisee' => 'non',
             'type_piece' => 'CNIB', 'recto' => $this->photo('recto.jpg'), 'verso' => $this->photo('verso.png'), 'selfie' => $this->photo('selfie.jpg'),
             'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => '0304 0602 6180 0450 1', 'piece_expire_le' => now()->addYears(5)->toDateString(),
         ])->assertRedirect(route('espace.verification'))->assertSessionHasNoErrors();
@@ -89,11 +89,11 @@ class VerificationTest extends TestCase
         // Passeport : recto seul + selfie.
         $autre = User::factory()->role(Role::Citoyen)->create(['statut_kyc' => StatutKyc::NonSoumis]);
         // Date d'expiration de la pièce : obligatoire, dans le futur.
-        $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo()])
+        $this->actingAs($autre)->post('/espace/verification', ['formalisee' => 'non', 'type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo()])
             ->assertSessionHasErrors(['piece_expire_le', 'numero_piece']);
-        $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
+        $this->actingAs($autre)->post('/espace/verification', ['formalisee' => 'non', 'type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
             'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'P0012345', 'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
-        $this->actingAs($autre)->post('/espace/verification', ['type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
+        $this->actingAs($autre)->post('/espace/verification', ['formalisee' => 'non', 'type_piece' => 'PASSEPORT', 'recto' => $this->photo(), 'selfie' => $this->photo(),
             'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'P0012345', 'piece_expire_le' => now()->addYears(4)->toDateString()])->assertSessionHasNoErrors();
         $this->assertSame(now()->addYears(4)->toDateString(), $autre->fresh()->piece_expire_le->toDateString());
         $this->assertSame(2, $autre->kycDocuments()->count());
@@ -101,7 +101,7 @@ class VerificationTest extends TestCase
 
     public function test_refus_d_un_fichier_trop_lourd_ou_au_mauvais_format(): void
     {
-        $this->actingAs($this->citoyen)->from('/espace/verification')->post('/espace/verification', [
+        $this->actingAs($this->citoyen)->from('/espace/verification')->post('/espace/verification', ['formalisee' => 'non',
             'type_piece' => 'CNIB',
             'recto' => UploadedFile::fake()->image('lourd.jpg')->size(6000),
             'verso' => UploadedFile::fake()->create('piece.pdf', 100, 'application/pdf'),
@@ -115,7 +115,7 @@ class VerificationTest extends TestCase
             ]);
 
         // Pièce manquante : verso exigé pour une CNIB.
-        $this->actingAs($this->citoyen)->post('/espace/verification', ['type_piece' => 'CNIB', 'recto' => $this->photo(), 'selfie' => $this->photo()])
+        $this->actingAs($this->citoyen)->post('/espace/verification', ['formalisee' => 'non', 'type_piece' => 'CNIB', 'recto' => $this->photo(), 'selfie' => $this->photo()])
             ->assertSessionHasErrors(['verso' => 'Ajoutez cette pièce.']);
 
         $this->assertSame(0, KycDocument::count());
@@ -180,7 +180,7 @@ class VerificationTest extends TestCase
             ->assertSee('Renvoyer les pièces refusées')
             ->assertSee('name="verso"', false)->assertDontSee('name="recto"', false)->assertDontSee('name="selfie"', false);
 
-        $this->actingAs($this->citoyen->fresh())->post('/espace/verification', ['verso' => $this->photo('verso2.jpg')])->assertSessionHasNoErrors();
+        $this->actingAs($this->citoyen->fresh())->post('/espace/verification', ['formalisee' => 'non', 'verso' => $this->photo('verso2.jpg')])->assertSessionHasNoErrors();
 
         $this->assertSame(4, $this->citoyen->kycDocuments()->count());
         $this->assertSame(StatutKyc::EnAttente, $this->citoyen->fresh()->statut_kyc);

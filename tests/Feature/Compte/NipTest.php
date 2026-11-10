@@ -42,7 +42,7 @@ class NipTest extends TestCase
     {
         $photo = fn (string $nom) => UploadedFile::fake()->image($nom, 800, 500);
 
-        return $this->actingAs($this->citoyen)->post('/espace/verification', [
+        return $this->actingAs($this->citoyen)->post('/espace/verification', ['formalisee' => 'non',
             'type_piece' => $type, 'recto' => $photo('recto.jpg'), 'verso' => $photo('verso.jpg'), 'selfie' => $photo('selfie.jpg'),
             'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => $numero, 'piece_expire_le' => now()->addYears(5)->toDateString(),
         ]);

@@ -88,15 +88,16 @@ class PiecesTitulairesTest extends TestCase
         $this->actingAs($cib)->get(route('espace.verification'))->assertOk()
             ->assertSee('CNIB (carte nationale d’identité burkinabè)', false)->assertSee('CIB-AES (carte d’identité biométrique AES)', false)->assertSee('Passeport')
             ->assertSee('name="numero_piece"', false)->assertSee('name="piece_expire_le"', false)
-            // RCCM facultatif pour une personne physique : bloc à part, pas une pièce du dépôt (05/11/2026).
-            ->assertSee('data-rccm', false)->assertDontSee('name="rccm" type="file"', false);
-        $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'selfie' => $this->image()])
+            // Premier dépôt d'une personne physique : RCCM dans le bloc de formalisation, demandé seulement si l'activité est
+            // formalisée (10/11/2026) ; jamais une pièce d'identité du dépôt.
+            ->assertSee('data-formalisation', false)->assertDontSee('name="rccm" type="file"', false);
+        $this->actingAs($cib)->post(route('espace.verification.store'), ['formalisee' => 'non', 'type_piece' => 'CIB_AES', 'recto' => $this->image(), 'selfie' => $this->image()])
             ->assertSessionHasErrors('verso');
-        $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image()])
+        $this->actingAs($cib)->post(route('espace.verification.store'), ['formalisee' => 'non', 'type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image()])
             ->assertSessionHasErrors(['numero_piece', 'piece_expire_le']);
-        $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
+        $this->actingAs($cib)->post(route('espace.verification.store'), ['formalisee' => 'non', 'type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
             'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => '0304-0602 6180 0450 1', 'piece_expire_le' => now()->subDay()->toDateString()])->assertSessionHasErrors('piece_expire_le');
-        $this->actingAs($cib)->post(route('espace.verification.store'), ['type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
+        $this->actingAs($cib)->post(route('espace.verification.store'), ['formalisee' => 'non', 'type_piece' => 'CIB_AES', 'recto' => $this->image(), 'verso' => $this->image(), 'selfie' => $this->image(),
             'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => '0304-0602 6180 0450 1', 'piece_expire_le' => now()->addYears(3)->toDateString()])->assertSessionHasNoErrors();
         $cib->refresh();
         $this->assertSame(StatutKyc::EnAttente, $cib->statut_kyc);
@@ -106,7 +107,7 @@ class PiecesTitulairesTest extends TestCase
 
         // Passeport : une page, sans verso.
         $passeport = $this->citoyen();
-        $this->actingAs($passeport)->post(route('espace.verification.store'), ['type_piece' => 'PASSEPORT', 'recto' => $this->image(), 'selfie' => $this->image(),
+        $this->actingAs($passeport)->post(route('espace.verification.store'), ['formalisee' => 'non', 'type_piece' => 'PASSEPORT', 'recto' => $this->image(), 'selfie' => $this->image(),
             'sexe' => 'F', 'lieu_naissance' => 'Ouagadougou', 'numero_piece' => 'BF1234567', 'piece_expire_le' => now()->addYears(4)->toDateString()])->assertSessionHasNoErrors();
         $this->assertSame(2, $passeport->kycDocuments()->count());
         // Une personne physique ne dépose pas d'IFU : il est ignoré.
@@ -179,6 +180,7 @@ class PiecesTitulairesTest extends TestCase
 
         // Personne morale : IFU seulement ; même IFU sur un autre compte refusé, autre IFU accepté.
         $morale = $this->citoyen(TypeTitulaire::Morale, ['ifu' => '00012345X']);
+        Boutiques::demandeIdentite($morale);
         $this->actingAs($morale)->get(route('boutiques.boutique', Boutiques::boutique('A', 2)->code))->assertOk()
             ->assertSee('IFU (personne morale)', false)->assertDontSee('value="CNIB"', false);
         Boutiques::reserver($this, $morale, Boutiques::boutique('A', 2), 'B1234567', 'CNIB')->assertSessionHasErrors('type_piece');

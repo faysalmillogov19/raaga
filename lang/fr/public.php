@@ -921,6 +921,21 @@ return [
         ],
         // Libellés courts des types de pièces (listes, dossiers, carte).
         // RCCM (05/11/2026), modifiable à tout moment ; jamais imprimé sur la carte.
+        // Formalisation au premier dépôt d'une personne physique (10/11/2026).
+        'formalisation' => [
+            'question' => 'Votre activité est-elle déjà formalisée ?',
+            'aide' => 'Formalisée : vous avez un numéro IFU et une immatriculation au registre du commerce (RCCM). Sinon, vous pourrez préréserver une boutique et vous formaliser ensuite, dans le délai indiqué sur votre récépissé.',
+            'deja' => 'Votre IFU ou votre RCCM est déjà indiqué : complétez les informations de formalisation.',
+            'oui' => 'Oui, j’ai mon IFU et mon RCCM',
+            'non' => 'Non, pas encore',
+            'ifu_titre' => 'Identifiant financier unique (IFU)',
+            'ifu_aide' => '8 chiffres suivis d’une lettre, tel qu’inscrit sur votre attestation IFU.',
+            'erreurs' => [
+                'question' => 'Indiquez si votre activité est déjà formalisée.',
+                'ifu' => 'Indiquez votre numéro IFU : 8 chiffres suivis d’une lettre.',
+                'attestation_ifu' => 'Joignez votre attestation IFU : image JPG, PNG ou PDF, 5 Mo au plus.',
+            ],
+        ],
         'rccm' => [
             'titre' => 'Registre du commerce (RCCM)',
             'aide_morale' => 'Obligatoire pour une personne morale. Le RCCM n’est jamais imprimé sur la carte.',
@@ -1327,6 +1342,15 @@ return [
     ],
 
     'boutiques' => [
+        // Demande de vérification d'identité avant toute préréservation (10/11/2026).
+        'identite_avant' => [
+            'titre' => 'Vérifiez d’abord votre identité',
+            'texte' => 'Pour préréserver une boutique, déposez d’abord votre demande de vérification d’identité : votre pièce d’identité et un selfie (personne morale : aussi les pièces de l’entreprise). Vous reviendrez ensuite à cette boutique.',
+            'corriger' => 'Votre dossier d’identité est à corriger. Renvoyez les pièces demandées dans « Vérifier mon identité », puis revenez à cette boutique.',
+            'expiree' => 'Votre pièce d’identité a expiré. Déposez une pièce en cours de validité dans « Vérifier mon identité », puis revenez à cette boutique.',
+            'bouton' => 'Vérifier mon identité',
+            'envoyee' => 'Votre demande de vérification d’identité est envoyée. Vous pouvez maintenant préréserver cette boutique.',
+        ],
         'titre' => 'Obtenir une boutique',
         'intro' => 'Réservez une boutique du futur marché Raaga, au premier arrivé, premier servi : choisissez-la sur le plan, joignez votre pièce d’identité, puis payez la caution dans le délai.',
         'independance_titre' => 'Sans lien avec les actions',
@@ -1534,6 +1558,7 @@ return [
             'piece_fichier' => 'Joignez la photo ou le scan de votre pièce d’identité.',
             'deja_attribuee' => 'Cette boutique est déjà attribuée : choisissez-en une autre sur le plan.',
             'sans_ifu' => 'Le numéro IFU est obligatoire pour souscrire à une boutique.',
+            'identite_a_demander' => 'Faites d’abord votre demande de vérification d’identité dans « Vérifier mon identité » : dossier complet, avec une pièce d’identité en cours de validité.',
             'attestation_ifu' => 'Joignez votre attestation IFU : image JPG, PNG ou PDF, 5 Mo au plus.',
             'limite_commercant' => 'Vous ne pouvez pas être attributaire de plus de deux boutiques.',
             'prevenir_nom' => 'Indiquez le nom de la personne à prévenir.',

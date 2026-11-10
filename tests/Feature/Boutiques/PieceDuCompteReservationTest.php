@@ -41,6 +41,11 @@ class PieceDuCompteReservationTest extends TestCase
         KycDocument::create(['user_id' => $user->id, 'type' => TypeDocumentKyc::Cnib, 'face' => FaceDocument::Recto, 'chemin_fichier' => 'kyc/'.$user->id.'/cnib.jpg',
             'nom_original' => 'cnib.jpg', 'mime' => 'image/jpeg', 'taille' => 1000, 'empreinte_sha256' => str_repeat('0', 64),
             'statut' => StatutDocumentKyc::Valide, 'numero' => 'B7654321']);
+        // Dossier complet (10/11/2026) : verso et selfie aussi, demande de vérification faite.
+        foreach ([[TypeDocumentKyc::Cnib, FaceDocument::Verso], [TypeDocumentKyc::Selfie, null]] as [$type, $face]) {
+            KycDocument::create(['user_id' => $user->id, 'type' => $type, 'face' => $face, 'chemin_fichier' => 'kyc/'.$user->id.'/'.$type->value.'.jpg',
+                'nom_original' => 'piece.jpg', 'mime' => 'image/jpeg', 'taille' => 1000, 'empreinte_sha256' => str_repeat('0', 64), 'statut' => StatutDocumentKyc::Valide]);
+        }
         Boutiques::ifuVerifie($user);
 
         return $user;
@@ -66,7 +71,7 @@ class PieceDuCompteReservationTest extends TestCase
         $inscription = InscriptionBoutique::query()->where('user_id', $user->id)->firstOrFail();
         $this->assertSame([TypeDocumentKyc::Cnib->value, 'B7654321'], [$inscription->type_piece, $inscription->numero_piece]);
         // Aucune nouvelle pièce déposée ; sexe et lieu de naissance du profil gardés.
-        $this->assertSame(1, KycDocument::query()->where('user_id', $user->id)->where('type', TypeDocumentKyc::Cnib)->count());
+        $this->assertSame(1, KycDocument::query()->where('user_id', $user->id)->where('type', TypeDocumentKyc::Cnib)->where('face', FaceDocument::Recto)->count());
         $this->assertSame(['M', 'Bobo-Dioulasso'], [$user->fresh()->sexe, $user->fresh()->lieu_naissance]);
     }
 
@@ -132,15 +137,17 @@ class PieceDuCompteReservationTest extends TestCase
         $this->assertNull(ReservationsBoutiques::pieceDuCompte($user->fresh()));
     }
 
-    public function test_identite_rejetee_a_mettre_a_jour_ou_piece_expiree_la_piece_est_demandee(): void
+    public function test_identite_rejetee_a_mettre_a_jour_ou_piece_expiree_identite_a_corriger_d_abord(): void
     {
+        // Depuis le 10/11/2026 : pas de préréservation avant une demande de vérification faite ; la pièce n'est plus
+        // demandée à la réservation, l'identité est à corriger dans « Vérifier mon identité ».
         $boutique = Boutiques::boutique('A', 1);
         foreach ([['statut_kyc' => StatutKyc::Rejete], ['statut_kyc' => StatutKyc::AMettreAJour], ['piece_expire_le' => today()->subDay()]] as $cas) {
             $user = $this->citoyenVerifie($cas);
             $this->actingAs($user)->get(route('boutiques.boutique', $boutique->code))->assertOk()
-                ->assertDontSee('data-piece-compte', false)->assertSee('name="piece"', false);
+                ->assertDontSee('data-piece-compte', false)->assertSee('data-identite-a-demander', false)->assertDontSee('name="piece"', false);
             $this->actingAs($user)->post(route('boutiques.reserver', $boutique->code), $this->donneesSansPiece())
-                ->assertSessionHasErrors(['type_piece', 'numero_piece', 'piece']);
+                ->assertSessionHasErrors('boutique');
         }
     }
 }

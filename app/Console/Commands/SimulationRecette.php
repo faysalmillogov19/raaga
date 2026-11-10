@@ -217,7 +217,8 @@ class SimulationRecette extends Command
                 app(ReservationsBoutiques::class)->attribuer($r->refresh(), now()->toDateString(), $this->validateur());
             });
 
-        $this->scenario('Brahima SOMÉ', '60000017', StatutKyc::Rejete, 'Boutique '.$b5->code.' : identité refusée, délai de correction',
+        // Demande de vérification faite avant la préréservation (10/11/2026) : identité refusée seulement ensuite.
+        $this->scenario('Brahima SOMÉ', '60000017', StatutKyc::Valide, 'Boutique '.$b5->code.' : identité refusée, délai de correction',
             'Alerte sur le suivi ; sans correction, la boutique passe au suivant', function (User $u) use ($b5) {
                 $this->payer($this->inscrire($u, $b5));
                 // Pièce déposée à la réservation, puis refusée au back-office.

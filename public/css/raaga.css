@@ -3369,3 +3369,10 @@ html,
 .theme-foret :is(.choix-commune-province, .choix-commune-vide) {
     color: var(--muted);
 }
+
+/* Bouton plein dans un encadré (« Vérifier mon identité », 10/11/2026) : texte blanc, jamais la couleur des liens de l'encadré. */
+.encadre a.btn-plein,
+.theme-lumiere .nuit-page .encadre-attention a.btn-plein {
+    color: #FFFFFF;
+    text-decoration: none;
+}

@@ -7,6 +7,7 @@ use App\Enums\StatutBoutique;
 use App\Enums\StatutCampagneBoutiques;
 use App\Enums\StatutDocumentKyc;
 use App\Enums\StatutGrilleTarifaire;
+use App\Enums\StatutKyc;
 use App\Enums\StatutSite;
 use App\Enums\StatutTypeBoutique;
 use App\Enums\TypeDocumentKyc;
@@ -22,6 +23,7 @@ use App\Models\Site;
 use App\Models\TypeBoutique;
 use App\Models\User;
 use App\Services\Boutiques\ReservationsBoutiques;
+use App\Services\Kyc\VerificationIdentite;
 use App\Support\Nip;
 use Database\Seeders\SecteursActiviteSeeder;
 use Illuminate\Http\UploadedFile;
@@ -89,6 +91,24 @@ final class Boutiques
     }
 
     /**
+     * Demande de vérification d'identité faite, condition de toute préréservation (10/11/2026) : sans elle, dossier complet
+     * déposé (pièce du type et du numéro donnés, CNIB pour une personne morale), identité en attente de vérification.
+     */
+    public static function demandeIdentite(User $user, string $numeroPiece = 'B1234567', string $type = 'CNIB'): void
+    {
+        if (app(VerificationIdentite::class)->demandeFaite($user->fresh())) {
+            return;
+        }
+        $piece = TypeDocumentKyc::tryFrom($type);
+        $piece = in_array($piece, TypeDocumentKyc::piecesIdentite(), true) ? $piece : TypeDocumentKyc::Cnib;
+        $numero = Nip::porteNip($piece) && ! Nip::valide($numeroPiece) ? self::nip($numeroPiece) : $numeroPiece;
+        DossierKyc::complet($user, ReservationBoutique::normaliserPiece($numero), null, $piece);
+        if ($user->statut_kyc !== StatutKyc::Valide) {
+            $user->forceFill(['statut_kyc' => StatutKyc::EnAttente])->saveQuietly();
+        }
+    }
+
+    /**
      * NIP de test (17 chiffres) tiré d'un ancien numéro de pièce (06/11/2026) : lettres et chiffres gardés (majuscules,
      * sans espaces ni tirets), chaque lettre remplacée par deux chiffres. Deux écritures du même numéro donnent le même NIP.
      */
@@ -110,6 +130,7 @@ final class Boutiques
         if (Nip::porteNip(TypeDocumentKyc::tryFrom($type)) && ! Nip::valide($numeroPiece)) {
             $numeroPiece = self::nip($numeroPiece);
         }
+        self::demandeIdentite($user, $numeroPiece, $type);
 
         return $test->actingAs($user)->post(route('boutiques.reserver', $boutique->code), [
             'type_piece' => $type, 'numero_piece' => $numeroPiece, 'piece' => UploadedFile::fake()->image('piece.jpg'),

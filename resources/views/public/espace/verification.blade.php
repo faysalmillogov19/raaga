@@ -23,6 +23,9 @@
     $libelle = fn (string $cle, ?string $piece) => in_array($cle, ['recto', 'verso'], true) ? ($v['pieces'][$cle][$piece ?? 'CNIB'] ?? '') : $v['pieces'][$cle];
     $documents = \App\Services\Kyc\VerificationIdentite::DOCUMENTS;
     $titulaireModifiable = in_array($kyc, [StatutKyc::NonSoumis, StatutKyc::AMettreAJour, StatutKyc::Valide], true);
+    // Formalisation demandée dans le dépôt (personne physique, premier dépôt, 10/11/2026) : IFU et RCCM dans son bloc.
+    $blocFormalisation = $aFournir && \App\Services\Kyc\VerificationIdentite::formalisationDemandee($user);
+    $questionFormalisation = \App\Services\Kyc\VerificationIdentite::questionFormalisation($user);
 @endphp
 
 <x-public.layout :titre="$titre">
@@ -77,6 +80,9 @@
             <form method="POST" action="{{ route('espace.verification.store') }}" enctype="multipart/form-data" novalidate class="carte mt-6 p-5"
                   x-data="{ piece: @js(old('type_piece', $typePiece?->value ?? 'CNIB')) }" data-depot-kyc>
                 @csrf
+                @if ($retour)
+                    <input type="hidden" name="retour" value="{{ $retour }}">
+                @endif
                 <h2 class="!text-lg">{{ $premierDepot ? $v['deposer_titre'] : ($kyc === StatutKyc::Rejete ? $v['renvoyer_titre'] : $v['completer_titre']) }}</h2>
                 <p class="mt-1 texte-carte">{{ $v['consignes'] }}</p>
                 @if ($titulaire === TypeTitulaire::Morale)
@@ -105,7 +111,7 @@
 
                 <div class="mt-5 space-y-5">
                     @foreach (['recto', 'verso', 'selfie', 'ifu', 'pouvoir', 'rccm'] as $cle)
-                        @if (in_array($cle, $aFournir, true))
+                        @if (in_array($cle, $aFournir, true) && ! ($blocFormalisation && in_array($cle, ['ifu', 'rccm'], true)))
                             @php($document = in_array($cle, $documents, true))
                             <div x-data="pieceKyc(@js($options))" @if ($cle === 'verso' && $choixPiece) x-show="piece !== 'PASSEPORT'" @endif data-emplacement="{{ $cle }}">
                                 <label for="{{ $cle }}" class="block font-semibold text-encre">
@@ -163,6 +169,59 @@
                     @endforeach
                 </div>
 
+                {{-- Formalisation (10/11/2026) : personne physique au premier dépôt. « Oui » (ou IFU, RCCM déjà connus) : IFU et RCCM
+                     demandés ; « Non » : préréservation possible, formalisation ensuite dans le délai du récépissé. --}}
+                @if ($blocFormalisation)
+                    @php($fv = __('public.verification.formalisation'))
+                    @php($rc = __('public.rccm'))
+                    <fieldset class="mt-6 border-t border-ligne pt-5" x-data="{ formalisee: @js((string) old('formalisee', $questionFormalisation ? '' : 'oui')) }" data-formalisation>
+                        <legend class="font-semibold text-encre">@if ($questionFormalisation)<x-requis /> @endif{{ $fv['question'] }}</legend>
+                        <p class="texte-carte">{{ $questionFormalisation ? $fv['aide'] : $fv['deja'] }}</p>
+                        @if ($questionFormalisation)
+                            <div class="mt-2 grid gap-3 sm:grid-cols-2">
+                                @foreach (['oui', 'non'] as $reponse)
+                                    <label class="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-charte border-2 p-3"
+                                           :class="formalisee === '{{ $reponse }}' ? 'border-vert-fonce bg-vert-pale' : 'border-ligne'">
+                                        <input type="radio" name="formalisee" value="{{ $reponse }}" x-model="formalisee" @checked(old('formalisee') === $reponse) class="h-5 w-5 text-vert focus:ring-0" data-formalisee="{{ $reponse }}">
+                                        <span class="font-semibold text-encre">{{ $fv[$reponse] }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            <x-public.erreur :messages="$errors->get('formalisee')" />
+                        @else
+                            <input type="hidden" name="formalisee" value="oui">
+                        @endif
+
+                        <div class="mt-5 space-y-5" x-show="formalisee === 'oui'" @if ($questionFormalisation && old('formalisee') !== 'oui') x-cloak @endif data-informations-formalisation>
+                            <h3 class="font-bold text-encre">{{ $fv['ifu_titre'] }}</h3>
+                            <x-public.champ nom="numero_ifu" :libelle="$v['numero_ifu']" :aide="$fv['ifu_aide']" :valeur="$user->ifu" maxlength="30" autocomplete="off" autocapitalize="characters" obligatoire />
+                            <div>
+                                <label for="ifu" class="block font-semibold text-encre"><x-requis /> {{ $v['pieces']['ifu'] }}</label>
+                                <p id="ifu-aide" class="texte-carte">{{ $v['aides']['ifu'] }}</p>
+                                <input id="ifu" name="ifu" type="file" accept="image/jpeg,image/png,application/pdf" aria-describedby="ifu-aide ifu-erreur" @error('ifu') aria-invalid="true" @enderror
+                                       class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
+                                <x-public.erreur :messages="$errors->get('ifu')" id="ifu-erreur" />
+                            </div>
+
+                            <h3 class="font-bold text-encre">{{ __('public.verification.rccm.titre') }}</h3>
+                            {{-- Aide au-dessus des deux champs : numéro et date restent au même niveau. --}}
+                            <p class="texte-carte">{{ $rc['numero_aide'] }}</p>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <x-public.champ nom="rccm" :libelle="$rc['numero']" :valeur="$user->rccm" maxlength="60" autocomplete="off" autocapitalize="characters" obligatoire />
+                                <x-public.champ nom="rccm_immatricule_le" type="date" :libelle="$rc['date']" :valeur="$user->rccm_immatricule_le?->toDateString()" max="{{ now()->toDateString() }}" obligatoire />
+                            </div>
+                            @include('public.partials.champ-greffe', ['valeurId' => old('rccm_greffe_id', $user->rccm_greffe_id), 'valeurAutre' => old('rccm_greffe_autre', $user->rccm_greffe_autre), 'classeLibelle' => 'block font-semibold text-encre', 'obligatoire' => true])
+                            <div>
+                                <label for="justificatif_rccm" class="block font-semibold text-encre"><x-requis /> {{ $rc['document'] }}</label>
+                                <p id="justificatif_rccm-aide" class="texte-carte">{{ __('public.verification.rccm.document_aide') }}</p>
+                                <input id="justificatif_rccm" name="justificatif_rccm" type="file" accept="image/jpeg,image/png,application/pdf" aria-describedby="justificatif_rccm-aide justificatif_rccm-erreur"
+                                       @error('justificatif_rccm') aria-invalid="true" @enderror class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
+                                <x-public.erreur :messages="$errors->get('justificatif_rccm')" id="justificatif_rccm-erreur" />
+                            </div>
+                        </div>
+                    </fieldset>
+                @endif
+
                 <button type="submit" class="btn-primaire mt-6 w-full sm:w-auto">{{ $v['envoyer'] }}</button>
             </form>
         @endif
@@ -172,6 +231,7 @@
              moment ; un nouveau justificatif est vérifié par l'ADMIN ; jamais imprimé sur la carte. --}}
         @php($rc = __('public.rccm'))
         @php($rv = __('public.verification.rccm'))
+        @unless ($blocFormalisation)
         <form method="POST" action="{{ route('espace.verification.rccm') }}" enctype="multipart/form-data" novalidate class="carte mt-6 p-5" id="rccm" data-rccm>
             @csrf
             <h2 class="!text-lg">{{ $rv['titre'] }}</h2>
@@ -182,10 +242,12 @@
                     <p class="texte-carte">{{ $rv['motif'] }} {{ $justificatifRccm->commentaire }}</p>
                 @endif
             @endif
-            <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                <x-public.champ nom="rccm" :libelle="$rc['numero']" :aide="$rc['numero_aide']" :valeur="$user->rccm" maxlength="60" autocomplete="off" autocapitalize="characters" :obligatoire="$titulaire === TypeTitulaire::Morale" />
+            {{-- Aide au-dessus des deux champs : numéro et date d'immatriculation au même niveau (10/11/2026). --}}
+            <p class="mt-4 texte-carte">{{ $rc['numero_aide'] }}</p>
+            <div class="mt-2 grid gap-4 sm:grid-cols-2">
+                <x-public.champ nom="rccm" :libelle="$rc['numero']" :valeur="$user->rccm" maxlength="60" autocomplete="off" autocapitalize="characters" :obligatoire="$titulaire === TypeTitulaire::Morale" />
                 <x-public.champ nom="rccm_immatricule_le" type="date" :libelle="$rc['date']" :valeur="$user->rccm_immatricule_le?->toDateString()" max="{{ now()->toDateString() }}" :obligatoire="$titulaire === TypeTitulaire::Morale" />
-                <div>@include('public.partials.champ-greffe', ['valeurId' => old('rccm_greffe_id', $user->rccm_greffe_id), 'valeurAutre' => old('rccm_greffe_autre', $user->rccm_greffe_autre),
+                <div>@include('public.partials.champ-greffe', ['valeurId' => old('rccm_greffe_id', $user->rccm_greffe_id), 'valeurAutre' => old('rccm_greffe_autre', $user->rccm_greffe_autre), 'classeLibelle' => 'block font-semibold text-encre',
                     'obligatoire' => $titulaire === TypeTitulaire::Morale])</div>
             </div>
             <div class="mt-4">
@@ -197,6 +259,7 @@
             </div>
             <button type="submit" class="btn-secondaire mt-4">{{ $rv['enregistrer'] }}</button>
         </form>
+        @endunless
 
         {{-- Groupe sanguin (05/11/2026) : facultatif, modifiable à tout moment ; imprimé sur la carte de commerçant seulement avec
              l'accord et un justificatif vérifié par l'ADMIN. --}}

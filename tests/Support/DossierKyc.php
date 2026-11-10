@@ -16,16 +16,17 @@ use App\Services\Kyc\VerificationIdentite;
  */
 final class DossierKyc
 {
-    public static function complet(User $user, string $numeroPiece = 'B12345678', ?string $expireLe = null): void
+    public static function complet(User $user, string $numeroPiece = 'B12345678', ?string $expireLe = null, TypeDocumentKyc $type = TypeDocumentKyc::Cnib): void
     {
         $expireLe ??= now()->addYears(5)->toDateString();
-        $pieces = [
-            [TypeDocumentKyc::Cnib, FaceDocument::Recto, $numeroPiece, $expireLe],
-            [TypeDocumentKyc::Cnib, FaceDocument::Verso, null, null],
+        // Passeport : recto seul (10/11/2026).
+        $pieces = array_values(array_filter([
+            [$type, FaceDocument::Recto, $numeroPiece, $expireLe],
+            $type === TypeDocumentKyc::Passeport ? null : [$type, FaceDocument::Verso, null, null],
             [TypeDocumentKyc::Selfie, null, null, null],
-        ];
+        ]));
         // Attestation IFU : personne morale, ou personne physique qui a donné son IFU.
-        if (VerificationIdentite::avecIfu($user)) {
+        if (VerificationIdentite::avecIfu($user) && ! $user->kycDocuments()->where('type', TypeDocumentKyc::Ifu)->exists()) {
             $pieces[] = [TypeDocumentKyc::Ifu, null, $user->ifu, null];
         }
         if ($user->estPersonneMorale()) {

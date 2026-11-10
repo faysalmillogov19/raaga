@@ -86,6 +86,22 @@ class VerificationIdentite
         return $user->type_titulaire ?? TypeTitulaire::Physique;
     }
 
+    /**
+     * Formalisation au premier dépôt d'une personne physique (10/11/2026) : l'identification demande si l'activité est
+     * formalisée ; si oui, IFU (numéro et attestation) et RCCM (numéro, date, greffe, justificatif) sont demandés. Une
+     * personne morale est toujours formalisée (pièces de l'entreprise demandées d'office).
+     */
+    public static function formalisationDemandee(User $user): bool
+    {
+        return self::titulaire($user) === TypeTitulaire::Physique && self::premierDepot($user);
+    }
+
+    /** Question « formalisée ? » posée : IFU et RCCM pas encore connus (sinon, la formalisation est complétée d'office). */
+    public static function questionFormalisation(User $user): bool
+    {
+        return self::formalisationDemandee($user) && blank($user->ifu) && blank($user->rccm);
+    }
+
     /** Le justificatif RCCM fait-il partie du dossier ? Personne morale, ou personne physique qui a déclaré un RCCM. */
     public static function avecRccm(User $user): bool
     {
@@ -117,6 +133,21 @@ class VerificationIdentite
     public function typePiece(User $user): ?TypeDocumentKyc
     {
         return $user->kycDocuments()->whereIn('type', TypeDocumentKyc::piecesIdentite())->latest('id')->first()?->type;
+    }
+
+    /**
+     * Demande de vérification d'identité faite (10/11/2026), condition de toute préréservation de boutique : identité
+     * validée, ou dossier complet déposé et en attente de vérification ; pièce d'identité non expirée. Dossier rejeté, à
+     * mettre à jour, jamais soumis ou incomplet : la demande est à faire (ou à corriger) d'abord.
+     */
+    public function demandeFaite(User $user): bool
+    {
+        if ($user->piece_expire_le?->lt(today())) {
+            return false;
+        }
+
+        return $user->statut_kyc === StatutKyc::Valide
+            || ($user->statut_kyc === StatutKyc::EnAttente && $this->manquants($user) === []);
     }
 
     /** Emplacements attendus qui n'ont encore aucune pièce. @return list<string> */

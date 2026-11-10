@@ -82,6 +82,14 @@
             <x-public.alerte variante="danger" class="mt-6" role="alert" data-limite-commercant>{{ __('public.boutiques.erreurs.limite_commercant') }}</x-public.alerte>
         @elseif (! $tarif)
             <x-public.alerte variante="attention" class="mt-6">{{ $r['sans_tarif'] }}</x-public.alerte>
+        @elseif ($identiteADemander)
+            {{-- Demande de vérification d'identité d'abord (10/11/2026) ; retour à cette boutique une fois le dossier déposé. --}}
+            @php($vi = __('public.boutiques.identite_avant'))
+            @php($aCorriger = in_array(auth()->user()->statut_kyc, [\App\Enums\StatutKyc::Rejete, \App\Enums\StatutKyc::AMettreAJour], true))
+            <x-public.alerte variante="attention" class="mt-6" :titre="$vi['titre']" data-identite-a-demander>
+                <p>{{ auth()->user()->piece_expire_le?->lt(today()) ? $vi['expiree'] : ($aCorriger ? $vi['corriger'] : $vi['texte']) }}</p>
+                <p class="mt-3"><a href="{{ route('espace.verification', ['retour' => $boutique->code]) }}" class="btn-plein inline-flex" data-lien-verification>{{ $vi['bouton'] }}</a></p>
+            </x-public.alerte>
         @else
             @if (! $immediate)
                 <x-public.alerte variante="attention" class="mt-6" :data-limite-atteinte="$limiteAtteinte && $libre ? '' : null" data-liste-attente>

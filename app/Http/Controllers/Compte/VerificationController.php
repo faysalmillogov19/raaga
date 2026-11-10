@@ -6,16 +6,19 @@ use App\Enums\TypeCarte;
 use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeTitulaire;
 use App\Http\Controllers\Controller;
+use App\Models\Boutique;
 use App\Models\KycDocument;
 use App\Models\User;
 use App\Services\Cartes\Cartes;
 use App\Services\Kyc\JustificatifsGroupeSanguin;
 use App\Services\Kyc\RegistreCommerce;
 use App\Services\Kyc\VerificationIdentite;
+use App\Support\Ifu;
 use App\Support\Nip;
 use App\Support\Rccm;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -37,7 +40,17 @@ class VerificationController extends Controller
             'aFournir' => $this->verification->aFournir($user),
             'justificatifGroupe' => JustificatifsGroupeSanguin::dernier($user),
             'justificatifRccm' => RegistreCommerce::justificatif($user),
+            // Venu d'une boutique (10/11/2026) : code de la boutique, pour y revenir une fois la demande faite.
+            'retour' => self::retour($request),
         ]);
+    }
+
+    /** Code de la boutique d'où vient le citoyen (paramètre « retour »), s'il existe ; sinon null. */
+    private static function retour(Request $request): ?string
+    {
+        $code = (string) $request->input('retour', '');
+
+        return $code !== '' && strlen($code) <= 20 && Boutique::query()->where('code', $code)->exists() ? $code : null;
     }
 
     public function store(Request $request): RedirectResponse
@@ -46,8 +59,13 @@ class VerificationController extends Controller
         // Attestation IFU, justificatif de pouvoir : souvent des PDF.
         $document = ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
         $e = __('public.verification.erreurs');
+        $user = $request->user();
         // Type de la pièce : choisi ici, sinon celui déjà déposé ; CNIB ou CIB-AES : le numéro est le NIP (06/11/2026).
-        $typePiece = TypeDocumentKyc::tryFrom((string) $request->input('type_piece')) ?? $this->verification->typePiece($request->user());
+        $typePiece = TypeDocumentKyc::tryFrom((string) $request->input('type_piece')) ?? $this->verification->typePiece($user);
+        // Formalisation (10/11/2026) : personne physique au premier dépôt ; « oui » (ou IFU, RCCM déjà connus) : IFU et RCCM exigés.
+        $question = VerificationIdentite::questionFormalisation($user);
+        $formalisee = VerificationIdentite::formalisationDemandee($user) && (! $question || $request->input('formalisee') === 'oui');
+        $f = __('public.verification.formalisation.erreurs');
 
         $donnees = $request->validate([
             // CNIB, CIB-AES ou passeport, et rien d'autre.
@@ -57,18 +75,45 @@ class VerificationController extends Controller
             'piece_expire_le' => ['nullable', 'date_format:Y-m-d', 'after:today'],
             'recto' => $fichier, 'verso' => $fichier, 'selfie' => $fichier,
             'ifu' => $document, 'pouvoir' => $document, 'rccm' => $document,
-            ...VerificationIdentite::reglesInfos($request->user()),
-        ], [...$e['fichiers'], 'type_piece.*' => $e['type'], 'piece_expire_le.*' => $e['expiration'], ...array_fill_keys(['numero_piece.required', 'numero_piece.string', 'numero_piece.min', 'numero_piece.max'], $e['numero_piece']),
+            ...VerificationIdentite::reglesInfos($user),
+            'formalisee' => [Rule::requiredIf($question), 'nullable', Rule::in(['oui', 'non'])],
+            ...(VerificationIdentite::formalisationDemandee($user) && ! $formalisee ? ['numero_ifu' => ['nullable']] : []),
+            ...($formalisee ? [
+                'numero_ifu' => Ifu::regles($user, 'required'),
+                'ifu' => ['required', ...array_slice($document, 1)],
+                ...Rccm::regles('required', $user),
+                'justificatif_rccm' => ['required', ...array_slice($document, 1)],
+            ] : []),
+        ], [...$e['fichiers'], ...($formalisee ? Rccm::messages() : []), 'formalisee.*' => $f['question'], 'numero_ifu.required' => $f['ifu'],
+            'ifu.required' => $f['attestation_ifu'], 'justificatif_rccm.*' => __('public.rccm.erreurs.document'), 'type_piece.*' => $e['type'], 'piece_expire_le.*' => $e['expiration'], ...array_fill_keys(['numero_piece.required', 'numero_piece.string', 'numero_piece.min', 'numero_piece.max'], $e['numero_piece']),
             'sexe.*' => $e['sexe'], 'lieu_naissance.*' => $e['lieu_naissance']], __('public.verification.attributs'));
 
-        $this->verification->deposer(
-            $request->user(),
-            isset($donnees['type_piece']) ? TypeDocumentKyc::from($donnees['type_piece']) : null,
-            array_filter($request->only(['recto', 'verso', 'selfie', 'ifu', 'pouvoir', 'rccm'])),
-            array_intersect_key($donnees, array_flip(['numero_piece', 'piece_expire_le', 'sexe', 'lieu_naissance', 'numero_ifu'])),
-        );
+        DB::transaction(function () use ($request, $user, $donnees, $formalisee) {
+            $fichiers = array_filter($request->only(['recto', 'verso', 'selfie', 'ifu', 'pouvoir', 'rccm']));
+            // Activité formalisée : IFU et RCCM enregistrés, leurs justificatifs déposés avec les pièces d'identité.
+            if ($formalisee) {
+                Ifu::enregistrer($user, (string) $donnees['numero_ifu'], $user, 'verification_identite');
+                $user->forceFill(['rccm' => Rccm::normaliser($donnees['rccm']), 'rccm_immatricule_le' => $donnees['rccm_immatricule_le'],
+                    'rccm_greffe_id' => (int) $donnees['rccm_greffe_id'], 'rccm_greffe_autre' => Rccm::precisionAutre($donnees)])->save();
+                $fichiers['rccm'] = $request->file('justificatif_rccm');
+            } elseif (VerificationIdentite::formalisationDemandee($user)) {
+                unset($fichiers['ifu'], $fichiers['rccm']);
+            }
+            $this->verification->deposer(
+                $user,
+                isset($donnees['type_piece']) ? TypeDocumentKyc::from($donnees['type_piece']) : null,
+                $fichiers,
+                array_intersect_key($donnees, array_flip(['numero_piece', 'piece_expire_le', 'sexe', 'lieu_naissance', 'numero_ifu'])),
+            );
+        });
 
-        return redirect()->route('espace.verification')->avecSucces('public.verification.envoye');
+        // Venu d'une boutique : retour à sa page dès que la demande est faite (dossier complet).
+        $retour = self::retour($request);
+        if ($retour !== null && $this->verification->demandeFaite($request->user()->fresh())) {
+            return redirect()->route('boutiques.boutique', $retour)->avecSucces('public.boutiques.identite_avant.envoyee');
+        }
+
+        return redirect()->route('espace.verification', array_filter(['retour' => $retour]))->avecSucces('public.verification.envoye');
     }
 
     /**

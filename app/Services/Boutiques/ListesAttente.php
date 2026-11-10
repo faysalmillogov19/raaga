@@ -135,6 +135,10 @@ class ListesAttente
         if (! $user->telephone) {
             $erreur('telephone');
         }
+        // Préréservation (10/11/2026) : demande de vérification d'identité faite d'abord (dossier complet déposé ou validé).
+        if (! app(VerificationIdentite::class)->demandeFaite($user)) {
+            $erreur('identite_a_demander');
+        }
         $deja = self::pieceFournie($campagne, $user);
         // Pièce déjà transmise sur le compte : reprise, rien n'est redéposé.
         $duCompte = $deja ? null : ReservationsBoutiques::pieceDuCompte($user);

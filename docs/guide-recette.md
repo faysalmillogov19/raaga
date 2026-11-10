@@ -217,3 +217,15 @@ Profil : citoyen, administrateur, puis super-administrateur.
 3. En super-administrateur, ouvrez le même écran et choisissez « Ajouter à la liste » pour ce greffe.
 
 Résultat attendu : l'administrateur voit le greffe saisi en « Autre » sans pouvoir modifier la liste. Après l'ajout, le greffe figure dans la liste et le compte du citoyen y est rattaché.
+
+### S20. Vérification d'identité avant la préréservation
+
+Profil : nouveau citoyen, compte créé sans demande de vérification d'identité.
+
+1. Créez un compte citoyen, puis ouvrez une boutique disponible sur le plan.
+2. Lisez l'encadré « Vérifiez d'abord votre identité » et choisissez « Vérifier mon identité ».
+3. Déposez la pièce d'identité (recto et verso) et le selfie.
+4. À la question « Votre activité est-elle déjà formalisée ? », choisissez d'abord « Oui, j'ai mon IFU et mon RCCM » et constatez que l'IFU, son attestation, le RCCM, sa date, le greffe et son justificatif sont demandés. Choisissez ensuite « Non, pas encore », puis envoyez.
+5. Préréservez la boutique.
+
+Résultat attendu : aucune préréservation n'est possible avant l'envoi du dossier complet. Après l'envoi, la page de la boutique s'ouvre de nouveau avec le message « Votre demande de vérification d'identité est envoyée. Vous pouvez maintenant préréserver cette boutique. ». La préréservation est ensuite acceptée sans redemander la pièce d'identité. Avec « Oui », l'envoi sans IFU ni RCCM est refusé.

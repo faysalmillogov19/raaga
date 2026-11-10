@@ -60,6 +60,8 @@ class IfuCommercantTest extends TestCase
         if (filled($user->ifu)) {
             Boutiques::ifuVerifie($user);
         }
+        // Dossier d'identité complet (demande de vérification faite avant toute préréservation, 10/11/2026).
+        DossierKyc::complet($user, Boutiques::nip('B'.sprintf('%07d', $user->id)), now()->addYears(10)->toDateString());
 
         return $user;
     }

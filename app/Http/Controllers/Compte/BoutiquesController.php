@@ -22,6 +22,7 @@ use App\Services\Boutiques\RelancesInteret;
 use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Cartes\Cartes;
 use App\Services\Kyc\JustificatifsGroupeSanguin;
+use App\Services\Kyc\VerificationIdentite;
 use App\Support\Ifu;
 use App\Support\Nip;
 use App\Support\Telephone;
@@ -179,6 +180,8 @@ class BoutiquesController extends Controller
             // Liste d'attente : nombre de personnes déjà inscrites, inscription du citoyen, pièce déjà fournie.
             'interesses' => ListesAttente::interesses($boutique),
             'inscription' => $inscription,
+            // Demande de vérification d'identité à faire avant toute préréservation (10/11/2026).
+            'identiteADemander' => $user && ! app(VerificationIdentite::class)->demandeFaite($user),
             'pieceFournie' => ListesAttente::pieceFournie($campagne, $user),
             // Pièce vérifiée du compte (reprise) ; sexe et lieu de naissance demandés seulement s'ils manquent.
             'pieceCompte' => $user ? ReservationsBoutiques::pieceDuCompte($user) : null,
@@ -236,6 +239,10 @@ class BoutiquesController extends Controller
         $campagne = self::campagnePour($boutique, $request->user());
         abort_unless($campagne, 404);
         $user = $request->user();
+        // Demande de vérification d'identité faite d'abord (10/11/2026), avant tout contrôle du formulaire.
+        if (! app(VerificationIdentite::class)->demandeFaite($user)) {
+            return back()->withErrors(['boutique' => __('public.boutiques.erreurs.identite_a_demander')]);
+        }
         $premiere = ListesAttente::pieceFournie($campagne, $user) === null && ReservationsBoutiques::pieceDuCompte($user) === null;
         $sexeLieu = self::sexeLieuDemandes($campagne, $user);
         $attestation = ReservationsBoutiques::attestationIfuAFournir($user);
