@@ -127,7 +127,9 @@ class ListesAttente
         if ($sansIfu && $user->estPersonneMorale()) {
             throw ValidationException::withMessages(['ifu' => __('public.boutiques.erreurs.sans_ifu')]);
         }
-        $aFournir = ! $sansIfu && ReservationsBoutiques::attestationIfuAFournir($user);
+        // Attestation : seulement pour un IFU donné ici (10/11/2026 : le formulaire public ne le demande plus, l'IFU d'une
+        // personne physique se dépose avec son attestation dans « Vérifier mon identité »).
+        $aFournir = filled($ifu) && $ifu !== $user->ifu && ReservationsBoutiques::attestationIfuAFournir($user);
         $attestationIfu = $aFournir ? $attestationIfu : null;
         if ($aFournir && $attestationIfu === null) {
             throw ValidationException::withMessages(['attestation_ifu' => __('public.boutiques.erreurs.attestation_ifu')]);
@@ -167,7 +169,7 @@ class ListesAttente
 
         $chemins = [];
         try {
-            $inscription = DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $deja, $duCompte, $sansIfu, $ip, $userAgent, $erreur, $ifu, $attestationIfu, &$chemins) {
+            $inscription = DB::transaction(function () use ($campagne, $user, $boutique, $typePiece, $numero, $piece, $deja, $duCompte, $ip, $userAgent, $erreur, $ifu, $attestationIfu, &$chemins) {
                 $campagne = CampagneBoutiques::query()->lockForUpdate()->findOrFail($campagne->id);
                 // Réservations ouvertes, ou relance en cours de cette boutique pour ce membre de la liste générale.
                 if (! $campagne->accepteReservations() && RelancesInteret::ouvertePour($boutique, $user)?->campagne_boutiques_id !== $campagne->id) {
@@ -196,8 +198,8 @@ class ListesAttente
                 if ($attestationIfu) {
                     ReservationsBoutiques::deposerAttestationIfu($user, $ifu ?? (string) $user->ifu, $attestationIfu, $chemins);
                 }
-                // Sans IFU : formalisation différée, récépissé de préinscription pour cette inscription.
-                if ($sansIfu) {
+                // Sans IFU ou sans RCCM (10/11/2026) : formalisation différée, récépissé de préinscription pour cette inscription.
+                if (Formalisation::doitDemarrer($user)) {
                     app(Formalisation::class)->demarrer($user, $inscription);
                 }
 

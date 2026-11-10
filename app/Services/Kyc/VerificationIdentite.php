@@ -12,6 +12,7 @@ use App\Models\KycDocument;
 use App\Models\ReservationBoutique;
 use App\Models\User;
 use App\Services\Audit\Journal;
+use App\Services\Boutiques\Formalisation;
 use App\Services\Sms\EnvoiSms;
 use App\Support\Ifu;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -94,6 +95,16 @@ class VerificationIdentite
     public static function formalisationDemandee(User $user): bool
     {
         return self::titulaire($user) === TypeTitulaire::Physique && self::premierDepot($user);
+    }
+
+    /**
+     * Formulaire « Votre IFU » de « Vérifier mon identité » (10/11/2026) : personne physique, premier dépôt fait, IFU pas
+     * encore validé et pas déjà demandé dans le dépôt en cours (renvoi après un rejet).
+     */
+    public static function ifuADeposer(User $user): bool
+    {
+        return self::titulaire($user) === TypeTitulaire::Physique && ! self::premierDepot($user) && ! Formalisation::formalise($user)
+            && ! in_array('ifu', app(self::class)->aFournir($user), true);
     }
 
     /** Question « formalisée ? » posée : IFU et RCCM pas encore connus (sinon, la formalisation est complétée d'office). */

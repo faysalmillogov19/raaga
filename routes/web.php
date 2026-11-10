@@ -19,6 +19,7 @@ use App\Http\Controllers\Publique\AlerteSouscriptionController;
 use App\Http\Controllers\Publique\ArmoiriesController;
 use App\Http\Controllers\Publique\ContactController;
 use App\Http\Controllers\Publique\GuichetController;
+use App\Http\Controllers\Publique\GuidesController;
 use App\Http\Controllers\Publique\ImagePlateformeController;
 use App\Http\Controllers\Publique\InvestController;
 use App\Http\Controllers\Publique\PageController;
@@ -165,6 +166,8 @@ Route::middleware(['auth', 'role:citoyen'])->controller(VerificationController::
     Route::post('/groupe-sanguin', 'groupeSanguin')->middleware('throttle:10,1')->name('.groupe-sanguin');
     // RCCM (05/11/2026) : numéro, date d'immatriculation, greffe et justificatif, modifiables à tout moment.
     Route::post('/rccm', 'rccm')->middleware('throttle:10,1')->name('.rccm');
+    // IFU et attestation (10/11/2026) : personne physique pas encore formalisée, à tout moment après le premier dépôt.
+    Route::post('/ifu', 'ifu')->middleware('throttle:10,1')->name('.ifu');
     Route::get('/fichiers/{document}', 'fichier')->whereNumber('document')->name('.fichier');
 });
 
@@ -206,6 +209,9 @@ Route::redirect('/guichet', '/admin')->name('guichet');
 // avec la clé RAAGA_CLE_PORTIQUES (en-tête X-Cle-Portique). Limites : QR code par adresse IP (par compte pour un agent
 // autorisé, AppServiceProvider) ; portiques, essais avec une mauvaise clé seulement (VerificationCarteController).
 Route::get('/c/{jeton}', [VerificationCarteController::class, 'show'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:cartes-verification')->name('cartes.verifier');
+// Guides (10/11/2026) : source des pages statiques public/guides/, rendue par raaga:guides ; jamais en production.
+Route::get('/_guides/{guide?}', GuidesController::class)->where('guide', '[a-z-]{1,40}')->name('guides.source');
+
 // Récépissé de préinscription Raaga (05/11/2026) : vérification publique par QR code ; PDF du titulaire.
 Route::get('/r/{jeton}', [RecepissesController::class, 'verifier'])->where('jeton', '[A-Za-z0-9]{1,100}')->middleware('throttle:cartes-verification')->name('recepisses.verifier');
 Route::get('/espace/recepisses/{numero}', [RecepissesController::class, 'pdf'])->where('numero', 'RP-[0-9]{4}-[0-9]{6}')->middleware(['auth', 'role:citoyen'])->name('espace.recepisse');

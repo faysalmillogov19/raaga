@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Plateforme officielle de souscription aux actions populaires du marché Raaga">
+
+    <title>Obtenir une boutique du marché Raaga · Raaga · Participation populaire</title>
+
+    <link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/plateforme/images/logoSymboleSimplifie?v=1977241a50">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#005C2B">
+    <link rel="preload" href="/fonts/public-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/public-sans-700.woff2" as="font" type="font/woff2" crossorigin>
+
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Obtenir une boutique du marché Raaga · Raaga · Participation populaire">
+    <meta property="og:description" content="Plateforme officielle de souscription aux actions populaires du marché Raaga">
+    <meta property="og:url" content="/_guides/boutique">
+    <meta property="og:image" content="/images/og-raaga.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="/images/og-raaga.png">
+
+    
+    <link rel="stylesheet" href="/css/app.css?v=1792104604">
+<link rel="stylesheet" href="/css/raaga.css?v=1794288728">
+    <script src="/js/app.js?v=1793977675" defer></script>
+    <script src="/vendor/alpinejs/3.17.4/alpine.min.js?v=1792104673" defer></script>
+</head>
+<body class="site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased theme-nuit theme-lumiere">
+        <a href="#contenu" class="sr-only z-50 bg-jaune font-semibold text-encre focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:px-4 focus:py-3">
+        Aller au contenu
+    </a>
+
+    
+            <header class="nuit-entete" x-data="{ menuOuvert: false }" @keydown.escape="menuOuvert = false">
+    <div class="conteneur nuit-entete-corps">
+        <a href="" class="nuit-entete-logo"
+           aria-label="Accueil · Raaga · Participation populaire">
+            <img src="/armoiries?v=ff58a11987" alt="Armoiries du Burkina Faso" width="48" height="56"
+     class="nuit-entete-armoiries">
+        </a>
+
+        <nav aria-label="Menu principal" class="nuit-menu" :class="menuOuvert ? 'est-ouvert' : ''">
+            <ul id="menu-principal" class="nuit-menu-liste">
+                                    <li>
+                        <a href="" class="nuit-menu-lien"
+                           >
+                                                        Accueil
+                        </a>
+                    </li>
+                                    <li>
+                        <a href="/offre" class="nuit-menu-lien"
+                           >
+                                                            <span class="menu-picto demarche-investir" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-4 w-4">
+     <circle cx="10" cy="15" r="6"/><path d="M10 12.5v5M8.5 14h2.5a1 1 0 0 1 0 2H9"/><path d="M16 9.5c0-3 1.8-5.5 5-5.5 0 3-1.8 5.5-5 5.5z"/><path d="M16 9.5V12"/> </svg>
+</span>
+                                                        Investir
+                        </a>
+                    </li>
+                                    <li>
+                        <a href="/boutiques" class="nuit-menu-lien"
+                           >
+                                                            <span class="menu-picto demarche-boutiques" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-4 w-4">
+     <path d="M3 10 4.5 4h15L21 10"/><path d="M3 10a2.25 2.25 0 0 0 4.5 0 2.25 2.25 0 0 0 4.5 0 2.25 2.25 0 0 0 4.5 0 2.25 2.25 0 0 0 4.5 0"/><path d="M5 12.5V20h14v-7.5M10 20v-5h4v5"/> </svg>
+</span>
+                                                        Boutiques
+                        </a>
+                    </li>
+                                    <li>
+                        <a href="/faq" class="nuit-menu-lien"
+                           >
+                                                        Aide &amp; FAQ
+                        </a>
+                    </li>
+                            </ul>
+        </nav>
+
+                    <a href="tel:+22680000000" class="nuit-entete-telephone" title="Numéro vert gratuit">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-5 w-5">
+                <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>
+            </svg>
+                <span class="sr-only">Numéro vert gratuit :</span>
+                <span>80 00 00 00</span>
+            </a>
+        
+                    <a href="/connexion" class="nuit-pilule nuit-pilule-plein nuit-entete-compte">Mon espace</a>
+        
+        <button type="button" class="nuit-burger" aria-controls="menu-principal" :aria-expanded="menuOuvert.toString()" aria-expanded="false"
+                @click="menuOuvert = ! menuOuvert">
+            <span class="sr-only" x-text="menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'">Ouvrir le menu</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-6 w-6" x-show="! menuOuvert">
+                <path d="M3 6h18M3 12h18M3 18h18"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-6 w-6" x-show="menuOuvert" x-cloak="x-cloak">
+                <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+</header>
+        
+    <main id="contenu" class="flex-1 nuit-page" tabindex="-1">
+        
+                        <div class="nuit-bandeau">
+    <div class="conteneur nuit-bandeau-corps">
+        <div class="nav-fil">
+        <div class="nav-historique" data-navigation-historique>
+    <button type="button" class="nav-historique-bouton" data-historique-retour data-parent="/guides/index.html" title="Retour">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0">
+                <path d="M19 12H5M11 6l-6 6 6 6"/>
+            </svg>
+<span class="sr-only">Retour à la page précédente</span>
+    </button>
+    <button type="button" class="nav-historique-bouton" data-historique-suivant title="Suivant">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+<span class="sr-only">Aller à la page suivante</span>
+    </button>
+</div>
+        <nav aria-label="Fil d’Ariane">
+            <ol class="flex flex-wrap items-center gap-1 text-sm text-gris">
+                <li><a href="" class="inline-flex min-h-[44px] items-center text-vert-fonce underline underline-offset-2">Accueil</a></li>
+                                    <li class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-4 w-4">
+                <path d="m9 6 6 6-6 6"/>
+            </svg>
+                                                    <a href="/guides/index.html" class="inline-flex min-h-[44px] items-center text-vert-fonce underline underline-offset-2">Guides pas à pas</a>
+                                            </li>
+                                    <li class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-4 w-4">
+                <path d="m9 6 6 6-6 6"/>
+            </svg>
+                                                    <span  aria-current="page" >Obtenir une boutique du marché Raaga</span>
+                                            </li>
+                            </ol>
+        </nav>
+        </div>
+                    <h1 class="nuit-bandeau-titre">Obtenir une boutique du marché <strong>Raaga</strong></h1>
+            <p class="nuit-bandeau-intro">Du compte citoyen à la carte de commerçant : créer son compte, faire vérifier son identité, préréserver une boutique, payer la caution et l’avance, se formaliser avec le récépissé, puis recevoir sa carte.</p>            </div>
+</div>
+
+    <div class="guide-cadre mx-auto max-w-6xl px-4 py-10 sm:px-6" data-guide="boutique">
+        <nav class="guide-sommaire" aria-label="Étapes du guide">
+            <p class="guide-sommaire-titre">Étapes du guide</p>
+            <ol>
+                                    <li><a href="#compte"><span>1</span>Créer votre compte</a></li>
+                                    <li><a href="#recherche"><span>2</span>Trouver une boutique</a></li>
+                                    <li><a href="#identite-avant"><span>3</span>Commencer par la vérification d’identité</a></li>
+                                    <li><a href="#verification"><span>4</span>Déposer votre demande de vérification d’identité</a></li>
+                                    <li><a href="#prereservation"><span>5</span>Préréserver la boutique</a></li>
+                                    <li><a href="#caution"><span>6</span>Payer la caution</a></li>
+                                    <li><a href="#avance"><span>7</span>Payer l’avance</a></li>
+                                    <li><a href="#recepisse"><span>8</span>Votre récépissé de préinscription</a></li>
+                                    <li><a href="#formalisation"><span>9</span>Déposer votre IFU et votre RCCM</a></li>
+                                    <li><a href="#attribution"><span>10</span>La boutique vous est attribuée</a></li>
+                                    <li><a href="#carte"><span>11</span>Votre carte de commerçant Raaga</a></li>
+                            </ol>
+            <a href="/guides/index.html" class="guide-retour">Tous les guides</a>
+        </nav>
+
+        <div class="guide-contenu">
+            <p class="guide-pour-qui"><span class="font-semibold">Pour qui :</span> Personne physique, sans IFU ni RCCM au départ.</p>
+
+                            <section class="guide-etape" id="compte" data-etape="compte">
+                    <p class="guide-numero">Étape 1</p>
+                    <h2>Créer votre compte</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Saisissez votre numéro de téléphone, puis le code reçu par SMS.</li>
+                                                                    <li>Indiquez que vous êtes une personne physique, puis vos nom, prénoms et date de naissance, tels qu’inscrits sur votre pièce d’identité.</li>
+                                                                    <li>Tapez les premières lettres de votre commune de résidence et choisissez-la dans les suggestions.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>Votre compte est créé. Vous êtes connecté à votre espace.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/compte-telephone.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/compte-telephone.jpg" alt="Votre numéro de téléphone." loading="lazy">
+                                </a>
+                                <figcaption>Votre numéro de téléphone.</figcaption>
+                            </figure>
+                                                                                <figure>
+                                <a href="/guides/boutique/compte-code.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/compte-code.jpg" alt="Le code reçu par SMS." loading="lazy">
+                                </a>
+                                <figcaption>Le code reçu par SMS.</figcaption>
+                            </figure>
+                                                                                <figure>
+                                <a href="/guides/boutique/compte-identite.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/compte-identite.jpg" alt="Votre identité ; la commune se choisit dans les suggestions." loading="lazy">
+                                </a>
+                                <figcaption>Votre identité ; la commune se choisit dans les suggestions.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="recherche" data-etape="recherche">
+                    <p class="guide-numero">Étape 2</p>
+                    <h2>Trouver une boutique</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Ouvrez « Boutiques » et choisissez un site.</li>
+                                                                    <li>Comparez le coût à l’entrée (caution + avance) de chaque zone.</li>
+                                                                    <li>Filtrez selon votre budget, la zone, le niveau ou la surface, puis ouvrez une boutique.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>Chaque boutique affiche le total à l’entrée, le loyer mensuel et le nombre de personnes déjà en liste d’attente.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/recherche.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/recherche.jpg" alt="Recherche selon votre budget." loading="lazy">
+                                </a>
+                                <figcaption>Recherche selon votre budget.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="identite-avant" data-etape="identite-avant">
+                    <p class="guide-numero">Étape 3</p>
+                    <h2>Commencer par la vérification d’identité</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Sur la fiche de la boutique, lisez le récapitulatif des montants.</li>
+                                                                    <li>Choisissez « Vérifier mon identité » : la préréservation n’est possible qu’après votre demande de vérification.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>Une fois votre demande envoyée, vous revenez directement sur cette boutique.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/identite-avant.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/identite-avant.jpg" alt="Fiche de la boutique : vérifiez d’abord votre identité." loading="lazy">
+                                </a>
+                                <figcaption>Fiche de la boutique : vérifiez d’abord votre identité.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="verification" data-etape="verification">
+                    <p class="guide-numero">Étape 4</p>
+                    <h2>Déposer votre demande de vérification d’identité</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Choisissez votre pièce : CNIB, CIB-AES ou passeport. Déposez le recto, le verso et un selfie.</li>
+                                                                    <li>Saisissez le NIP de votre CNIB (17 chiffres), la date d’expiration, votre sexe et votre lieu de naissance.</li>
+                                                                    <li>À la question « Votre activité est-elle déjà formalisée ? », répondez « Oui » si vous avez votre IFU et votre RCCM : ils vous sont alors demandés avec leurs justificatifs. Sinon, répondez « Non, pas encore ».</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>Votre dossier passe « en attente de vérification ». Avec « Non, pas encore », la démarche à suivre s’affiche : Raaga vous délivrera un récépissé à la préréservation.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/verification-pieces.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/verification-pieces.jpg" alt="Votre pièce d’identité et votre selfie." loading="lazy">
+                                </a>
+                                <figcaption>Votre pièce d’identité et votre selfie.</figcaption>
+                            </figure>
+                                                                                <figure>
+                                <a href="/guides/boutique/formalisation-oui.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/formalisation-oui.jpg" alt="Activité formalisée : IFU et RCCM demandés." loading="lazy">
+                                </a>
+                                <figcaption>Activité formalisée : IFU et RCCM demandés.</figcaption>
+                            </figure>
+                                                                                <figure>
+                                <a href="/guides/boutique/formalisation-non.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/formalisation-non.jpg" alt="Pas encore formalisée : la démarche à suivre." loading="lazy">
+                                </a>
+                                <figcaption>Pas encore formalisée : la démarche à suivre.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="prereservation" data-etape="prereservation">
+                    <p class="guide-numero">Étape 5</p>
+                    <h2>Préréserver la boutique</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Votre pièce d’identité est reprise de votre compte : rien à redéposer.</li>
+                                                                    <li>Choisissez votre activité principale et indiquez la personne à prévenir.</li>
+                                                                    <li>Cochez les trois engagements et confirmez.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>La boutique est préréservée à votre nom pendant le délai de paiement de la caution, affiché sur la page de la campagne : la page de paiement de la caution s’ouvre.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/prereservation-formulaire.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/prereservation-formulaire.jpg" alt="Le formulaire de préréservation." loading="lazy">
+                                </a>
+                                <figcaption>Le formulaire de préréservation.</figcaption>
+                            </figure>
+                                                                                <figure>
+                                <a href="/guides/boutique/caution-a-payer.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/caution-a-payer.jpg" alt="Préréservée : la caution est à payer dans le délai." loading="lazy">
+                                </a>
+                                <figcaption>Préréservée : la caution est à payer dans le délai.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="caution" data-etape="caution">
+                    <p class="guide-numero">Étape 6</p>
+                    <h2>Payer la caution</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Choisissez votre moyen de paiement, par exemple Orange Money.</li>
+                                                                    <li>Validez la demande de paiement sur votre téléphone. Saisissez votre code secret uniquement sur votre téléphone.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>La boutique est « Réservée : caution payée ». Le reçu de la caution se télécharge en PDF.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/caution-operateur.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/caution-operateur.jpg" alt="En attente de votre validation sur le téléphone." loading="lazy">
+                                </a>
+                                <figcaption>En attente de votre validation sur le téléphone.</figcaption>
+                            </figure>
+                                                                                <figure>
+                                <a href="/guides/boutique/caution-payee.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/caution-payee.jpg" alt="Caution payée : la boutique est réservée." loading="lazy">
+                                </a>
+                                <figcaption>Caution payée : la boutique est réservée.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="avance" data-etape="avance">
+                    <p class="guide-numero">Étape 7</p>
+                    <h2>Payer l’avance</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Ouvrez votre réservation et payez l’avance de loyer, comme la caution.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>La boutique est « Réservée : avance payée ». Elle vous sera attribuée à la signature du contrat.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/avance-payee.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/avance-payee.jpg" alt="Avance payée : les deux reçus se téléchargent." loading="lazy">
+                                </a>
+                                <figcaption>Avance payée : les deux reçus se téléchargent.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="recepisse" data-etape="recepisse">
+                    <p class="guide-numero">Étape 8</p>
+                    <h2>Votre récépissé de préinscription</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Dans « Mon espace › Mes boutiques », téléchargez votre récépissé de préinscription.</li>
+                                                                    <li>Présentez-le avec votre pièce d’identité pour demander votre IFU et votre RCCM selon la procédure allégée.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>Le bloc « Dossier en cours de formalisation » rappelle ce qu’il vous reste à déposer et la date limite.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/mes-boutiques-recepisse.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/mes-boutiques-recepisse.jpg" alt="Mes boutiques : dossier en cours de formalisation et récépissé." loading="lazy">
+                                </a>
+                                <figcaption>Mes boutiques : dossier en cours de formalisation et récépissé.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="formalisation" data-etape="formalisation">
+                    <p class="guide-numero">Étape 9</p>
+                    <h2>Déposer votre IFU et votre RCCM</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Dans « Vérifier mon identité », rubrique « Votre IFU », indiquez votre numéro IFU et joignez votre attestation.</li>
+                                                                    <li>Rubrique « Registre du commerce (RCCM) » : numéro, date d’immatriculation, greffe et extrait du registre.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>Raaga vérifie vos justificatifs. Votre carte de commerçant est émise une fois votre IFU vérifié.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/votre-ifu.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/votre-ifu.jpg" alt="Votre IFU et son attestation." loading="lazy">
+                                </a>
+                                <figcaption>Votre IFU et son attestation.</figcaption>
+                            </figure>
+                                                                                <figure>
+                                <a href="/guides/boutique/votre-rccm.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/votre-rccm.jpg" alt="Votre registre du commerce." loading="lazy">
+                                </a>
+                                <figcaption>Votre registre du commerce.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="attribution" data-etape="attribution">
+                    <p class="guide-numero">Étape 10</p>
+                    <h2>La boutique vous est attribuée</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Raaga vérifie votre identité, puis vous attribue la boutique à la signature du contrat.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>Dans « Mes boutiques », la boutique porte le statut « Attribuée ». Une notification annonce votre carte de commerçant.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/boutique-attribuee.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/boutique-attribuee.jpg" alt="Mes boutiques : boutique attribuée." loading="lazy">
+                                </a>
+                                <figcaption>Mes boutiques : boutique attribuée.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+                            <section class="guide-etape" id="carte" data-etape="carte">
+                    <p class="guide-numero">Étape 11</p>
+                    <h2>Votre carte de commerçant Raaga</h2>
+                    <div class="guide-colonnes">
+                        <div>
+                            <h3>Ce que vous faites</h3>
+                            <ol class="guide-gestes">
+                                                                    <li>Ouvrez « Ma carte Raaga », onglet « Commerçant ».</li>
+                                                                    <li>Affichez-la en plein écran ou téléchargez-la en PDF ou en image.</li>
+                                                            </ol>
+                        </div>
+                        <div class="guide-resultat">
+                            <h3>Ce qui se passe ensuite</h3>
+                            <p>Votre carte porte votre numéro Raaga (votre IFU), votre activité, votre site et un QR code de vérification.</p>
+                        </div>
+                    </div>
+                    <div class="guide-captures">
+                                                                                <figure>
+                                <a href="/guides/boutique/carte.jpg" target="_blank" rel="noopener" title="Voir la capture en grand">
+                                    <img src="/guides/boutique/carte.jpg" alt="La carte de commerçant, recto et verso." loading="lazy">
+                                </a>
+                                <figcaption>La carte de commerçant, recto et verso.</figcaption>
+                            </figure>
+                                            </div>
+                </section>
+            
+                            <div class="encadre encadre-info mt-8" data-a-savoir="data-a-savoir">
+            <h3 class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 encadre-symbole h-5 w-5">
+                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+            </svg>
+ Bon à savoir</h3>
+        <div><ul class="list-disc space-y-1 pl-5">
+                                                    <li>Deux boutiques au plus par personne, toutes campagnes confondues.</li>
+                                                    <li>Une boutique déjà préréservée accepte des inscriptions en liste d’attente : si la caution n’est pas payée dans le délai, la boutique est proposée au suivant, prévenu par SMS.</li>
+                                                    <li>Sans IFU ou sans RCCM, vous disposez de 6 mois après votre première préréservation pour les déposer. Des rappels vous sont envoyés par SMS.</li>
+                                            </ul></div>
+    </div>
+            
+                            <p class="guide-maj">Captures mises à jour le 10/11/2026.</p>
+                    </div>
+    </div>
+    </main>
+
+    <footer class="pied-public bg-encre text-gris-clair">
+    <div class="conteneur pied-grille py-10">
+        <div>
+            <a href="" class="inline-flex min-h-[44px] items-center">
+                
+                <img src="/plateforme/images/logoHorizontal?v=d465836c60"  alt="Raaga · Participation populaire – Accueil"
+         class="w-auto h-[52px]">
+            </a>
+            
+                            <p class="mt-2 leading-relaxed">La souscription populaire ouvre à tous les citoyens burkinabè le capital du marché Raaga.</p>
+                                        <p class="mt-2 leading-relaxed">Placée sous la tutelle du Gouvernement du Burkina Faso.</p>
+                    </div>
+
+        <div>
+            <h2 class="pied-titre">Découvrir</h2>
+            <ul>
+                                    <li><a href="/offre" class="pied-lien">Comprendre l’offre</a></li>
+                                    <li><a href="/transparence" class="pied-lien">Transparence</a></li>
+                                    <li><a href="/faq" class="pied-lien">Aide &amp; FAQ</a></li>
+                            </ul>
+        </div>
+
+        <div>
+            <h2 class="pied-titre">Mon compte</h2>
+            <ul>
+                <li><a href="/inscription" class="pied-lien">Créer un compte</a></li>
+                <li><a href="/espace" class="pied-lien">Mon espace</a></li>
+                                    <li><a href="/souscrire" class="pied-lien">Souscrire</a></li>
+                            </ul>
+        </div>
+
+        <div>
+            <h2 class="pied-titre">Assistance</h2>
+            <ul>
+                                    <li><a href="tel:+22680000000" class="pied-lien inline-flex min-h-[44px] items-center gap-2 font-semibold !text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-4 w-4">
+                <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>
+            </svg>
+Numéro vert : <span class="whitespace-nowrap">80 00 00 00</span></a></li>
+                                                <li><a href="/faq" class="pied-lien">Aide &amp; FAQ</a></li>
+                
+                <li><a href="/guides/index.html" class="pied-lien">Guides pas à pas</a></li>
+                <li><a href="/guichets" class="pied-lien">Guichets agréés</a></li>
+                <li><a href="/contact" class="pied-lien">Nous contacter</a></li>
+            </ul>
+        </div>
+    </div>
+
+            <div class="border-t border-white/10">
+            <div class="conteneur flex flex-col gap-3 py-4 text-[.9rem] lg:flex-row lg:items-start lg:justify-between">
+                                    <p class="max-w-2xl"><strong class="text-white">Attention aux fraudes :</strong> Raaga ne vous demandera jamais votre mot de passe par téléphone, SMS ou courriel.</p>
+                                <div class="flex flex-col gap-2">
+                                                        </div>
+            </div>
+        </div>
+    
+    <div class="border-t border-white/10">
+        <div class="conteneur flex flex-col gap-2 py-4 text-[.9rem] sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 Raaga SA</p>
+            <nav aria-label="Informations légales">
+                <ul class="flex flex-wrap gap-x-4">
+                                            <li><a href="/mentions-legales" class="pied-lien">Mentions légales</a></li>
+                                            <li><a href="/donnees-personnelles" class="pied-lien">Données personnelles</a></li>
+                                            <li><a href="/accessibilite" class="pied-lien">Accessibilité</a></li>
+                                    </ul>
+            </nav>
+        </div>
+    </div>
+</footer>
+    </body>
+</html>

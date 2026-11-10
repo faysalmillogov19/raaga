@@ -200,13 +200,13 @@ Résultat attendu : seules les boutiques dont le total à l'entrée ne dépasse 
 
 Profil : citoyen, personne physique sans IFU, puis agent de guichet et administrateur.
 
-1. Réservez une boutique sans renseigner de numéro IFU.
+1. Réservez une boutique : le formulaire de réservation ne demande pas l'IFU.
 2. Dans « Mon espace › Mes boutiques », lisez le bloc « Dossier en cours de formalisation » et téléchargez le récépissé.
 3. Scannez le QR code du récépissé avec un téléphone.
 4. En agent de guichet, recherchez le récépissé par son numéro et imprimez-le.
-5. Déposez ensuite l'IFU et son attestation dans « Vérifier mon identité » ; en administrateur, validez le dossier.
+5. Déposez ensuite l'IFU et son attestation dans « Vérifier mon identité », rubrique « Votre IFU » ; en administrateur, validez le dossier.
 
-Résultat attendu : la réservation est acceptée sans IFU. Le récépissé porte un numéro propre, la boutique, le site, la date et la date limite de formalisation. Le QR code ouvre une page « Récépissé authentique » sans nom ni numéro de pièce. La carte de commerçant n'est émise qu'après la validation de l'IFU.
+Résultat attendu : la réservation est acceptée sans IFU. Un récépissé est délivré dès que l'IFU ou le RCCM manque. Il porte un numéro propre, la boutique, le site, la date, la date limite de formalisation, la phrase sur la procédure allégée et la « Démarche à suivre ». La démarche s'affiche aussi dans « Vérifier mon identité » (réponse « Non, pas encore ») et dans « Mes boutiques ». Le QR code ouvre une page « Récépissé authentique » sans nom ni numéro de pièce. La carte de commerçant n'est émise qu'après la validation de l'IFU.
 
 ### S19. Greffes du RCCM
 

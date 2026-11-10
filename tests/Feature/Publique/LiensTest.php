@@ -81,6 +81,13 @@ class LiensTest extends TestCase
                 continue;
             }
 
+            // Pages statiques (rubrique « Guides », 10/11/2026) : fichiers .html de public/.
+            if (str_ends_with(strtok($lien, '?'), '.html')) {
+                $this->assertFileExists(public_path(ltrim(strtok($lien, '?'), '/')), "Page statique manquante : {$lien} (lien trouvé sur {$source})");
+
+                continue;
+            }
+
             $statut = $this->get($lien)->getStatusCode();
             $this->assertLessThan(400, $statut, "Lien cassé : {$lien} (trouvé sur {$source}) → HTTP {$statut}");
         }

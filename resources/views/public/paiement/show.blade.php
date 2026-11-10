@@ -95,7 +95,7 @@
                         </div>
 
                         @if ($simule)
-                            <div class="mt-6 rounded-charte border-2 border-dashed border-jaune p-4">
+                            <div class="mt-6 rounded-charte border-2 border-dashed border-jaune p-4" data-simulateur>
                                 <p class="font-bold text-encre">{{ __('public.paiement.simulateur') }}</p>
                                 <p class="texte-carte">{{ __('public.paiement.simulateur_aide') }}</p>
                                 <div class="mt-3 flex flex-col gap-3 sm:flex-row">

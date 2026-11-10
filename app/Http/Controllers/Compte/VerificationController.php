@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Boutique;
 use App\Models\KycDocument;
 use App\Models\User;
+use App\Services\Boutiques\ReservationsBoutiques;
 use App\Services\Cartes\Cartes;
 use App\Services\Kyc\JustificatifsGroupeSanguin;
 use App\Services\Kyc\RegistreCommerce;
@@ -139,6 +140,30 @@ class VerificationController extends Controller
         }
 
         return redirect()->to(route('espace.verification').'#groupe-sanguin')->avecSucces('public.verification.groupe_sanguin.enregistre');
+    }
+
+    /**
+     * IFU d'une personne physique pas encore formalisée (10/11/2026) : numéro et attestation, vérifiés par l'ADMIN ; la
+     * carte de commerçant est émise une fois l'IFU validé.
+     */
+    public function ifu(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless(VerificationIdentite::ifuADeposer($user), 404);
+        $donnees = $request->validate([
+            'numero_ifu' => Ifu::regles($user, 'required'),
+            'attestation_ifu' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'],
+        ], ['attestation_ifu.*' => __('public.verification.formalisation.erreurs.attestation_ifu')]);
+        $chemins = [];
+        try {
+            DB::transaction(fn () => ReservationsBoutiques::deposerAttestationIfu($user, Ifu::normaliser($donnees['numero_ifu']), $request->file('attestation_ifu'), $chemins));
+        } catch (\Throwable $e) {
+            Storage::disk(VerificationIdentite::DISQUE)->delete($chemins);
+
+            throw $e;
+        }
+
+        return redirect()->to(route('espace.verification').'#ifu')->avecSucces('public.verification.ifu.enregistre');
     }
 
     /** RCCM (05/11/2026) : numéro, date, greffe et justificatif ; obligatoire pour une personne morale, facultatif sinon. */

@@ -20,6 +20,8 @@ use Illuminate\Support\Str;
  * réglé par le SUPER_ADMIN (carte.delaiFormalisationMois, 6 mois par défaut) à compter de la première inscription sans
  * IFU ; rappels par SMS à 2 mois, 1 mois et 15 jours de l'échéance ; à l'échéance, alerte au back-office seulement (aucune
  * action sur la boutique). Formalisé : IFU saisi et attestation validée par l'ADMIN ; la carte n'est émise qu'alors.
+ * Depuis le 10/11/2026 : récépissé dès que l'IFU ou le RCCM manque ; il permet de demander l'un et l'autre selon la
+ * procédure allégée. Le délai court jusqu'à la formalisation complète (IFU et RCCM validés) ; la carte ne demande que l'IFU.
  */
 class Formalisation
 {
@@ -45,10 +47,50 @@ class Formalisation
         return $attestation?->statut === StatutDocumentKyc::Valide;
     }
 
-    /** Dossier « en cours de formalisation » : délai ouvert par une inscription sans IFU, IFU pas encore validé. */
+    /** RCCM saisi et justificatif validé (dernier justificatif déposé, pour ce numéro). */
+    public static function rccmValide(User $user): bool
+    {
+        if (blank($user->rccm)) {
+            return false;
+        }
+        $justificatif = KycDocument::query()->where('user_id', $user->id)->where('type', TypeDocumentKyc::Rccm)->latest('id')->first();
+
+        return $justificatif?->statut === StatutDocumentKyc::Valide && $justificatif->numero === $user->rccm;
+    }
+
+    /** Formalisation complète (10/11/2026) : IFU et RCCM validés. */
+    public static function complete(User $user): bool
+    {
+        return self::formalise($user) && self::rccmValide($user);
+    }
+
+    /** Personne physique sans IFU ou sans RCCM : une inscription sur une boutique ouvre le délai et donne un récépissé. */
+    public static function doitDemarrer(User $user): bool
+    {
+        return ! $user->estPersonneMorale() && (blank($user->ifu) || blank($user->rccm));
+    }
+
+    /** Ce qui reste à obtenir (jamais saisi) : « ifu », « rccm », les deux, ou rien (justificatifs en vérification). @return list<string> */
+    public static function aObtenir(User $user): array
+    {
+        return array_keys(array_filter(['ifu' => blank($user->ifu), 'rccm' => blank($user->rccm)]));
+    }
+
+    /**
+     * « votre IFU et votre RCCM », « votre IFU » ou « votre RCCM » (les deux si rien ne manque) ; $forme « pieces_titulaire »
+     * pour le récépissé : « son IFU et son RCCM ».
+     */
+    public static function libelleAObtenir(User $user, string $forme = 'pieces'): string
+    {
+        $cles = self::aObtenir($user);
+
+        return __('public.formalisation.'.$forme.'.'.(count($cles) === 1 ? $cles[0] : 'ifu_rccm'));
+    }
+
+    /** Dossier « en cours de formalisation » : délai ouvert par une inscription sans IFU ou sans RCCM, pas encore complet. */
     public static function enCours(User $user): bool
     {
-        return $user->formalisation_debut_le !== null && ! self::formalise($user);
+        return $user->formalisation_debut_le !== null && ! self::complete($user);
     }
 
     /** Échéance dépassée sans formalisation. */
@@ -91,7 +133,7 @@ class Formalisation
         $bilan = ['rappels' => 0, 'alertes' => 0, 'formalises' => 0];
         $enCours = User::query()->whereNotNull('formalisation_debut_le')->whereNotNull('formalisation_echeance_le')->get();
         foreach ($enCours as $user) {
-            if (self::formalise($user)) {
+            if (self::complete($user)) {
                 continue;
             }
             $echeance = CarbonImmutable::parse($user->formalisation_echeance_le);
@@ -100,7 +142,7 @@ class Formalisation
                 $date = $echeance->subMonthsNoOverflow($mois)->subDays($jours);
                 if (! in_array($cle, $envoyes, true) && today()->gte($date) && today()->lte($echeance)) {
                     if ($user->telephone) {
-                        $this->sms->envoyer($user->telephone, __('public.formalisation.sms.rappel'), ['date' => $echeance->format('d/m/Y')]);
+                        $this->sms->envoyer($user->telephone, __('public.formalisation.sms.rappel'), ['date' => $echeance->format('d/m/Y'), 'pieces' => self::libelleAObtenir($user)]);
                     }
                     $envoyes[] = $cle;
                     $bilan['rappels']++;

@@ -149,31 +149,8 @@
                     <x-public.champ nom="lieu_naissance" :libelle="__('public.verification.lieu_naissance')" :valeur="auth()->user()->lieu_naissance" class="mt-4" maxlength="100" autocomplete="off" obligatoire />
                 @endif
 
-                @if ($attestationIfu)
-                    {{-- Première réservation d'une personne physique : numéro IFU et attestation, vérifiés par le VALIDATEUR. --}}
-                    {{-- Personne physique sans IFU (05/11/2026) : facultatif ; sans IFU, récépissé de préinscription et délai pour se formaliser. --}}
-                    @php($ifuConnu = filled(auth()->user()->ifu))
-                    <fieldset class="mt-6" data-ifu-reservation>
-                        <legend class="text-lg font-bold text-encre">@if ($ifuConnu)<x-requis /> @endif{{ $r['ifu_titre'] }}</legend>
-                        <p class="texte-carte">{{ $r['ifu_aide'] }}</p>
-                        @unless ($ifuConnu)
-                            <p class="mt-2 texte-carte" data-sans-ifu>{{ __('public.formalisation.reservation', ['mois' => \App\Services\Boutiques\Formalisation::delaiMois()]) }}</p>
-                        @endunless
-                        @if (filled(auth()->user()->ifu) && ! $errors->has('ifu'))
-                            {{-- IFU déjà donné : rappelé, seule l'attestation est demandée (correction depuis « Vérifier mon identité »). --}}
-                            <input type="hidden" name="ifu" value="{{ auth()->user()->ifu }}">
-                            <p class="mt-3 text-encre" data-ifu-connu><span class="font-semibold">{{ $r['ifu'] }} :</span> {{ auth()->user()->ifu }}</p>
-                        @else
-                            <x-public.champ nom="ifu" :libelle="$r['ifu']" :valeur="auth()->user()->ifu" class="mt-3" maxlength="30" autocomplete="off" autocapitalize="characters" :obligatoire="$ifuConnu" />
-                        @endif
-                        <div class="mt-4">
-                            <label for="attestation_ifu" class="block font-semibold text-encre">@if ($ifuConnu)<x-requis /> @endif{{ $r['attestation_ifu'] }}</label>
-                            <input id="attestation_ifu" name="attestation_ifu" type="file" accept="image/jpeg,image/png,application/pdf" @if ($ifuConnu) required @endif aria-describedby="attestation_ifu-erreur"
-                                   class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
-                            <x-public.erreur :messages="$errors->get('attestation_ifu')" id="attestation_ifu-erreur" />
-                        </div>
-                    </fieldset>
-                @endif
+                {{-- IFU : plus demandé à la réservation (10/11/2026) ; une personne physique le dépose dans « Vérifier mon identité »
+                     (question de formalisation, ou formulaire « Votre IFU ») ; sans IFU, récépissé de préinscription. --}}
 
                 {{-- Activité et personne à prévenir déjà renseignées : rappelées, champs ouverts seulement sur « Modifier » (05/11/2026). --}}
                 @php($moi = auth()->user())

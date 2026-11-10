@@ -197,8 +197,6 @@ class BoutiquesController extends Controller
             'pieces' => ReservationsBoutiques::piecesPour($request->user()),
             'secteurs' => SecteurActivite::parFamille(),
             'secteurAutre' => SecteurActivite::query()->where('code', SecteurActivite::AUTRE)->value('id'),
-            // Première réservation d'une personne physique : numéro IFU et attestation.
-            'attestationIfu' => $user && ReservationsBoutiques::attestationIfuAFournir($user),
             'groupes' => User::GROUPES_SANGUINS,
         ]);
     }
@@ -245,7 +243,8 @@ class BoutiquesController extends Controller
         }
         $premiere = ListesAttente::pieceFournie($campagne, $user) === null && ReservationsBoutiques::pieceDuCompte($user) === null;
         $sexeLieu = self::sexeLieuDemandes($campagne, $user);
-        $attestation = ReservationsBoutiques::attestationIfuAFournir($user);
+        // IFU : plus demandé à la réservation d'une personne physique (10/11/2026), déposé dans « Vérifier mon identité ».
+        $attestation = false;
 
         $document = ['file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:5120'];
         $donnees = $request->validate([

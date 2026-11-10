@@ -109,14 +109,16 @@ class PieceDuCompteReservationTest extends TestCase
         $this->actingAs($user->fresh())->post(route('boutiques.reserver', $a2->code), $this->donneesSansPiece())->assertSessionHasNoErrors();
     }
 
-    public function test_ifu_connu_rappele_seule_l_attestation_est_demandee(): void
+    public function test_ifu_connu_sans_attestation_demandee_dans_verifier_mon_identite(): void
     {
         $user = $this->citoyenVerifie();
         KycDocument::query()->where('user_id', $user->id)->where('type', TypeDocumentKyc::Ifu)->delete();
 
+        // Réservation : plus d'IFU ni d'attestation (10/11/2026) ; « Vérifier mon identité » rappelle l'IFU et demande l'attestation.
         $this->actingAs($user)->get(route('boutiques.boutique', Boutiques::boutique('A', 1)->code))->assertOk()
-            ->assertSee('data-ifu-connu', false)->assertSee($user->ifu)->assertSee('name="attestation_ifu"', false)
-            ->assertSee('type="hidden" name="ifu" value="'.$user->ifu.'"', false);
+            ->assertDontSee('data-ifu-connu', false)->assertDontSee('name="attestation_ifu"', false);
+        $this->actingAs($user)->get(route('espace.verification'))->assertOk()
+            ->assertSee('data-ifu-formalisation', false)->assertSee('value="'.$user->ifu.'"', false)->assertSee('name="attestation_ifu"', false);
     }
 
     public function test_piece_transmise_en_cours_de_verification_reprise(): void

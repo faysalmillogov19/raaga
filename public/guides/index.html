@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Plateforme officielle de souscription aux actions populaires du marché Raaga">
+
+    <title>Guides pas à pas · Raaga · Participation populaire</title>
+
+    <link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/plateforme/images/logoSymboleSimplifie?v=1977241a50">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#005C2B">
+    <link rel="preload" href="/fonts/public-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/public-sans-700.woff2" as="font" type="font/woff2" crossorigin>
+
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Guides pas à pas · Raaga · Participation populaire">
+    <meta property="og:description" content="Plateforme officielle de souscription aux actions populaires du marché Raaga">
+    <meta property="og:url" content="/_guides">
+    <meta property="og:image" content="/images/og-raaga.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="/images/og-raaga.png">
+
+    
+    <link rel="stylesheet" href="/css/app.css?v=1792104604">
+<link rel="stylesheet" href="/css/raaga.css?v=1794288728">
+    <script src="/js/app.js?v=1793977675" defer></script>
+    <script src="/vendor/alpinejs/3.17.4/alpine.min.js?v=1792104673" defer></script>
+</head>
+<body class="site-public flex min-h-screen flex-col bg-white font-public text-texte antialiased theme-nuit theme-lumiere">
+        <a href="#contenu" class="sr-only z-50 bg-jaune font-semibold text-encre focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:px-4 focus:py-3">
+        Aller au contenu
+    </a>
+
+    
+            <header class="nuit-entete" x-data="{ menuOuvert: false }" @keydown.escape="menuOuvert = false">
+    <div class="conteneur nuit-entete-corps">
+        <a href="" class="nuit-entete-logo"
+           aria-label="Accueil · Raaga · Participation populaire">
+            <img src="/armoiries?v=ff58a11987" alt="Armoiries du Burkina Faso" width="48" height="56"
+     class="nuit-entete-armoiries">
+        </a>
+
+        <nav aria-label="Menu principal" class="nuit-menu" :class="menuOuvert ? 'est-ouvert' : ''">
+            <ul id="menu-principal" class="nuit-menu-liste">
+                                    <li>
+                        <a href="" class="nuit-menu-lien"
+                           >
+                                                        Accueil
+                        </a>
+                    </li>
+                                    <li>
+                        <a href="/offre" class="nuit-menu-lien"
+                           >
+                                                            <span class="menu-picto demarche-investir" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-4 w-4">
+     <circle cx="10" cy="15" r="6"/><path d="M10 12.5v5M8.5 14h2.5a1 1 0 0 1 0 2H9"/><path d="M16 9.5c0-3 1.8-5.5 5-5.5 0 3-1.8 5.5-5 5.5z"/><path d="M16 9.5V12"/> </svg>
+</span>
+                                                        Investir
+                        </a>
+                    </li>
+                                    <li>
+                        <a href="/boutiques" class="nuit-menu-lien"
+                           >
+                                                            <span class="menu-picto demarche-boutiques" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-4 w-4">
+     <path d="M3 10 4.5 4h15L21 10"/><path d="M3 10a2.25 2.25 0 0 0 4.5 0 2.25 2.25 0 0 0 4.5 0 2.25 2.25 0 0 0 4.5 0 2.25 2.25 0 0 0 4.5 0"/><path d="M5 12.5V20h14v-7.5M10 20v-5h4v5"/> </svg>
+</span>
+                                                        Boutiques
+                        </a>
+                    </li>
+                                    <li>
+                        <a href="/faq" class="nuit-menu-lien"
+                           >
+                                                        Aide &amp; FAQ
+                        </a>
+                    </li>
+                            </ul>
+        </nav>
+
+                    <a href="tel:+22680000000" class="nuit-entete-telephone" title="Numéro vert gratuit">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-5 w-5">
+                <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>
+            </svg>
+                <span class="sr-only">Numéro vert gratuit :</span>
+                <span>80 00 00 00</span>
+            </a>
+        
+                    <a href="/connexion" class="nuit-pilule nuit-pilule-plein nuit-entete-compte">Mon espace</a>
+        
+        <button type="button" class="nuit-burger" aria-controls="menu-principal" :aria-expanded="menuOuvert.toString()" aria-expanded="false"
+                @click="menuOuvert = ! menuOuvert">
+            <span class="sr-only" x-text="menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'">Ouvrir le menu</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-6 w-6" x-show="! menuOuvert">
+                <path d="M3 6h18M3 12h18M3 18h18"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-6 w-6" x-show="menuOuvert" x-cloak="x-cloak">
+                <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+</header>
+        
+    <main id="contenu" class="flex-1 nuit-page" tabindex="-1">
+        
+                        <div class="nuit-bandeau">
+    <div class="conteneur nuit-bandeau-corps">
+        <div class="nav-fil">
+        <div class="nav-historique" data-navigation-historique>
+    <button type="button" class="nav-historique-bouton" data-historique-retour data-parent="" title="Retour">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0">
+                <path d="M19 12H5M11 6l-6 6 6 6"/>
+            </svg>
+<span class="sr-only">Retour à la page précédente</span>
+    </button>
+    <button type="button" class="nav-historique-bouton" data-historique-suivant title="Suivant">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+<span class="sr-only">Aller à la page suivante</span>
+    </button>
+</div>
+        <nav aria-label="Fil d’Ariane">
+            <ol class="flex flex-wrap items-center gap-1 text-sm text-gris">
+                <li><a href="" class="inline-flex min-h-[44px] items-center text-vert-fonce underline underline-offset-2">Accueil</a></li>
+                                    <li class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-4 w-4">
+                <path d="m9 6 6 6-6 6"/>
+            </svg>
+                                                    <span  aria-current="page" >Guides pas à pas</span>
+                                            </li>
+                            </ol>
+        </nav>
+        </div>
+                    <h1 class="nuit-bandeau-titre">Guides pas à <strong>pas</strong></h1>
+            <p class="nuit-bandeau-intro">Chaque guide déroule une démarche écran par écran, avec ce que vous faites et ce qui se passe ensuite. Les personnes et les numéros montrés sont fictifs.</p>            </div>
+</div>
+
+    <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <ul class="guides-liste" data-guides>
+                            <li class="guides-carte">
+                                            <img src="/guides/boutique/carte.jpg" alt="" class="guides-vignette" loading="lazy">
+                                        <div class="guides-carte-texte">
+                        <h2>Obtenir une boutique du marché Raaga</h2>
+                        <p>Du compte citoyen à la carte de commerçant : créer son compte, faire vérifier son identité, préréserver une boutique, payer la caution et l’avance, se formaliser avec le récépissé, puis recevoir sa carte.</p>
+                        <p class="guides-meta">11 étapes</p>
+                        <a href="/guides/boutique/index.html" class="btn-plein guides-ouvrir">Lire le guide</a>
+                    </div>
+                </li>
+                    </ul>
+    </div>
+    </main>
+
+    <footer class="pied-public bg-encre text-gris-clair">
+    <div class="conteneur pied-grille py-10">
+        <div>
+            <a href="" class="inline-flex min-h-[44px] items-center">
+                
+                <img src="/plateforme/images/logoHorizontal?v=d465836c60"  alt="Raaga · Participation populaire – Accueil"
+         class="w-auto h-[52px]">
+            </a>
+            
+                            <p class="mt-2 leading-relaxed">La souscription populaire ouvre à tous les citoyens burkinabè le capital du marché Raaga.</p>
+                                        <p class="mt-2 leading-relaxed">Placée sous la tutelle du Gouvernement du Burkina Faso.</p>
+                    </div>
+
+        <div>
+            <h2 class="pied-titre">Découvrir</h2>
+            <ul>
+                                    <li><a href="/offre" class="pied-lien">Comprendre l’offre</a></li>
+                                    <li><a href="/transparence" class="pied-lien">Transparence</a></li>
+                                    <li><a href="/faq" class="pied-lien">Aide &amp; FAQ</a></li>
+                            </ul>
+        </div>
+
+        <div>
+            <h2 class="pied-titre">Mon compte</h2>
+            <ul>
+                <li><a href="/inscription" class="pied-lien">Créer un compte</a></li>
+                <li><a href="/espace" class="pied-lien">Mon espace</a></li>
+                                    <li><a href="/souscrire" class="pied-lien">Souscrire</a></li>
+                            </ul>
+        </div>
+
+        <div>
+            <h2 class="pied-titre">Assistance</h2>
+            <ul>
+                                    <li><a href="tel:+22680000000" class="pied-lien inline-flex min-h-[44px] items-center gap-2 font-semibold !text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+     class="h-5 w-5 shrink-0 h-4 w-4">
+                <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>
+            </svg>
+Numéro vert : <span class="whitespace-nowrap">80 00 00 00</span></a></li>
+                                                <li><a href="/faq" class="pied-lien">Aide &amp; FAQ</a></li>
+                
+                <li><a href="/guides/index.html" class="pied-lien">Guides pas à pas</a></li>
+                <li><a href="/guichets" class="pied-lien">Guichets agréés</a></li>
+                <li><a href="/contact" class="pied-lien">Nous contacter</a></li>
+            </ul>
+        </div>
+    </div>
+
+            <div class="border-t border-white/10">
+            <div class="conteneur flex flex-col gap-3 py-4 text-[.9rem] lg:flex-row lg:items-start lg:justify-between">
+                                    <p class="max-w-2xl"><strong class="text-white">Attention aux fraudes :</strong> Raaga ne vous demandera jamais votre mot de passe par téléphone, SMS ou courriel.</p>
+                                <div class="flex flex-col gap-2">
+                                                        </div>
+            </div>
+        </div>
+    
+    <div class="border-t border-white/10">
+        <div class="conteneur flex flex-col gap-2 py-4 text-[.9rem] sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 Raaga SA</p>
+            <nav aria-label="Informations légales">
+                <ul class="flex flex-wrap gap-x-4">
+                                            <li><a href="/mentions-legales" class="pied-lien">Mentions légales</a></li>
+                                            <li><a href="/donnees-personnelles" class="pied-lien">Données personnelles</a></li>
+                                            <li><a href="/accessibilite" class="pied-lien">Accessibilité</a></li>
+                                    </ul>
+            </nav>
+        </div>
+    </div>
+</footer>
+    </body>
+</html>

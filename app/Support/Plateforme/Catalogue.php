@@ -136,6 +136,8 @@ final class Catalogue
                 'bandeauAnnonce' => ['bandeau'],
                 'modeMaintenance' => ['maintenance'],
                 'messageAntiFraude' => ['texte_long', 250],
+                // Formalisation (10/11/2026) : où présenter le récépissé pour la procédure allégée ; vide : démarche sans lieu.
+                'lieuFormalisation' => ['texte_long', 400],
             ],
             // Carte d'identification : réglages lus par le rendu des cartes, tous requis pour générer une carte (le numéro
             // vert imprimé au verso est celui des contacts d'assistance).

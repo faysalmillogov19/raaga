@@ -5,8 +5,10 @@ namespace Tests\Feature\Boutiques;
 use App\Contracts\SmsProvider;
 use App\Enums\Role;
 use App\Enums\StatutCarte;
+use App\Enums\StatutDocumentKyc;
 use App\Enums\StatutKyc;
 use App\Enums\TypeCarte;
+use App\Enums\TypeDocumentKyc;
 use App\Enums\TypeTitulaire;
 use App\Models\InscriptionBoutique;
 use App\Models\KycDocument;
@@ -64,7 +66,8 @@ class FormalisationTest extends TestCase
     {
         $user = $this->sansIfu();
         $this->actingAs($user)->get(route('boutiques.boutique', Boutiques::boutique('A', 1)->code))->assertOk()
-            ->assertSee('data-sans-ifu', false)->assertSee('récépissé de préinscription Raaga', false)->assertSee('6 mois');
+            // IFU plus demandé à la réservation (10/11/2026) : ni champ IFU, ni attestation.
+            ->assertSee('data-formulaire-reservation', false)->assertDontSee('data-ifu-reservation', false)->assertDontSee('name="attestation_ifu"', false);
         $this->reserver($user);
 
         $user->refresh();
@@ -122,7 +125,7 @@ class FormalisationTest extends TestCase
         $this->travelTo($echeance->copy()->subMonthsNoOverflow(2));
         $this->assertSame(1, $formalisation->echeances()['rappels']);
         $this->assertSame(0, $formalisation->echeances()['rappels']);
-        $this->assertStringContainsString('Déposez votre IFU et son attestation avant le '.$echeance->format('d/m/Y'), end($this->sms->envoyes)['message']);
+        $this->assertStringContainsString('Déposez votre IFU et votre RCCM avant le '.$echeance->format('d/m/Y'), end($this->sms->envoyes)['message']);
         // À 1 mois, puis à 15 jours.
         $this->travelTo($echeance->copy()->subMonthsNoOverflow(1));
         $this->assertSame(1, $formalisation->echeances()['rappels']);
@@ -175,6 +178,11 @@ class FormalisationTest extends TestCase
         $this->assertTrue(Formalisation::enCours($user->fresh()));
         Boutiques::ifuVerifie($user->fresh());
         $this->assertTrue(Formalisation::formalise($user->fresh()));
+        // IFU validé, RCCM manquant : toujours en cours (10/11/2026) ; RCCM validé : formalisation complète.
+        $this->assertTrue(Formalisation::enCours($user->fresh()));
+        $user->fresh()->forceFill(['rccm' => 'BF OUA 2024 A 07777', 'rccm_immatricule_le' => '2024-01-10', 'rccm_greffe_id' => 1])->save();
+        KycDocument::query()->create(['user_id' => $user->id, 'type' => TypeDocumentKyc::Rccm, 'chemin_fichier' => 'kyc/rccm.pdf', 'mime' => 'application/pdf',
+            'taille' => 1000, 'empreinte_sha256' => str_repeat('0', 64), 'statut' => StatutDocumentKyc::Valide, 'televerse_par' => $user->id, 'numero' => 'BF OUA 2024 A 07777']);
         $this->assertFalse(Formalisation::enCours($user->fresh()));
 
         $morale = User::factory()->role(Role::Citoyen)->create(['type_titulaire' => TypeTitulaire::Morale, 'raison_sociale' => 'Société Y', 'forme_morale' => 'ENTREPRISE',

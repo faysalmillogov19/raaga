@@ -133,10 +133,11 @@ class LimiteParCommercantTest extends TestCase
         // Second compte de la même personne : son IFU est refusé (déjà utilisé), rien n'est enregistré.
         Storage::fake('local');
         $second = $this->citoyen();
-        $this->actingAs($second)->post(route('boutiques.reserver', Boutiques::boutique('A', 3)->code), [
-            'type_piece' => 'CNIB', 'numero_piece' => Boutiques::nip('B5555555'), 'piece' => UploadedFile::fake()->image('piece.jpg'), ...Boutiques::donneesCommercant(),
-            'ifu' => '0000 4742 u', 'attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf'),
-        ])->assertSessionHasErrors(['ifu' => 'Ce numéro IFU est déjà utilisé par un autre compte.']);
+        // IFU déposé dans « Vérifier mon identité » (10/11/2026 : plus à la réservation).
+        Boutiques::demandeIdentite($second, 'B5555555');
+        $this->actingAs($second)->post(route('espace.verification.ifu'), [
+            'numero_ifu' => '0000 4742 u', 'attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf'),
+        ])->assertSessionHasErrors(['numero_ifu' => 'Ce numéro IFU est déjà utilisé par un autre compte.']);
         $this->assertSame(0, ReservationBoutique::query()->where('user_id', $second->id)->count());
         $this->assertNull($second->fresh()->ifu);
         // Même en base, deux comptes ne portent jamais le même IFU (transaction imbriquée : la suite du test continue).

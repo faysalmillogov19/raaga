@@ -87,6 +87,12 @@ class Phase1BoutiquesTest extends TestCase
         }
 
         foreach ($liens as $lien => $source) {
+            // Pages statiques (rubrique « Guides », 10/11/2026) : fichiers .html de public/.
+            if (str_ends_with(strtok($lien, '?'), '.html')) {
+                $this->assertFileExists(public_path(ltrim(strtok($lien, '?'), '/')), "Page statique manquante : {$lien} (sur {$source})");
+
+                continue;
+            }
             $reponse = $this->get($lien);
             $this->assertLessThan(400, $reponse->getStatusCode(), "Lien cassé : {$lien} (sur {$source})");
             $this->assertFalse($reponse->isRedirect(route('boutiques')) && $lien !== '/boutiques', "Lien vers une page des actions : {$lien} (sur {$source})");

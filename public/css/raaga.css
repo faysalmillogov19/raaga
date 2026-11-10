@@ -3376,3 +3376,197 @@ html,
     color: #FFFFFF;
     text-decoration: none;
 }
+
+/* Fenêtre du back-office ouverte depuis une cellule de tableau (« Attribuer », 10/11/2026) : texte aligné à gauche et
+   renvoyé à la ligne, quel que soit le style de la cellule. */
+.adm-fenetre {
+    text-align: start;
+    white-space: normal;
+}
+/* « * Champ obligatoire » d'une fenêtre : sous la barre de titre, aux marges du contenu (10/11/2026). */
+.adm-fenetre-cadre > .adm-fenetre-tete {
+    order: -1;
+}
+.adm-fenetre-cadre > .mention-requis {
+    margin: 0;
+    padding: 12px 20px 0;
+}
+
+/* Rubrique « Guides » (10/11/2026) : sommaire des guides, puis guide pas à pas (sommaire collant à gauche sur grand
+   écran, une colonne sur téléphone). */
+.guides-liste {
+    display: grid;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.guides-carte {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px;
+    border: 1px solid var(--ligne);
+    border-radius: 12px;
+    background: #FFFFFF;
+}
+@media (min-width: 768px) {
+    .guides-carte { grid-template-columns: 320px minmax(0, 1fr); align-items: center; }
+}
+.guides-vignette {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    object-position: top;
+    border: 1px solid var(--ligne);
+    border-radius: 8px;
+}
+.guides-carte-texte {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+.guides-carte-texte h2 {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--encre);
+}
+.guides-meta {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--vert-fonce);
+}
+.guides-ouvrir {
+    width: auto;
+    justify-self: start;
+    margin-top: 8px;
+    padding: 0 24px;
+    text-decoration: none;
+    color: #FFFFFF;
+}
+.guide-cadre {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+}
+@media (min-width: 1024px) {
+    .guide-cadre { grid-template-columns: 240px minmax(0, 1fr); }
+    .guide-sommaire { position: sticky; top: 16px; align-self: start; }
+}
+.guide-sommaire ol {
+    display: grid;
+    gap: 2px;
+    margin: 8px 0 16px;
+    padding: 0;
+    list-style: none;
+}
+.guide-sommaire a {
+    display: flex;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    color: var(--texte);
+    text-decoration: none;
+    font-size: .9rem;
+}
+.guide-sommaire a:hover,
+.guide-sommaire a:focus-visible {
+    background: var(--vert-pale);
+    color: var(--encre);
+}
+.guide-sommaire a span {
+    min-width: 1.4em;
+    font-variant-numeric: tabular-nums;
+    color: var(--gris);
+}
+.guide-sommaire-titre {
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+.guide-retour {
+    font-weight: 600;
+    color: var(--vert-fonce);
+}
+.guide-contenu {
+    display: grid;
+    gap: 28px;
+    min-width: 0;
+}
+.guide-pour-qui {
+    color: var(--texte);
+}
+.guide-etape {
+    display: grid;
+    gap: 16px;
+    padding: 22px;
+    border: 1px solid var(--ligne);
+    border-radius: 12px;
+    background: #FFFFFF;
+    scroll-margin-top: 16px;
+}
+.guide-etape h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--encre);
+}
+.guide-numero {
+    justify-self: start;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--vert-pale);
+    color: var(--vert-fonce);
+    font-size: .85rem;
+    font-weight: 800;
+}
+.guide-colonnes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px 24px;
+}
+.guide-colonnes h3 {
+    margin-bottom: 6px;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--gris);
+}
+.guide-gestes {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding-left: 1.2em;
+    list-style: decimal;
+}
+.guide-resultat {
+    padding-left: 12px;
+    border-left: 3px solid var(--vert);
+}
+.guide-captures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+.guide-captures figure {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    min-width: 0;
+}
+.guide-captures img {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    object-fit: cover;
+    object-position: top;
+    border: 1px solid var(--ligne);
+    border-radius: 8px;
+}
+.guide-captures figcaption,
+.guide-maj {
+    font-size: .85rem;
+    color: var(--gris);
+}

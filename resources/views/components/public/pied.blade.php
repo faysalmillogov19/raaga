@@ -56,6 +56,8 @@
                     <li><a href="mailto:{{ $contacts['emailAssistance'] }}" class="pied-lien break-all">{{ $contacts['emailAssistance'] }}</a></li>
                 @endif
                 <li><a href="{{ route('faq') }}" class="pied-lien">{{ __('public.pied.aide') }}</a></li>
+                {{-- Guides illustrés (10/11/2026) : pages statiques de public/guides/. --}}
+                <li><a href="{{ url('guides/index.html') }}" class="pied-lien">{{ __('public.pied.guides') }}</a></li>
                 <li><a href="{{ route('guichets') }}" class="pied-lien">{{ __('public.pied.guichets') }}</a></li>
                 <li><a href="{{ route('contact') }}" class="pied-lien">{{ __('public.pied.contact') }}</a></li>
             </ul>

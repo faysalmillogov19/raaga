@@ -86,25 +86,27 @@ class IfuCommercantTest extends TestCase
         ]);
     }
 
-    public function test_premiere_reservation_ifu_et_attestation_obligatoires_puis_verifiees(): void
+    public function test_ifu_depose_dans_verifier_mon_identite_puis_verifie(): void
     {
         Storage::fake('local');
         $citoyen = $this->citoyen(['ifu' => null]);
         $boutique = Boutiques::boutique('A', 1);
 
+        // La réservation ne demande plus l'IFU (10/11/2026) : il se dépose dans « Vérifier mon identité », rubrique « Votre IFU ».
         $this->actingAs($citoyen)->get(route('boutiques.boutique', $boutique->code))->assertOk()
-            ->assertSee('data-ifu-reservation', false)->assertSee('Votre numéro IFU')->assertSee('Numéro IFU')->assertDontSee('Numéro Raaga (IFU)')->assertSee('name="ifu"', false)->assertSee('name="attestation_ifu"', false);
+            ->assertSee('data-formulaire-reservation', false)->assertDontSee('data-ifu-reservation', false)->assertDontSee('name="attestation_ifu"', false);
+        $this->actingAs($citoyen)->get(route('espace.verification'))->assertOk()->assertSee('data-ifu-formalisation', false)->assertSee('Numéro IFU')->assertDontSee('Numéro Raaga (IFU)');
 
-        // IFU sans attestation, IFU déjà pris : rien n'est enregistré. (Sans IFU du tout : réservation possible avec un
-        // récépissé de préinscription depuis le 05/11/2026, voir FormalisationTest.)
-        $this->candidater($citoyen, $boutique, ['ifu' => '00004742U'])->assertSessionHasErrors('attestation_ifu');
+        // IFU sans attestation, IFU déjà pris : rien n'est enregistré.
+        $deposer = fn (array $donnees) => $this->actingAs($citoyen)->post(route('espace.verification.ifu'), $donnees);
+        $deposer(['numero_ifu' => '00004742U'])->assertSessionHasErrors('attestation_ifu');
         $this->citoyen(['ifu' => '00009999Z']);
-        $this->candidater($citoyen, $boutique, ['ifu' => '0000 9999 z', 'attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf')])
-            ->assertSessionHasErrors(['ifu' => 'Ce numéro IFU est déjà utilisé par un autre compte.']);
-        $this->assertSame(0, ReservationBoutique::query()->count());
+        $deposer(['numero_ifu' => '0000 9999 z', 'attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf')])
+            ->assertSessionHasErrors(['numero_ifu' => 'Ce numéro IFU est déjà utilisé par un autre compte.']);
+        $this->assertNull($citoyen->fresh()->ifu);
 
-        // Saisie normalisée (espaces, tiret, mot « IFU ») ; attestation au dossier, à vérifier par le VALIDATEUR.
-        $this->candidater($citoyen, $boutique, ['ifu' => 'IFU 0000-4742 u', 'attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf')])
+        // Saisie normalisée (espaces, tiret, mot « IFU ») ; attestation au dossier, à vérifier par l'ADMIN.
+        $deposer(['numero_ifu' => 'IFU 0000-4742 u', 'attestation_ifu' => UploadedFile::fake()->create('ifu.pdf', 50, 'application/pdf')])
             ->assertSessionHasNoErrors();
         $citoyen->refresh();
         $this->assertSame('00004742U', $citoyen->ifu);

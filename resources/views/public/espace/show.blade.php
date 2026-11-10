@@ -178,8 +178,8 @@
                         @php($f = __('public.formalisation.espace'))
                         <x-public.alerte :variante="\App\Services\Boutiques\Formalisation::echue($user) ? 'attention' : 'info'" class="mb-4" data-formalisation>
                             <p class="font-bold">{{ $f['titre'] }}</p>
-                            <p>{{ __(\App\Services\Boutiques\Formalisation::echue($user) ? 'public.formalisation.espace.echu' : 'public.formalisation.espace.en_cours', ['date' => $user->formalisation_echeance_le->format('d/m/Y')]) }}</p>
-                            <a href="{{ route('espace.verification') }}" class="lien mt-1">{{ $f['lien'] }}</a>
+                            <p>{{ \App\Services\Boutiques\Formalisation::aObtenir($user) === [] ? __('public.formalisation.espace.en_verification') : __(\App\Services\Boutiques\Formalisation::echue($user) ? 'public.formalisation.espace.echu' : 'public.formalisation.espace.en_cours', ['pieces' => \App\Services\Boutiques\Formalisation::libelleAObtenir($user), 'date' => $user->formalisation_echeance_le->format('d/m/Y')]) }}</p>
+                            <a href="{{ route('espace.verification') }}#ifu" class="lien mt-1">{{ $f['lien'] }}</a>
                         </x-public.alerte>
                     @endif
                     @if ($recepisses->isNotEmpty())

@@ -321,6 +321,7 @@ return [
         'souscrire' => 'Souscrire',
         'assistance' => 'Assistance',
         'aide' => 'Aide & FAQ',
+        'guides' => 'Guides pas à pas',
         'guichets' => 'Guichets agréés',
         'contact' => 'Nous contacter',
         'mentions' => 'Mentions légales',
@@ -921,6 +922,15 @@ return [
         ],
         // Libellés courts des types de pièces (listes, dossiers, carte).
         // RCCM (05/11/2026), modifiable à tout moment ; jamais imprimé sur la carte.
+        // IFU d'une personne physique pas encore formalisée, après le premier dépôt (10/11/2026).
+        'ifu' => [
+            'titre' => 'Votre IFU',
+            'aide' => 'Vous avez obtenu votre IFU ? Indiquez son numéro et joignez votre attestation. Votre carte de commerçant sera émise une fois votre IFU vérifié.',
+            'statuts' => ['EN_ATTENTE' => 'Attestation IFU en cours de vérification.', 'VALIDE' => 'Attestation IFU vérifiée.', 'REJETE' => 'Attestation IFU refusée : déposez-en une autre.'],
+            'motif' => 'Motif :',
+            'envoyer' => 'Envoyer mon IFU',
+            'enregistre' => 'Votre IFU est envoyé. Il sera vérifié avec votre attestation.',
+        ],
         // Formalisation au premier dépôt d'une personne physique (10/11/2026).
         'formalisation' => [
             'question' => 'Votre activité est-elle déjà formalisée ?',
@@ -1079,14 +1089,30 @@ return [
 
     // Formalisation différée et récépissé de préinscription Raaga (réunion du 05/11/2026, lot 2).
     'formalisation' => [
+        // Pièces de formalisation qui restent à obtenir (10/11/2026).
+        'pieces' => ['ifu' => 'votre IFU', 'rccm' => 'votre RCCM', 'ifu_rccm' => 'votre IFU et votre RCCM'],
+        'pieces_titulaire' => ['ifu' => 'son IFU', 'rccm' => 'son RCCM', 'ifu_rccm' => 'son IFU et son RCCM'],
+        // Démarche de la procédure allégée (10/11/2026) : vérification d'identité (« Non, pas encore »), Mes boutiques, récépissé.
+        'demarche' => [
+            'titre' => 'Démarche à suivre',
+            'intro' => 'Sans IFU ou sans RCCM, vous pouvez quand même préréserver une boutique. Raaga vous délivre alors un récépissé de préinscription.',
+            'etapes' => [
+                'Préréservez votre boutique : votre récépissé de préinscription se télécharge dans « Mon espace › Mes boutiques ».',
+                'Présentez ce récépissé avec votre pièce d’identité pour demander votre IFU et votre RCCM selon la procédure allégée.',
+                'Déposez votre IFU et votre RCCM, avec leurs justificatifs, dans « Vérifier mon identité », avant la date indiquée sur le récépissé (:mois mois après votre première préréservation).',
+                'Votre carte de commerçant est émise une fois votre IFU vérifié.',
+            ],
+            'lieu' => 'Où présenter le récépissé :',
+        ],
         'reservation' => 'Pas encore d’IFU ? Vous pouvez réserver sans lui : vous recevez un récépissé de préinscription Raaga et disposez de :mois mois pour obtenir votre IFU et le déposer avec son attestation. Votre carte de commerçant sera émise une fois votre IFU vérifié.',
         'sms' => [
-            'rappel' => '{nomPlateforme} : votre dossier de commerçant est en cours de formalisation. Déposez votre IFU et son attestation avant le {date} dans Mon espace, Vérifier mon identité.[ Aide : {numeroVert}]',
+            'rappel' => '{nomPlateforme} : votre dossier de commerçant est en cours de formalisation. Déposez {pieces} avant le {date} dans Mon espace, Vérifier mon identité.[ Aide : {numeroVert}]',
         ],
         'espace' => [
             'titre' => 'Dossier en cours de formalisation',
-            'en_cours' => 'Déposez votre IFU et son attestation avant le :date, dans « Vérifier mon identité ». Votre carte de commerçant sera émise une fois votre IFU vérifié.',
-            'echu' => 'Le délai de formalisation a pris fin le :date. Déposez votre IFU et son attestation dès que possible, dans « Vérifier mon identité ».',
+            'en_cours' => 'Avec votre récépissé, demandez :pieces selon la procédure allégée. Déposez ensuite :pieces et les justificatifs dans « Vérifier mon identité » avant le :date. Votre carte de commerçant sera émise une fois votre IFU vérifié.',
+            'echu' => 'Le délai de formalisation a pris fin le :date. Déposez :pieces dès que possible, dans « Vérifier mon identité ».',
+            'en_verification' => 'Vos justificatifs sont déposés et en cours de vérification.',
             'lien' => 'Vérifier mon identité',
             'recepisses' => 'Récépissés de préinscription',
             'telecharger' => 'Télécharger le récépissé :numero',
@@ -1104,7 +1130,8 @@ return [
             'date' => 'Date de la réservation',
             'echeance' => 'Délai de formalisation : jusqu’au',
             'mention_titre' => 'Objet du récépissé',
-            'mention' => 'Ce récépissé atteste seulement que le titulaire a réservé la boutique ci-dessus sur la plateforme Raaga et qu’il dispose, jusqu’au :date, d’un délai pour déposer son IFU et son attestation sur la plateforme. Il ne remplace aucune pièce officielle. Il ne vaut ni attribution de la boutique ni carte de commerçant.',
+            'mention' => 'Ce récépissé atteste que le titulaire a réservé la boutique ci-dessus sur la plateforme Raaga et qu’il dispose, jusqu’au :date, d’un délai pour déposer :pieces sur la plateforme. Il lui permet de demander :pieces selon la procédure allégée. Il ne remplace aucune pièce officielle. Il ne vaut ni attribution de la boutique ni carte de commerçant.',
+            'demarche_titre' => 'Démarche à suivre',
             'qr' => 'QR code de vérification du récépissé',
             'qr_aide' => 'Pour vérifier ce récépissé, scannez le QR code : la page de vérification de la plateforme Raaga s’ouvre.',
         ],
@@ -1123,6 +1150,22 @@ return [
 
     // Registre du commerce et du crédit mobilier (réunion du 05/11/2026) : jamais imprimé sur la carte.
     // NIP de la CNIB et de la CIB-AES (06/11/2026) : 17 chiffres, à la place du numéro de la pièce.
+    // Rubrique « Guides » (10/11/2026) : parcours illustrés, pages statiques.
+    'guides' => [
+        'titre' => 'Guides pas à pas',
+        'intro' => 'Chaque guide déroule une démarche écran par écran, avec ce que vous faites et ce qui se passe ensuite. Les personnes et les numéros montrés sont fictifs.',
+        'ouvrir' => 'Lire le guide',
+        'etapes' => ':n étapes',
+        'pour_qui' => 'Pour qui',
+        'vous_faites' => 'Ce que vous faites',
+        'resultat' => 'Ce qui se passe ensuite',
+        'a_savoir' => 'Bon à savoir',
+        'sommaire' => 'Étapes du guide',
+        'etape' => 'Étape :n',
+        'agrandir' => 'Voir la capture en grand',
+        'mise_a_jour' => 'Captures mises à jour le :date.',
+        'retour' => 'Tous les guides',
+    ],
     'nip' => [
         'pieces' => ['CNIB' => 'la CNIB', 'CIB_AES' => 'la CIB-AES'],
         'libelle' => 'NIP de :piece',

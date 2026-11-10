@@ -188,6 +188,9 @@
                                 @endforeach
                             </div>
                             <x-public.erreur :messages="$errors->get('formalisee')" />
+                            <div class="mt-4" x-show="formalisee === 'non'" @if (old('formalisee') !== 'non') x-cloak @endif>
+                                @include('public.partials.demarche-formalisation')
+                            </div>
                         @else
                             <input type="hidden" name="formalisee" value="oui">
                         @endif
@@ -223,6 +226,36 @@
                 @endif
 
                 <button type="submit" class="btn-primaire mt-6 w-full sm:w-auto">{{ $v['envoyer'] }}</button>
+            </form>
+        @endif
+
+        {{-- Votre IFU (10/11/2026) : personne physique pas encore formalisée, après le premier dépôt ; vérifié par l'ADMIN, la
+             carte de commerçant est émise ensuite. --}}
+        @if (\App\Services\Kyc\VerificationIdentite::ifuADeposer($user))
+            @php($vi = __('public.verification.ifu'))
+            @php($attestation = $user->kycDocuments()->where('type', \App\Enums\TypeDocumentKyc::Ifu)->latest('id')->first())
+            <form method="POST" action="{{ route('espace.verification.ifu') }}" enctype="multipart/form-data" novalidate class="carte mt-6 p-5" id="ifu" data-ifu-formalisation>
+                @csrf
+                <h2 class="!text-lg">{{ $vi['titre'] }}</h2>
+                <p class="texte-carte">{{ $vi['aide'] }}</p>
+                @if ($attestation && $attestation->numero === $user->ifu)
+                    <p class="mt-3 font-semibold text-encre" data-statut-ifu>{{ $vi['statuts'][$attestation->statut->value] }}</p>
+                    @if ($attestation->statut === StatutDocumentKyc::Rejete && $attestation->commentaire)
+                        <p class="texte-carte">{{ $vi['motif'] }} {{ $attestation->commentaire }}</p>
+                    @endif
+                @endif
+                <div class="mt-4 space-y-4">
+                    <x-public.champ nom="numero_ifu" id="numero_ifu_formalisation" :libelle="$v['numero_ifu']" :aide="__('public.verification.formalisation.ifu_aide')" :valeur="$user->ifu"
+                                    maxlength="30" autocomplete="off" autocapitalize="characters" obligatoire />
+                    <div>
+                        <label for="attestation_ifu" class="block font-semibold text-encre"><x-requis /> {{ $v['pieces']['ifu'] }}</label>
+                        <p id="attestation_ifu-aide" class="texte-carte">{{ $v['aides']['ifu'] }}</p>
+                        <input id="attestation_ifu" name="attestation_ifu" type="file" accept="image/jpeg,image/png,application/pdf" aria-describedby="attestation_ifu-aide attestation_ifu-erreur"
+                               @error('attestation_ifu') aria-invalid="true" @enderror class="mt-2 block w-full text-base file:mr-3 file:min-h-[44px] file:rounded-charte file:border-2 file:border-vert-fonce file:bg-white file:px-4 file:font-semibold file:text-vert-fonce">
+                        <x-public.erreur :messages="$errors->get('attestation_ifu')" id="attestation_ifu-erreur" />
+                    </div>
+                </div>
+                <button type="submit" class="btn-secondaire mt-4">{{ $vi['envoyer'] }}</button>
             </form>
         @endif
 

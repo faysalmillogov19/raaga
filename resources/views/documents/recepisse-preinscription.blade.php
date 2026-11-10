@@ -25,7 +25,21 @@
 
     <div class="encadre">
         <strong>{{ $t['mention_titre'] }}</strong><br>
-        {{ __('public.formalisation.recepisse.mention', ['date' => $r->echeance_le->format('d/m/Y')]) }}
+        {{ __('public.formalisation.recepisse.mention', ['date' => $r->echeance_le->format('d/m/Y'), 'pieces' => \App\Services\Boutiques\Formalisation::libelleAObtenir($u, 'pieces_titulaire')]) }}
+    </div>
+
+    {{-- Démarche à suivre (10/11/2026) : à partir de la demande de l'IFU et du RCCM. --}}
+    @php($dm = __('public.formalisation.demarche'))
+    <div class="encadre">
+        <strong>{{ $t['demarche_titre'] }}</strong>
+        <ol style="margin: 4px 0 0 18px; padding: 0">
+            @foreach (array_slice($dm['etapes'], 1) as $etape)
+                <li>{{ str_replace(':mois', (string) \App\Services\Boutiques\Formalisation::delaiMois(), $etape) }}</li>
+            @endforeach
+        </ol>
+        @if (filled($lieu = plateforme('messages.lieuFormalisation')))
+            <p style="margin: 4px 0 0">{{ $dm['lieu'] }} {{ $lieu }}</p>
+        @endif
     </div>
 
     <table class="donnees">

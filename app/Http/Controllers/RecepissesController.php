@@ -49,7 +49,7 @@ class RecepissesController extends Controller
     public static function etat(Recepisse $recepisse): string
     {
         return match (true) {
-            Formalisation::formalise($recepisse->user) => 'formalise',
+            Formalisation::complete($recepisse->user) => 'formalise',
             $recepisse->echeance_le->lt(today()) => 'echu',
             default => 'en_cours',
         };
